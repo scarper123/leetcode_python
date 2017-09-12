@@ -1,0 +1,376 @@
+9-line accepted Java code, without the need of handling overflow
+compare half of the digits in x, so don't need to deal with overflow.
+
+    public boolean isPalindrome(int x) {
+        if (x<0 || (x!=0 && x%10==0)) return false;
+        int rev = 0;
+        while (x>rev){
+        	rev = rev*10 + x%10;
+        	x = x/10;
+        }
+        return (x==rev || x==rev/10);
+    }
+
+----------------------------------------------------------------------------------------------------
+An easy c++ 8 lines code (only reversing till half and then compare)
+    class Solution {
+    public:
+        bool isPalindrome(int x) {
+            if(x<0|| (x!=0 &&x%10==0)) return false;
+            int sum=0;
+            while(x>sum)
+            {
+                sum = sum*10+x%10;
+                x = x/10;
+            }
+            return (x==sum)||(x==sum/10);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+This problem is meanless
+- Impossible to solve without extra space. Always need space for constants, variables or whatever. Recursion calls will take space for call stack.
+
+- If you are talking about constant space, then even declaring a string / stack will take constant space. (In fact at most (log(10, INT_MAX) * sizeof char), which is no worse than declaring an integer or more). Actually, even recursion will take constant space.
+
+----------------------------------------------------------------------------------------------------
+-2147447412 is not a palindromic number
+I am wondering how the other people got their code ACed, the testing result of **"-2147447412"** seems a little odd to me. Should it be a palindromic number or not?
+
+Note: I believe the range of int is [-2147483648, 2147483647] and **"-2147447412"** is not overflowed, plus I handled the overflow cases already (test case "-2147483648" in particular).
+
+
+11499 / 11502 test cases passed.
+
+Status: Wrong Answer
+
+
+Input:	-2147447412
+
+Output:	true
+
+Expected:	false
+
+------------------------------------------------------------------
+Here's my second question:
+
+**Why does the function take "int" as input instead of "unsigned int", when we assume all negative numbers are NOT palindromic.**
+
+----------------------------------------------------------------------------------------------------
+O(1) space, O(lgn) time java solution, no overflow risk
+    public boolean isPalindrome(int x) {
+        
+        if (x < 0) return false;
+
+        int p = x; 
+        int q = 0; 
+        
+        while (p >= 10){
+            q *=10; 
+            q += p%10; 
+            p /=10; 
+        }
+        
+        return q == x / 10 && p == x % 10;
+    }
+
+// so the reversed version of int is always  1 time short in the factor of 10s . 
+
+in case of Int16,  check 63556  will finally check if (6553 == 6355 && 6 == 63556%10)  so there will have no concerns about the overflow.
+
+----------------------------------------------------------------------------------------------------
+Neat AC java code. O(n) time complexity.
+    public boolean isPalindrome(int x) {
+            int palindromeX = 0;
+            int inputX = x;
+            while(x>0){
+                palindromeX = palindromeX*10 + (x % 10);
+                x = x/10;
+            }
+            return palindromeX==inputX;	
+        }
+
+----------------------------------------------------------------------------------------------------
+7 line simple C++ solution beats 90% submissions in O(1) space, two pointers
+Use two pointers concept, find the half point, and compare first half and 2nd half. 
+
+Variable ***revhalf*** is the reversed 2nd half(x has even number of digits), or 2nd half with the middle digit(if x has odd number of digits)
+
+    class Solution {
+    public:
+        bool isPalindrome(int x) {
+            if(x < 0) return false;
+            int revhalf = 0, slow = x, fast = x;
+            while(fast){ 
+                revhalf = revhalf * 10 + slow % 10;
+                slow /= 10;
+                fast /= 100;
+            }
+            return slow == revhalf || slow == revhalf / 10;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple JAVA O(1) space solution
+    public boolean isPalindrome(int x) {
+        if(x<0 || (x!=0 && x%10==0))
+        return false;
+        int res = 0;
+           while(x>res){
+            res = res*10 + x%10;
+            x = x/10;
+           }
+        return (x==res || x==res/10);
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ solution..
+    class Solution {
+
+public:
+
+    bool isPalindrome(int x) {
+        if(x<0)
+            return false;
+
+        int num=x;
+        int a=0;
+        while(x)
+        {
+            a=a*10 + x%10;
+            x=x/10;
+        }
+        if(a==num)
+            return true;
+        else
+            return false;
+        
+    }
+};
+
+
+----------
+## Heading ##
+
+----------------------------------------------------------------------------------------------------
+Is this simple enough? What is the so-called generic way
+    class Solution {
+    public:
+        bool isPalindrome(int x) {
+            int i = 0;;
+            if ((x % 10 == 0 && x != 0) || x < 0) return false;
+            while (i < x) {
+                i = i * 10 + x % 10;
+                x = x / 10;
+            }
+            return (i == x || i / 10 == x);        
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+How to define extra space?
+If it says O(1) space I can understand how to do that, but what does no "extra space" mean? If I use another integer to save the reversed number does it mean I'm still using extra space? Or when I simply am using an integer i for loop does it mean I have extra space?
+
+----------------------------------------------------------------------------------------------------
+Solution using 32-bit integer without overflow
+
+The idea is to reverse only half of the digits and compare them.
+
+        public boolean isPalindrome1(int x) {
+        if (x == 0) return true;
+        // in leetcode, negative numbers and numbers with ending zeros
+        // are not palindrome
+        if (x < 0 || x % 10 == 0)
+            return false;
+
+        // reverse half of the number
+        // the exit condition is y >= x
+        // so that overflow is avoided.
+        int y = 0;
+        while (y < x) {
+            y = y * 10 + (x % 10);
+            if (x == y)  // to check numbers with odd digits
+                return true;
+            x /= 10;
+        }
+        return x == y; // to check numbers with even digits
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;9 ms JAVA&#93; Beats 99.5 java solutions, easy to understand
+    public class Solution {
+        static int v;
+        public static boolean isPalindrome(int x) {
+            //optimizations
+            if(x<0) return false;
+            if(x<10) return true;
+            if(x%10==0) return false;
+            if(x<100&&x%11==0) return true;
+            if(x<1000&&((x/100)*10+x%10)%11==0) return true;
+
+            //actual logic
+            v=x%10;
+            x=x/10;
+            while(x-v>0)
+            {
+                    v=v*10+x%10;
+                    x/=10;
+            }
+            if(v>x){v/=10;}
+            return v==x?true:false;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Python solution based on the algorithm in leetcode blog
+    class Solution:
+        # @param x, an integer
+        # @return a boolean
+        def isPalindrome(self, x):
+            if x < 0:
+                return False
+    
+            ranger = 1
+            while x / ranger >= 10:
+                ranger *= 10
+    
+            while x:
+                left = x / ranger
+                right = x % 10
+                if left != right:
+                    return False
+                
+                x = (x % ranger) / 10
+                ranger /= 100
+    
+            return True
+            
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple and straightforward solution with explanation
+    bool isPalindrome(int x) {
+        long reverse = 0;
+        long num = abs(x);
+        while(x != 0){
+            reverse *= 10;
+            reverse += x % 10;
+            x /= 10;
+        }
+        return reverse == num;
+    }
+
+The basic idea is to reverse `x`.
+
+However, we need to handle two issues. First of all, what if reverse number overflows? We use `long` to solve. Secondly, negative number doesn't have palindrome. So we make num = abs(x). 
+
+----------------------------------------------------------------------------------------------------
+44ms c++ solution
+You can also view more solution on [Github](https://github.com/flexwang/CodeTest)
+
+	class Solution {
+	public:
+		bool isPalindrome(int x) {
+			if (x < 0) return false;
+			int p1 = 0, p2 = x;
+			while (p2 > 0) {
+				p1 = p1*10 + p2%10;
+				p2 /= 10;
+			}
+			return p1 == x;
+		}
+	};
+
+----------------------------------------------------------------------------------------------------
+Straightforward java code
+    public class Solution {
+    public boolean isPalindrome(int x) {
+        int sum = 0,target = x;
+        while (x > 0) {
+            int temp = x % 10;
+            x /= 10;
+            sum = sum * 10 + temp;
+        }
+        return sum == target;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+A straightforward log(n) AC solution
+    class Solution {
+    public:
+        bool isPalindrome(long long x) {
+            if (x < 0) return false;
+            long long d = 10, e = 10;
+            while (x / d) d *= 10;
+            while (d > e)
+            {
+                if ((x % d) / (d / 10) != (x % e) / (e / 10))
+                    return false;
+                d /= 10;
+                e *= 10;
+            }
+            return true;
+        }
+    };
+
+compare the highest digit and lowest digit in each iteration. should the local variable d and e be regarded as 'extra memory'?
+
+----------------------------------------------------------------------------------------------------
+My simplest AC code with O(zero) space
+    #define order(x) ((int)pow(10, (int)log10(x)))
+    
+    bool isPalindrome(int x) {
+    	// non palindrome number for negative numbers
+    	if (x < 0)
+    		return false;
+    
+    	while (x) {
+    		// non palindrome if the most significant digit
+    		// doesn't match the least one
+    		if (x % 10 != x / order(x))
+    			return false;
+    
+    		// remove both the most and the least digit
+    		// if the second most significant digit is NOT 0,
+    		if (order(x) / 10 == order(x - x % 10 * order(x)))
+    			x = (x - x % 10 * order(x)) / 10;
+    
+    		// it's 0, then make sure the second least is also 0
+    		// non palindrome if otherwise
+    		else if (x / 10 % 10 != 0)
+    			return false;
+    
+    		// now the second most and the second least are both 0,
+    		// remove the most and the least, and change the two 0's to 1's
+    		else
+    			x = (x - x % 10 * order(x) + order(x) / 10) / 10 + 1;
+    	}
+    
+    	return true;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Two-pointer style solution, walking from left and right to the middle
+I wanted to check if the number is a palindrome the same way you would check if a string is a palindrome, with a left pointer and right pointer that walk toward the middle. The only trick is finding the largest multiple of 10 smaller than x, for which I use the pow, floor, and log10 functions:
+
+    bool isPalindrome(int x) {
+        if (x < 0) return false;
+        
+        int left = pow(10, floor(log10(x)));
+        int right = 1;
+        while (right < left) {
+            if ((x / left - x / right) % 10 != 0) {
+                return false;
+            }
+            right *= 10;
+            left /= 10;
+        }
+        
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------

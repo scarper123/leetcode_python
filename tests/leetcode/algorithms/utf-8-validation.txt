@@ -1,0 +1,802 @@
+Short Ruby &#x2F; Python &#x2F; Java &#x2F; C++
+Just Eulerian path. Greedy DFS, building the route backwards when retreating.
+
+More explanation and example under the codes.
+
+Iterative versions inspired by [fangyang](https://leetcode.com/discuss/84706/share-solution-java-greedy-stack-15ms-with-explanation) (I had only thought of recursion, d'oh).
+
+---
+
+**Ruby**
+
+    def find_itinerary(tickets)
+      tickets = tickets.sort.reverse.group_by(&:first)
+      route = []
+      visit = -> airport {
+        visit[tickets[airport].pop()[1]] while (tickets[airport] || []).any?
+        route << airport
+      }
+      visit["JFK"]
+      route.reverse
+    end
+
+Iterative version:
+
+    def find_itinerary(tickets)
+      tickets = tickets.sort.reverse.group_by(&:first)
+      route, stack = [], ["JFK"]
+      while stack.any?
+        stack << tickets[stack[-1]].pop()[1] while (tickets[stack[-1]] || []).any?
+        route << stack.pop()
+      end
+      route.reverse
+    end
+
+---
+
+**Python**
+
+    def findItinerary(self, tickets):
+        targets = collections.defaultdict(list)
+        for a, b in sorted(tickets)[::-1]:
+            targets[a] += b,
+        route = []
+        def visit(airport):
+            while targets[airport]:
+                visit(targets[airport].pop())
+            route.append(airport)
+        visit('JFK')
+        return route[::-1]
+
+Iterative version:
+
+    def findItinerary(self, tickets):
+        targets = collections.defaultdict(list)
+        for a, b in sorted(tickets)[::-1]:
+            targets[a] += b,
+        route, stack = [], ['JFK']
+        while stack:
+            while targets[stack[-1]]:
+                stack += targets[stack[-1]].pop(),
+            route += stack.pop(),
+        return route[::-1]
+
+---
+
+**Java**
+
+    public List<String> findItinerary(String[][] tickets) {
+        for (String[] ticket : tickets)
+            targets.computeIfAbsent(ticket[0], k -> new PriorityQueue()).add(ticket[1]);
+        visit("JFK");
+        return route;
+    }
+    
+    Map<String, PriorityQueue<String>> targets = new HashMap<>();
+    List<String> route = new LinkedList();
+    
+    void visit(String airport) {
+        while(targets.containsKey(airport) && !targets.get(airport).isEmpty())
+            visit(targets.get(airport).poll());
+        route.add(0, airport);
+    }
+
+Iterative version:
+
+    public List<String> findItinerary(String[][] tickets) {
+        Map<String, PriorityQueue<String>> targets = new HashMap<>();
+        for (String[] ticket : tickets)
+            targets.computeIfAbsent(ticket[0], k -> new PriorityQueue()).add(ticket[1]);
+        List<String> route = new LinkedList();
+        Stack<String> stack = new Stack<>();
+        stack.push("JFK");
+        while (!stack.empty()) {
+            while (targets.containsKey(stack.peek()) && !targets.get(stack.peek()).isEmpty())
+                stack.push(targets.get(stack.peek()).poll());
+            route.add(0, stack.pop());
+        }
+        return route;
+    }
+
+---
+
+**C++**
+
+    vector<string> findItinerary(vector<pair<string, string>> tickets) {
+        for (auto ticket : tickets)
+            targets[ticket.first].insert(ticket.second);
+        visit("JFK");
+        return vector<string>(route.rbegin(), route.rend());
+    }
+
+    map<string, multiset<string>> targets;
+    vector<string> route;
+
+    void visit(string airport) {
+        while (targets[airport].size()) {
+            string next = *targets[airport].begin();
+            targets[airport].erase(targets[airport].begin());
+            visit(next);
+        }
+        route.push_back(airport);
+    }
+
+---
+
+**Explanation**
+
+First keep going forward until you get stuck. That's a good main path already. Remaining tickets form cycles which are found on the way back and get merged into that main path. By writing down the path backwards when retreating from recursion, merging the cycles into the main path is easy - the end part of the path has already been written, the start part of the path hasn't been written yet, so just write down the cycle now and then keep backwards-writing the path.
+
+Example:
+
+![enter image description here][1]
+
+From JFK we first visit JFK -> A -> C -> D -> A. There we're stuck, so we write down A as the end of the route and retreat back to D. There we see the unused ticket to B and follow it: D -> B -> C -> JFK -> D. Then we're stuck again, retreat and write down the airports while doing so: Write down D before B, then JFK before D, etc. When we're back from our cycle at D, the written route is D -> B -> C -> JFK -> D -> A. Then we retreat further along the original path, prepending C, A and finally JFK to the route, ending up with the route JFK -> A -> C -> D -> B -> C -> JFK -> D -> A.
+
+  [1]: http://www.stefan-pochmann.info/misc/reconstruct-itinerary.png
+
+
+----------------------------------------------------------------------------------------------------
+Share my solution
+See also [here](http://algobox.org/reconstruct-itinerary/)
+
+All the airports are vertices and tickets are directed edges. Then all these tickets form a directed graph.
+
+The graph must be Eulerian since we know that a Eulerian path exists.
+
+Thus, start from "JFK", we can apply the Hierholzer's algorithm to find a Eulerian path in the graph which is a valid reconstruction.
+
+Since the problem asks for lexical order smallest solution, we can put the neighbors in a min-heap. In this way, we always visit the smallest possible neighbor first in our trip.
+
+    public class Solution {
+
+        Map<String, PriorityQueue<String>> flights;
+        LinkedList<String> path;
+
+        public List<String> findItinerary(String[][] tickets) {
+            flights = new HashMap<>();
+            path = new LinkedList<>();
+            for (String[] ticket : tickets) {
+                flights.putIfAbsent(ticket[0], new PriorityQueue<>());
+                flights.get(ticket[0]).add(ticket[1]);
+            }
+            dfs("JFK");
+            return path;
+        }
+
+        public void dfs(String departure) {
+            PriorityQueue<String> arrivals = flights.get(departure);
+            while (arrivals != null && !arrivals.isEmpty())
+                dfs(arrivals.poll());
+            path.addFirst(departure);
+        }
+    }
+
+    79 / 79 test cases passed.
+    Status: Accepted
+    Runtime: 11 ms
+
+----------------------------------------------------------------------------------------------------
+Short C++ DFS iterative 44ms solution with explanation.  No recursive calls, no backtracking.
+    class Solution {
+    public:
+    	vector<string> findItinerary(vector<pair<string, string>> tickets) {
+    		// Each node (airport) contains a set of outgoing edges (destination).
+    		unordered_map<string, multiset<string>> graph;
+    		// We are always appending the deepest node to the itinerary, 
+    		// so will need to reverse the itinerary in the end.
+    		vector<string> itinerary;
+    		if (tickets.size() == 0){
+    			return itinerary;
+    		}
+    		// Construct the node and assign outgoing edges
+    		for (pair<string, string> eachTicket : tickets){
+    			graph[eachTicket.first].insert(eachTicket.second);
+    		}
+    		stack<string> dfs;
+    		dfs.push("JFK");
+    		while (!dfs.empty()){
+    			string topAirport = dfs.top();
+    			if (graph[topAirport].empty()){
+    				// If there is no more outgoing edges, append to itinerary
+    				// Two cases: 
+    				// 1. If it searchs the terminal end first, it will simply get
+    				//    added to the itinerary first as it should, and the proper route
+    				//    will still be traversed since its entry is still on the stack.
+    				// 2. If it search the proper route first, the dead end route will also
+    				//    get added to the itinerary first.
+    				itinerary.push_back(topAirport);
+    				dfs.pop();
+    			}
+    			else {
+    				// Otherwise push the outgoing edge to the dfs stack and 
+    				// remove it from the node.
+    				dfs.push(*(graph[topAirport].begin()));
+    				graph[topAirport].erase(graph[topAirport].begin());
+    			}
+    		}
+    		// Reverse the itinerary.
+    		reverse(itinerary.begin(), itinerary.end());
+    		return itinerary;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+&#91;Share Solution&#93; Java, Greedy, Stack, 15ms with explanation
+Noticed some folks are using Hierholzer's algorithm to find a Eulerian path.
+
+My solution is similar, considering this passenger has to be physically in one place before move to another airport, we are considering using up all tickets and choose lexicographically smaller solution if in tie as two constraints.
+
+Thinking as that passenger, the passenger choose his/her flight greedy as the lexicographical order, once he/she figures out go to an airport without departure with more tickets at hand. the passenger will push current ticket in a stack and look at whether it is possible for him/her to travel to other places from the airport on his/her way.
+
+Please let me know if you have any suggestions.
+
+        public List<String> findItinerary(String[][] tickets) {
+            List<String> ans = new ArrayList<String>();
+            if(tickets == null || tickets.length == 0) return ans;
+            Map<String, PriorityQueue<String>> ticketsMap = new HashMap<>();
+            for(int i = 0; i < tickets.length; i++) {
+                if(!ticketsMap.containsKey(tickets[i][0])) ticketsMap.put(tickets[i][0], new PriorityQueue<String>());
+                ticketsMap.get(tickets[i][0]).add(tickets[i][1]);
+            }
+    
+            String curr = "JFK";
+            Stack<String> drawBack = new Stack<String>();
+            for(int i = 0; i < tickets.length; i++) {
+                while(!ticketsMap.containsKey(curr) || ticketsMap.get(curr).isEmpty()) {
+                    drawBack.push(curr);
+                    curr = ans.remove(ans.size()-1);
+                }
+                ans.add(curr);
+                curr = ticketsMap.get(curr).poll();
+            }
+            ans.add(curr);
+            while(!drawBack.isEmpty()) ans.add(drawBack.pop());
+            return ans;
+        }
+
+----------------------------------------------------------------------------------------------------
+Java 11ms solution(HashMap &amp; sorted List)
+    public class Solution {
+        public List<String> findItinerary(String[][] tickets) {
+            ArrayList<String> result = new ArrayList<String>();
+            
+            if(tickets == null || tickets.length == 0){
+                return result;
+            }
+            
+            int total = tickets.length + 1;
+            
+            HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+            
+            for(int i = 0; i < tickets.length; i++){
+                if(map.containsKey(tickets[i][0])){
+                    ArrayList<String> tmp = map.get(tickets[i][0]);
+                    listAdd(tickets[i][1], tmp);
+                }
+                else{
+                    ArrayList<String> tmp = new ArrayList<String>();
+                    tmp.add(tickets[i][1]);
+                    map.put(tickets[i][0], tmp);
+                }
+            }
+            
+            result.add("JFK");
+            
+            itineraryHelper("JFK", map, result, total, 1);
+            
+            return result;
+        }
+        
+        public boolean itineraryHelper(String current, HashMap<String, ArrayList<String>> map, ArrayList<String> result, int total, int num){
+            
+            if(num >= total){
+                return true;
+            }
+            
+            if(!map.containsKey(current) || map.get(current).size() == 0){
+                return false;
+            }
+            
+            ArrayList<String> curList = map.get(current);
+            int i = 0;
+            
+            while(i < curList.size()){
+                String next = curList.remove(i);
+                result.add(next);
+                
+                if(itineraryHelper(next, map, result, total, num + 1)){
+                    return true;
+                }
+                
+                result.remove(result.size() - 1);
+                listAdd(next, curList);
+                i++;
+            }
+            
+            return false;
+        }
+        
+        
+        public void listAdd(String value, ArrayList<String> list){
+            if(list.size() == 0){
+                list.add(value);
+                return;
+            }
+            else{
+                int i = 0;
+                while(i < list.size()){
+                    if(value.compareTo(list.get(i)) <= 0){
+                        list.add(i, value);
+                        return;
+                    }
+                    i++;
+                }
+                list.add(value);
+                return;
+            }
+        }
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ non-recursive O(N)-time O(N)-space solution with detail explanations
+The idea of this algorithm, which was originally found in fangyang's thread [https://leetcode.com/discuss/84706/share-solution-java-greedy-stack-15ms-with-explanation][1], consists of two steps:
+
+- **Step 1**: Store the flight in a hash map. (say `m` in the code below. This map enables us to find all possible destinations from a place in amortized constant time.)
+
+- **Step 2**: Use a greedy and trace-back approach to find the optimal itinerary. Specifically, we use greedy method to find a lexicographically-smallest path until we can not move any further (the path can be stored in a vector, say `march` in the code below). Each time we reach such an exhaustive state, we find a place which is exactly the end of the itinerary. (The reason is, the path `march` is an optimal itinerary expect that some loops are omitted. The optimal itinerary can be obtained by inserting some loops into this path, which does not change the last vertex of the path.) Therefore, we can record the last vertex in another place (say `results` in the code below). So and so forth, the vector `results` stores the optimal itinerary reversely, since we always place the optimal last vertex at the end of this vector. Reversing the vertex `results` leads to the correct answer.
+
+
+-----
+
+**Example**:
+This example is originally shown in  StefanPochmann's thread [https://leetcode.com/discuss/84659/short-ruby-python-java-c][2]
+
+
+![][3]  
+[ Source of this picture: http://www.stefan-pochmann.info/misc/reconstruct-itinerary.png[][4] ]
+
+
+In Step 2, we first march greedily, and get the vector `march` as:
+
+    march: JFK -> A -> C -> D -> A      (the red path)
+
+However, the optimal itinerary, is 
+
+    JFK -> A -> C -> D( -> B -> C -> JFK -> D) -> A
+
+where the loop (D -> B -> C -> JFK -> D) shall be inserted in the vector `march`. However, we have already found the last vertex A, Therefore, we can record this result. So `march` and `results` become
+
+    march: JFK -> A -> C -> D
+    results: A
+
+Then we march greedily again, results in
+
+    march: JFK -> A -> C -> D -> B -> C -> JFK -> D
+    results: A
+
+Now all edges are used. Before the final reversion, `march` and `results` become
+
+    march: (empty)
+    results: A <- D <- JFK <- C <- B <- D <- C <- A <- JFK
+
+
+----
+
+**Overall Complexities**:
+
+Let N be the number of tickets. Let D be the largest outgoing degree of a vertex.
+
+- **Time**: *O*(N log D)  
+Step 1: O(N log D)  
+Step 2: O(N). Each vertex needs to be put into `march` once and be moved from `march` to `results`. At the very end, `results` is reversed.
+- **Space**: *O*(N)            
+The map `m` needs to store all vertices.
+
+
+-----
+
+**Code** (40 ms):
+
+    class Solution {
+    public:
+        vector<string> findItinerary(vector<pair<string, string>> tickets) {
+            
+            // Step 1: Store directed edges in a hash map
+            unordered_map<string, multiset<string>> m;
+            for (const pair<string, string> & ticket : tickets) {
+                m[ticket.first].insert(ticket.second);
+            }
+            
+            // Step 2: March greedily and traceback
+            vector<string> march = { "JFK" }; // the storage for greedy searching
+            vector<string> results; // store the final results reversely
+            while (march.empty() == false) {
+                string & from = march.back();
+                if ((m.find(from) != m.end()) && (m[from].empty() == false)) { // march further
+                    multiset<string> & to = m[from];
+                    march.push_back(*(to.begin()));
+                    to.erase(to.begin());
+                } else { // can not march further, trace back
+                    results.push_back(march.back()); // archive the last place
+                    march.pop_back();
+                }
+            }
+            reverse(results.begin(), results.end()); // reverse the entries back
+            return results;
+        }
+    };
+
+
+  [1]: https://leetcode.com/discuss/84706/share-solution-java-greedy-stack-15ms-with-explanation
+  [2]: https://leetcode.com/discuss/84659/short-ruby-python-java-c
+  [3]: http://www.stefan-pochmann.info/misc/reconstruct-itinerary.png
+  [4]: https://leetcode.com/discuss/84659/short-ruby-python-java-c
+
+----------------------------------------------------------------------------------------------------
+Very Straightforward DFS Solution with Detailed Explanations
+The nice thing about DFS is it tries a path, and if that's wrong (i.e. path does not lead to solution), DFS goes one step back and tries another path. It continues to do so until we've found the correct path (which leads to the solution). You need to always bear this nice feature in mind when utilizing DFS to solve problems.
+
+In this problem, the path we are going to find is an itinerary which:
+1. uses all tickets to travel among airports
+2. preferably in ascending lexical order of airport code
+
+Keep in mind that requirement 1 must be satisfied before we consider 2. If we always choose the airport with the smallest lexical order, this would lead to a perfectly lexical-ordered itinerary, but pay attention that when doing so, there can be a "dead end" somewhere in the tickets such that we are not able visit all airports (or we can't use all our tickets), which is bad because it fails to satisfy requirement 1 of this problem. Thus we need to take a step back and try other possible airports, which might not give us a perfectly ordered solution, but will use all tickets and cover all airports.
+
+Thus it's natural to think about the "backtracking" feature of DFS. We start by building a graph and then sorting vertices in the adjacency list so that when we traverse the graph later, we can guarantee the lexical order of the itinerary can be as good as possible. When we have generated an itinerary, we check if we have used all our airline tickets. If not, we revert the change and try another ticket. We keep trying until we have used all our tickets.
+
+    public class Solution {
+        private HashMap<String, List<String>> adjList = new HashMap<>();
+        private LinkedList<String> route = new LinkedList<>();
+        private int numTickets = 0;
+        private int numTicketsUsed = 0;
+        
+        public List<String> findItinerary(String[][] tickets) {
+            if (tickets == null || tickets.length == 0) return route;
+            // build graph
+            numTickets = tickets.length;
+            for (int i = 0; i < tickets.length; ++i) {
+                if (!adjList.containsKey(tickets[i][0])) {
+                    // create a new list
+                    List<String> list = new ArrayList<>();
+                    list.add(tickets[i][1]);
+                    adjList.put(tickets[i][0], list);
+                } else {
+                    // add to existing list
+                    adjList.get(tickets[i][0]).add(tickets[i][1]);
+                }
+            }
+            // sort vertices in the adjacency list so they appear in lexical order
+            for (Map.Entry<String, List<String>> entry : adjList.entrySet()) {
+                Collections.sort(entry.getValue());
+            }
+            
+            // start DFS
+            route.add("JFK");
+            dfsRoute("JFK");
+            return route;
+        }
+        
+        private void dfsRoute(String v) {
+            // base case: vertex v is not in adjacency list
+            // v is not a starting point in any itinerary, or we would have stored it
+            // thus we have reached end point in our DFS
+            if (!adjList.containsKey(v)) return;
+            List<String> list = adjList.get(v);
+            for (int i = 0; i < list.size(); ++i) {
+                String neighbor = list.get(i);
+                // remove ticket(route) from graph
+                list.remove(i);
+                route.add(neighbor);
+                numTicketsUsed++;
+                dfsRoute(neighbor);
+                // we only return when we have used all tickets
+                if (numTickets == numTicketsUsed) return;
+                // otherwise we need to revert the changes and try other tickets
+                list.add(i, neighbor);
+                // This line took me a long time to debug
+                // we must remove the last airport, since in an itinerary, the same airport can appear many times!!
+                route.removeLast();
+                numTicketsUsed--;
+            }
+        }
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+28ms C++ beats 100% Short and Elegant.
+I think this algorithm is often called Fleury's algorithm. But actually it is  Hierholzer's algorithm according to the wiki. Anyway, it works like this:
+
+Keep going one path until stuck, then retreat and push the vertices along the route to a stack until it reaches a vertex that has alternative paths, then go along that path and repeat the process.
+The assumption for this to work is there is guaranteed to exist one Euler path. (This problem is basically to find a Euler path of a graph).
+
+      class Solution {
+            unordered_map<string, priority_queue<string, vector<string>, greater<string>>> graph;
+            vector<string> result;
+            void dfs(string vtex)
+            {
+                auto & edges = graph[vtex];
+                while (!edges.empty())
+                {
+                    string to_vtex = edges.top();
+                    edges.pop();
+                    dfs(to_vtex);
+                }
+                result.push_back(vtex);
+            }
+        public:
+            vector<string> findItinerary(vector<pair<string, string>> tickets) {
+                for (auto e : tickets)
+                    graph[e.first].push(e.second);
+                dfs("JFK");
+                reverse(result.begin(), result.end());
+                return result;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Java 14ms. DFS backtrack
+Calculate Euler path. For each point, try to DFS its out-going point. There is chance that a DFS won't get a result. So, we do backtrack. Out-going points should keep ascending order.
+
+    public static List<String> findItinerary(String[][] tickets) {
+        // construct graph
+        HashMap<String, ArrayList<String>> graph = new HashMap<String, ArrayList<String>>();
+        ArrayList<String> al = null;
+        for (String[] ticket : tickets) {
+            al = graph.get(ticket[0]);
+            if (al == null) {
+                al = new ArrayList<String>();
+                graph.put(ticket[0], al);
+            }
+            al.add(ticket[1]);
+        }
+        for (ArrayList<String> curr : graph.values()) {
+            Collections.sort(curr);
+        }
+        ArrayList<String> ans = new ArrayList<>();
+        itineraryHelper("JFK", ans, graph, tickets.length + 1);
+        return ans;
+    }
+
+    // n is how many stops totally should contain
+    public static boolean itineraryHelper(String curr, List<String> ans, HashMap<String, ArrayList<String>> graph, int n) {
+        ans.add(curr);
+        if (ans.size() >= n) {
+            return true;
+        }
+        if (!graph.containsKey(curr) || graph.get(curr).isEmpty()) {
+            return false;
+        }
+        ArrayList<String> arrivals = graph.get(curr);
+        for (int i = 0; i < arrivals.size(); i++) { // iterate each arrival point
+            String arrival = graph.get(curr).remove(i);
+            if (itineraryHelper(arrival, ans, graph, n)) {
+                return true;
+            }
+            ans.remove(ans.size() - 1); // backtrack
+            arrivals.add(i, arrival);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Wrong testcase?
+Input:
+[["JFK","KUL"],["JFK","NRT"],["NRT","JFK"]]
+Output:
+["JFK","KUL"]
+Expected:
+["JFK","NRT","JFK","KUL"]
+
+How could "NRT" have a higher lexical ordering than "KUL"?
+
+----------------------------------------------------------------------------------------------------
+C++ Solution using DFS
+            
+      class Solution {
+        public:
+            vector<string> findItinerary(vector<pair<string, string>> tickets) {
+                vector<string> ans;
+                int n = tickets.size();
+                for(int i = 0; i < n; ++ i){
+                    g[tickets[i].first].insert(tickets[i].second);
+                }
+                dfs("JFK", ans, 1, n);
+           //     puts(" -- ");
+                reverse(ans.begin(), ans.end());
+                return ans;
+            }
+        private:
+            void dfs(string u, vector<string> &ans, int dep, int tot){
+                while(g[u].size()){
+                    string v = *g[u].begin();
+                    g[u].erase(g[u].begin());
+                    dfs(v, ans, dep + 1, tot);
+                }
+                ans.push_back(u);
+            }
+        private:
+        unordered_map<string, multiset<string> > g;
+        //unordered_map<string, set<string>::iterator> vis;
+        };
+
+----------------------------------------------------------------------------------------------------
+Very Short Iterative Java Solution
+Just using a hashmap and stack to replace recursion.
+
+    public List<String> findItinerary(String[][] tickets) {
+        LinkedList<String> ret = new LinkedList<String>();
+        Map<String, PriorityQueue<String>> map = new HashMap<String, PriorityQueue<String>>();
+        Stack<String> stack = new Stack<String>();
+        for(String[] t : tickets) {
+            if(!map.containsKey(t[0])) map.put(t[0], new PriorityQueue<String>());
+            map.get(t[0]).offer(t[1]);
+        }
+        stack.push("JFK");
+        while(!stack.isEmpty()) {
+            String next = stack.peek();
+            if(map.containsKey(next) && map.get(next).size() > 0) stack.push(map.get(next).poll());
+            else ret.addFirst(stack.pop());
+        }
+        return ret;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python Dfs Backtracking
+I use a dictionary to represent the tickets (start -> [list of possible destinations]).   Then, I start the route at JFK and I dfs from there.  Since I do the dfs in sorted order, the first time that I find a possible route, I can return it and know that it is in the smallest lexigraphic order.  Finally, note that the worked variable either contains None (as a result of a failed search) or the correct route.
+
+    def findItinerary(self, tickets):
+        d = defaultdict(list)
+        for flight in tickets:
+            d[flight[0]] += flight[1],
+        self.route = ["JFK"]
+        def dfs(start = 'JFK'):
+            if len(self.route) == len(tickets) + 1:
+                return self.route
+            myDsts = sorted(d[start])
+            for dst in myDsts:
+                d[start].remove(dst)
+                self.route += dst,
+                worked = dfs(dst)
+                if worked:
+                    return worked
+                self.route.pop()
+                d[start] += dst,
+        return dfs()
+    
+
+----------------------------------------------------------------------------------------------------
+Two Java solution (DFS+Stack &amp;&amp; Backtrace+Recursion) very easy to understand
+I have used two method to solve this problem, the first one is a DFS using stack, the second one is backtrace. The backtrace one only uses 14ms, and the one with stack used 25ms. Personally, I prefer to use backtrace methods, because it is easy to understand, and it kind of has a "template" which you can apply to almost all backtrace problems.
+
+This is a DFS using stack:
+
+    public class Solution {
+        public List<String> findItinerary(String[][] tickets) {
+            List<String> result = new ArrayList();
+            if(tickets == null || tickets.length == 0){
+                return result;
+            }
+            Map<String, ArrayList<String>> graph = new HashMap();
+        
+            for(int i=0; i<tickets.length; i++){
+                if(!graph.containsKey(tickets[i][0])){
+                    ArrayList<String> adj = new ArrayList();
+                    adj.add(tickets[i][1]);
+                    graph.put(tickets[i][0], adj);
+                }else{
+                    ArrayList<String> newadj = graph.get(tickets[i][0]);
+                    newadj.add(tickets[i][1]);
+                    graph.put(tickets[i][0], newadj);
+                }
+            }
+            for(ArrayList<String> a : graph.values()){
+                Collections.sort(a);
+            }
+            
+            Stack<String> stack = new Stack();
+            stack.push("JFK");
+            
+            while(!stack.isEmpty()){
+                
+                while(graph.containsKey(stack.peek()) && !graph.get(stack.peek()).isEmpty()){
+                    stack.push(graph.get(stack.peek()).remove(0));
+                }
+                result.add(0,stack.pop());
+            }
+            return result;
+        }
+    }
+
+This one is a backtrace method with recursion:
+
+    public class Solution {
+        public List<String> findItinerary(String[][] tickets) {
+            List<String> result = new ArrayList();
+            if(tickets == null || tickets.length == 0){
+                return result;
+            }
+            
+            Map<String, ArrayList<String>> graph = new HashMap();
+            for(int i=0; i<tickets.length; i++){
+                if(!graph.containsKey(tickets[i][0])){
+                    ArrayList<String> adj = new ArrayList();
+                    adj.add(tickets[i][1]);
+                    graph.put(tickets[i][0], adj);
+                }else{
+                    ArrayList<String> newadj = graph.get(tickets[i][0]);
+                    newadj.add(tickets[i][1]);
+                    graph.put(tickets[i][0], newadj);
+                }
+            }
+            
+            for(ArrayList<String> a : graph.values()){
+                Collections.sort(a);
+            }
+            
+            backtracing(result, "JFK", graph);
+            
+            return result;
+        }
+        
+        public void backtracing(List<String> result, String current, Map<String, ArrayList<String>> graph){
+            while(graph.containsKey(current) && !graph.get(current).isEmpty()){
+                String s = graph.get(current).remove(0);
+                backtracing(result, s, graph);
+            }
+            result.add(0,current);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing my 44ms C++ solution
+    class Solution {
+    public:
+        vector<string> findItinerary(vector<pair<string, string>> tickets) {
+            unordered_map<string, multiset<string>> myGraph;
+            int i, n = tickets.size();
+            string first, second;
+            for(i=0; i<n; i++)
+            {
+                first  = tickets[i].first;
+                second = tickets[i].second;
+                myGraph[first].insert(second);
+            }
+            
+            vector<string> marching;
+            vector<string> itinerary;
+            marching.push_back("JFK");
+            
+            while(marching.size()>0)
+            {
+                string from = marching.back();
+                if(myGraph.count(from)>0 && myGraph[from].size()>0)
+                {
+                    multiset<string>& to = myGraph[from];
+                    marching.push_back(*to.begin());
+                    to.erase(to.begin());
+                }
+                else
+                {
+                    itinerary.push_back(from);
+                    marching.pop_back();
+                }
+            }
+            
+            reverse(itinerary.begin(), itinerary.end());
+            return itinerary;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Description and problem is inaccurate
+When input is [ ["JFK","LHR"] ,["JFK","MUC"] ]
+
+the output expected is ["JFK", "LHR","MUC" ]
+
+this is wrong because the person does not have a ticket from LHR to MUC at all! where did the concept of "from" and "to" go ??
+
+----------------------------------------------------------------------------------------------------
+Share my clean Java code with comments &#91;standard dfs&#93;

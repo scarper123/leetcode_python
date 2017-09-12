@@ -1,0 +1,568 @@
+Simple Java recursive solution
+[500]
+[[2,1],[3,2],[4,1]]
+[9]
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS + DP
+    public int shoppingOffers(List<Integer> price, List<List<Integer>> special, List<Integer> needs) {
+        Map<List<Integer>, Integer> dp = new HashMap<>();
+        List<Integer> allZero = new ArrayList<>();
+        for(int i=0;i<needs.size();i++) {
+            allZero.add(0);
+        }
+        dp.put(allZero, 0);
+        return dfs(needs, price, special, dp);
+    }
+    private int dfs(List<Integer> needs, List<Integer> price, List<List<Integer>> special, Map<List<Integer>, Integer> dp) {
+        if(dp.containsKey(needs)) return dp.get(needs);
+        int res = Integer.MAX_VALUE;
+        for(List<Integer> s : special) {
+            List<Integer> needsCopy = new ArrayList<>(needs);
+            boolean valid = true;
+            for(int i=0;i<needs.size();i++) {
+                needsCopy.set(i, needsCopy.get(i) - s.get(i));
+                if(needsCopy.get(i) < 0) {
+                    valid = false;
+                    break;
+                }
+            }
+            if(valid) {
+                res = Math.min(res, s.get(needs.size()) + dfs(needsCopy, price, special, dp));
+            }
+        }
+        //What if we do not use specials? specials can be deceiving,
+        //perhaps buying using regular prices is cheaper.
+        int noSpecial = 0;
+            for(int i=0;i<needs.size();i++) {
+                noSpecial += needs.get(i) * price.get(i);
+            }
+        res = Math.min(res, noSpecial);    
+
+        dp.put(needs, res);
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+A just for fun only DP solution
+int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs)
+{
+	int n = price.size();
+	for (int i = n; i < 6; i++)
+	{
+		price.push_back(0);
+		needs.push_back(0);
+	}
+	for (int i = special.size() - 1; i >= 0; i--)  // fill special to 6 items
+	{
+		int t = special[i][n];
+		special[i][n] = 0;
+		for (int j = n + 1; j < 7; j++)
+			special[i].push_back(0);
+		special[i][6] = t;
+	}
+	int dp[7][7][7][7][7][7], m = special.size();
+	//memset(dp, INT_MAX, 7 * 7 * 7 * 7 * 7 * 7);      
+	//as @vallentin-petrov point out, memset fill the space by byte
+	for (int j = 0; j < 7; j++)
+	{
+		for (int k = 0; k < 7; k++)
+		for (int p = 0; p < 7; p++)
+		for (int q = 0; q < 7; q++)
+		for (int r = 0; r < 7; r++)
+		for (int s = 0; s < 7; s++)
+			dp[j][k][p][q][r][s]=j*price[0]+k*price[1]+p*price[2]+q*price[3]+r*price[4]+s*price[5];
+	}
+	for (int i = 0; i < m; i++)  // then it just a dynamic programming problem
+	{
+		for (int j = special[i][0]; j < 7; j++)
+		for (int k = special[i][1]; k < 7; k++)
+		for (int p = special[i][2]; p < 7; p++)
+		for (int q = special[i][3]; q < 7; q++)
+		for (int r = special[i][4]; r < 7; r++)
+		for (int s = special[i][5]; s < 7; s++)
+		{
+			int tt=dp[j-special[i][0]][k-special[i][1]][p-special[i][2]]
+				[q-special[i][3]][r-special[i][4]][s-special[i][5]];
+			if (tt != INT_MAX)
+				dp[j][k][p][q][r][s]=min(dp[j][k][p][q][r][s],tt+special[i][6]);
+		}
+	}
+	return dp[needs[0]][needs[1]][needs[2]][needs[3]][needs[4]][needs[5]];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python dfs with memorization.
+def shoppingOffers(self, price, special, needs):
+        d = {}
+        def dfs(cur):
+            val = sum(cur[i]*price[i] for i in range(len(needs))) #cost without special
+            for spec in special:
+                tmp = [cur[j] - spec[j] for j in range(len(needs))]
+                if min(tmp) >= 0: # skip deals that exceed needs
+                    val = min(val, d.get(tuple(tmp), dfs(tmp)) + spec[-1]) # .get check the dictionary first for result, otherwise perform dfs.
+            d[tuple(cur)] = val
+            return val
+        return dfs(needs)
+
+
+----------------------------------------------------------------------------------------------------
+C++, DP&#x2F;DFS with Memoization
+class Solution {
+public:
+    int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs) {
+        // memorize intermediate results 
+        unordered_map<int, int> mp;
+        return helper(price, special, mp, get_key(needs));
+    }
+private:
+    int helper(vector<int>& price, vector<vector<int>>& special, unordered_map<int, int>& mp, int k) {
+        if (mp.count(k)) return mp[k];
+        int n = price.size(), ans = 0;
+        // pows is to help get each digit of key
+        vector<int> pows(n, 1);
+        for (int i = n-2; i >= 0; i--) pows[i] = pows[i+1]*10;
+        for (int i = 0; i < n; i++) ans += ((k/pows[i])%10)*price[i];
+        for (auto spe:special) {
+            int key = 0, i = 0;
+            // check whether this offer is valid
+            while (i < n) {
+                int t = (k/pows[i])%10;
+                if (t >= spe[i]) 
+                    key = key*10+(t-spe[i++]);
+                else
+                    break;
+            } 
+            if (i == n) ans = min(ans, spe[n]+helper(price, special, mp, key));
+        }
+        mp[k] = ans;
+        return ans;
+    }
+    int get_key(vector<int>& needs) {
+        int n = needs.size(), key = 0;
+        for (int i = n-1, p = 1; i >= 0; i--, p *= 10)
+            key += needs[i]*p;
+        return key;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Scala solutions are rejected because they exceed compile time limit...
+<p>I think I have a quite reasonable 80-line answer to this question in Scala, but it was rejected because the compile time limit is exceeded... Either this limit should be raised, or Scala should not be accepted as a language option. It&#39;s otherwise a waste of time.</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution
+class Solution {
+public:
+    int shoppingOffers(const vector<int>& price, const vector<vector<int>>& special, const vector<int>& needs) {
+        int result = inner_product(price.begin(), price.end(), needs.begin(), 0);
+        for (const vector<int>& offer : special) {
+            vector<int> r = can(needs, offer);
+            if (r.empty()) continue;
+            result = min(result, offer.back() + shoppingOffers(price, special, r));
+        }
+        return result;
+    }
+    vector<int> can(const vector<int>& needs, const vector<int>& offer) {
+        vector<int> r(needs.size(), 0);
+        for (int i = 0, n = needs.size(); i < n; ++i) {
+            if (offer[i] > needs[i]) return vector<int>();
+            r[i] = needs[i] - offer[i];
+        }
+        return r;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Python DFS solution
+def shoppingOffers(self, price, special, needs):
+        def dfs(remain, acc):
+            if all(x == 0 for x in remain):
+                return acc
+            elif any(x < 0 for x in remain):
+                return float('inf')
+            ans = sum(map(lambda x, y: x*y, remain, price))
+            for spc in special:
+                ans = min(ans, dfs(map(lambda x, y: x-y, remain, spc[:-1]), spc[-1]))                
+            return ans+acc
+        return dfs(needs, 0)
+
+
+----------------------------------------------------------------------------------------------------
+Java code using DFS with memorization
+public class Solution {
+    List<Integer> a,c;
+    List<List<Integer>> b;
+    int n,m;
+    Map<Integer,Integer> map=new HashMap<>();
+    int hashc(List<Integer> a) //Hashcode for the needs list (we turn an state array to an integer)
+    {
+        int num=0;
+        for (int i=0;i<a.size();i++) num=num*10+a.get(i);
+        return num;
+    }
+    int dfs(List<Integer> c)
+    {
+        for (int i=0;i<n;i++) // needs<0 is illegal
+            if (c.get(i)<0) return 10000000;
+        int ha=hashc(c);
+        if (map.containsKey(ha)) return map.get(ha); // If we have dealt with this state before, just use our previous result (to avoid repetitive computation)
+        int ans=0;
+        for (int i=0;i<n;i++) ans+=c.get(i)*a.get(i); // buy all goods one by one
+        for (int i=0;i<m;i++) //use each offer
+        {
+            List<Integer> now=b.get(i);
+            int price=now.get(n);
+            for (int j=0;j<n;j++) c.set(j,c.get(j)-now.get(j));
+            ans=Math.min(ans,price+dfs(c));
+            for (int j=0;j<n;j++) c.set(j,c.get(j)+now.get(j));
+        }
+        map.put(ha,ans); //Store the result for this state
+        return ans;
+    }
+    public int shoppingOffers(List<Integer> price, List<List<Integer>> special, List<Integer> needs) {
+        a=price;
+        b=special;
+        n=price.size();
+        m=special.size();
+        return dfs(needs);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very Easy to understand JAVA Solution beats 95% with explanation
+public class Solution {
+    public int shoppingOffers(List<Integer> price, List<List<Integer>> special, List<Integer> needs) {
+    	return helper(price, special, needs, 0);
+    }
+    
+    private int helper(List<Integer> price, List<List<Integer>> special, List<Integer> needs, int pos) {
+    	int local_min = directPurchase(price, needs);
+    	for (int i = pos; i < special.size(); i++) {
+    		List<Integer> offer = special.get(i);
+    		List<Integer> temp = new ArrayList<Integer>();
+        	for (int j= 0; j < needs.size(); j++) {
+        		if (needs.get(j) < offer.get(j)) { // check if the current offer is valid
+        			temp =  null;
+        			break;
+        		}
+        		temp.add(needs.get(j) - offer.get(j));
+        	}
+        	
+    		if (temp != null) { // use the current offer and try next
+    			local_min = Math.min(local_min, offer.get(offer.size() - 1) + helper(price, special, temp, i)); 
+    		}
+    	}
+
+    	return  local_min;
+    }
+    
+    private int directPurchase(List<Integer> price, List<Integer> needs) {
+    	int total = 0;
+    	for (int i = 0; i < needs.size(); i++) {
+    		total += price.get(i) * needs.get(i);
+    	}
+    	
+    	return total;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Concise c++ DFS solution, 6ms
+void operator+=(vector<int> &a, const vector<int> &b) {
+    for (int i = 0; i < a.size(); i++)
+        a[i] += b[i];
+}
+
+void operator-=(vector<int> &a, const vector<int> &b) {
+    for (int i = 0; i < a.size(); i++)
+        a[i] -= b[i];
+}
+
+bool operator<(const vector<int> &a, const int &n) {
+    for (int i : a)
+        if (i < n)
+            return true;
+    return false;
+}
+
+int operator*(const vector<int> &a, const vector<int> &b) {
+    int res = 0;
+    for (int i = 0; i < a.size(); i++)
+        res += a[i] * b[i];
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 8, recursion with cache, very short solution
+public static int shoppingOffers(List<Integer> price, List<List<Integer>> special, List<Integer> needs, int index, Map<String, Integer> map) {
+        int lowest = Integer.MAX_VALUE;
+        if(needs.stream().allMatch(x -> x == 0)) return 0;
+        String key = needs.stream().map(x -> ""+x).collect(Collectors.joining(" "));
+        if(map.containsKey(key)) return map.get(key);
+
+        if(index == special.size()) {
+            return IntStream.range(0, needs.size()).map(i -> needs.get(i) * price.get(i)).sum();
+        }
+        List<Integer> updatedNeeds = IntStream.range(0, needs.size()).mapToObj(i -> needs.get(i) - special.get(index).get(i)).collect(Collectors.toList());
+        if(updatedNeeds.stream().allMatch(x -> x >= 0) ){
+            lowest = Math.min(lowest, special.get(index).get(special.get(index).size() - 1) + shoppingOffers(price, special, updatedNeeds, index, map));
+        }
+        return Math.min(lowest, shoppingOffers(price, special, needs, index + 1, map));
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution(DFS+ Map)
+def shoppingOffers(self, price, special, needs):
+    dic = {}
+    def dfs(tup):
+        if tup in dic:
+            return dic[tup]
+        dic[tup] = sum(i*j for i,j in zip(tup, price))
+        for sp in special:
+            newtup = tuple(k-l for k,l in zip(tup, sp))
+            if min(newtup) < 0:
+                continue
+            dic[tup] = min(dic[tup], dfs(newtup) + sp[-1])
+        return dic[tup]
+    return dfs(tuple(needs))
+
+----------------------------------------------------------------------------------------------------
+Python recursion with detailed comments
+class Solution:
+    def shoppingOffers(self, price, special, needs):
+        """
+        :type price: List[int]
+        :type special: List[List[int]]
+        :type needs: List[int]
+        :rtype: int
+        """
+        if not needs:
+            return 0
+        self.special = special
+        self.price = price
+        return self.lowestPrice(0, needs)
+        
+    def lowestPrice(self, i, needs):
+        """
+        The lowest price to buy exact needs from the [i, end) specials and normal items
+        """
+        # base case: all the specials have been exhausted and we can only buy normal ones
+        if i == len(self.special):
+            return sum(n * p for n, p in zip(needs, self.price))
+        # can we buy the i special?
+        ispecial = self.special[i]
+        for j in range(len(needs)):
+            if ispecial[j] > needs[j]: # cannot
+                return self.lowestPrice(i + 1, needs)
+        # we can buy, but whether to buy it? Choose the min.
+        needs_after_buy = [n - s for n, s in zip(needs, ispecial)]
+        buy_price = ispecial[-1] + self.lowestPrice(i, needs_after_buy) # we can buy multiple times
+        not_buy_price = self.lowestPrice(i + 1, needs)
+        return min(buy_price, not_buy_price)
+
+----------------------------------------------------------------------------------------------------
+Java optimal solution without memorization with explanation
+    public int shoppingOffers(List<Integer> price, List<List<Integer>> special, List<Integer> needs) {
+        int[] needsArray = new int[needs.size()];
+        for(int i = 0; i < needsArray.length;i++) {
+            needsArray[i] = needs.get(i);
+        }
+
+        return minAmount(price, special, needsArray) ;
+    }
+
+    int minAmount(List<Integer> price, List<List<Integer>> specials, int[] needs) {
+
+        int amountToPay = 0;
+
+        if (specials.isEmpty()) {
+            // There are no special offers, so just buying the needed amount
+            for (int i = 0; i < needs.length; i++) {
+                amountToPay += needs[i] * price.get(i);
+            }
+
+            return amountToPay;
+        }
+
+        List<Integer> special = specials.remove(specials.size() - 1);
+        int minAmount = Integer.MAX_VALUE;
+
+        boolean canApplyOffer = true;
+        int count = 0;
+        final int offerPriceIndex = needs.length;
+
+        while (canApplyOffer) {
+
+            amountToPay = minAmount(price, specials, needs);
+            minAmount = Math.min(minAmount, special.get(offerPriceIndex) * count + amountToPay);
+
+            for (int j = 0; j < needs.length; j++) {
+                needs[j] -= special.get(j);
+
+                if (needs[j] < 0) {
+                    canApplyOffer = false;
+                }
+            }
+
+            count++;
+        }
+
+        // Restore "needs" array
+        for (int i = 0; i < needs.length; i++) {
+            needs[i] += special.get(i) * count;
+        }
+
+        // Restore offers list
+        specials.add(special);
+
+        return minAmount;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ Backtracking Search
+class Solution {
+public:
+    int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs) {
+        return utill(price, special, needs, 0);
+        
+    }
+    
+    long int utill(vector<int>& price, vector<vector<int>>& special, vector<int>& needs, int s) {
+        
+        if(s >= special.size()) {
+            int cost = 0;
+            for(int i=0; i < needs.size(); ++i) cost += price[i]*needs[i];
+            
+            return cost;
+        }
+        
+        long unused = utill(price, special, needs, s+1);
+        bool valid = true;
+        for(int i = 0; i < needs.size(); ++i)  {
+            needs[i] -= special[s][i];
+            valid = valid && needs[i] >= 0;
+        }
+        long used = INT_MAX;;
+        if(valid) {
+            used = special[s].back() + utill(price, special, needs, s);
+        }
+        for(int i = 0; i < needs.size(); ++i)  {
+            needs[i] += special[s][i];
+        }
+        
+        return min(used, unused);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ DFS AC solution
+    int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs) {
+    int n = price.size();
+    
+    int num_offer = special.size();
+    
+    int ans = 0;
+    for(int i = 0 ; i < n; i++){
+        ans += needs[i] * price[i];
+    }
+    search(price, special, needs, 0, num_offer, ans, 0);
+    return ans;            
+}
+
+void search(vector<int>& price, vector<vector<int>> & special, vector<int>& needs, int idx, int n, int& ans, int pre){
+    int maxi_num = numeric_limits<int>::max();
+    if(idx >= special.size()) return;
+    for(int i = 0; i < needs.size(); i++){ // maxi_num is maximum number of idx_th offer we can use
+        if(special[idx][i] == 0) continue;
+        maxi_num = min(maxi_num, needs[i] / special[idx][i]);
+    }
+    
+    search(price, special, needs, idx + 1, n, ans, pre); // do not use offer idx;
+    
+    for(int i = 1; i <= maxi_num; i++){
+        vector<int> need = needs;
+        int cur = special[idx].back() * i + pre;
+        int current = cur;
+        for(int j = 0; j < need.size(); j++){ // use i offers
+            need[j] -= special[idx][j] * i;
+            cur += need[j] * price[j];
+        }
+        search(price, special, need, idx + 1, n, ans, current);
+        
+        ans = min(ans, cur);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Wrong TestCase in Input
+<p>I guess there is some mistake with the following test case, if not kindly explain why 3 is the output<br/>
+Input:<br/>
+&#91;2,3&#93;<br/>
+&#91;&#91;1,0,1&#93;,&#91;0,1,2&#93;&#93;<br/>
+&#91;1,1&#93;<br/>
+Output:<br/>
+4<br/>
+Expected:<br/>
+3</p>
+
+
+----------------------------------------------------------------------------------------------------
+C# DFS Solution
+public class Solution {
+    int result = 0;
+    public int ShoppingOffers(IList<int> price, IList<IList<int>> special, IList<int> needs) {
+        int len = price.Count;
+        result = 0;
+        for(int i = 0;i<len;i++){
+            result += price[i]*needs[i];
+        }
+        
+        Helper(price,special,needs,0,special.Count,len,result);
+        
+        return result;
+    }
+    
+    private void Helper(IList<int> price, IList<IList<int>> special, IList<int> needs,int index, int offLen,int len,int total){
+        for(int i = index;i<offLen;i++){
+            bool valid = true;
+            for(int j = 0;j<len;j++){
+                if(needs[j] < special[i][j]){
+                    valid = false;
+                    break;
+                }
+            }
+            
+            if(valid){
+                int nextTotal = total;
+                for(int j = 0;j<len;j++){
+                    needs[j]-=special[i][j];
+                    nextTotal-=price[j]*special[i][j];
+                }
+                nextTotal+=special[i][len];
+                
+                result = Math.Min(result,nextTotal);
+                
+                Helper(price,special,needs,i,offLen,len,nextTotal);
+                
+                for(int j = 0;j<len;j++){
+                    needs[j]+=special[i][j];
+                }
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

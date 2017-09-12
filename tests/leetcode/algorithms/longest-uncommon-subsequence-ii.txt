@@ -1,0 +1,491 @@
+Simple Java solution using one array and two pointers
+public class Solution {
+    public int magicalString(int n) {
+        if (n <= 0) return 0;
+        if (n <= 3) return 1;
+        
+        int[] a = new int[n + 1];
+        a[0] = 1; a[1] = 2; a[2] = 2;
+        int head = 2, tail = 3, num = 1, result = 1;
+        
+        while (tail < n) {
+            for (int i = 0; i < a[head]; i++) {
+                a[tail] = num;
+                if (num == 1 && tail < n) result++;
+                tail++;
+            }
+            num = num ^ 3;
+            head++;
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short C++
+int magicalString(int n) {
+    string S = "122";
+    int i = 2;
+    while (S.size() < n)
+        S += string(S[i++] - '0', S.back() ^ 3);
+    return count(S.begin(), S.begin() + n, '1');
+}
+
+----------------------------------------------------------------------------------------------------
+Is the magical string unique?
+<p>Based on the rule, if start with 2, I can get string:<br/>
+2211212212211....</p>
+<p>Compare with the one in the problem 1<strong>2211212212211</strong>...., it removes the prefix 1.</p>
+<p>If that is correct, for some N  like 5, then the answer will be different depending on which one we are referring to.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Very Straightforward and simple Java solution O(n)
+public int magicalString(int n) {
+        StringBuilder magic = new StringBuilder("1221121221221121122");
+        int pt1 = 12, pt2 = magic.length(), count = 0; //initiate pointers
+        //generate sequence directly
+        while(magic.length() < n){
+            if(magic.charAt(pt1) == '1'){
+                if(magic.charAt(pt2-1) == '1') magic.append(2);
+                else magic.append(1);
+                pt2++;
+            }else{ //==2
+                if(magic.charAt(pt2-1) == '1') magic.append(22);
+                else magic.append(11);
+                pt2+=2;
+            }
+            pt1++;
+        }
+        for(int i=0;i<n;i++)
+            if(magic.charAt(i)=='1') count++;
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(log n) space using recursive generators
+import itertools
+
+class Solution(object):
+    def magicalString(self, n):
+        def gen():
+            global generators, yields
+            generators += 1
+            for x in 1, 2, 2:
+                yields += 1
+                yield x
+            for i, x in enumerate(gen()):
+                if i > 1:
+                    for _ in range(x):
+                        yields += 1
+                        yield i % 2 + 1
+        return sum(x & 1 for x in itertools.islice(gen(), n))
+
+print '     n      generators  yields'
+print '             (=space)   (=time)'
+for e in range(9):
+    n = 10**e
+    generators = yields = 0
+    Solution().magicalString(n)
+    print '%10d' * 3 % (n, generators, yields)
+
+
+----------------------------------------------------------------------------------------------------
+Short Python using queue
+class Solution(object):
+    def magicalString(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        queue = collections.deque([2])
+        S = [1,2,2]
+        while len(S) < n:
+            k = queue.popleft()
+            tmp = 3 - S[-1]
+            for i in range(k):
+                S.append(tmp)
+                queue.append(tmp)
+        return S[:n].count(1)
+
+
+----------------------------------------------------------------------------------------------------
+O(log n) space Java
+public class Solution {
+
+    public int magicalString(int n) {
+        Kolakoski kolakoski = new Kolakoski();
+        int ones = 0;
+        while (n-- > 0)
+            if (kolakoski.next() == 1)
+                ones++;
+        return ones;
+    }
+
+    private class Kolakoski {
+        private int[] queue = {1, 2, 2};
+        private int first = 0, last = 2;
+        private Kolakoski source;
+        int next() {
+            if (first > last) {
+                if (source == null) {
+                    source = new Kolakoski();
+                    source.next();
+                    source.next();
+                }
+                int output = queue[last % 3] ^ 3;
+                for (int k = source.next(); k > 0; k--)
+                    queue[++last % 3] = output;
+            }
+            return queue[first++ % 3];
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+The example in the problem seems to be wrong.
+Input: 6
+Output: 3
+Explanation: The first 6 elements of magical string S is "12211" and it contains three 1's, so return 3.
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with an array
+    public int magicalString(int n) {
+        if (n < 1) return 0;
+        if (n == 1) return 1;
+        
+        int[] s = new int[n + 1];
+
+        int val = 1;
+        int index = 2;
+        int count = 1;
+        for (int i = 2; i < n + 1; i++) {
+            val = val == 2 ? 1 : 2;
+            s[index++] = val;
+            if (val == 1) count++;
+            if (index > n) break;
+            if (s[i] == 2) {
+                s[index++] = val;
+                if (val == 1) count++;
+                if (index > n) break;
+            }
+        }
+
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+One traverse js solution
+var magicalString = function(n) {
+    if (!n) return n;
+    var sb = [1, 2, 2];
+    var count = 1;
+    for (var i = 3; i <= n; i++) {
+        if (sb[i - 1] === 1) count++;
+        for (var j = 0; j < sb[i - 1]; j++) sb.push((i % 2) ? 1 : 2);
+    }
+    return count;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+ public int magicalString(int n) {
+        if(n==0)return 0;
+        if(n==1)return 1;
+        StringBuilder sb= new StringBuilder(n);
+        sb.append("122");
+        int count=1;
+        int i=2;
+        while (sb.length()<n){
+            if(sb.charAt(i)=='1'){
+                boolean one=sb.charAt(sb.length()-1) =='1';
+                count+=one ? 0: 1;
+                sb.append(one ? 2 : 1);
+            }else{
+                boolean one=sb.charAt(sb.length()-1) =='1';
+                count+=one ? 0: 2;
+                sb.append(one ? 22 : 11);
+            }
+            i++;
+        }
+        if(sb.length()>n && sb.charAt(sb.length()-1)=='1')count--;
+        return count;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution Easy understand
+
+public class Solution {
+    public int magicalString(int n) {
+        if(n==0) return 0;
+        StringBuilder sb=new StringBuilder("122");
+        int distcnt=2;
+        int ret=1;
+        while(sb.length()<n)
+        {
+            char ch=sb.charAt(distcnt);
+            char prev=sb.charAt(sb.length()-1);
+            if(ch=='1')
+            {
+                if(prev=='1') sb.append("2");
+                else{ sb.append("1");  ret++;}
+            }
+            else
+            {
+                if(prev=='1') {sb.append("22");}
+                else{
+                    sb.append("11");  
+                   ret= sb.length()==n+1 ? ret+1:ret+2;
+ 
+                }
+            }
+            distcnt++;
+        }
+       // if(sb.length()==n+1&&sb.charAt(sb.length()-1)=='1') return ret-1;
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) Time and O(n) Space
+public int magicalString(int n) {
+        int[] magic=new int[n];
+        int number=1, count=0;
+        int index=0;
+        int res=0;
+        for(int i=0;i<n;i++){
+            res+=number==1?1:0;
+            magic[i]=number;
+            count++;
+            if(count==magic[index]){
+                number=(number+1)/number;
+                count=0;
+                index++;
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Beat 91% Java solution
+public int magicalString(int n) {
+        if (n == 0) return 0;
+        if (n <= 3) return 1;
+        
+        int[] arr = new int[n + 1];
+        arr[0] = 1; arr[1] = 2; arr[2] = 2;
+        
+        int head = 2, tail = 3, val = 1, count = 1;
+        while (tail < n) {
+            if (val == 1) count += arr[head];
+            for (int i = 0; i < arr[head]; i++) {
+                arr[tail++] = val;
+            }
+            head++;
+            val ^= 3;
+        }
+        if (arr[n] == 1) count--;
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java Solution with explanation
+public class Solution {
+    public int magicalString(int n) {
+        // o(n)
+        if (n == 0) return 0;
+        if (n < 3) return 1;
+        int head = 3;
+        int tail = 2;
+        boolean[] nums = new boolean[n];
+        //1:true 2: false
+        nums[0] = true;
+        nums[1] = false;
+        nums[2] = false;
+        int res = 0;
+        while (head < n) {
+            if (!nums[tail]) {
+                nums[head] = !nums[head-1];
+                head++;
+                if (head < n) {
+                    nums[head] = nums[head-1];
+                    head++;
+                }
+            } else {
+                nums[head] = !nums[head-1];
+                head++;
+            }
+            tail++;
+        }
+        for(boolean b: nums) {
+            if (b) res++;
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solutions
+class Solution {
+public:
+    int magicalString(int n) {
+        if (n < 1)
+            return 0;
+        
+        queue<int> q;
+        int ans = 1, num = 1, count = 2, i = 3;
+        while (i < n) {
+            while (count--) {
+                q.push(num);
+                if (i < n && num == 1)
+                    ++ans;
+                ++i;
+            }
+            
+            num ^= 3; // num = (num == 1 ? 2 : 1);
+            count = q.front();
+            q.pop();
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My Simple and Fast Swift Solution
+func magicalString(_ n: Int) -> Int {
+        var magicArray:[Int] = [1,2,2]
+        var count = 0
+        var i = 2
+        while i < n{
+            let j = magicArray.last   // last number
+            for i in 0..<magicArray[i]{
+                magicArray.append(j==1 ? 2 : 1)
+            }
+            i+=1
+        }
+        for i in 0..<n{
+            if magicArray[i] == 1{
+                count += 1
+            }
+        }
+        return count
+}
+
+----------------------------------------------------------------------------------------------------
+Short Java Solution uses Queue
+ // start when n > 3 
+ int cnt = 3;
+ int num = 1;
+ int result = 1;
+ 
+ while(cnt < n) {
+     int newNumCnt = q.poll();
+     for (int i = 0; i<newNumCnt && cnt < n ;i++) {
+         q.add(num);
+         cnt ++;
+         result += num == 1 ? 1 : 0;
+     }
+     num = num ^ 3;
+ }
+ return result;
+
+
+----------------------------------------------------------------------------------------------------
+Java two arrays solution
+public class Solution {
+    public int magicalString(int n) {
+        List<Integer> str1 = new ArrayList<>();
+        int p1 = -1;
+        List<Integer> str2 = new ArrayList<>();
+        int p2 = -1;
+        boolean one = true;
+        while (p1 < n) {
+            if (one) {
+                set(str1, (p1++) + 1, 1);
+                set(str2, (p2++) + 1, 1);
+                if (!valid(str1, str2)) {
+                    p1--;
+                    p2--;
+                    set(str1, (p1++) + 1, 1);
+                    set(str1, (p1++) + 1, 1);
+                    set(str2, (p2++) + 1, 2);
+                }
+            } else {
+                set(str1, (p1++) + 1, 2);
+                set(str2, (p2++) + 1, 1);
+                if (!valid(str1, str2)) {
+                    p1--;
+                    p2--;
+                    set(str1, (p1++) + 1, 2);
+                    set(str1, (p1++) + 1, 2);
+                    set(str2, (p2++) + 1, 2);
+                }
+            }
+            one = !one;
+        }
+        int ones = 0;
+        for (int i = 0; i < n; i++) {
+            ones += str1.get(i) == 1 ? 1 : 0;
+        }
+        return ones;
+    }
+
+    private boolean valid(List<Integer> str1, List<Integer> str2) {
+        return str1.get(str2.size() - 1) == str2.get(str2.size() - 1);
+    }
+
+    private void set(List<Integer> str, int index, int val) {
+        if (index >= str.size()) {
+            str.add(val);
+        } else {
+            str.set(index, val);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution handles special case
+    public int magicalString(int n) {
+        if (n < 1)
+            return 0;
+        if (n < 4)
+            return 1;
+            
+        int[] arr = new int[n+2];
+        int count = 0;
+        arr[1] = 1;
+        arr[2] = 2;arr[3] = 2;
+        int cur1 = 3, cur2 = 4, i;
+        
+        while (cur2 <= n) {
+            if (arr[cur1] == 1) {
+                arr[cur2] = 3 - arr[cur2-1];
+                cur2++;
+            } else {
+                arr[cur2+1] = arr[cur2] = 3 - arr[cur2-1];
+                cur2 += 2;
+            }
+            cur1++;
+        }
+        for (i=1;i<=n;i++)
+            if (arr[i] == 1) {
+                count++;
+            }
+        return count;
+    }
+}
+
+----------------------------------------------------------------------------------------------------

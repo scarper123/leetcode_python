@@ -1,0 +1,295 @@
+Accpted Solution for the Nth Highest Salary
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+    DECLARE M INT;
+    SET M=N-1;
+      RETURN (
+          # Write your MySQL query statement below.
+          SELECT DISTINCT Salary FROM Employee ORDER BY Salary DESC LIMIT M, 1
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+My accepted simply solution.Any advising?
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+        set N=N-1;
+      RETURN (
+          select distinct Salary from Employee order by Salary desc limit N,1
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+No Variable, No Limit X,1, Just one query, 808ms
+        CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+        
+      RETURN (
+          # Write your MySQL query statement below.
+          
+        
+          SELECT e1.Salary
+          FROM (SELECT DISTINCT Salary FROM Employee) e1
+          WHERE (SELECT COUNT(*) FROM (SELECT DISTINCT Salary FROM Employee) e2 WHERE e2.Salary > e1.Salary) = N - 1      
+          
+          LIMIT 1
+          
+          
+          
+          
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+Why using LIMIT N-1,1 will cause error?
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+    RETURN (
+          # Write your MySQL query statement below.
+          SELECT IFNULL((SELECT DISTINCT Salary FROM Employee ORDER BY Salary DESC LIMIT N-1 ,1), NULL)  
+      );
+    END
+
+This was my code for the problem, but it seems there's an error near LIMIT N-1,1. Anyone has any idea why?
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution of Nth Highest Salary
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+    DECLARE M INT;
+    SET M=N-1;
+      RETURN (
+        # Write your MySQL query statement below.
+        SELECT IFNULL((SELECT DISTINCT Salary FROM Employee ORDER BY Salary DESC LIMIT M ,1), NULL)
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+My simple solution with order by and limit
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+      RETURN (
+          # Write your MySQL query statement below.
+          select if(count(*)<N,null,min(s.Salary))
+          from 
+          (select distinct Salary
+          from Employee
+          order by Salary DESC
+          limit 0,N) s
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+My accepted solution, 813ms
+    select  IF(count(*) >= N, Min(rank.Salary), NULL) salary
+    from (select distinct salary
+          from Employee     
+          order by salary desc
+          limit N
+     ) rank
+
+----------------------------------------------------------------------------------------------------
+Comprehensive solution inspired by problem &#x27;rank score&#x27;
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+      RETURN (
+          # Write your MySQL query statement below.
+          select distinct s.Salary from 
+            (select a.Salary as Salary, 
+                (select count(distinct b.Salary) + 1 from Employee b where b.Salary > a.Salary) as nth
+            from Employee a) s where s.nth = N
+      );
+    END
+
+Create a ranked table and select nth from it. Remember the 'distinct' in outer selection and no if condition needed.
+
+----------------------------------------------------------------------------------------------------
+Accepted solution using correlated subquery
+    select distinct(Salary) from Employee e1 where (N - 1) = (select count(distinct(e2.Salary)) from Employee e2 where e2.Salary > e1.Salary)
+
+----------------------------------------------------------------------------------------------------
+Ugly code but slightly better performance
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+    declare i int;
+    declare finished int default 0;
+    declare temp int;
+    declare fun cursor for select distinct salary from Employee order by Salary desc;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished = 1;
+    set i=1;
+    open fun;
+    fun1: loop 
+    IF  i > N THEN
+    LEAVE  fun1;
+    end If;
+    set i=i+1;
+    fetch fun into temp;
+    if finished=1
+    then
+    close fun;
+    return Null;
+    end if;
+    end loop fun1;
+    close fun;
+    
+  RETURN (
+        temp
+      # Write your MySQL query statement below.
+      
+  );
+END
+
+----------------------------------------------------------------------------------------------------
+Clean solution, ~990ms
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+
+      set N = N - 1;
+      RETURN (
+          select max(Salary) from Employee group by Salary order by Salary DESC limit N,1
+      );
+
+END
+
+
+----------------------------------------------------------------------------------------------------
+Different opinion on the definition of Nth Highest
+Shouldn't it like this?
+
+    +---------+--------+-------------+
+    | Row No. | Salary | Nth Highest |
+    +---------+--------+-------------+
+    |       1 |    300 |           1 |
+    |       2 |    300 |           1 |
+    |       3 |    200 |           3 |
+    |       4 |    200 |           3 |
+    |       5 |    100 |           5 |
+    +---------+--------+-------------+
+
+----------------------------------------------------------------------------------------------------
+Fastest solution without using order by or declaring variables
+Often this question would be followed by solving the same problem without order by, rank, or declaring variables. Below are two accepted solutions for that problem. However, both of them are a lot slower than other accepted answers for this question, I think because the faster questions use order by -- what is the fastest way to write this query without order by?
+
+solution 1, correlated subquery, 1311 ms:
+
+    select distinct Salary from Employee e1 
+        where N = (select count(distinct Salary)
+        from Employee e2
+        where e1.Salary <= e2.Salary)
+
+solution 2, self join - 1329 ms:
+
+         select salary from
+          ((select N as rank) rank
+          left join
+          (select a.salary, count(distinct b.salary) as rank
+          from Employee a
+          join Employee b
+          where a.salary <= b.salary
+          group by a.salary) salary_rank
+          on rank.rank = salary_rank.rank)
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Why use top case error
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+      RETURN (
+          # Write your MySQL query statement below.
+         select top 1 Salary from (select distinct top N Salary from Employee order by Salary desc) as tmp order by Salary asc
+      );
+    END
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+  declare number int;
+  set number = N - 1;
+  RETURN (
+      # Write your MySQL query statement below.
+      
+      select max(e.Salary) from 
+      (select e.Salary from Employee e group by e.Salary order by e.Salary desc limit number, 1) tmp
+      inner join Employee e
+      on e.Salary = tmp.Salary
+  );
+END
+
+----------------------------------------------------------------------------------------------------
+1168ms solution without filesort and temptables (loop)
+Using where:
+
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+        DECLARE mx INT;
+        DECLARE v1 INT DEFAULT N;
+        
+        SET mx = (SELECT MAX(`Salary`) FROM `Employee`);
+    
+        loop1: LOOP
+          SET v1 = v1 - 1;      
+          
+          IF v1 > 0 THEN
+            SET mx = (SELECT MAX(`Salary`) FROM `Employee` WHERE `Salary` < mx);
+            ITERATE loop1;
+          END IF;
+          
+          LEAVE loop1; 
+        END LOOP loop1;
+    
+      RETURN mx;
+    END
+
+
+----------------------------------------------------------------------------------------------------
+WA, what&#x27;s wrong?
+why does this code wrong? what happened to my code?
+
+        CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+      RETURN (
+          # Write your MySQL query statement below.
+          select Id from  (select @num:=@num+1 as rank, a.Id as Id from Employee as a, (select @num:=0) as b order by Salary desc)sub where N = sub.rank
+      );
+    END
+
+----------------------------------------------------------------------------------------------------
+1014ms solution
+    SELECT Salary FROM (
+    	SELECT Salary, @r:=@r+1 as r FROM (
+    		SELECT Salary FROM Employee GROUP BY Salary ORDER BY Salary DESC
+    	) AS A, (SELECT @r:=0) AS B
+    ) AS C WHERE r=N
+
+----------------------------------------------------------------------------------------------------
+Can someone please explain the reason for this syntax being working differently
+
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+    DECLARE M INT;
+    SET M=N;
+      RETURN (
+        **SELECT DISTINCT Salary FROM Employee ORDER BY Salary DESC LIMIT M-1,1**
+    );
+    END
+
+this query gives exception when M=0 as it becomes -1
+however when I write it like 
+
+    CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+    BEGIN
+    DECLARE M INT;
+    SET M=N-1;
+      RETURN (
+        **SELECT DISTINCT Salary FROM Employee ORDER BY Salary DESC LIMIT M,1**
+    );
+    END
+
+Please explain the difference between the two statements
+
+----------------------------------------------------------------------------------------------------

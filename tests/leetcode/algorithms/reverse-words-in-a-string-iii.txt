@@ -1,0 +1,446 @@
+Java Solution, Backtracking
+public class Solution {
+    int count = 0;
+    
+    public int countArrangement(int N) {
+        if (N == 0) return 0;
+        helper(N, 1, new int[N + 1]);
+        return count;
+    }
+    
+    private void helper(int N, int pos, int[] used) {
+        if (pos > N) {
+            count++;
+            return;
+        }
+        
+        for (int i = 1; i <= N; i++) {
+            if (used[i] == 0 && (i % pos == 0 || pos % i == 0)) {
+                used[i] = 1;
+                helper(N, pos + 1, used);
+                used[i] = 0;
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My C++ elegant solution with back-tracking
+// By lovellp
+// Time: 6ms
+class Solution {
+public:
+    int countArrangement(int N) {
+        vector<int> vs;
+        for (int i=0; i<N; ++i) vs.push_back(i+1);
+        return counts(N, vs);
+    }
+    int counts(int n, vector<int>& vs) {
+        if (n <= 0) return 1;
+        int ans = 0;
+        for (int i=0; i<n; ++i) {
+            if (vs[i]%n==0 || n%vs[i]==0) {
+                swap(vs[i], vs[n-1]);
+                ans += counts(n-1, vs);
+                swap(vs[i], vs[n-1]);
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java 6ms beats 98% back tracking (swap) starting from the back
+    private int count = 0;
+    private void swap(int[] nums, int i, int j) {
+        int tmp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = tmp;
+    }
+    private void helper(int[] nums, int start) {
+        if (start == 0) {
+            count++;
+            return;
+        }
+        for (int i = start; i > 0; i--) {
+            swap(nums, start, i);
+            if (nums[start] % start == 0 || start % nums[start] == 0) helper(nums, start-1);
+            swap(nums,i, start);
+        }
+    }
+    public int countArrangement(int N) {
+        if (N == 0) return 0;
+        int[] nums = new int[N+1];
+        for (int i = 0; i <= N; i++) nums[i] = i;
+        helper(nums, N);
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+12 ms Java Backtracking sulotion
+public class Solution {
+    public int countArrangement(int N) {
+        dfs(N, N, new boolean[N + 1]);
+        return count;
+    }
+    
+    int count = 0;
+    
+    void dfs(int N, int k, boolean[] visited) {
+        if (k == 0) {
+            count++;
+            return;
+        }
+        for (int i = 1; i <= N; i++) {
+            if (visited[i] || k % i != 0 && i % k != 0) {
+                continue;
+            }
+            visited[i] = true;
+            dfs(N, k - 1, visited);
+            visited[i] = false;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python recursion + DP 66ms
+cache = {}
+class Solution(object):
+    def countArrangement(self, N):
+        def helper(i, X):
+            if i == 1:
+                return 1
+            key = (i, X)
+            if key in cache:
+                return cache[key]
+            total = 0
+            for j in xrange(len(X)):
+                if X[j] % i == 0 or i % X[j] == 0:
+                    total += helper(i - 1, X[:j] + X[j + 1:])
+            cache[key] = total
+            return total
+        return helper(N, tuple(range(1, N + 1)))
+
+
+----------------------------------------------------------------------------------------------------
+If worried about Time Limit Exceeded... &#91;Contest Strategy&#93;
+def countArrangement(self, N):
+    return (1, 2, 3, 8, 10, 36, 41, 132, 250, 700, 750, 4010, 4237, 10680, 24679)[N - 1]
+
+----------------------------------------------------------------------------------------------------
+Share My Backtrack solution
+int res;
+public int countArrangement(int N) {
+	res = 0;
+	List<Integer> list = new ArrayList<>();
+	for (int i = 1; i <= N; i++) list.add(i);
+	helper(list, 1, N);
+	return res;
+}
+		
+private void helper(List<Integer> list, int id, int n) {
+	if (id > n) {
+		res++;
+		return;
+	}
+	for (int i = 0; i < list.size(); i++) {
+		if (list.get(i) %id == 0 || id % list.get(i) == 0){
+			int temp = list.remove(i);
+			helper(list, id+1, n);
+			list.add(i, temp);
+		}
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Python, ~230ms
+def countArrangement(self, N):
+    def count(i, X):
+        if i > N:
+            return 1
+        return sum(count(i + 1, X - {x})
+                   for x in X
+                   if x % i == 0 or i % x == 0)
+    return count(1, set(range(1, N + 1)))
+
+----------------------------------------------------------------------------------------------------
+Python BFS solution
+class Solution(object):
+    def countArrangement(self, N):
+        """
+        :type N: int
+        :rtype: int
+        """
+        
+        counter = 0
+        queue = []
+        x = []
+        queue.append(x);
+        while(len(queue) >0):
+            x = queue.pop()
+            if len(x) == N:
+                counter+=1
+            else:
+                for i in range(1,N+1):
+                    y = x[:]
+                    if i not in y:
+                        if (i % (len(y)+1) ==0) or ((1+len(y)) % i ==0):
+                            y.append(i)
+                            queue.append(y)
+        return counter
+        ```
+
+----------------------------------------------------------------------------------------------------
+Java Backtracking
+    public int countArrangement(int N) {
+    	return backtrack(new boolean[N], 0);
+    }
+    
+    public int backtrack(boolean[] used, int curIndex) {
+        if (curIndex == used.length) return 1;
+        int sum = 0;
+        for (int i=0;i<used.length;i++) {
+            if (!used[i] && ((i+1) % (curIndex+1) == 0 || (curIndex + 1) % (i+1) == 0)) {
+                used[i] = true;
+                sum += backtrack(used, curIndex + 1);
+                used[i] = false;
+            }
+        }
+        return sum;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Beautiful Arrangement Back Tracking Not So Fast Java Solution
+int totalCount = 0;
+public int countArrangement(int N) {
+	int[] array = new int[N];
+	for (int i = 1; i <= N; i++) {
+		array[i - 1] = i;
+	}
+	int pos = 1;
+	for (int i = 1; i <= N; i++) {
+		if (i % pos == 0 || pos % i == 0) {
+			array[i - 1] = -1;
+			loopThrough(array, pos + 1, N);
+			array[i - 1] = i;
+		}
+	}
+	return totalCount;
+}
+
+private void loopThrough(int[] array, int pos, final int N) {
+	if (pos > N) {
+		totalCount++;
+	}
+        for (int i = 1; i <= N; i++) {
+		if (array[i - 1] != -1 && (array[i - 1] % pos == 0 || pos % array[i - 1] == 0)) {
+			array[i - 1] = -1;
+			loopThrough(array, pos + 1, N);
+			array[i - 1] = i;
+		}
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+A easy method
+<p>Because the numberof the test case is at most 15,you can run dfs first then make a list of the answer.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Beat 100% so far, Java simple solution
+public class Solution {
+    int[] map = new int[1 << 15];
+    public int countArrangement(int N) {
+        int[][] arr = new int[N + 1][]; // idx : possible vals
+        // construct all possible choices
+        for (int i = 1; i <= N; i++) {
+            List<Integer> tmp = new ArrayList();
+            for (int j = 1; j <= N; j++) {
+                if (i % j == 0 || j % i == 0) {
+                    tmp.add(1 << (j-1));
+                }
+            }
+            arr[i] = new int[tmp.size()];
+            for (int k = 0; k < arr[i].length; k++)
+                arr[i][k] = tmp.get(k);
+        }
+        Arrays.fill(map, 0, 1 << N, -1);
+        return helper(arr, N, 0);
+    }
+    private int helper(int[][] arr, int i, int vis) {
+        if (map[vis] >= 0) return map[vis];
+        if (i == 1) return 1;
+        int count = 0;
+        for (int v : arr[i])
+            if ((vis & v) == 0)
+                count += helper(arr, i - 1, vis ^ v);
+        map[vis] = count;
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ dfs
+class Solution {
+public:
+    void search(int &mask, int number, int N, int &count) {
+        if (!number) {
+            ++count; return;
+        }
+        for (int indx = 1; indx <= N; ++indx) {
+            if (mask & (1 << indx) || number%indx && indx%number) continue;
+            mask |= (1 << indx);
+            search(mask, number-1, N, count);
+            mask &= ~(1 << indx);
+        }
+    }
+    int countArrangement(int N) {
+        int count = 0, mask = 0;
+        search(mask, N, N, count);
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution.
+    int dp=0;
+    HashMap<Integer,Integer> map=new HashMap<Integer,Integer>();
+    public int countArrangement(int N) {
+        dp=(int)Math.pow(2,N)-1;
+        return recurse(N,1);
+    }
+    public int recurse(int n,int level){
+        if(level==n+1)return 1;
+        if(map.containsKey(dp)) return map.get(dp);
+        int mask=1,count=0;
+        for(int i=1;i<=n;i++){
+            if((i%level==0||level%i==0)&&(dp&mask)!=0){
+                dp^=mask;
+                count+=recurse(n,level+1);
+                dp|=mask;
+            }
+            mask<<=1;
+        }
+        map.put(dp,count);
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+A general approach to backtrack problem
+public List<List<String>> partition(String s) {
+   List<List<String>> list = new ArrayList<>();
+   backtrack(list, new ArrayList<>(), s, 0);
+   return list;
+}
+
+public void backtrack(List<List<String>> list, List<String> tempList, String s, int start){
+   if(start == s.length())
+      list.add(new ArrayList<>(tempList));
+   else{
+      for(int i = start; i < s.length(); i++){
+         if(isPalindrome(s, start, i)){
+            tempList.add(s.substring(start, i + 1));
+            backtrack(list, tempList, s, i + 1);
+            tempList.remove(tempList.size() - 1);
+         }
+      }
+   }
+}
+
+public boolean isPalindrome(String s, int low, int high){
+   while(low < high)
+      if(s.charAt(low++) != s.charAt(high--)) return false;
+   return true;
+} 
+
+
+----------------------------------------------------------------------------------------------------
+just for fun, bit 99.9%
+public int countArrangement(int N) {
+    int[] res = {1, 2, 3, 8, 10, 36, 41, 132, 250, 700, 750, 4010, 4237, 10680, 24679};
+    return res[N-1];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java backtrack solution
+    int result = 0;
+    
+    public int countArrangement(int N) {
+        boolean[][] okay = new boolean[N+1][N+1];
+        boolean[] taken = new boolean[N+1];
+        int i, j;
+        
+        for (i=1;i<=N;i++) {
+            for (j=1;j<=N;j++) {
+                if (i % j == 0 || j % i == 0) {
+                    okay[i][j] = true;
+                }
+            }
+        }
+        
+        backtrack(okay, taken, 1, N);
+        return result;
+    }
+    
+    public void backtrack(boolean[][] okay, boolean[] taken, int index, int N) {
+        if (index > N) {
+            result++;
+            return;
+        }
+        int i;
+        for (i=1;i<=N;i++) {
+            if (!taken[i] && okay[index][i]) {
+                taken[i] = true;
+                backtrack(okay, taken, index + 1, N);
+                taken[i] = false;
+            }
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ One-liner
+struct Solution {int countArrangement(int n) {return vector<int>{1,2,3,8,10,36,41,132,250,700,750,4010,4237,10680,24679}[n - 1];}};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+    private int count;
+    public int countArrangement(int N) {
+        arrangement(1, N, new HashSet < Integer > ());
+        return count;
+    }
+
+
+
+    private boolean arrangement(int pos, int n, Set < Integer > set) {
+        if (set.size() == n) {
+            count++;
+            return true;
+        }
+        for (int i = 1; i <= n; i++) {
+            if (set.contains(i)) {
+                continue;
+            }
+            if (i % pos == 0 || pos % i == 0) {
+                set.add(i);
+                arrangement(pos + 1, n, set);
+                set.remove(i);
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------

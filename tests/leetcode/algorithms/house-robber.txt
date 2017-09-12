@@ -1,0 +1,332 @@
+A Binary Search Solution
+Instead of using fancy Newton's method, this plain binary search approach also works.
+
+    public int sqrt(int x) {
+        if (x == 0)
+            return 0;
+        int left = 1, right = Integer.MAX_VALUE;
+        while (true) {
+            int mid = left + (right - left)/2;
+            if (mid > x/mid) {
+                right = mid - 1;
+            } else {
+                if (mid + 1 > x/(mid + 1))
+                    return mid;
+                left = mid + 1;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+3-4 short lines, Integer Newton, Every Language
+Quite a few people used Newton already, but I didn't see someone make it this short. Same solution in every language. Explanation under the solutions.
+
+**C++ and C**
+
+        long r = x;
+        while (r*r > x)
+            r = (r + x/r) / 2;
+        return r;
+
+**Python**
+
+        r = x
+        while r*r > x:
+            r = (r + x/r) / 2
+        return r
+
+**Ruby**
+
+        r = x
+        r = (r + x/r) / 2 while r*r > x
+        r
+
+**Java and C#**
+
+        long r = x;
+        while (r*r > x)
+            r = (r + x/r) / 2;
+        return (int) r;
+
+**JavaScript**
+
+        r = x;
+        while (r*r > x)
+            r = ((r + x/r) / 2) | 0;
+        return r;
+
+---
+
+**Explanation**
+
+Apparently, [using only integer division for the Newton method works](https://en.wikipedia.org/wiki/Integer_square_root#Using_only_integer_division). And I guessed that if I start at x, the root candidate will decrease monotonically and never get too small.
+
+The above solutions all got accepted, and in C++ I also verified it locally on my PC for all possible inputs (0 to 2147483647):
+
+    #include <iostream>
+    #include <climits>
+    using namespace std;
+    
+    int mySqrt(int x) {
+        long long r = x;
+        while (r*r > x)
+            r = (r + x/r) / 2;
+        return r;
+    }
+    
+    int main() {
+        for (long long x=0; x<=INT_MAX; ++x) {
+            long long r = mySqrt(x);
+            if (r<0 || r*r > x || (r+1)*(r+1) <= x)
+                cout << "false: " << x << " " << r << endl;
+            if (x % 10000000 == 0)
+                cout << x << endl;
+        }
+        cout << "all checked" << endl;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my O(log n) Solution using bit manipulation
+## Basic Idea: ##
+
+----------
+Since sqrt(x) is composed of binary bits, I calculate sqrt(x) by deciding every bit from the most significant to least significant. **Since an integer n can have O(log n) bits with each bit decided within constant time, this algorithm has time limit O(log n), actually, because an Integer can have at most 32 bits, I can also say this algorithm takes O(32)=O(1) time.**
+
+----------
+  
+
+     public int sqrt(int x) {
+        if(x==0)
+            return 0;
+        int h=0;
+        while((long)(1<<h)*(long)(1<<h)<=x) // firstly, find the most significant bit
+            h++;
+        h--;
+        int b=h-1;
+        int res=(1<<h);
+        while(b>=0){  // find the remaining bits
+            if((long)(res | (1<<b))*(long)(res |(1<<b))<=x)
+                res|=(1<<b);
+            b--;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Solve this problem with  Binary Search
+    class Solution {
+    public:
+        int sqrt(int x) {
+            if (0 == x) return 0;
+            int left = 1, right = x, ans;
+            while (left <= right) {
+                int mid = left + (right - left) / 2;
+                if (mid <= x / mid) {
+                    left = mid + 1;
+                    ans = mid;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Newton&#x27;s Iterative Method in C++
+    int sqrt(int x) {
+        double ans    = x;
+        double delta  = 0.0001;
+        while (fabs(pow(ans, 2) - x) > delta) {
+            ans = (ans + x / ans) / 2;
+        }
+        return ans;
+    }
+
+The key point is the average result is calculate by "ans = (ans + x / ans) / 2";
+
+For instance, when calculate sqrt(2) :
+
+       Guess Result        Quotient                             Average Result
+              1          2 / 1 = 2                            (2 + 1) / 2 = 1.5
+             1.5      2 / 1.5 = 1.3333                (1.3333 + 1.5) / 2 = 1.4167
+           1.4167    2 / 1.4167 = 1.4118          (1.4167 + 1.4118) / 2 = 1.4142
+            ... ...
+
+----------------------------------------------------------------------------------------------------
+Share my 2ms and 4lines JAVA code,
+My idea is, for any non-negative number N, sqrt(N) = 2/2*sqrt(N) =2*sqrt(1/4)*sqrt(N) = 2*sqrt(N/4). And for the Ns that are not multiple of 4, for example, 9, 25 or 49, the actual result should be 1+2*sqrt(N/4), because we need to take remainders into account.
+
+    public int mySqrt(int x) {
+        if(x < 4) return x == 0 ? 0 : 1;
+        int res = 2 * mySqrt(x/4);
+        if((res+1) * (res+1) <= x && (res+1) * (res+1) >= 0) return res+1;
+        return res;
+    }
+
+Hope it helps.
+
+----------------------------------------------------------------------------------------------------
+My clean C++ code 8ms
+Binary search and high is always converged to the one that 1 larger than the result.
+
+    class Solution {
+    public:
+        int mySqrt(int x) {
+            int low = 0,  high = x, mid;
+            if(x<2) return x; // to avoid mid = 0
+            while(low<high)
+            {
+                mid = (low + high)/2;
+                if(x/mid >= mid) low = mid+1;
+                else high = mid;
+            }
+            return high-1;
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Using binary search accepted, but one question
+    int sqrt(int x) {
+            if(x == 0 || x == 1){
+                return x;
+            }
+            int l = 1, r = x, res;
+            while(l <= r){
+                int m = (l + r)/2;
+                if(m == x / m){ 
+                    return m;
+                }else if(m > x / m){
+                    r = m - 1;
+                }else{
+                    l = m + 1;
+                    res = m;
+                }
+            }
+            return res;
+        }
+
+My question is:
+If using `if(m * m == x)` instead of `if(m == x / m)` (and `if(m * m > x)` instead of `if(m > x / m)` ), I will get "Time Limit Exceeded" on case 2147395599. Why that happens?
+
+Thank you in advance!
+
+----------------------------------------------------------------------------------------------------
+Change x to double and the return value to double please
+that will make sense. How do you expect the sqrt of 2 is  integer too?
+
+----------------------------------------------------------------------------------------------------
+3 JAVA solutions with explanation
+The three solutions are as the follows, solution1 and solution3 are pretty straight forward. 
+
+     Look for the critical point: i * i <= x && (i+1)(i+1) > x
+
+ A little trick is using i <=  x / i for comparison, instead of i * i <= x, to avoid exceeding integer upper limit.
+
+**Solution1 - Binary Search Solution: Time complexity = O(lg(x)) = O(32)=O(1)**
+
+
+    public int mySqrt(int x) {
+    	if (x == 0) return 0;
+    	int start = 1, end = x;
+    	while (start < end) { 
+    		int mid = start + (end - start) / 2;
+    		if (mid <= x / mid && (mid + 1) > x / (mid + 1))// Found the result
+    			return mid; 
+    		else if (mid > x / mid)// Keep checking the left part
+    			end = mid;
+    		else
+    			start = mid + 1;// Keep checking the right part
+    	}
+    	return start;
+    }
+
+**Solution2 - Newton Solution: Time complexity = O(lg(x))**
+
+I think Newton solution will not be faster than Solution1(Binary Search), because i = (i + x / i) / 2, the two factors i and x / i are with opposite trends. So time complexity in the best case is O(lgx). 
+
+**Anyone can give the accurate time complexity? Appreciate it!**
+
+    public int mySqrt(int x) {
+        if (x == 0) return 0;
+    	long i = x;
+    	while(i > x / i)  
+    		i = (i + x / i) / 2;	    	
+    	return (int)i;
+    }
+
+**Solution3 - Brute Force: Time complexity = O(sqrt(x))**
+
+    public int mySqrt(int x) { 
+    	if (x == 0) return 0;
+    	for (int i = 1; i <= x / i; i++) 		
+    		if (i <= x / i && (i + 1) > x / (i + 1))// Look for the critical point: i*i <= x && (i+1)(i+1) > x
+    			return i;		
+    	return -1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Newton method, accepted solution.
+    class Solution:
+	# @param x, an integer
+	# @return an integer
+	def sqrt(self, x):
+		i=1.0;
+		while(True):
+			j=(i+x/i)/2.0;
+			if(abs(i-j)< 0.000000000005):
+				break;
+			i=j;
+		return int(j);
+
+----------------------------------------------------------------------------------------------------
+Share JAVA log(n) Solution no need to change type
+    public class Solution {
+        public int mySqrt(int x) {
+            if(x <= 0) return 0;
+            int l = 1, r = x, res = 1;
+            while(l < r) {
+                int mid = (l + r) / 2;
+                if(mid > x/mid) {
+                    r = mid;
+                } else {
+                    res = mid;
+                    l = mid + 1;
+                }
+            }
+            return res;
+        }
+    }
+
+Using  x / mid to avoid overflow of Integer. l means left, r means right. Always have a variable res to maintain the result.
+
+----------------------------------------------------------------------------------------------------
+Newton&#x27;s method with only one variable
+    public class Solution {
+        public int mySqrt(int x) {
+            double x0 = 1;
+            do{
+                x0 = (x0+ x/x0)/2;
+            }while(Math.abs(Math.pow(x0, 2) - x) >= 1);
+            return (int)x0;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python binary search solution (O(lgn)).
+        
+    # Binary search  
+    def mySqrt(self, x):
+        l, r = 0, x
+        while l <= r:
+            mid = l + (r-l)//2
+            if mid * mid <= x < (mid+1)*(mid+1):
+                return mid
+            elif x < mid * mid:
+                r = mid
+            else:
+                l = mid + 1
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,443 @@
+My 6 lines solution
+    class Solution {
+    public:
+        bool isIsomorphic(string s, string t) {
+            int m1[256] = {0}, m2[256] = {0}, n = s.size();
+            for (int i = 0; i < n; ++i) {
+                if (m1[s[i]] != m2[t[i]]) return false;
+                m1[s[i]] = i + 1;
+                m2[t[i]] = i + 1;
+            }
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short Java solution without maps
+Hi guys!
+
+The main idea is to store the last seen positions of current (i-th) characters in both strings. If previously stored positions are different then we know that the fact they're occuring in the current i-th position simultaneously is a mistake. We could use a map for storing but as we deal with chars which are basically ints and can be used as indices we can do the whole thing with an array.
+
+Check the code below. Happy coding! 
+
+----------
+
+    public class Solution {
+        public boolean isIsomorphic(String s1, String s2) {
+            int[] m = new int[512];
+            for (int i = 0; i < s1.length(); i++) {
+                if (m[s1.charAt(i)] != m[s2.charAt(i)+256]) return false;
+                m[s1.charAt(i)] = m[s2.charAt(i)+256] = i+1;
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python different solutions (dictionary, etc).
+    def isIsomorphic1(self, s, t):
+        d1, d2 = {}, {}
+        for i, val in enumerate(s):
+            d1[val] = d1.get(val, []) + [i]
+        for i, val in enumerate(t):
+            d2[val] = d2.get(val, []) + [i]
+        return sorted(d1.values()) == sorted(d2.values())
+            
+    def isIsomorphic2(self, s, t):
+        d1, d2 = [[] for _ in xrange(256)], [[] for _ in xrange(256)]
+        for i, val in enumerate(s):
+            d1[ord(val)].append(i)
+        for i, val in enumerate(t):
+            d2[ord(val)].append(i)
+        return sorted(d1) == sorted(d2)
+        
+    def isIsomorphic3(self, s, t):
+        return len(set(zip(s, t))) == len(set(s)) == len(set(t))
+        
+    def isIsomorphic4(self, s, t): 
+        return [s.find(i) for i in s] == [t.find(j) for j in t]
+        
+    def isIsomorphic5(self, s, t):
+        return map(s.find, s) == map(t.find, t)
+    
+    def isIsomorphic(self, s, t):
+        d1, d2 = [0 for _ in xrange(256)], [0 for _ in xrange(256)]
+        for i in xrange(len(s)):
+            if d1[ord(s[i])] != d2[ord(t[i])]:
+                return False
+            d1[ord(s[i])] = i+1
+            d2[ord(t[i])] = i+1
+        return True
+
+----------------------------------------------------------------------------------------------------
+My C 0ms solution
+    bool isIsomorphic(char* s, char* t) {
+    	char charArrS[256] = { 0 };
+    	char charArrT[256] = { 0 };
+    	int i = 0;
+    	while (s[i] !=0)
+    	{
+    		if (charArrS[s[i]] == 0 && charArrT[t[i]] == 0)
+    		{
+    			charArrS[s[i]] = t[i];
+    			charArrT[t[i]] = s[i];
+    		}
+    		else
+    		if (charArrS[s[i]] != t[i] || charArrT[t[i]] != s[i])
+    			return false;
+    		i++;
+    	}
+    
+    	return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution using HashMap
+    public class Solution {
+        public boolean isIsomorphic(String s, String t) {
+            if(s == null || s.length() <= 1) return true;
+            HashMap<Character, Character> map = new HashMap<Character, Character>();
+            for(int i = 0 ; i< s.length(); i++){
+                char a = s.charAt(i);
+                char b = t.charAt(i);
+                if(map.containsKey(a)){
+                     if(map.get(a).equals(b))
+                    continue;
+                    else
+                    return false;
+                }else{
+                    if(!map.containsValue(b))
+                    map.put(a,b);
+                    else return false;
+                    
+                }
+            }
+            return true;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms C++ Solution without Hashmap
+    bool isIsomorphic(string s, string t) {
+            char map_s[128] = { 0 };
+            char map_t[128] = { 0 };
+            int len = s.size();
+            for (int i = 0; i < len; ++i)
+            {
+                if (map_s[s[i]]!=map_t[t[i]]) return false;
+                map_s[s[i]] = i+1;
+                map_t[t[i]] = i+1;
+            }
+            return true;    
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with 1 line core code
+    public boolean isIsomorphic(String s1, String s2) {
+            Map<Character, Integer> m1 = new HashMap<>();
+            Map<Character, Integer> m2 = new HashMap<>();
+        
+            for(Integer i = 0; i < s1.length(); i++) {
+    
+                if(m1.put(s1.charAt(i), i) != m2.put(s2.charAt(i), i)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+1 line in Python
+    def isIsomorphic(self, s, t):
+            return len(set(zip(s, t))) == len(set(s)) and len(set(zip(t, s))) == len(set(t))
+
+----------------------------------------------------------------------------------------------------
+Java 3ms beats 99.25%
+Since all the test cases use ASCII characters, you can use small arrays as a lookup tables.
+
+    public class Solution {
+        
+        public boolean isIsomorphic(String sString, String tString) {
+    
+            char[] s = sString.toCharArray();
+            char[] t = tString.toCharArray();
+    
+            int length = s.length;
+            if(length != t.length) return false;
+    
+            char[] sm = new char[256];
+            char[] tm = new char[256];
+    
+            for(int i=0; i<length; i++){
+                char sc = s[i];
+                char tc = t[i];
+                if(sm[sc] == 0 && tm[tc] == 0){
+                    sm[sc] = tc;
+                    tm[tc] = sc;
+                }else{
+                    if(sm[sc] != tc || tm[tc] != sc){
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+5 lines simple Java
+    public boolean isIsomorphic(String s, String t) {
+        Map m = new HashMap();
+        for (Integer i=0; i<s.length(); ++i)
+            if (m.put(s.charAt(i), i) != m.put(t.charAt(i)+"", i))
+                return false;
+        return true;
+    }
+
+Based on my [earlier solution for another problem](https://leetcode.com/discuss/62374/8-lines-simple-java). There I was matching chars and strings, which allowed me to use the same map for both. Here I only have chars, so I turn the chars from `t` into strings.
+
+----------------------------------------------------------------------------------------------------
+C++ 8ms - simple solution
+    class Solution {
+    public:
+        bool isIsomorphic(string s, string t) 
+        {
+            const size_t n = s.size();
+            if ( n != t.size())
+                return false;
+            
+            unsigned char forward_map[256] = {}, reverse_map[256] = {};
+            
+            for ( int i=0; i < n; ++i)
+            {
+                unsigned char c1 = s[i];
+                unsigned char c2 = t[i];
+                
+                if ( forward_map[c1] && forward_map[c1] != c2)
+                    return false;
+                
+                if ( reverse_map[c2] && reverse_map[c2] != c1)
+                    return false;
+                
+                forward_map[c1] = c2;
+                reverse_map[c2] = c1;
+            }
+            
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms Accept C code
+Hopefully a nice balance of readability and performance.
+
+The Code:
+
+    bool isIsomorphic(char* s, char* t) {
+    		char mapST[128] = { 0 };
+    		char mapTS[128] = { 0 };
+    		size_t len = strlen(s);
+    		for (int i = 0; i < len; ++i)
+    		{
+    			if (mapST[s[i]] == 0 && mapTS[t[i]] == 0)
+    			{
+    				mapST[s[i]] = t[i];
+    				mapTS[t[i]] = s[i];
+    			}
+    			else
+    			{
+    				if (mapST[s[i]] != t[i] || mapTS[t[i]] != s[i])
+    					return false;
+    			}
+    		}
+    		return true;    
+    }
+
+----------------------------------------------------------------------------------------------------
+1-liner in Python
+Edit: For an even shorter solution, check out mathsam's answer below and my comment on it.
+
+    class Solution:
+        def isIsomorphic(self, s, t):
+            return all(map({}.setdefault, a, b) == list(b) for a, b in ((s, t), (t, s)))
+
+
+----------------------------------------------------------------------------------------------------
+AC HashMap Clear code (JAVA)
+    public class Solution {
+        public boolean isIsomorphic(String s, String t) {
+            if(s == null || t == null){
+                return false;
+            }
+            if(s.length() == 0 || t.length() == 0){
+                return true;
+            }
+            
+            Map<Character,Character> corr = new HashMap<Character,Character>();
+            for(int i = 0; i < s.length(); i ++){
+                char sc = s.charAt(i);
+                char tc = t.charAt(i);
+                if(corr.containsKey(sc)){
+                    if(corr.get(sc) != tc){
+                        return false;
+                    }
+                }
+                else{
+                    if(corr.containsValue(tc)){
+                        return false;   
+                    }
+                    else{
+                        corr.put(sc,tc);
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution Beats 97%
+    public boolean isIsomorphic(String s, String t) {
+            int m = s.length();
+            if (m <= 1) {
+                return true;
+            }
+            int[] sToT = new int[256];
+            int[] tToS = new int[256];
+            char[] sValue = s.toCharArray();
+            char[] tValue = t.toCharArray();
+            for (int i = 0; i < m; i++) {
+                if (sToT[sValue[i]] == 0 && tToS[tValue[i]] == 0) {
+                    sToT[sValue[i]] = tValue[i];
+                    tToS[tValue[i]] = sValue[i];
+                } else if (sToT[sValue[i]] != tValue[i] || tToS[tValue[i]] != sValue[i]) {
+                    return false;
+                } 
+            }
+            return true;
+        }
+
+----------------------------------------------------------------------------------------------------
+C++ 8 ms beats 67.75% one path, two mapping arrays
+	bool isIsomorphic(string s, string t)
+	{
+		vector<char> mapStoT(127, 0);
+		vector<char> mapTtoS(127, 0);
+		int len = s.length();
+		
+		for (int i = 0; i < len; ++i)
+		{
+			char s_char = s[i], t_char = t[i];
+			if (mapStoT[s_char] == 0 && mapTtoS[t_char] == 0)
+			{
+				mapStoT[s_char] = t_char;
+				mapTtoS[t_char] = s_char;
+			}
+			else if (mapTtoS[t_char] != s_char || mapStoT[s_char] != t_char)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+----------------------------------------------------------------------------------------------------
+My simple Java solution
+Because we need maintain two map array, so I use a map function to reuse the codes.
+
+    public class Solution {
+        public boolean isIsomorphic(String s, String t) {
+            char[] map1 = new char[256], map2 = new char[256];
+            for (int i = 0; i < s.length(); i++) {
+                char a = s.charAt(i);
+                char b = t.charAt(i);
+                if (!this.map(a, b, map1) || !this.map(b, a, map2)) { return false; }
+            }
+            return true;
+        }
+    
+        private boolean map(char a, char b, char[] map) {
+            if (map[a] == 0) { map[a] = b; }
+            return map[a] == b;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Silly C++ Solution with two unordered_map, slow but easy to understand
+    class Solution {
+    public:
+        bool isIsomorphic(string s, string t) {
+            
+            if (s.size()== 0)
+                return true;
+            
+            
+            unordered_map<char, char> map1;
+            unordered_map<char, char> map2;
+            map1.insert(make_pair(s[0], t[0]));
+            map2.insert(make_pair(t[0], s[0]));
+            
+            
+            for (int i = 1; i< s.size(); i++){
+                if (map1.find(s[i])!=map1.end()){
+                    if (t[i] != map1.at(s[i])) {
+                        return false;
+                    }
+                }
+                
+                if (map2.find(t[i])!=map2.end()){
+                    
+                    if (s[i] != map2.at(t[i])) {
+                        return false;
+                    }
+                }
+                
+                else{
+                    map1.insert(make_pair(s[i],t[i]));
+                    map2.insert(make_pair(t[i],s[i]));
+                }
+                
+            }
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+10 lines C solution, without hash table
+    bool isIsomorphic(char* s, char* t){
+    	if(!(s&&t))
+    		return false;
+    	char *spt = s, *tpt=t;
+    	while(*spt != '\0'){
+    		if( strchr(s, *spt++)-s != strchr(t, *tpt++)-t)
+    			return false;
+    	}
+    	return true;
+    }
+
+Two strings s and t are not isomorphic if for every index i, s[i]  and t[i] first appear in string s and t, respectively, in different position.
+
+----------------------------------------------------------------------------------------------------
+8ms c++ simple solution
+
+    bool isIsomorphic(string s, string t) {
+        int cs[128] = {0}, ct[128] = {0};
+        for(int i=0; i<s.size(); i++)
+        {
+            if(cs[s[i]] != ct[t[i]]) return false;
+            else if(!cs[s[i]] && !ct[t[i]]) //only record once
+            {
+                cs[s[i]] = i+1;
+                ct[t[i]] = i+1;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,502 @@
+The bottom up O(N) solution would be better
+This problem is generally believed to have two solutions: the top down approach and the bottom up way.
+
+1.The first method checks whether the tree is balanced strictly according to the definition of balanced binary tree: the difference between the heights of the two sub trees are not bigger than 1, and both the left sub tree and right sub tree are also balanced. With the helper function depth(), we could easily write the code; 
+
+    class solution {
+    public:
+        int depth (TreeNode *root) {
+            if (root == NULL) return 0;
+            return max (depth(root -> left), depth (root -> right)) + 1;
+        }
+    
+        bool isBalanced (TreeNode *root) {
+            if (root == NULL) return true;
+            
+            int left=depth(root->left);
+            int right=depth(root->right);
+            
+            return abs(left - right) <= 1 && isBalanced(root->left) && isBalanced(root->right);
+        }
+    };
+
+For the current node root, calling depth() for its left and right children actually has to access all of its children, thus the complexity is O(N). We do this for each node in the tree, so the overall complexity of isBalanced will be O(N^2). This is a top down approach.
+
+2.The second method is based on DFS. Instead of calling depth() explicitly for each child node, we return the height of the current node in DFS recursion. When the sub tree of the current node (inclusive) is balanced, the function dfsHeight() returns a non-negative value as the height. Otherwise -1 is returned.  According to the leftHeight and rightHeight of the two children, the parent node could check if the sub tree
+is balanced, and decides its return value.
+
+    class solution {
+    public:
+    int dfsHeight (TreeNode *root) {
+            if (root == NULL) return 0;
+            
+            int leftHeight = dfsHeight (root -> left);
+            if (leftHeight == -1) return -1;
+            int rightHeight = dfsHeight (root -> right);
+            if (rightHeight == -1) return -1;
+            
+            if (abs(leftHeight - rightHeight) > 1)  return -1;
+            return max (leftHeight, rightHeight) + 1;
+        }
+        bool isBalanced(TreeNode *root) {
+            return dfsHeight (root) != -1;
+        }
+    };
+
+In this bottom up approach, each node in the tree only need to be accessed once. Thus the time complexity is O(N), better than the first solution.
+
+
+----------------------------------------------------------------------------------------------------
+Java solution based on height, check left and right node in every recursion to avoid further useless search
+
+    public boolean isBalanced(TreeNode root) {
+        if(root==null){
+            return true;
+        }
+        return height(root)!=-1;
+        
+    }
+    public int height(TreeNode node){
+        if(node==null){
+            return 0;
+        }
+        int lH=height(node.left);
+        if(lH==-1){
+            return -1;
+        }
+        int rH=height(node.right);
+        if(rH==-1){
+            return -1;
+        }
+        if(lH-rH<-1 || lH-rH>1){
+            return -1;
+        }
+        return Math.max(lH,rH)+1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two different definitions of balanced binary tree result in two different judgments
+Input:	{1,2,2,3,3,3,3,4,4,4,4,4,4,#,#,5,5}
+
+Output:	false (based on balanced binary definition **"no 2 leaf nodes differ in distance from the root by more than 1"**)
+
+Expected:	true (base on balanced binary definition **"two subtrees of every node never differ by more than 1"** )
+
+
+----------------------------------------------------------------------------------------------------
+VERY SIMPLE Python solutions (iterative and recursive), both beat 90%
+    class Solution(object):
+        def isBalanced(self, root):
+            
+            def check(root):
+                if root is None:
+                    return 0
+                left  = check(root.left)
+                right = check(root.right)
+                if left == -1 or right == -1 or abs(left - right) > 1:
+                    return -1
+                return 1 + max(left, right)
+            
+            return check(root) != -1 
+
+----------------------------------------------------------------------------------------------------
+Accepted O(n) solution
+We determine recursively the height of the root node but when the recursion is coming upwards we return UNBALANCED instead of the actual height if we know that the tree is already known to be unbalanced. 
+
+We visit each node just once thus it has linear time complexity.
+
+
+    private static final int UNBALANCED = -99;
+    
+    public boolean isBalanced(TreeNode root) {
+        if (root == null) {
+            return true;
+        }
+        return getHeight(root) != UNBALANCED;
+    }
+    
+    private int getHeight(TreeNode root) {
+        if (root == null) {
+            return -1;
+        }
+        int l = getHeight(root.left);
+        int r = getHeight(root.right);
+        if (l == UNBALANCED || r == UNBALANCED || Math.abs(l-r) > 1) {
+            return UNBALANCED;
+        }
+        return 1 + Math.max(l,r);
+    }
+
+----------------------------------------------------------------------------------------------------
+Can we have a better solution
+My solution for this problem is as follows:
+
+    public class Solution {
+    public boolean isBalanced(TreeNode root) {
+        if (root == null)
+            return true;
+        if (Math.abs(depth(root.left) - depth(root.right)) >1)
+            return false;
+        return isBalanced(root.left) && isBalanced(root.right);
+    }
+    
+    private int depth(TreeNode root){
+        if (root == null)
+            return 0;
+        return Math.max(depth(root.left), depth(root.right)) + 1;
+    }
+}
+
+But it has two recursions, one for depth() and one for isBalanced(). Will there be a performance issue?
+
+----------------------------------------------------------------------------------------------------
+JAVA O(n) solution based on Maximum Depth of Binary Tree
+    public class Solution {
+    private boolean result = true;
+
+    public boolean isBalanced(TreeNode root) {
+        maxDepth(root);
+        return result;
+    }
+
+    public int maxDepth(TreeNode root) {
+        if (root == null)
+            return 0;
+        int l = maxDepth(root.left);
+        int r = maxDepth(root.right);
+        if (Math.abs(l - r) > 1)
+            result = false;
+        return 1 + Math.max(l, r);
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Input: 	{1,2,2,3,3,3,3,4,4,4,4,4,4,#,#,5,5}  Expected: 	true
+Hi, 
+
+How come this input tree is balanced?
+Input: 	{1,2,2,3,3,3,3,4,4,4,4,4,4,#,#,5,5}
+Output: 	false
+Expected: 	true
+
+                1
+           2           2
+        3     3     3     3 
+      4  4   4 4   4 4   # # 
+     5 5 
+
+from root 1, the depth to 5 is 4 and from 1 to 3 is 2. 
+
+
+----------------------------------------------------------------------------------------------------
+Java 1ms Solution
+This is perhaps a bit hacky but, hey, it works!
+
+    private int helper(TreeNode root, int height)
+    {
+        if (root == null)
+        {
+            return height;
+        }
+        
+        int leftTree = helper(root.left, height + 1);
+        int rightTree = helper(root.right, height + 1);
+        if (leftTree < 0 || rightTree < 0 || Math.abs(leftTree - rightTree) > 1)
+        {
+            return -1;
+        }
+        
+        return Math.max(leftTree, rightTree);
+    }
+    
+    public boolean isBalanced(TreeNode root) {
+        return helper(root, 0) >= 0;
+    }
+
+I tried to avoid mutual recursion or having two functions that both recurse.  Having two functions that both recurse, one to get the depth of the left and right subtree, and one to continue down the tree if that node checks out, works fine but can recurse an unnecessary number of times if the tree is valid.  This function will always complete in O(nodes) since it just calculates the max depth of each subtree and when the recursion unwinds it checks to see if the restriction on the height has been broken.  If it has, it sets the height to -1 (hacky), indicating that the restrictions has been broken.  Essentially, this just gets around returning two values, one for whether the restriction has been broken and one for the max height of tree. 
+
+----------------------------------------------------------------------------------------------------
+My C++ solution in 15ms
+	class Solution {
+		public:
+			int height(TreeNode *root) {
+				if(root == NULL)return 0;
+				return max(height(root->left), height(root->right)) + 1;
+			}
+			bool isBalanced(TreeNode* root) {
+				if(root == NULL)return true;
+				return isBalanced(root->left) && isBalanced(root->right) && abs(height(root->left) - height(root->right)) <= 1;
+			}
+	};
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ code with short cut
+     // We definitely need to calculate the height of each node
+    // Actually when we calculate the height, we can perform the balance check at the same time
+    // this help function just did this
+    class Solution {
+    private:
+        bool isBalancedTreeHelper(TreeNode* root,int&depth)
+        {
+            if(root==NULL)
+            {
+                depth = 0;
+                return true;
+            }
+            int left,right;
+            // Notice, the logic operation is shortcut
+            // once the left tree is judged to be unbalanced, then the right tree will not be judged
+            if(isBalancedTreeHelper(root->left,left) && isBalancedTreeHelper(root->right,right) && abs(left-right)<2){
+                depth = max(left,right)+1;
+                return true;
+            }
+            return false;
+        }
+    public:
+        bool isBalanced(TreeNode* root) {
+            int depth;
+            return isBalancedTreeHelper(root,depth);
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+A simple Python recursive solution - 172ms
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+    
+    class Solution:
+        # @param {TreeNode} root
+        # @return {boolean}
+        def isBalanced(self, root):
+            if not root:
+                return True
+    
+            return abs(self.getHeight(root.left) - self.getHeight(root.right)) < 2 and self.isBalanced(root.left) and self.isBalanced(root.right)
+    
+        def getHeight(self, root):
+            if not root:
+                return 0
+    
+            return 1 + max(self.getHeight(root.left), self.getHeight(root.right))
+
+
+
+----------------------------------------------------------------------------------------------------
+A Iterative PostOrder Traversal Java Solution
+A recursive method is straightforward. Doing it iteratively is a lot of fun. I use postorder traversal to realize a iterative version.
+
+    public class Solution {
+        public boolean isBalanced(TreeNode root) {
+            if(root==null) return true;
+            Stack<TreeNode> stack = new Stack<TreeNode>();
+            Map<TreeNode, Integer> map = new HashMap<TreeNode, Integer>();
+            stack.push(root);
+            while(!stack.isEmpty()){
+                TreeNode node = stack.pop();
+                if((node.left==null || node.left!=null && map.containsKey(node.left)) &&(node.right==null || node.right!=null && map.containsKey(node.right))){
+                    int left = node.left==null?0:map.get(node.left);
+                    int right = node.right==null?0:map.get(node.right);
+                    if(Math.abs(left-right) > 1) return false;
+                    map.put(node, Math.max(left, right)+1);
+                }else{
+                    if(node.left!=null && !map.containsKey(node.left)){
+                        stack.push(node);
+                        stack.push(node.left);
+                    }else{
+                        stack.push(node);
+                        stack.push(node.right);
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple java clean solution!
+    /**
+     * Definition for a binary tree node.
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public boolean isBalanced(TreeNode root) {
+            if (root == null){
+                return true;
+            }
+            int leftHeight = getHeight (root.left);
+            int rightHeight = getHeight (root.right);
+            if (Math.abs (leftHeight - rightHeight) > 1){
+                return false;
+            }
+            return (isBalanced (root.left) && isBalanced (root.right));
+        }
+        
+        public int getHeight (TreeNode root){
+            if (root == null){
+                return 0;
+            }
+            else {
+                return Math.max (getHeight(root.left), getHeight(root.right)) + 1;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My short O(n) recursive C++ code
+    class Solution {
+    public:
+        int height(TreeNode *root)
+        {
+            if(root == NULL) return 0;
+            int hl = height(root->left);
+            int hr = height(root->right);
+            if (hl == -1 || hr == -1 || abs(hl - hr) > 1) return -1;
+            return max(hl, hr) + 1;
+        }
+        bool isBalanced(TreeNode *root) {
+            return height(root) != -1;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Why {1,2,2,3,3,3,3,4,4,4,4,4,4,#,#,5,5} expected true
+test 218/ 226
+
+Input:	{1,2,2,3,3,3,3,4,4,4,4,4,4,#,#,5,5}
+Output:	false
+Expected: true
+
+   
+
+               1
+            /     \
+          2        2
+         /  \      / \
+        3   3     3  3
+       /\   /\   /\
+      4 4  4 4  4 4
+      /\
+     5  5
+
+
+I think this is unbalanced
+
+
+even stranger
+
+test 212/226
+Input:	{1,2,2,3,3,#,#,4,4}
+Output:	true
+Expected: false
+
+
+----------------------------------------------------------------------------------------------------
+Easy Top Down &amp;&amp; Bottom Up(beat 89.35%) Solutions in JAVA
+Top Down Solution, which is O(n^2) time complexity
+
+    public boolean isBalanced(TreeNode root) {
+        if (root == null) return true;
+        if (root.left == null && root.right == null) return true;
+        int left = depth(root.left);
+        int right = depth(root.right);
+        return Math.abs(left-right) <=1 && isBalanced(root.left) && isBalanced(root.right);
+    }
+    public int depth(TreeNode root) {
+        if (root == null) return 0;
+        if (root.left == null && root.right == null) return 1;
+        return Math.max(depth(root.left),depth(root.right))+1;
+    }
+
+Bottom Up Solution, which is O(n) time complexity
+
+    public boolean isBalanced(TreeNode root) {
+        if (root == null) return true;
+        int depth = depth(root);
+        if (depth == -1) return false;
+        else return true;
+    }
+    private int depth(TreeNode root) {
+        if (root == null) return 0;
+        int left = depth(root.left);
+        int right = depth(root.right);
+        if (left == -1 || right == -1 || Math.abs(left-right) > 1) return -1;
+        return Math.max(left,right)+1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 1ms solution with explanation
+    public class Solution {
+        public boolean isBalanced(TreeNode root) {
+            return checkBalance(root) == -1 ? false : true;
+        }
+        
+        // 1. If a subtree is hit as unbalanced, the whole tree is unbalanced. In this case, -1 is set as the return value.
+        // 2. If the left subtree and the right subtree of a node are balanced, there are two more cases:
+        // 2.1. The tree rooted at the node is unbalanced (the depth of its two subtrees differs by more than 1), as a result, -1 is returned.
+        // 2.2 The tree rooted at the node is balanced, then the depth of the tree will be returned.
+        public int checkBalance(TreeNode node){
+            if (node == null) // case 2.2
+                return 0;
+                
+            int left = checkBalance(node.left);
+            if (left == -1) // check case 1
+                return -1;
+                
+            int right = checkBalance(node.right);
+            if (right == -1) // check case 1
+                return -1;
+            
+            if (left - right > 1 || right - left > 1)
+                return -1; // check case 2.1
+            
+            return (left > right ? left : right) + 1; // case 2.2
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Shortest recursive solution
+
+    public boolean isBalanced(TreeNode root) {
+        if(root==null) return true;
+        int l=depth(root.left);
+        int r=depth(root.right);
+        return ((int)Math.abs(l-r)<2)&&isBalanced(root.left) && isBalanced(root.right);
+    }
+    static int depth(TreeNode n){
+            if(n==null) return 0;
+            return Math.max(depth(n.left),depth(n.right))+1;
+       }
+ 
+
+----------------------------------------------------------------------------------------------------
+My 10-line recursion solution
+    public class Solution {
+        public boolean isBalanced(TreeNode root) {
+            if(root == null) return true;
+            if(Math.abs(height(root.left) - height(root.right)) > 1) return false;
+            return isBalanced(root.left) && isBalanced(root.right);
+        }
+        public int height(TreeNode node){
+            if(node == null) return 0;
+            return Math.max(height(node.left), height(node.right)) + 1;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,354 @@
+Linear and simple solution in C++
+I just iterate and update the maximal index that I can reach
+
+    bool canJump(int A[], int n) {
+        int i = 0;
+        for (int reach = 0; i < n && i <= reach; ++i)
+            reach = max(i + A[i], reach);
+        return i == n;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simplest O(N) solution with constant space
+Idea is to work backwards from the last index. Keep track of the smallest index that can "jump" to the last index. Check whether the current index can jump to this smallest index.
+
+    bool canJump(int A[], int n) {
+        int last=n-1,i,j;
+        for(i=n-2;i>=0;i--){
+            if(i+A[i]>=last)last=i;
+        }
+        return last<=0;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution easy to understand
+    public boolean canJump(int[] A) {
+        int max = 0;
+        for(int i=0;i<A.length;i++){
+            if(i>max) {return false;}
+            max = Math.max(A[i]+i,max);
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+6 line java solution in O(n)
+The basic idea is this: at each step, we keep track of the furthest reachable index. The nature of the problem (eg. maximal jumps where you can hit a range of targets instead of singular jumps where you can only hit one target) is that for an index to be reachable, each of the previous indices have to be reachable.
+
+Hence, it suffices that we iterate over each index, and If we ever encounter an index that is not reachable, we abort and return false. By the end, we will have iterated to the last index. If the loop finishes, then the last index is reachable.
+
+    public boolean canJump(int[] nums) {
+        int reachable = 0;
+        for (int i=0; i<nums.length; ++i) {
+            if (i > reachable) return false;
+            reachable = Math.max(reachable, i + nums[i]);
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 98% Percentile Solution
+The easiest way to think about this problem is to ask are the elements with a 0 value avoidable? this is the algorithm that I constructed to answer this question.Starting from the second to last element in the array we continue to decrement towards the start of the array. Only stopping if we hit an element with a value of 0; in this case we evaluate if there exist an element somewhere at the start of the array which has a jump value large enough to jump over this 0 value element. 
+
+    public class Solution {
+        public boolean canJump(int[] nums) {
+           if(nums.length < 2) return true;
+           
+           for(int curr = nums.length-2; curr>=0;curr--){
+               if(nums[curr] == 0){
+                   int neededJumps = 1;
+                   while(neededJumps > nums[curr]){
+                       neededJumps++;
+                       curr--;
+                       if(curr < 0) return false;
+                   }
+               }
+           }
+           return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++, elegant solution, O(n) time.
+    bool canJump(vector<int>& nums) {
+        int size=nums.size();
+        int step=nums[0];
+        for(int i=1;i<size;++i){
+            step--;
+            if(step<0)
+               return false;
+            if(nums[i]>step)
+               step=nums[i];
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+1-6 lines, O(n) time, O(1) space
+**Solution 1**
+
+Going forwards. `m` tells the maximum index we can reach so far.
+
+    def canJump(self, nums):
+        m = 0
+        for i, n in enumerate(nums):
+            if i > m:
+                return False
+            m = max(m, i+n)
+        return True
+
+**Solution 2**
+
+One-liner version:
+
+    def canJump(self, nums):
+        return reduce(lambda m, (i, n): max(m, i+n) * (i <= m), enumerate(nums, 1), 1) > 0
+
+**Solution 3**
+
+Going backwards, most people seem to do that, here's my version.
+
+    def canJump(self, nums):
+        goal = len(nums) - 1
+        for i in range(len(nums))[::-1]:
+            if i + nums[i] >= goal:
+                goal = i
+        return not goal
+
+**Solution 4**
+
+C version.
+
+    bool canJump(int* nums, int n) {
+        int goal=n-1, i;
+        for (i=n; i--;)
+            if (i+nums[i] >= goal)
+                goal=i;
+        return !goal;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+3ms simple JAVA solution
+    public boolean canJump(int[] nums) {
+        int maxIndex = nums.length-1;
+        int maxJump  = nums[0];
+        for(int i = 0; i <= maxJump; i++){
+            maxJump=Math.max(maxJump,i+nums[i]);
+            if(maxJump>=maxIndex) return true;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ smiple and easy to understand O(n) time 4 lines
+    class Solution {
+    public:
+    	bool canJump(vector<int>& nums) {
+    		int truepos=nums.size()-1;//the lowest starting point that you can reach the end 
+    		for(int i=nums.size()-2;i>=0;i--)
+    			truepos=(i+nums[i])>=truepos?i:truepos;
+    		return(truepos==0);	
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Greedy, 14ms. O(n), O(1),  easy C++ solution, easy understanding.
+
+
+    bool canJump(int A[], int n) { // Greedy
+        
+        n==1?({return true;}):({;});  // Return true if already reach the end
+        
+        int max_index_can_jump = 0; // So far the current max index we can jump to.
+        
+        for (int i = 0; i <= max_index_can_jump; ++i )
+        {
+            if( (A[i]+i) > max_index_can_jump ) // check if need to update the current max index we can jump to
+            {
+                if((A[i]+i) >= (n - 1)) // check if we can jump to the last index (end)
+                {
+                    return true;
+                }
+                else
+                {
+                    max_index_can_jump = A[i]+i; // Then update
+                }
+            }
+        }
+        
+        //return max_index_can_jump == (n-1); // First line is only one of the case
+        
+        return false;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+How about my solution?
+     public boolean canJump(int[] A) {
+       if(A.length==0) return true;
+       int maxcan=0;// the farthest position it can jump
+       for(int i=0;i<A.length;i++){
+           if(maxcan>=A.length-1) return true; //if the farthest postion have passed the end or reached the end
+           maxcan=Math.max(maxcan,A[i]+i);// update the farthest position
+           if(maxcan==i) return false; // return false when you cannot move any further..
+       }
+       return true;//not necessary, just a return type...
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy Java code accepted with comments for understanding
+just for record
+
+    public class Solution {
+    public boolean canJump(int[] A) {
+        int len=A.length;
+        int ability=A[0];//the farmost grid index that can be reached
+        for(int i=1;i<len;i++)
+        {
+            if(ability<i)//cannot reach beyond current grid by any means, return false
+            return false;
+            //update ability using the bigger grid index that can be reached
+            ability=ability>i+A[i]?ability:i+A[i];
+        }
+        //loop finished, the last grid can be reached
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Another way of looking at the problem
+0 is like a **trap**. 
+Anytime you fall-in 0, you can't jump no more (except the last one which you are already at target).
+
+So first, find those traps from start. After we find one, we have to go back to test if this trap is leap-able. This is not efficient.
+
+If we search from back, whenever a trap is found, we can conveniently convert **searching for trap** problem to **searching for leap-able** problem. No need to go back. So one scan, O(n).
+
+partial code:
+
+    	for(int i = A.length - 2; i >= 0; i--)
+		{
+			if(A[i] == 0)
+			{
+				//start search
+				int zeroIndex = i;
+				for(i = i - 1; i >=0; i--)  //keep using same i to continue searching!
+				{
+					if(A[i] > zeroIndex - i)   //we can overcome this trap!
+					{
+						break;
+					}
+				}
+				if(i == -1) //searched to end and no possible leap
+					return false;
+			}
+		}
+		return true;
+
+
+
+----------------------------------------------------------------------------------------------------
+One pass Solution Java
+     public boolean canJump(int[] nums) {
+            int max =0;
+            for(int i=0;i<nums.length; i++){
+                if(max<i) return false;
+                max=Math.max(max, i+nums[i]);
+            }
+            return true;
+        }
+
+----------------------------------------------------------------------------------------------------
+Help me improve it , thx.
+    class Solution {
+    public:
+        bool canJump(int A[], int n) {
+            int max = A[0];
+            for(int i=1;i<=max && max<n-1;i++) {
+                if(A[i]+i > max) {
+                    max = A[i]+i;
+                }
+            }
+            return max>n-2;
+        }
+    };
+tried my best. but i think its not good enough.
+
+----------------------------------------------------------------------------------------------------
+5 lines code solution with O(n)
+    class Solution {
+    public:
+        bool canJump(int A[], int n) {
+        if (n<=1) return true;        
+    
+        // step means max step it can go from i-1
+        // when it go one further step, compare the (previous step - 1) with the step of current node can go, keep the max
+        // when step goes to 0, it means it can't go further, fail the jump. otherwise, it will end to the end
+    	int step = A[0];
+    	for(int i=1;step>0 && i+step < n; i++)
+    		step = max(step-1,A[i]);
+    	return step!=0;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution with comments.
+        
+    bool canJump(vector<int>& nums) {
+        unsigned int maxReach = 0;
+        for (unsigned int i = 0; i < nums.size(); i++) {
+            if (maxReach < i)  // cannot reach i 
+                return false;
+            if (maxReach >= nums.size()-1)
+                return true;  //early return 
+            maxReach = max(maxReach, i+nums[i]);
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+This might be the simplest interview question ever...
+    public boolean canJump(int[] A) {
+        int max = 0;
+        for (int i=0; i<=max && i<A.length; i++) {
+            max = Math.max(A[i] + i, max);
+        }
+        return max >= A.length - 1;
+    }
+
+As straightforward as it is. Just update the current max position it can reach. A easy minor optimization is to early terminate when max is already enough big. But this is already enough.
+
+----------------------------------------------------------------------------------------------------
+My 5 lines DP solution in O(n) time with constant space, 19ms.
+This a DP solution, and the idea is to save the maximum jump length every time, if the maximum length be zero, than return false.
+
+    class Solution {
+    public:
+        bool canJump(std::vector<int> &nums) {
+    		int maxJumpNow = 0, len = static_cast<int>(nums.size());
+            for (int i = 0; i < len - 1 && maxJumpNow < len - i; ++i)
+                if (!(maxJumpNow = std::max(maxJumpNow - 1, nums[i])))
+                    return false;
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear greedy Solution for c++
+    class Solution {
+    public:
+        bool canJump(vector<int>& nums) {
+           if(nums.size() <= 1)return true;
+           int step = nums[0];
+           for(int i = 1; i < nums.size() - 1 && step != 0; i++){
+               step--;
+               step = max(step,nums[i]);//keep the step or change to the biggest step we can go now
+           }
+           return step != 0;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,660 @@
+Any shorter O(1) space solution?
+My idea is simple: store states of each row in the first of that row, and store states of each column in the first of that column. Because the state of row0 and the state of column0 would occupy the same cell, I let it be the state of row0, and use another variable "col0" for column0. In the first phase, use matrix elements to set states in a top-down way. In the second phase, use states to set matrix elements in a bottom-up way.
+
+    void setZeroes(vector<vector<int> > &matrix) {
+        int col0 = 1, rows = matrix.size(), cols = matrix[0].size();
+    
+        for (int i = 0; i < rows; i++) {
+            if (matrix[i][0] == 0) col0 = 0;
+            for (int j = 1; j < cols; j++)
+                if (matrix[i][j] == 0)
+                    matrix[i][0] = matrix[0][j] = 0;
+        }
+    
+        for (int i = rows - 1; i >= 0; i--) {
+            for (int j = cols - 1; j >= 1; j--)
+                if (matrix[i][0] == 0 || matrix[0][j] == 0)
+                    matrix[i][j] = 0;
+            if (col0 == 0) matrix[i][0] = 0;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+My AC java O(1) solution (easy to read)
+    public class Solution {
+    public void setZeroes(int[][] matrix) {
+        boolean fr = false,fc = false;
+        for(int i = 0; i < matrix.length; i++) {
+            for(int j = 0; j < matrix[0].length; j++) {
+                if(matrix[i][j] == 0) {
+                    if(i == 0) fr = true;
+                    if(j == 0) fc = true;
+                    matrix[0][j] = 0;
+                    matrix[i][0] = 0;
+                }
+            }
+        }
+        for(int i = 1; i < matrix.length; i++) {
+            for(int j = 1; j < matrix[0].length; j++) {
+                if(matrix[i][0] == 0 || matrix[0][j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+        if(fr) {
+            for(int j = 0; j < matrix[0].length; j++) {
+                matrix[0][j] = 0;
+            }
+        }
+        if(fc) {
+            for(int i = 0; i < matrix.length; i++) {
+                matrix[i][0] = 0;
+            }
+        }
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My C++ O(1) yoooooo
+I find the last row which has 0, and use it to store the 0-collumns.
+Then go row by row set them to 0.
+Then go column by column set them to 0.
+Finally set the last row which has 0. It's long but hey it's O(1) 
+
+
+    class Solution {
+    public:
+        void setZeroes(vector<vector<int> > &matrix) {
+            
+            int H = matrix.size();
+            int W = matrix[0].size();
+            
+            // find the last 0 row
+            int last_0_row = -1;
+            for (int y = H - 1; y >= 0 && last_0_row == -1; y--)
+                for (int x = 0; x < W; x++)
+                    if (matrix[y][x] == 0)
+                    {
+                        last_0_row = y;
+                        break;
+                    }
+            if (last_0_row == -1)
+                return;
+            
+            // go row by row
+            for (int y = 0; y < last_0_row; y++)
+            {
+                bool this_is_a_0_row = false;
+                
+                for (int x = 0; x < W; x++)
+                {
+                    if (matrix[y][x] == 0)
+                    {
+                        this_is_a_0_row = true;
+                        matrix[last_0_row][x] = 0;
+                    }
+                }
+                
+                if (this_is_a_0_row)
+                for (int x = 0; x < W; x++)
+                {
+                    matrix[y][x] = 0;
+                }
+            }
+            
+            // set collums to 0
+            for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                if (matrix[last_0_row][x] == 0)
+                    matrix[y][x] = 0;
+            }
+            
+            // set the last 0 row 
+            for (int x = 0; x < W; x++)
+            {
+                matrix[last_0_row][x] = 0;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java O(1) solution (easy to understand)
+    public class Solution {
+        public void setZeroes(int[][] matrix) {
+            if(matrix==null){
+                return;
+            }
+            
+            int m = matrix.length;
+            int n = matrix[0].length;
+            
+            boolean rowHasZero = false;
+            boolean colHasZero = false;
+            
+            for(int i=0; i<n; i++){
+                if(matrix[0][i]==0){
+                    rowHasZero = true;
+                    break;
+                }
+            }
+            
+            for(int i=0; i<m; i++){
+                if(matrix[i][0]==0){
+                    colHasZero = true;
+                    break;
+                }
+            }
+            
+            for(int i=1; i<m; i++){
+                for(int j=1; j<n; j++){
+                    if(matrix[i][j]==0){
+                        matrix[i][0] = 0;
+                        matrix[0][j] = 0;
+                    }
+                }
+            }
+            
+    
+            
+            for(int j=1;j<n; j++){
+                if(matrix[0][j]==0){
+                    nullifyCol(matrix, j, m, n);
+                }
+            }
+            
+            for(int i=1; i<m; i++){
+                if(matrix[i][0]==0){
+                    nullifyRow(matrix, i, m, n);
+                }
+            }
+            
+            if(rowHasZero){
+                nullifyRow(matrix, 0, m, n);
+            }
+            if(colHasZero){
+                nullifyCol(matrix, 0, m, n);
+            }
+            
+        }
+        
+        public void nullifyRow(int[][] matrix, int i, int m, int n){
+            for(int col=0; col<n; col++){
+                matrix[i][col] = 0;
+            }
+        }
+        
+        public void nullifyCol(int[][] matrix, int j, int m, int n){
+            for(int row=0; row<m; row++){
+                matrix[row][j] = 0;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(1) JAVA, straightforward idea
+Use the first column and the first row as marker:
+1. first scan through the whole matrix, and if one row i has zero, label matrix[i][0] = 0, if column j has zero, then label matrix[0][j] = 0.
+if we find the first row has zero, then mark a boolean row = true, if the first column has zeros, mark a boolean col = true;
+
+2. By the markers on the first row and first col, set the other columns and rows to zeros. (first row and first column already contain zeros)
+
+3. According to booleans row and col, decide whether to set first row and column to zeros.
+
+        public class Solution {
+        public void setZeroes(int[][] matrix) {
+            if (matrix == null || matrix.length == 0 || matrix[0].length == 0) return;
+            int m = matrix.length, n = matrix[0].length;
+            boolean row = false, col = false;
+            for (int i = 0; i < m; i++)
+                for (int j = 0; j < n; j++){
+                    if (matrix[i][j] == 0) {
+                        matrix[0][j] = 0;
+                        matrix[i][0] = 0;
+                        if (i == 0) row = true;
+                        if (j == 0) col = true;
+                    }
+                }
+            for (int i = 1; i < m; i++){
+                if (matrix[i][0] == 0){
+                    for (int j = 1; j < n;j++)
+                        matrix[i][j] = 0;
+                }
+            }
+            for (int j = 1; j < n; j++){
+                if (matrix[0][j] == 0){
+                    for (int i = 1; i < m; i++)
+                        matrix[i][j] = 0;
+                }
+            }
+            if (row){
+                for (int j = 0; j < n; j++)
+                    matrix[0][j] = 0;
+            }
+            if (col){
+                for(int i = 0; i < m; i++)
+                    matrix[i][0] = 0;
+            }
+        }
+}
+ 
+
+----------------------------------------------------------------------------------------------------
+21 lines concise and easy understand C++ solution, O(1) space, three steps
+    class Solution {
+    public:
+        void setZeroes(vector<vector<int>>& matrix) {
+            bool row = false, col = false;
+            for(int i = 0; i < matrix.size(); i++){
+                for(int j = 0; j < matrix[0].size(); j++){
+                    if(matrix[i][j] == 0) {
+                        if(i == 0) row = true;
+                        if(j == 0) col = true;
+                        matrix[0][j] = matrix[i][0] = 0;
+                    }
+                }
+            }
+            for(int i = 1; i < matrix.size(); i++){
+                for(int j = 1; j < matrix[0].size(); j++){
+                    if(matrix[i][0] == 0 || matrix[0][j] == 0) matrix[i][j] = 0;
+                }
+            }
+            if(col){
+                for(int i = 0; i < matrix.size(); i++) matrix[i][0] = 0;
+            }
+            if(row){
+                for(int j = 0; j < matrix[0].size(); j++) matrix[0][j] = 0;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(1) space solution in Python
+    class Solution:
+    # @param {integer[][]} matrix
+    # @return {void} Do not return anything, modify matrix in-place instead.
+    def setZeroes(self, matrix):
+        m = len(matrix)
+        if m == 0:
+            return
+        n = len(matrix[0])
+        
+        row_zero = False
+        for i in range(m):
+            if matrix[i][0] == 0:
+                row_zero = True
+        col_zero = False
+        for j in range(n):
+            if matrix[0][j] == 0:
+                col_zero = True
+                
+        for i in range(1, m):
+            for j in range(1, n):
+                if matrix[i][j] == 0:
+                    matrix[i][0] = 0
+                    matrix[0][j] = 0
+        
+        for i in range(1, m):
+            if matrix[i][0] == 0:
+                for j in range(1, n):
+                    matrix[i][j] = 0
+                    
+        for j in range(1, n):
+            if matrix[0][j] == 0:
+                for i in range(1, m):
+                    matrix[i][j] = 0
+        
+        if col_zero:
+            for j in range(n):
+                matrix[0][j] = 0
+        if row_zero:
+            for i in range(m):
+                matrix[i][0] = 0
+                
+
+----------------------------------------------------------------------------------------------------
+Constant Space Java solution
+ a b b 
+
+   b c c
+
+   b c c
+
+Step1: Determine row1 and col1. Need to go through the first col and first row. Use two vars to store that information.
+Step2: Use "c" to determine "b". Need to go through the entire matrix. Once "c" is zero, set its corresponding two "b"s to zero.
+Step3: Use "b" to set "c". If "b" is zero, its corresponding row or col are set to all zero.
+Step4: Use previous row1 and col1 information to set col1 and row1.
+
+    public class Solution {
+        public void setZeroes(int[][] matrix) {
+            boolean firstColZero = false, firstRowZero = false;
+            for(int i = 0;i < matrix.length;i++)
+                if(matrix[i][0] == 0)
+                    firstColZero = true;
+            for(int j = 0;j < matrix[0].length;j++)
+                if(matrix[0][j] == 0)
+                    firstRowZero = true;
+            for(int i = 1;i < matrix.length;i++)
+                for(int j = 1;j < matrix[0].length;j++)
+                    if(matrix[i][j] == 0)
+                        matrix[i][0] = matrix[0][j] = 0;
+            for(int i = 1;i < matrix.length;i++)
+                if(matrix[i][0] == 0)
+                    for(int j = 0;j < matrix[0].length;j++)
+                        matrix[i][j] = 0;
+            for(int j = 1;j < matrix[0].length;j++)
+                if(matrix[0][j] == 0)
+                    for(int i = 0;i < matrix.length;i++)
+                        matrix[i][j] = 0;
+            if(firstColZero)
+                for(int i = 0;i < matrix.length;i++)
+                    matrix[i][0] = 0;
+            if(firstRowZero)
+                for(int j = 0;j < matrix[0].length;j++)
+                    matrix[0][j] = 0;
+                    
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python O(1) space 11 lines solution
+**Java**
+
+    public void setZeroes(int[][] matrix) {
+        int m = matrix.length, n = matrix[0].length, k = 0;
+        // First row has zero?
+        while (k < n && matrix[0][k] != 0) ++k;
+        // Use first row/column as marker, scan the matrix
+        for (int i = 1; i < m; ++i)
+            for (int j = 0; j < n; ++j)
+                if (matrix[i][j] == 0)
+                    matrix[0][j] = matrix[i][0] = 0;
+        // Set the zeros
+        for (int i = 1; i < m; ++i)
+            for (int j = n - 1; j >= 0; --j)
+                if (matrix[0][j] == 0 || matrix[i][0] == 0)
+                    matrix[i][j] = 0;
+        // Set the zeros for the first row
+        if (k < n) Arrays.fill(matrix[0], 0);
+    }
+
+**Python**
+
+    def setZeroes(self, matrix):
+        # First row has zero?
+        m, n, firstRowHasZero = len(matrix), len(matrix[0]), not all(matrix[0])
+        # Use first row/column as marker, scan the matrix
+        for i in xrange(1, m):
+            for j in xrange(n):
+                if matrix[i][j] == 0:
+                    matrix[0][j] = matrix[i][0] = 0
+        # Set the zeros
+        for i in xrange(1, m):
+            for j in xrange(n - 1, -1, -1):
+                if matrix[i][0] == 0 or matrix[0][j] == 0:
+                    matrix[i][j] = 0
+        # Set the zeros for the first row
+        if firstRowHasZero:
+            matrix[0] = [0] * n
+
+
+----------------------------------------------------------------------------------------------------
+Java easy to understand O(1) space solution with 2 passes
+    public class Solution {
+    
+    public void setZeroes(int[][] matrix) {
+        if(matrix==null || matrix.length==0){
+            return;
+        }
+        
+        boolean setFirstRowToZeroes = false;
+        boolean setFirstColumnToZeroes = false;
+        
+        //check if first column needs to be set to zero
+        for(int row=0;row<matrix.length;row++){
+            if(matrix[row][0] == 0){
+                setFirstColumnToZeroes=true;
+                break;
+            }
+        }
+        
+        //check if first row needs to be set to zero
+        for(int col=0;col<matrix[0].length;col++){
+            if(matrix[0][col] == 0){
+                setFirstRowToZeroes=true;
+                break;
+            }
+        }
+        
+        //mark columns and rows to be set to zero
+        for(int row=1;row<matrix.length;row++){
+            for(int col=1;col<matrix[0].length;col++){
+                if(matrix[row][col]==0){
+                    matrix[row][0]=0;
+                    matrix[0][col]=0;
+                }
+            }
+        }
+        
+        // make rows zero
+        for(int row=1;row<matrix.length;row++){
+            if(matrix[row][0]==0){
+                for(int col=1;col<matrix[0].length;col++){
+                    matrix[row][col]=0;
+                }
+            }
+        }
+        
+        // make columns zero
+        for(int col=1;col<matrix[0].length;col++){
+            if(matrix[0][col]==0){
+                for(int row=1;row<matrix.length;row++){
+                    matrix[row][col]=0;
+                }
+            }
+        }
+        
+        // zero out first row (if needed)
+        if(setFirstRowToZeroes){
+            for(int col=0;col<matrix[0].length;col++){
+                matrix[0][col]=0;
+            }
+        }
+        
+        // zero out first column (if needed)
+        if(setFirstColumnToZeroes){
+            for(int row=0;row<matrix.length;row++){
+                matrix[row][0]=0;
+            }
+        }
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Is there a better constant space solution?
+My solution is kind of hackish - accpeted. So, I want to know if there is a better constant space solution?
+
+I traverse the matrix and if I find a zero, I replace all the elements, except the 0 elements, of the corresponding row and column with -1. Finally I make all the -1 to 0.
+
+This algorithm would fail if the matrix has -1s. 
+
+        void setZeroes(vector<vector<int> > &matrix) {
+        
+        int i,j,k,m,n;
+        
+        m = matrix.size();
+        n = matrix[0].size();
+        
+        for(i=0;i<m;i++)
+            for(j=0;j<n;j++)
+                if(matrix[i][j]==0)
+                {
+                    for(k=0;k<n;k++)
+                        if(matrix[i][k]!=0)
+                            matrix[i][k] = -1;
+                    for(k=0;k<m;k++)
+                        if(matrix[k][j]!=0)
+                            matrix[k][j] = -1;
+                }
+        
+        for(i=0;i<m;i++)
+            for(j=0;j<n;j++)
+                if(matrix[i][j]==-1)
+                   matrix[i][j]=0; 
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA constant space solution (Hint: use space inside the matrix)
+An easy way to solve this problem is to use extra O(m + n) space, storing the zero row and column indices. 
+
+We can improve it by not using the extra O(m + n) space, instead, we can use the space inside that input matrix (inspired by **Shangrila**'s solution, which use the first row and column for storage).
+
+In this solution, at the beginning, I find the first zero element, and use that row and column as the temp place for storing the other zero element indices. After we get all the zero indices, then set the corresponding row and columns to zero. Please see the code below.
+
+    public void setZeroes(int[][] matrix) {
+        int rowTemp = -1;   // select a row to store the column indices for the zero element
+        int colTemp = -1;   // select a column to store the row indices for the zero element
+        
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] == 0) {
+                    // find the first zero element
+                    if (rowTemp == -1) {
+                        rowTemp = i;
+                        colTemp = j;
+                    }
+                    // update indice in the row and column temp
+                    else {
+                        matrix[rowTemp][j] = 0;
+                        matrix[i][colTemp] = 0;
+                    }
+                }
+            }
+        }
+        // no zero in the matrix
+        if (rowTemp == -1)
+            return;
+        // set rows to zero
+        for (int i = 0; i < matrix.length; i++) {
+            if (i == rowTemp)   // skip the temp row
+                continue;
+            if (matrix[i][colTemp] == 0) {
+                for (int j = 0; j < matrix[0].length; j++)
+                    matrix[i][j] = 0;
+            }
+        }
+        // set columns to zero
+        for (int j = 0; j < matrix[0].length; j++) {
+            if (matrix[rowTemp][j] == 0) {
+                for (int i = 0; i < matrix.length; i++)
+                    matrix[i][j] = 0;
+            }
+        }
+        // set the final temp row to zero
+        for (int j = 0; j < matrix[0].length; j++)
+            matrix[rowTemp][j] = 0;
+    }
+
+----------------------------------------------------------------------------------------------------
+In-place solution using constant space in C++, best submission
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) 
+    {
+        if(matrix.empty()) return ;
+        int rowSize = matrix.size(), colSize = matrix[0].size();
+        bool firstRow = false, firstCol = false;
+        for(int c = 0; c < colSize; ++c) if(matrix[0][c] == 0) firstRow = true;
+        for(int r = 0; r < rowSize; ++r) if(matrix[r][0] == 0) firstCol = true;
+        for(int r = 1; r < rowSize; ++r)
+            for(int c = 1; c < colSize; ++c)
+                if(matrix[r][c] == 0) matrix[0][c] = matrix[r][0] = 0;
+        for(int c = 1; c < colSize; ++c) 
+            if(matrix[0][c] == 0)
+                for(int r = 1; r < rowSize; ++r)
+                    matrix[r][c] = 0;
+        for(int r = 1; r < rowSize; ++r) 
+            if(matrix[r][0] == 0)
+                for(int c = 1; c < colSize; ++c)
+                    matrix[r][c] = 0;
+        if(firstRow) for(int c = 0; c < colSize; ++c) matrix[0][c] = 0;
+        if(firstCol) for(int r = 0; r < rowSize; ++r) matrix[r][0] = 0;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My c++ solution , use O(1)space and 84ms
+    class Solution {
+    public:
+        void setZeroes(vector<vector<int>>& matrix) {
+            int m = matrix.size();
+            int n = matrix[0].size();
+            
+            if(m==0 || n==0) return;
+            int row = -1, col = -1;
+            for(int i=0; i<m; i++){
+                if(row != -1) break;
+                for(int j=0; j<n; j++){
+                    if(matrix[i][j] == 0){
+                        row = i;
+                        col = j;
+                        break;
+                    }
+                }
+            }
+            if(row == -1) return;
+            for(int i=0; i<m; i++){
+                for(int j=0; j<n; j++){
+                    if(matrix[i][j] == 0){
+                        matrix[i][col] = 0;
+                        matrix[row][j] = 0;
+                    }
+                }
+            }
+            for(int i=0; i<m; i++){
+                if(i == row) continue;
+                if(matrix[i][col] == 0){
+                    for(int j=0; j<n; j++) matrix[i][j] = 0;
+                }
+            }
+            for(int j=0; j<n; j++){
+                if(j == col) continue;
+                if(matrix[row][j] == 0){
+                    for(int i=0; i<m; i++) matrix[i][j] = 0;
+                }
+            }
+            for(int i=0; i<m; i++) matrix[i][col] = 0;
+            for(int j=0; j<n; j++) matrix[row][j] = 0;
+        }
+    };`enter code here`
+
+----------------------------------------------------------------------------------------------------
+My JAVA solution, easy to understand
+    public void setZeroes(int[][] matrix) {
+        int m=matrix.length;
+        int n=matrix[0].length;
+        int[] row = new int[m];
+        int[] col = new int[n];
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(matrix[i][j]==0){
+                    row[i]=1;
+                    col[j]=1;
+                }
+            }
+        }
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(row[i]==1||col[j]==1){
+                    matrix[i][j]=0;
+                }
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

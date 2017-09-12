@@ -1,0 +1,473 @@
+Straight forward Java simple solution
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+        if (s.length() == 0) return true;
+        int indexS = 0, indexT = 0;
+        while (indexT < t.length()) {
+            if (t.charAt(indexT) == s.charAt(indexS)) {
+                indexS++;
+                if (indexS == s.length()) return true;
+            }
+            indexT++;
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+3 lines C
+bool isSubsequence(char* s, char* t) {
+    while (*t)
+        s += *s == *t++;
+    return !*s;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Binary search solution for follow-up with detailed comments
+    // Follow-up: O(N) time for pre-processing, O(Mlog?) for each S.
+    // Eg-1. s="abc", t="bahbgdca"
+    // idx=[a={1,7}, b={0,3}, c={6}]
+    //  i=0 ('a'): prev=1
+    //  i=1 ('b'): prev=3
+    //  i=2 ('c'): prev=6 (return true)
+    // Eg-2. s="abc", t="bahgdcb"
+    // idx=[a={1}, b={0,6}, c={5}]
+    //  i=0 ('a'): prev=1
+    //  i=1 ('b'): prev=6
+    //  i=2 ('c'): prev=? (return false)
+    public boolean isSubsequence(String s, String t) {
+        List<Integer>[] idx = new List[256]; // Just for clarity
+        for (int i = 0; i < t.length(); i++) {
+            if (idx[t.charAt(i)] == null)
+                idx[t.charAt(i)] = new ArrayList<>();
+            idx[t.charAt(i)].add(i);
+        }
+        
+        int prev = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (idx[s.charAt(i)] == null) return false; // Note: char of S does NOT exist in T causing NPE
+            int j = Collections.binarySearch(idx[s.charAt(i)], prev);
+            if (j < 0) j = -j - 1;
+            if (j == idx[s.charAt(i)].size()) return false;
+            prev = idx[s.charAt(i)].get(j) + 1;
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+2 lines Python
+def isSubsequence(self, s, t):
+    t = iter(t)
+    return all(c in t for c in s)
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand binary search solution
+from collections import defaultdict
+from bisect import bisect_left
+class Solution(object):
+    
+    def createMap(self, s):
+        # create a map. key is char. value is index of apperance in acending order. 
+        posMap = defaultdict(list)
+        for i, char in enumerate(s):
+            posMap[char].append(i)
+        return posMap
+        
+    
+    def isSubsequence(self, s, t):
+        """
+        :type s: str
+        :type t: str
+        :rtype: bool
+        """
+        posMap = self.createMap(t)
+        # lowBound is the minimum index the current char has to be at.
+        lowBound = 0
+        for char in s:
+            if char not in posMap: return False
+            charIndexList = posMap[char]
+            # try to find an index that is larger than or equal to lowBound
+            i = bisect_left(charIndexList, lowBound)
+            if i == len(charIndexList): return False
+            lowBound = charIndexList[i] + 1
+        return True
+
+
+----------------------------------------------------------------------------------------------------
+Java code for the follow-up question
+/**
+ * Follow-up
+ * If we check each sk in this way, then it would be O(kn) time where k is the number of s and t is the length of t. 
+ * This is inefficient. 
+ * Since there is a lot of s, it would be reasonable to preprocess t to generate something that is easy to search for if a character of s is in t. 
+ * Sounds like a HashMap, which is super suitable for search for existing stuff. 
+ */
+public boolean isSubsequence(String s, String t) {
+    if (s == null || t == null) return false;
+    
+    Map<Character, List<Integer>> map = new HashMap<>(); //<character, index>
+    
+    //preprocess t
+    for (int i = 0; i < t.length(); i++) {
+        char curr = t.charAt(i);
+        if (!map.containsKey(curr)) {
+            map.put(curr, new ArrayList<Integer>());
+        }
+        map.get(curr).add(i);
+    }
+    
+    int prev = -1;  //index of previous character
+    for (int i = 0; i < s.length(); i++) {
+        char c = s.charAt(i);
+        
+        if (map.get(c) == null)  {
+            return false;
+        } else {
+            List<Integer> list = map.get(c);
+            prev = binarySearch(prev, list, 0, list.size() - 1);
+            if (prev == -1) {
+                return false;
+            }
+            prev++;
+        }
+    }
+    
+    return true;
+}
+
+private int binarySearch(int index, List<Integer> list, int start, int end) {
+    while (start <= end) {
+        int mid = start + (end - start) / 2;
+        if (list.get(mid) < index) {
+            start = mid + 1;
+        } else {
+            end = mid - 1;
+        }
+    }
+    
+    return start == list.size() ? -1 : list.get(start);
+}
+
+----------------------------------------------------------------------------------------------------
+Java. Only 2ms. Much faster than normal 2 pointers.
+public class Solution 
+{
+    public boolean isSubsequence(String s, String t) 
+    {
+        if(t.length() < s.length()) return false;
+        int prev = 0;
+        for(int i = 0; i < s.length();i++)
+        {
+            char tempChar = s.charAt(i);
+            prev = t.indexOf(tempChar,prev);
+            if(prev == -1) return false;
+            prev++;
+        }
+        
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 4 lines simple solution
+bool isSubsequence(string s, string t) {
+    int sLen = s.length(), sIdx = 0, tLen = t.length();
+    for (int i=0; i<tLen && sIdx<sLen; i++) 
+        if (t[i]==s[sIdx]) sIdx++;
+    return sIdx==sLen;
+}
+
+----------------------------------------------------------------------------------------------------
+Python simple solution
+class Solution(object):
+    def isSubsequence(self, s, t):
+        """
+        :type s: str
+        :type t: str
+        :rtype: bool
+        """
+        if len(s) == 0:
+            return True
+        if len(t) == 0:
+            return False 
+        i, j = 0, 0
+        while i < len(s) and j < len(t):
+            if s[i] == t[j]:
+                i += 1
+            j += 1
+        return True if i == len(s) else False
+
+
+----------------------------------------------------------------------------------------------------
+Binary search solution to cope with input with many Ss(with explanation)
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        //build a record the index of each char in t
+        vector<vector<int>> record(26);
+        //add indexs
+        for(int i = 0; i < t.size(); i++) {
+            record[t[i]-'a'].push_back(i);
+        }
+        //check if each char in s is in the legal place
+        int index = -1;
+        for(int i = 0; i < s.size(); i++) {
+            auto iter = upper_bound(record[s[i]-'a'].begin(), record[s[i]-'a'].end(), index);
+            if(iter == record[s[i]-'a'].end()) return false;
+            index = *iter;
+        }
+        return true;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+java 1ms solution
+public boolean isSubsequence(String s, String t) {
+        int fromIndex = 0;
+        for (char c : s.toCharArray()) {
+            fromIndex = t.indexOf(c, fromIndex);
+            if (fromIndex++ < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Do we really need DP, BS?
+    if (t.length() == 0 && s.length() == 0) return true;
+    if (t.length() == 0) return false;
+    if (s.length() == 0) return true;
+    
+    int target_index = 0;
+    for (int i = 0; i < t.length(); i ++) {
+        if (s.charAt(target_index) == t.charAt(i)) {
+            if (target_index == s.length()-1) return true;
+            target_index ++;
+        }
+    }
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ code as well as the Followup solution
+class Solution {
+public:
+    Solution(string t):target(t) {
+        for(int i = 0; i < t.length(); ++i) {
+            posMap[t[i] - 'a'].push_back(i);
+        }
+    }
+    
+    vector<bool> isSubsequence(vector<string> strs) {
+        int pre = -1;
+        int index[26];
+        vector<bool> ans;
+        for(string str: strs) {
+            memset(index, -1, sizeof(index));
+            pre = -1;
+            int i = 0;
+            for(;i < str.size(); ++i) {
+                int j = str[i] - 'a';
+                if(posMap.find(j) == posMap.end() || posMap[j].size()<= index[j] + 1 || posMap[j][index[j] + 1] <= pre) {
+                    ans.push_back(false);
+                    break;
+                }
+                pre = posMap[j][index[j] + 1];
+                index[j]++;
+            }
+            if(i == str.size()) ans.push_back(true);
+        }
+        return ans;
+    }
+    
+private:
+    string target;
+    unordered_map<int, vector<int> > posMap;
+};
+
+
+
+
+----------------------------------------------------------------------------------------------------
+3ms Java solution
+
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+	        
+	        int j = 0;
+	        int i = 0;
+	        for(;i<s.length();i++)
+	        {
+	            
+	            char c = s.charAt(i);
+	       
+	            if(t.indexOf(c,j) ==-1) return false;
+	            else j = t.indexOf(c,j)+1;
+	            
+	        }
+	        return i==s.length();
+	    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+HashMap + Binary Search solution for the follow up question
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+        HashMap<Character, List<Integer>> map = new HashMap<>();
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            if (!map.containsKey(c)){
+                map.put(c, new ArrayList<>());
+            }
+            map.get(c).add(i);
+        }
+        
+        int prev = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!map.containsKey(c)) return false;
+            int j = binarySearch(map.get(c), prev);
+            if (j == map.get(c).size()) return false;
+            prev = map.get(c).get(j) + 1;//search larger index
+        }
+        return true;
+    }
+    
+    private int binarySearch(List<Integer> list, int target){
+        int start = 0;
+        int end = list.size()-1;
+        while(start<=end){
+            int middle = start + (end-start)/2;
+            if(list.get(middle) < target){
+                start = middle+1;
+            }else if(list.get(middle) > target){
+                end = middle-1;
+            }else{
+                return middle;
+            }
+        }
+        return start;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Two pointers easy solution (C++)
+    bool isSubsequence(string s, string t) {
+        int sp = 0, tp = 0;
+        while (tp < t.length()) {
+            if (s[sp] == t[tp])
+                sp++;
+            tp++;
+        }
+        return sp == s.length();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java easy-understanding recursion solution 38ms
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+        if (s == null || s.length() == 0) return true;
+        for (int i = 0; i < t.length(); i += 1) {
+            if (t.charAt(i) == s.charAt(0)) return isSubsequence(s.substring(1), t.substring(i + 1));
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+A possible solution regarding to &quot;t is very long&quot; and the follow up &quot;lots of incoming S&quot;
+public class Solution {
+    // Position index list for each letter appearing in t. 
+    // These lists can be reused for multiple queries with different input string s.
+    List<List<Integer>> charIndexLists = new ArrayList<List<Integer>>();
+    
+    public boolean isSubsequence(String s, String t) {
+        // Create position index list for each letter in t.
+        // IMPORTANT: This part only need to be done ONCE for multiple queries.
+        for (int i=0;i<26;i++){
+            charIndexLists.add(new ArrayList<Integer>());
+        }
+        char[] tCharArr = t.toCharArray();
+        for (int i=0;i<t.length();i++){
+            charIndexLists.get(tCharArr[i]-'a').add(i);
+        }
+        
+        // Check if we can find a feasible sequence of indexs in charIndexLists mathcing to s.
+        char[] sCharArr = s.toCharArray();
+        int[] pLists = new int[26];
+        int endPos = -1;
+        for (int i=0;i<s.length();i++){
+            // Find out the next available position of current char, i.e., 
+            // sCharArr[i] should appeear somewhere after endPos. 
+            int curIndex = sCharArr[i]-'a';
+            List<Integer> curIndexList = charIndexLists.get(curIndex);
+            while (pLists[curIndex] < curIndexList.size() && curIndexList.get(pLists[curIndex]) <= endPos){
+                pLists[curIndex]++;
+            }
+            // Cannot find any required char that appears after endPos, fails
+            if (pLists[curIndex] == curIndexList.size()){
+                return false;
+            }
+            // Update endPos.
+            endPos = curIndexList.get(pLists[curIndex]);
+        }
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java binary search using TreeSet got TLE
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+        int sLen = s.length(), tLen = t.length();
+        if(sLen == 0) return true;
+        if(sLen > tLen) return false;
+        
+        Map<Character, TreeSet<Integer>> map = new HashMap<>();
+        for(int i = 0; i < tLen; i++) {
+            char c = t.charAt(i);
+            if(!map.containsKey(c)) map.put(c, new TreeSet<Integer>());
+            map.get(c).add(i);
+        }
+        
+        int lowerIndex = -1;
+        for(int j = 0; j < sLen; j++) {
+            char c = s.charAt(j);
+            if(!map.containsKey(c)) return false;
+            
+            Integer index = map.get(c).higher(lowerIndex);
+            if(index == null) return false;
+            lowerIndex = index;
+        }
+        
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 7 lines solution 38ms
+public class Solution {
+    public boolean isSubsequence(String s, String t) {
+        int p1 = 0, p2 = 0;
+        while(p1 < s.length() && p2 < t.length()){
+            if(s.charAt(p1) == t.charAt(p2))
+                p1++;
+            p2++;
+        }
+        return p1 == s.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

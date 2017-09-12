@@ -1,0 +1,461 @@
+JAVA 9 lines DP solution, easy to understand with improvement to O(N) space complexity.
+
+public boolean PredictTheWinner(int[] nums) {
+    if (nums == null) { return true; }
+    int n = nums.length;
+    if ((n & 1) == 0) { return true; } // Improved with hot13399's comment.
+    int[] dp = new int[n];
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = i; j < n; j++) {
+            if (i == j) {
+                dp[i] = nums[i];
+            } else {
+                dp[j] = Math.max(nums[i] - dp[j], nums[j] - dp[j - 1]);
+            }
+        }
+    }
+    return dp[n - 1] >= 0;
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java 1 Line Recursion Solution
+public class Solution {
+    public boolean PredictTheWinner(int[] nums) {
+        return helper(nums, 0, nums.length-1, new Integer[nums.length][nums.length])>=0;
+    }
+    private int helper(int[] nums, int s, int e, Integer[][] mem){    
+        if(mem[s][e]==null)
+            mem[s][e] = s==e ? nums[e] : Math.max(nums[e]-helper(nums,s,e-1,mem),nums[s]-helper(nums,s+1,e,mem));
+        return mem[s][e];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+DP O(n^2)  + MIT OCW solution explanation
+class Solution {
+public:
+    bool PredictTheWinner(vector<int>& nums) {
+        if(nums.size()% 2 == 0) return true;
+        
+        int n = nums.size();
+        vector<vector<int>> dp(n, vector<int>(n, -1));
+        
+        int myBest = utill(nums, dp, 0, n-1);
+        return 2*myBest >= accumulate(nums.begin(), nums.end(), 0);
+    }
+    
+    int utill(vector<int>& v, vector<vector<int>> &dp, int i, int j){
+        if(i > j) return 0;
+        if(dp[i][j] != -1) return dp[i][j];
+        
+        int a = v[i] + min(utill(v,dp, i+1, j-1), utill(v, dp, i+2, j));
+        int b = v[j] + min(utill(v,dp,i, j-2), utill(v,dp, i+1, j-1));
+        dp[i][j] = max(a, b);
+                        
+        return dp[i][j];
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ DP solution with explanation
+class Solution {
+public:
+    bool PredictTheWinner(vector<int>& nums) {
+        int n = nums.size();
+        vector<vector<int>> dp(n, vector<int>(n)); // use to keep the score gap between player1 and player2
+        for (int i = 0; i < n; i++) dp[i][i] = nums[i];
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j+i < n; j++) {
+                dp[j][j+i] = max(nums[j+i]-dp[j][j+i-1], nums[j]-dp[j+1][j+i]);
+            }
+        }
+        return dp[0][n-1] >= 0; // player1 get more score points than player2
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Clean 3ms C++ DP solution with detailed explanation
+    bool PredictTheWinner(vector<int>& nums) {
+        vector<vector<int>> score(nums.size(), vector<int>(nums.size()));
+        vector<int> prefixSum(nums.size()+1);
+        prefixSum[0] = 0;
+        for (int i=0; i<nums.size(); i++) {
+            prefixSum[i+1] = prefixSum[i] + nums[i];
+        }
+        
+        for (int len=1; len<=nums.size(); len++) {
+            for (int lhs=0; lhs+len-1<nums.size(); lhs++) {
+                int rhs = lhs + len - 1;
+                if (lhs == rhs) {
+                    score[lhs][rhs] = nums[lhs];
+                } else if (lhs == rhs-1) {
+                    score[lhs][rhs] = max(nums[lhs], nums[rhs]);
+                } else {
+                    int pickLeft = nums[lhs] + prefixSum[rhs+1] - prefixSum[lhs+1] - score[lhs+1][rhs];
+                    int pickRight = nums[rhs] + prefixSum[rhs] - prefixSum[lhs] - score[lhs][rhs-1];
+                    score[lhs][rhs] = max(pickLeft, pickRight);
+                }
+            }
+        }
+        
+        return score[0][nums.size()-1] >= prefixSum.back()/2 + prefixSum.back()%2;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my 9ms recursive solution with explanation
+public boolean PredictTheWinner(int[] nums) {
+	return first(0, 0, nums, 0, nums.length-1);
+}
+
+private boolean first(int s1, int s2, int[] nums, int start, int end) {
+	if (start > end ){
+		if (s1 >= s2) return true;
+		else return false;
+	}
+	return !second(s1+nums[start], s2, nums, start+1, end) || !second(s1+nums[end], s2, nums, start, end-1);
+}
+
+private boolean second(int s1, int s2, int[] nums, int start, int end) {
+	if (start > end ){
+		if (s1 < s2) return true;
+		else return false;
+	}
+	return !first(s1, s2+nums[start], nums, start+1, end) || !first(s1, s2+nums[end], nums, start, end-1);
+}
+
+
+----------------------------------------------------------------------------------------------------
+java DP solution with explanation
+public boolean PredictTheWinner(int[] nums) {
+        int length = nums.length;
+        
+        int sum = 0;
+        for(int num : nums) sum+=num;
+        
+        int[][] dp = new int[length][length];
+        
+        for(int j = 0 ; j< length ; j++)
+        {
+            int curSum = 0;
+            for(int i = j ; i>= 0 ; i--)
+            {
+                curSum+=nums[i];
+                if(i == j) dp[i][j]=nums[j];
+                else
+                {
+                    dp[i][j]=Math.max(curSum-dp[i][j-1], curSum-dp[i+1][j]);
+                }
+            }
+        }
+        return dp[0][length-1]*2>=sum;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Explanation of the question
+<p>I did not understand what the question was asking exactly during the contest. I came up with multiple solutions based on what I thought was being asked, but they were all incorrect. Looks like I finally understood it. I wanted to clarify the question for people who may be confused like me.</p>
+<p>The setup should be easy to understand. p1 and p2 take turns in picking a number from the input array, either the first item or the last item. When an item is picked by one of the player, that item cannot be used anymore; you can imagine it being removed from the array.</p>
+<p>What made me confused was the part &#34;... predict whether player 1 is the winner. You can assume each player plays to maximize his score.&#34; I was not sure what maximizing the score meant. Here is what it means.</p>
+<p>Let&#39;s say the initial array is &#91;1, 5, 2&#93;. It&#39;s p1&#39;s turn. p1 will pick either 1 or 2, but it wants to make sure that whichever one he picks will maximize his gain at the end. What if p1 picks 1? Now the array is &#91;5, 2&#93; and it&#39;s p2&#39;s turn to pick. p2 looks at the current array and thinks about how to maximize his gain at the end. Obviously, picking 5 will maximize his gains. So, p2 will pick 5, leaving 2 for p1. Resulting scores for p1 and p2 are 3 and 5 respectively. This one did not work out for p1.</p>
+<p>What if p1 picks 2 at the beginning? Then the array becomes &#91;1, 5&#93;. Again, p2 looks at the current array and thinks about how to maximize his gain at the end. Picking 5 will maximize his gains. So, p2 will pick 5, leaving 1 for p1. Resulting scores for p1 and p2 are 3 and 5 respectively. This one did not work out for p1 either. Those were the only two possibilities for game play. p1 can never win.</p>
+<p>What if the input array is &#91;1, 5, 233, 7&#93;? For this one, let me list all possibilities and explain which ones are valid and which ones are not.</p>
+<p><img src="/uploads/files/1485064725743-upload-5137006d-197e-47b8-92a3-276224ff6f97.png" alt="0_1485064722628_upload-5137006d-197e-47b8-92a3-276224ff6f97" class="img-responsive img-markdown"/></p>
+<p>What clarified the question for me was realizing that in each step the current player takes a look at the current array as a whole and tries to make the best pick for maximizing it&#39;s gain (taking into consideration what the other player may do).</p>
+<p>I hope this helps someone.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution with explanation
+    public boolean PredictTheWinner(int[] nums) {
+        if(nums.length <= 2) return true;
+        int n = nums.length;
+        int[] sum = new int[n+1];
+        sum[0] = 0;
+        for(int i = 1; i <= n; i ++) {
+            sum[i] = sum[i-1] + nums[i-1];
+        }
+        
+        int[][] dp = new int[n][n];
+        for(int len = 1; len < n; len ++) {
+            for(int i = 0; i + len < n; i ++) {
+                int j = i + len;
+                if(len == 1) dp[i][j] = Math.max(nums[i], nums[j]);
+                else {
+                    int can1 = sum[j+1] - sum[i+1] - dp[i+1][j] + nums[i];
+                    int can2 = sum[j] - sum[i] - dp[i][j-1] + nums[j];
+                    dp[i][j] = Math.max(can1, can2);
+                }
+            }
+        }
+        return sum[n] - dp[0][n-1] <= dp[0][n-1];
+    }
+    
+
+
+----------------------------------------------------------------------------------------------------
+Python with memorization &#91;48 ms&#93;
+class Solution(object):
+    def PredictTheWinner(self, nums):
+        def check(left, right, memo):
+            if left > right:
+                return 0
+            if left == right:
+                return nums[left]
+            if not (left, right) in memo:
+                ss = sum(nums[left: right + 1])
+                l, r = ss - check(left + 1, right, memo) + nums[left], ss - check(left, right - 1, memo) + nums[right]
+                memo[(left, right)] = max(l, r)
+            return memo[(left, right)]
+
+        s = sum(nums)
+        c1 = check(0, len(nums) - 1, {})
+        return c1 >= s - c1
+
+
+----------------------------------------------------------------------------------------------------
+C 1 line recursive solution
+bool helper(int* nums, int numsSize, int point, bool round){
+    return !numsSize ? 
+    point>0 || round && !point :
+    !helper(nums+1, numsSize-1, -(point + nums[0]), !round) || !helper(nums, numsSize-1, -(point + nums[numsSize-1]), !round);
+}
+
+bool PredictTheWinner(int* nums, int numsSize) {
+    return helper(nums, numsSize, 0, true);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 7ms recursion Solution with explaination, easy to understand
+public class Solution {
+    public boolean PredictTheWinner(int[] nums) {
+        if(nums.length <= 1){
+            return true;
+        }
+        return canWin(nums, 0, nums.length-1, 0, 0);
+    }
+    private boolean canWin(int[] nums, int left, int right, int fistScore, int secondScore){
+        // assume fistScore is the score of current player (to pick in this round)
+        if(left > right){
+            return fistScore >= secondScore;
+        }
+        fistScore += nums[left++]; //  pick left
+        if(!canWin(nums, left, right, secondScore, fistScore)){ 
+        // check if next player can win. if next player cannot win, return true, which means the current player can win 
+            return true;
+        }
+        // backtrack
+        left--;
+        fistScore -= nums[left];
+        // pick right;
+        fistScore += nums[right--];
+        if(!canWin(nums, left, right, secondScore, fistScore)){
+        //check if next player can win
+            return true;
+        }
+        right++;
+        fistScore -= nums[right];
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+java recursive self explanatory solution
+public boolean PredictTheWinner(int[] nums) {
+
+        if (nums == null || nums.length < 1) {
+            return false;
+        }
+
+        int totalSum = 0;
+
+        for (int i = 0; i < nums.length; i++) {
+            totalSum += nums[i];
+        }
+        int firstPlayerSum = helper(nums, 0, nums.length - 1);
+        int secondPlayerSum = totalSum - firstPlayerSum;
+
+        return firstPlayerSum >= secondPlayerSum;
+    }
+
+    private int helper(int[] nums, int start, int end) {
+
+        if (start > end) {
+            return 0;
+        }
+
+        int first = nums[start] + Math.min(helper(nums, start + 2, end), helper(nums, start + 1, end - 1));
+        int last = nums[end] + Math.min(helper(nums, start + 1, end - 1), helper(nums, start, end - 2));
+
+        return Math.max(first, last);
+    }
+
+----------------------------------------------------------------------------------------------------
+Java DP solutions with O(N^2) and O(N) space
+public class Solution {
+    public boolean PredictTheWinner(int[] nums) {
+        if(nums == null || nums.length == 0) {
+            return true;
+        }
+        
+        int n = nums.length;
+        
+        //space O(n) solution:
+        int dp[] = Arrays.copyOf(nums, n);
+        
+        for(int len = 1; len < n; len++) {
+            for(int i = 0; i < n - len; i++) {
+                dp[i] = Math.max(nums[i] - dp[i+1], nums[i+len] - dp[i]);
+            }
+        }
+        return dp[0] >= 0;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Similar to Longest Palindromic SubSequence
+public boolean PredictTheWinner(int[] nums) {
+        int n = nums.length;
+        int[][] dp = new int[n][n];
+        
+        for (int i = 0; i < n; i++) { dp[i][i] = nums[i]; }
+        
+        for (int len = 2; len <= n; len++) {
+            for (int i = 0; i+len-1 < n ; i++) {
+                int j = i + len-1;
+                dp[i][j] = Math.max(nums[i] - dp[i + 1][j], nums[j] - dp[i][j - 1]);
+            }
+        }
+        return dp[0][n - 1] >= 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+easy python dp solution without dict
+#         p1 for player1 sum, p2 for player2 sum, turn == 0 for player1's turn
+        def dp(nums,p1,p2,turn):
+            if not nums:
+                return p1 >= p2
+            if turn:
+                return dp(nums[1:],p1,p2+nums[0],0) and dp(nums[:-1],p1,p2+nums[-1],0)
+            return dp(nums[1:],p1+nums[0],p2,1) or dp(nums[:-1],p1+nums[-1],p2,1)
+        return dp(nums,0,0,0)
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(N) Solution
+class Solution {
+public:
+    bool PredictTheWinner(vector<int>& nums) {
+        int N = nums.size();
+        if (N % 2 == 0)
+            return true;
+        int sum_odd = 0, sum_even = 0;
+        for (int i = 0; i < N; i++) {
+            if (i & 1)
+                sum_even += nums[i];
+            else
+                sum_odd += nums[i];
+        }
+        if (nums[0] >= abs(sum_even - sum_odd + nums[0]) || nums[N - 1] >= abs(sum_even - sum_odd + nums[N - 1]))
+            return true;
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Most readable C++ Recursion Version, 3ms!
+class Solution {
+  private:
+    enum TURN { A, B };
+
+  public:
+    bool PredictTheWinner(const vector<int> &nums) {
+        if (nums.size() <= 1) {
+            return true;
+        }
+        return dp(nums, 0, nums.size() - 1, 0, 0, A);
+    }
+
+  private:
+    bool dp(const vector<int> &nums, int from, int to_hasEnd, int score_A,
+            int score_B, TURN turn) {
+        if (from > to_hasEnd) {
+            return score_A > score_B;
+        }
+
+        switch (turn) {
+        case A:
+            return dp(nums, from + 1, to_hasEnd, score_A + nums[from], score_B,
+                      B) ||
+                   dp(nums, from, to_hasEnd - 1, score_A + nums[to_hasEnd],
+                      score_B, B);
+        case B:
+            return dp(nums, from + 1, to_hasEnd, score_A, score_B + nums[from],
+                      A) &&
+                   dp(nums, from, to_hasEnd - 1, score_A,
+                      score_B + nums[to_hasEnd], A);
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+dp by bfs+dfs in python
+class Solution(object):
+    def PredictTheWinner(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        cache={}
+        dict3={}
+        thre=sum(nums)/2.0
+        if thre==0:return True
+        def maximum(a,b):#[a,b)
+            #print a,"@",b
+            if (a,b) in cache:return cache[(a,b)]
+            if a>=b:res=0
+            elif a==b-1:res=nums[a]
+            elif b-a==2:res=max(nums[a],nums[a+1])
+            else :res=max(min(nums[a]+maximum(a+1,b-1),nums[a]+maximum(a+2,b)),min(nums[b-1]+maximum(a+1,b-1),nums[b-1]+maximum(a,b-2)))
+            cache[(a,b)]=res
+            #print cache
+            return res
+        for i in range(0,len(nums)-(len(nums)>>1)):
+            maximum(i,i+(len(nums)>>1))
+        if maximum(0,len(nums))>=thre:return True
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Recursion DP. Short and easy to understand.
+    public boolean PredictTheWinner(int[] nums) {
+        return (recurse(nums,0,nums.length-1,new int[nums.length][nums.length])>=0);
+    }
+    public int recurse(int[] nums,int start,int end,int[][] dp){
+        if(start==end){
+            return nums[start];
+        }
+        if(dp[start][end]!=0){
+            return dp[start][end];
+        }
+        
+        int front=0,back=0;
+        front=recurse(nums,start+1,end,dp);
+        back=recurse(nums,start,end-1,dp);
+        
+        dp[start][end]=Math.max(nums[start]-front,nums[end]-back);
+        return dp[start][end];
+    }
+
+
+----------------------------------------------------------------------------------------------------

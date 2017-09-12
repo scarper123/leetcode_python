@@ -1,0 +1,287 @@
+Java O(n) Time O(1) Space
+public int findUnsortedSubarray(int[] A) {
+    int n = A.length, beg = -1, end = -2, min = A[n-1], max = A[0];
+    for (int i=1;i<n;i++) {
+      max = Math.max(max, A[i]);
+      min = Math.min(min, A[n-1-i]);
+      if (A[i] < max) end = i;
+      if (A[n-1-i] > min) beg = n-1-i; 
+    }
+    return end - beg + 1;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Sort.
+public class Solution {
+    public int findUnsortedSubarray(int[] nums) {
+        int n = nums.length;
+        int[] temp = nums.clone();
+        Arrays.sort(temp);
+        
+        int start = 0;
+        while (start < n  && nums[start] == temp[start]) start++;
+        
+        int end = n - 1;
+        while (end > start  && nums[end] == temp[end]) end--;
+        
+        return end - start + 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Ideas behind the O(n) two-pass and one-pass solutions
+public int findUnsortedSubarray(int[] nums) {
+    int i = 0, j = -1, max = Integer.MIN_VALUE, min = Integer.MAX_VALUE;
+    
+    for (int l = 0, r = nums.length - 1; r >= 0; l++, r--) {
+        max = Math.max(max, nums[l]);
+        if (nums[l] != max) j = l;
+        
+        min = Math.min(min, nums[r]);
+        if (nums[r] != min) i = r;
+    }
+    
+    return (j - i + 1);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python 2 lines easy understand solution
+def findUnsortedSubarray(self, nums):
+        is_same = [a == b for a, b in zip(nums, sorted(nums))]
+        return 0 if all(is_same) else len(nums) - is_same.index(False) - is_same[::-1].index(False)
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution
+   int findUnsortedSubarray(vector<int>& nums) {
+        int shortest = 0;
+        
+        int left = 0, right = nums.size() - 1;
+        while (left < nums.size() - 1 && nums[left] <= nums[left + 1]) { left++; }
+        while (right > 0 && nums[right] >= nums[right - 1]) { right--; };
+        
+        if (right > left) {
+            int vmin = INT_MAX, vmax = INT_MIN;
+            for (int i = left; i <= right; ++i) {
+                if (nums[i] > vmax) {
+                    vmax = nums[i];
+                }
+                if (nums[i] < vmin) {
+                    vmin = nums[i];
+                }
+            }
+            
+            while (left >= 0 && nums[left] > vmin) { left--; };
+            while (right < nums.size() && nums[right] < vmax) { right++; };
+            
+            shortest = right - left - 1;
+        }
+        
+        return shortest;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code 2 Solution - Sort O(NlgN) &amp; max min vectors O(N)
+/**
+ *            /------------\
+ * nums:  [2, 6, 4, 8, 10, 9, 15]
+ * minr:   2  4  4  8   9  9  15
+ *         <--------------------
+ * maxl:   2  6  6  8  10 10  15
+ *         -------------------->
+ */
+class Solution {
+public:
+    int findUnsortedSubarray(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> maxlhs(n);   // max number from left to cur
+        vector<int> minrhs(n);   // min number from right to cur
+        for (int i = n - 1, minr = INT_MAX; i >= 0; i--) minrhs[i] = minr = min(minr, nums[i]);
+        for (int i = 0,     maxl = INT_MIN; i < n;  i++) maxlhs[i] = maxl = max(maxl, nums[i]);
+
+        int i = 0, j = n - 1;
+        while (i < n && nums[i] <= minrhs[i]) i++;
+        while (j > i && nums[j] >= maxlhs[j]) j--;
+
+        return j + 1 - i;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+c++ O(n) one-pass solution which beats almost
+end - start
+
+----------------------------------------------------------------------------------------------------
+Python runs slow but with time O(n) space O(1)
+class Solution(object):
+    def findUnsortedSubarray(self, nums):
+        nums = [float('-inf')] + nums + [float('inf')]
+        '''find left boundary'''
+        left = 0
+        while left<len(nums)-1 and nums[left]<=nums[left+1]:
+            left += 1
+        # return 0 if already sorted ascending
+        if left == len(nums)-1:
+            return 0
+        min_num = min(nums[left+1:])
+        while nums[left] > min_num:
+            left -= 1
+        '''find right boundary'''
+        right = len(nums)-1
+        while right>0 and nums[right-1]<=nums[right]:
+            right -= 1
+        # return 0 if sorted descending
+        if right == 0:
+            return 0
+        max_num = max(nums[:right])
+        while nums[right] < max_num:
+            right += 1
+        return right - left - 1
+
+
+----------------------------------------------------------------------------------------------------
+Java Sort Solution, easy to understand
+public class Solution {
+        public int findUnsortedSubarray(int[] nums) {
+            int begin  = nums.length - 1;
+            int end = nums.length - 1;
+
+            int[] sorted = nums.clone();
+            Arrays.sort(sorted);
+
+            for(int i = 0; i < nums.length; i++){
+                if(sorted[i] != nums[i]){
+                    begin = i;
+                    break;
+                }
+            }
+            for(int i = nums.length - 1; i > begin; i--){
+                if(sorted[i] != nums[i]){
+                    end = i;
+                    break;
+                }
+            }
+
+            return (end==begin)?0:(end-begin+1);
+        }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Sorting Solution - Find left most and right most mismatch
+    public int findUnsortedSubarray(int[] nums) {
+        int result  = 0;
+        int[] copy = Arrays.copyOf(nums, nums.length);
+        Arrays.sort(nums);
+        int l = 0, r = copy.length - 1;
+        while(l < r) {
+            if(copy[l] == nums[l]) l++;
+            if(copy[r] == nums[r]) r--;
+            if(copy[l] != nums[l] && copy[r] != nums[r]) break;
+        }
+        result = r - l + 1;
+        if(l == r) result = 0;
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution without sort
+    int left = 0, right = nums.length - 1;
+    
+    while (left < right  && nums[left] <= nums[left +1]) {
+    	left++;
+    }
+    
+    if (left >= right) {
+    	return 0;
+    }
+    
+    while (right > left && nums[right] >= nums[right-1]) {
+    	right--;
+    }
+    
+    int max = nums[left];
+    int min = nums[left];
+    for (int i = left + 1; i <= right; i++) {
+    	max = Math.max(max, nums[i]);
+    	min = Math.min(min, nums[i]);
+    }
+    
+    int s = left;
+    int e = right;
+    for (int i = 0; i < left; i++) {
+    	if (nums[i] > min) {
+    		s = i;
+    		break;
+    	}
+    }
+    
+    for (int i = nums.length - 1; i >right; i--) {
+    	if (nums[i] < max) {
+    		e = i;
+    		break;
+     	}
+    }
+    
+    return e - s + 1;
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution O(n) Simple Solution
+int findUnsortedSubarray(vector<int>& nums) {
+    if(nums.size() < 2) return 0;
+    int res = 0,start= 0,end = 0;
+    vector<int> temp = nums;
+    sort(temp.begin(),temp.end());
+    for(int i = 0 ; i < nums.size(); i++)
+    {
+        if(nums[i] != temp[i])
+        {
+            start = i;
+            break;
+        }
+    }
+    for(int i = nums.size()-1 ; i >= 0 ; i--)
+    {
+        
+        if(nums[i] != temp[i])
+        {
+            end = i;
+            break;
+        }
+    }
+    if(end < start || end  == start || start < 0) return 0;
+    res = end -start + 1;
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+4 lines Python via sorting
+class Solution(object):
+    def findUnsortedSubarray(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        n, sorts = len(nums), sorted(nums)
+        if nums == sorts: return 0
+        l, r = min(i for i in range(n) if nums[i] != sorts[i]), max(i for i in range(n) if nums[i] != sorts[i])
+        return r - l + 1
+
+
+----------------------------------------------------------------------------------------------------
+O(n) algorithm. No code
+<p>From left to right, find the potential start s where nums&#91;s+1&#93;&lt;nums&#91;s&#93;<br/>
+From right to left, find the potential end e where nums&#91;e&#93;&lt;nums&#91;e-1&#93;<br/>
+Find the min value and max value of the elements between start and end, compare them with the numbers from 0 to s and e to length -1. Update the start and end.<br/>
+Return end - start + 1</p>
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,579 @@
+Java Solution, tree traversal
+public class Solution {
+    public boolean isSubtree(TreeNode s, TreeNode t) {
+        if (s == null) return false;
+        if (isSame(s, t)) return true;
+        return isSubtree(s.left, t) || isSubtree(s.right, t);
+    }
+    
+    private boolean isSame(TreeNode s, TreeNode t) {
+        if (s == null && t == null) return true;
+        if (s == null || t == null) return false;
+        
+        if (s.val != t.val) return false;
+        
+        return isSame(s.left, t.left) && isSame(s.right, t.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy O(n) java solution using preorder traversal
+public class Solution {
+ public boolean isSubtree(TreeNode s, TreeNode t) {
+        String spreorder = generatepreorderString(s); 
+        String tpreorder = generatepreorderString(t);
+        
+        return spreorder.contains(tpreorder) ;
+    }
+    public String generatepreorderString(TreeNode s){
+        StringBuilder sb = new StringBuilder();
+        Stack<TreeNode> stacktree = new Stack();
+        stacktree.push(s);
+        while(!stacktree.isEmpty()){
+           TreeNode popelem = stacktree.pop();
+           if(popelem==null)
+              sb.append(",#"); // Appending # inorder to handle same values but not subtree cases
+           else      
+              sb.append(","+popelem.val);
+           if(popelem!=null){
+                stacktree.push(popelem.right);    
+                stacktree.push(popelem.left);  
+           }
+        }
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Concise O(n+m) Time O(n+m) Space
+public boolean isSubtree(TreeNode s, TreeNode t) {
+    return serialize(s).contains(serialize(t)); // Java uses a naive contains algorithm so to ensure linear time, 
+                                                // replace with KMP algorithm
+}
+
+public String serialize(TreeNode root) {
+    StringBuilder res = new StringBuilder();
+    serialize(root, res);
+    return res.toString();
+}
+
+private void serialize(TreeNode cur, StringBuilder res) {
+    if (cur == null) {res.append(",#"); return;}
+    res.append("," + cur.val);
+    serialize(cur.left, res);
+    serialize(cur.right, res);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation (O(ST) and O(S+T) approaches)
+def isSubtree(self, s, t):
+    from hashlib import sha256
+    def hash_(x):
+        S = sha256()
+        S.update(x)
+        return S.hexdigest()
+        
+    def merkle(node):
+        if not node:
+            return '#'
+        m_left = merkle(node.left)
+        m_right = merkle(node.right)
+        node.merkle = hash_(m_left + str(node.val) + m_right)
+        return node.merkle
+        
+    merkle(s)
+    merkle(t)
+    def dfs(node):
+        if not node:
+            return False
+        return (node.merkle == t.merkle or 
+                dfs(node.left) or dfs(node.right))
+                    
+    return dfs(s)
+
+
+----------------------------------------------------------------------------------------------------
+19ms C++ solution beats 99.9%
+class Solution {
+    vector<TreeNode*> nodes;
+
+public:
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        if (!s && !t) return true;
+        if (!s || !t) return false;
+
+        getDepth(s, getDepth(t, -1));
+
+        for (TreeNode* n: nodes)
+            if (identical(n, t))
+                return true;
+
+        return false;
+    }
+
+    int getDepth(TreeNode* r, int d) {
+        if (!r)
+            return -1;
+
+        int depth = max(getDepth(r->left, d), getDepth(r->right, d)) + 1;
+
+        // Check if depth equals required value
+        // Require depth is -1 for tree t (only return the depth, no push)
+        if (depth == d)
+            nodes.push_back(r);
+
+        return depth;
+    }
+
+    bool identical(TreeNode* a, TreeNode* b) {
+        if (!a && !b) return true;
+        if (!a || !b || a->val != b->val) return false;
+
+        return identical(a->left, b->left) && identical(a->right, b->right);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short Python by converting into strings
+class Solution(object):
+    def isSubtree(self, s, t):
+        """
+        :type s: TreeNode
+        :type t: TreeNode
+        :rtype: bool
+        """
+        def convert(p):
+            return "^" + str(p.val) + "#" + convert(p.left) + convert(p.right) if p else "$"
+        
+        return convert(t) in convert(s)
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code - 2 one liner
+public class Solution {
+    public boolean isSubtree(TreeNode s, TreeNode t) {
+        return t == null || s != null && (same(s, t) || isSubtree(s.left, t) || isSubtree(s.right, t));
+    }
+
+    private boolean same(TreeNode s, TreeNode t) {
+        return s == null ? t == null : t != null && s.val == t.val && same(s.left, t.left) && same(s.right, t.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straight forward solution
+class Solution {
+public:
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        if(s == nullptr && t == nullptr) return true;
+        if(t == nullptr) return true;
+        if(s == nullptr) return false;
+        
+        return sameTree(s, t) || isSubtree(s->left, t) || isSubtree(s->right, t);
+    }
+    
+    bool sameTree(TreeNode* s, TreeNode* t){
+        if(s == nullptr && t == nullptr) return true;
+        if(s == nullptr || t == nullptr) return false;
+        if(s->val != t->val) return false;
+        
+        return sameTree(s->left, t->left) && sameTree(s->right, t->right);
+    }
+    
+};
+
+----------------------------------------------------------------------------------------------------
+c++ O(n+m) Time O(n+m) Space non-recursive solution
+class Solution {
+public:
+    vector<int> preKMP(string substr) {
+        int m = substr.size();
+        vector<int> f(m);        
+        int k;
+        f[0] = -1;
+        for (int i = 1; i < m; i++) {
+            k = f[i - 1];
+            while (k >= 0) {
+                if (substr[k] == substr[i - 1])
+                    break;
+                else
+                    k = f[k];
+            }
+            f[i] = k + 1;
+        }
+        return f;
+    }
+ 
+    bool KMP(string substr, string str) {
+        int m = substr.size();
+        int n = str.size();
+        vector<int> f;
+        f = preKMP(substr);     
+        int i = 0;
+        int k = 0;        
+        while (i < n) {
+            if (k == -1) {
+                i++;
+                k = 0;
+            }
+            else if (str[i] == substr[k]) {
+                i++;
+                k++;
+                if (k == m) {
+                    return true;
+                }
+            }
+            else {
+                k = f[k];
+            }
+        }
+        return false;
+    }
+
+    string postOrderTraversal(TreeNode* root) {
+        string str;
+        stack<pair<TreeNode*, int>> s;
+        s.push(pair<TreeNode*, int>(root, 0));
+        while (!s.empty()) {
+            pair<TreeNode*, int> p = s.top();
+            TreeNode* node = p.first;
+            int idx = p.second;
+            if (node == NULL) {
+                s.pop();
+                continue;
+            }
+            if (idx == 0) {
+                str.push_back('(');
+                s.top().second++;
+                s.push(pair<TreeNode*, int>(node->left, 0));
+            } else if (idx == 1) {
+                s.top().second++;
+                s.push(pair<TreeNode*, int>(node->right, 0));
+            } else {
+                str += to_string(node->val);
+                str.push_back(')');
+                s.pop();
+            }
+        }
+        return str;
+    }
+    
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        string post_t = postOrderTraversal(t);
+        string post_s = postOrderTraversal(s);
+        //int pos = post_s.find(post_t);
+        //return (pos != string::npos);
+        return KMP(post_t, post_s);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My incorrect solution that didn&#x27;t cover a case got accepted
+class Solution(object):
+    def isSubtree(self, s, t):
+        """
+        :type s: TreeNode
+        :type t: TreeNode
+        :rtype: bool
+        """
+        def serialize(node):
+            if not node:
+                return '#'
+            return serialize(node.left) + str(node.val) + serialize(node.right)
+        serialized_t = serialize(t)
+        exists = [False]
+        def traverse(node):
+            if not node:
+                return '#'
+            serialized_tree = traverse(node.left) + str(node.val) + traverse(node.right)
+            if serialized_tree == serialized_t:
+                exists[0] = True
+            return serialized_tree
+        traverse(s)
+        return exists[0]
+
+
+----------------------------------------------------------------------------------------------------
+Is my accepted solution right?
+class Solution {
+public:
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        if(!s && !t) return true;
+        if(s && t){
+            if (s->val == t->val)if( isSubtree(s->left,t->left ) && isSubtree(t->right, s->right)) return true;
+            if(isSubtree(s->left, t)) return true;
+            if(isSubtree(s->right, t)) return true;
+        }
+        return false;
+    }
+
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution with explanation
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def isSubtree(self, s, t):
+        """
+        :type s: TreeNode
+        :type t: TreeNode
+        :rtype: bool
+        """
+        def check(s, t):
+            # helper function that does the actual subtree check
+            if (s is None) and (t is None):
+                return True
+            if (s is None) or (t is None):
+                return False
+            return (s.val == t.val and check(s.left, t.left) and check(s.right, t.right))
+
+        # need to do a pre-order traversal and do a check
+        # for every node we visit for the subtree
+        if not s:
+            # return False since None cannot contain a subtree 
+            return
+        if check(s, t):
+            # we found a match
+            return True
+        if self.isSubtree(s.left, t) or self.isSubtree(s.right, t):
+            # a match was found
+            return True
+        return False
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ not good solution but AC
+class Solution {
+    vector<TreeNode*> Cadidates;
+public:
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        findTNode(s, t);
+        if(Cadidates.size()==0) return false;
+        vector<int> nodeT;
+        print(t, nodeT);
+        for(int i=0; i<Cadidates.size(); i++)
+        {
+            vector<int> nodeI;
+            print(Cadidates[i], nodeI);
+            if(nodeI == nodeT) return true;
+        }
+        return false;
+    }
+    void print(TreeNode* root, vector<int>& res)
+    {
+        if(!root) return;
+        print(root->left, res);
+        res.push_back(root->val);
+        print(root->right, res);
+    }
+    void findTNode(TreeNode* s, TreeNode * t)
+    {
+        if(!s) return;
+        if(s->val==t->val)
+            Cadidates.push_back(s);
+        findTNode(s->left,t);
+        findTNode(s->right, t);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Traverse Tree For Once Java Solution
+    public boolean isSubtree(TreeNode s, TreeNode t) {
+		List<Integer> tList = new ArrayList<>();
+		convertToList(t, tList);
+		List<Integer> sList = new ArrayList<>();
+		convertToList(s, sList);
+		String sStr = toString(sList);
+		String tStr = toString(tList);
+		int idx = sStr.indexOf(tStr);
+		return (idx == 0 || (idx >= 2 && sStr.charAt(idx - 2) == ','));
+	}
+
+	private String toString(List<Integer> list) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < list.size(); i++) {
+			sb.append(list.get(i)).append(", ");
+		}
+		return sb.toString();
+	}
+
+	private void convertToList(TreeNode node, List<Integer> list) {
+		if (node == null) {
+			list.add(null);
+			return;
+		} else {
+			list.add(node.val);
+			convertToList(node.left, list);
+			convertToList(node.right, list);
+		}
+
+	}
+
+
+----------------------------------------------------------------------------------------------------
+java solution, convert Tree into a String, then using contains. O(n) time and O(1) space
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public boolean isSubtree(TreeNode s, TreeNode t) {
+        String s1 = convertTree(s);
+        String s2 = convertTree(t);
+        return s1.contains(s2);
+    }
+    
+    protected String convertTree(TreeNode root) {
+        if(root == null) {
+            return "";
+        }
+        String s = "" + root.val;
+        s = "[" + s.length() + "]" + s;
+        String left = convertTree(root.left);
+        String right = convertTree(root.right);
+        if(left.length() != 0) {
+            left = "l" + left;
+        }
+        if(right.length() != 0) {
+            right = "r" + right;
+        }
+        return s + "(" + left + right + ")";
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Concise Java
+public class Solution {
+    public boolean isSubtree(TreeNode s, TreeNode t) {
+        if (s == null) return false;
+        return traverse(s,t) || isSubtree(s.left, t) || isSubtree(s.right, t);
+    }
+    private boolean traverse(TreeNode s, TreeNode t) {
+        if (s == null && t == null)  return true;
+        else if (s == null || t == null) return false;
+        return s.val == t.val && traverse(s.left, t.left) && traverse(s.right, t.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java solution
+public boolean isSubtree(TreeNode s, TreeNode t) {
+        if (s == null && t == null) {
+            return true;
+        } else if (s == null ||  t == null) {
+            return false;
+        }
+        
+        return isSubtreeHelper(s, t) || isSubtree(s.left, t) || isSubtree(s.right, t);
+    }
+    
+    private boolean isSubtreeHelper(TreeNode s, TreeNode t) {
+        
+        if (s == null && t == null) {
+            return true;
+        }
+        
+        if (s == null ||  t == null) {
+            return false;
+        }
+        
+        if (s.val == t.val && isSubtreeHelper(s.left, t.left) && isSubtreeHelper(s.right, t.right)) {
+            return true;
+        }
+        
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Optimized Java Solution
+public boolean isSubtree(TreeNode s, TreeNode t) {
+        if(s==null) return false;
+        if(helper(s,t))return true;
+        return isSubtree(s.left, t)||isSubtree(s.right, t);
+    }
+    
+    public boolean helper(TreeNode s, TreeNode t){
+            if(s == null && t == null)
+                return true;
+            
+            if(s == null || t == null)
+                return false;
+
+            return s.val == t.val && helper(s.left, t.left) && helper(s.right, t.right);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ KMP and NoKMP
+class Solution {
+    vector<int> GetNext(string& del) {
+        int n = del.size(), k = -1, i = 0;
+        vector<int> next(n, 0);
+        next[0] = -1;
+        while (i < n - 1) {
+            if (k == -1 || del[i] == del[k]) {
+                k++, i++;
+                if (del[i] != del[k])
+                    next[i] = k;
+                else
+                    next[i] = next[k];
+            } else
+                k = next[k];
+        }
+        return next;
+    }
+    int Match(string& s, string& del) {
+        int n = s.size(), m = del.size(), i = 0, j = 0;
+        vector<int> next = GetNext(del);
+        while (i < n && j < m) {
+            if (j == -1 || s[i] == del[j])
+                j++, i++;
+            else
+                j = next[j];
+        }
+        if (j != m)
+            return -1;
+        return i - m;
+    }
+    void helper(TreeNode* cur, string& s) {
+        if (!cur) {
+            s += ",#";
+            return;
+        }
+        s += "," +to_string(cur->val);
+        helper(cur->left, s);
+        helper(cur->right, s);
+    }
+    
+public:
+    bool isSubtree(TreeNode* s, TreeNode* t) {
+        string s1, s2;
+        helper(s, s1);
+        helper(t, s2);
+        return Match(s1, s2) != -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,454 @@
+My solution for this question but I don&#x27;t know is there any easier way?
+count every Symbol and add its value to the sum, and minus the extra part of special cases. 
+
+    public int romanToInt(String s) {
+         int sum=0;
+        if(s.indexOf("IV")!=-1){sum-=2;}
+        if(s.indexOf("IX")!=-1){sum-=2;}
+        if(s.indexOf("XL")!=-1){sum-=20;}
+        if(s.indexOf("XC")!=-1){sum-=20;}
+        if(s.indexOf("CD")!=-1){sum-=200;}
+        if(s.indexOf("CM")!=-1){sum-=200;}
+        
+        char c[]=s.toCharArray();
+        int count=0;
+        
+       for(;count<=s.length()-1;count++){
+           if(c[count]=='M') sum+=1000;
+           if(c[count]=='D') sum+=500;
+           if(c[count]=='C') sum+=100;
+           if(c[count]=='L') sum+=50;
+           if(c[count]=='X') sum+=10;
+           if(c[count]=='V') sum+=5;
+           if(c[count]=='I') sum+=1;
+           
+       }
+       
+       return sum;
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean O(n) c++ solution
+Problem is simpler to solve by working the string from back to front and using a map.  Runtime speed is 88 ms.
+
+
+
+    int romanToInt(string s) 
+    {
+        unordered_map<char, int> T = { { 'I' , 1 },
+                                       { 'V' , 5 },
+                                       { 'X' , 10 },
+                                       { 'L' , 50 },
+                                       { 'C' , 100 },
+                                       { 'D' , 500 },
+                                       { 'M' , 1000 } };
+                                       
+       int sum = T[s.back()];
+       for (int i = s.length() - 2; i >= 0; --i) 
+       {
+           if (T[s[i]] < T[s[i + 1]])
+           {
+               sum -= T[s[i]];
+           }
+           else
+           {
+               sum += T[s[i]];
+           }
+       }
+       
+       return sum;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+I strongly suggest leetcode explains the conversion rule clearer.
+It would help a lot for those who are not familiar with Roman numerals if the conversion rule is provided, or a conversion table similar to [Roman Numerals Chart][1] is given.
+
+
+  [1]: http://literacy.kent.edu/Minigrants/Cinci/romanchart.htm
+
+----------------------------------------------------------------------------------------------------
+My Straightforward Python Solution
+
+    class Solution:
+    # @param {string} s
+    # @return {integer}
+    def romanToInt(self, s):
+        roman = {'M': 1000,'D': 500 ,'C': 100,'L': 50,'X': 10,'V': 5,'I': 1}
+        z = 0
+        for i in range(0, len(s) - 1):
+            if roman[s[i]] < roman[s[i+1]]:
+                z -= roman[s[i]]
+            else:
+                z += roman[s[i]]
+        return z + roman[s[-1]]
+
+
+*Note: The trick is that the last letter is always added. Except the last one, if one letter is less than its latter one, this letter is subtracted. 
+
+----------------------------------------------------------------------------------------------------
+7ms solution in Java. easy to understand
+     public int romanToInt(String s) {
+        int nums[]=new int[s.length()];
+        for(int i=0;i<s.length();i++){
+            switch (s.charAt(i)){
+                case 'M':
+                    nums[i]=1000;
+                    break;
+                case 'D':
+                    nums[i]=500;
+                    break;
+                case 'C':
+                    nums[i]=100;
+                    break;
+                case 'L':
+                    nums[i]=50;
+                    break;
+                case 'X' :
+                    nums[i]=10;
+                    break;
+                case 'V':
+                    nums[i]=5;
+                    break;
+                case 'I':
+                    nums[i]=1;
+                    break;
+            }
+        }
+        int sum=0;
+        for(int i=0;i<nums.length-1;i++){
+            if(nums[i]<nums[i+1])
+                sum-=nums[i];
+            else
+                sum+=nums[i];
+        }
+        return sum+nums[nums.length-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+My easy-to-understand C++ solutions
+       class Solution {
+        public:
+            int romanToInt(string s) {
+                int num = 0;
+                int size = s.size();
+                
+                for (int i = 0; i < size; i++) {
+                	if (i < (size - 1) && romanCharToInt(s[i]) < romanCharToInt(s[i + 1])) {
+                		num -= romanCharToInt(s[i]);
+                	} else {
+        				num += romanCharToInt(s[i]);
+        			}
+                }
+                return num;
+            }
+            
+            int romanCharToInt(char c) {
+            	switch (c) {
+            		case 'I': 	return 1;
+            		case 'V':	return 5;
+            		case 'X':	return 10;
+            		case 'L':	return 50;
+            		case 'C':	return 100;
+            		case 'D':	return 500;
+            		case 'M':	return 1000;
+            		default:	return 0;
+            	}
+            }
+        };
+
+[The code is faster][1] if the body of the for loop is replaced with:
+
+    	if (i < (size - 1) && (
+    		'I' == s[i] && ('V' == s[i + 1] || 'X' == s[i + 1]) ||
+    		'X' == s[i] && ('L' == s[i + 1] || 'C' == s[i + 1]) ||
+    		'C' == s[i] && ('D' == s[i + 1] || 'M' == s[i + 1]) )) {
+    		num -= romanCharToInt(s[i]);
+    	} else {
+			num += romanCharToInt(s[i]);
+		}
+
+ 
+
+
+  [1]: http://xiaohuiliucuriosity.blogspot.com/2014/12/problem-given-roman-numeral-convert-it.html
+
+----------------------------------------------------------------------------------------------------
+4 lines in Python
+    d = {'M':1000, 'D':500, 'C':100, 'L':50, 'X':10, 'V':5, 'I':1}
+    
+    def romanToInt(self, s):
+        res, p = 0, 'I'
+        for c in s[::-1]:
+            res, p = res - d[c] if d[c] < d[p] else res + d[c], c
+        return res
+                
+
+----------------------------------------------------------------------------------------------------
+JAVA----------------Easy Version To Understand!!!!
+    	public static int romanToInt(String s) {
+		if (s == null || s.length() == 0)
+			return -1;
+		HashMap<Character, Integer> map = new HashMap<Character, Integer>();
+		map.put('I', 1);
+		map.put('V', 5);
+		map.put('X', 10);
+		map.put('L', 50);
+		map.put('C', 100);
+		map.put('D', 500);
+		map.put('M', 1000);
+		int len = s.length(), result = map.get(s.charAt(len - 1));
+		for (int i = len - 2; i >= 0; i--) {
+			if (map.get(s.charAt(i)) >= map.get(s.charAt(i + 1)))
+				result += map.get(s.charAt(i));
+			else
+				result -= map.get(s.charAt(i));
+		}
+		return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+Python solution
+        def romanToInt(self, s):
+
+            romans = {'M': 1000, 'D': 500 , 'C': 100, 'L': 50, 'X': 10,'V': 5,'I': 1}
+
+            prev_value = running_total =0
+            
+            for i in range(len(s)-1, -1, -1):
+                int_val = romans[s[i]]
+                if int_val < prev_value:
+                    running_total -= int_val
+                else:
+                    running_total += int_val
+                prev_value = int_val
+            
+            return running_total
+
+----------------------------------------------------------------------------------------------------
+Simple 56ms C++ solution
+Processing the roman number from right to left turns out to be a bit easier since we can easily tell when to add or subtract:
+
+    class Solution {
+    public:
+        int romanToInt(string s) {
+            if (s.empty()) { return 0; }
+            unordered_map<char, int> mp { {'I', 1}, {'V', 5}, {'X', 10}, {'L', 50}, {'C', 100}, {'D', 500}, {'M', 1000} };
+            int sum = mp[s.back()];
+            for (int i = s.size() - 2; i >= 0; --i) {
+                sum += mp[s[i]] >= mp[s[i + 1]] ? mp[s[i]] : -mp[s[i]];
+            }
+            return sum;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A 36ms C++ Solution, No Hashmap, Clean to understand
+The key is to check if the `i-th` char is smaller than `(i+1)th`, If so, then it should be a negative.     
+Add them all is the result.
+
+    class Solution {
+    public:
+	    int romanToInt(string s) {
+		    int num[256] = { 0 };
+		    int result = 0;
+		    num['I'] = 1; num['V'] = 5; num['X'] = 10; num['L']=50;
+		    num['C'] = 100; num['D'] = 500; num['M'] = 1000;
+		    int i = 0;
+		    while (i < s.size()){
+			    if (num[s[i]] < num[s[i+1]])
+				    result -= num[s[i]];
+			    else
+				    result += num[s[i]];
+			    i++;
+		    }
+		    return result;
+	    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Solution - Clean and Simple :) ( 7 ms )
+    public int romanToInt(String str) {
+        int[] a = new int[26];
+        a['I' - 'A'] = 1;
+        a['V' - 'A'] = 5;
+        a['X' - 'A'] = 10;
+        a['L' - 'A'] = 50;
+        a['C' - 'A'] = 100;
+        a['D' - 'A'] = 500;
+        a['M' - 'A'] = 1000;
+        char prev = 'A';
+        int sum = 0;
+        for(char s : str.toCharArray()) {
+            if(a[s - 'A'] > a[prev - 'A']) {
+                sum = sum - 2 * a[prev - 'A'];
+            }
+            sum = sum + a[s - 'A'];
+            prev = s;
+        }
+        return sum;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand, Java solution, beats 98%, Well explained with comments.
+    public int romanToInt(String s) {
+    		  int result = 0 ;
+    		  char[] digits = s.toCharArray();
+    		  if(digits.length > 0){
+                  /* Initialize value map for Roman chars  */
+    			  int[] valueMap = new int[26];
+    			  valueMap['I' - 'A'] = 1;
+    			  valueMap['V' - 'A'] = 5;
+    			  valueMap['X' - 'A'] = 10;
+    			  valueMap['L' - 'A'] = 50;
+    			  valueMap['C' - 'A'] = 100;
+    			  valueMap['D' - 'A'] = 500;
+    			  valueMap['M' - 'A'] = 1000;
+    			  int lastIndex = digits[0] - 'A';
+    			  result = valueMap[lastIndex];
+    			  for(int i = 1 ; i < digits.length ; i++){
+    				  int currentIndex = digits[i] - 'A'; 
+                      // If previous number was smaller in value then remove the previous and decrease the current value by previous value
+    				  if(valueMap[lastIndex] < valueMap[currentIndex]){ 
+    					  result = result - 2*valueMap[lastIndex] + valueMap[currentIndex] ;
+    				  }else{
+    					  result+= valueMap[currentIndex]; // just add the current value
+    				  }
+    				  lastIndex = currentIndex; // update last index
+    			  }
+    		  }
+    		  return result;
+    	  }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ code
+    class Solution {
+    public:
+        int romanToInt(string s) {
+            unordered_map <char,int> mp={ { 'I', 1 }, { 'V', 5 }, { 'X', 10 }, { 'L', 50 }, { 'C', 100 }, { 'D', 500 }, { 'M', 1000 } };
+            int res=0;
+            int i;
+            for(i=0;i<s.length()-1;i++){
+                if(mp[s[i]]>=mp[s[i+1]]) res+=mp[s[i]];
+                else res-=mp[s[i]];
+            }
+            res+=mp[s[i]];
+            return res;
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java clean and fast solution
+        public int romanToInt(String s) {
+            int num = 0;
+            int l = s.length();
+            int last = 1000;
+            for (int i = 0; i < l; i++){
+                int v = getValue(s.charAt(i));
+                if (v > last) num = num - last * 2;
+                num = num + v;
+                last = v;
+            }
+            return num;
+        }
+        private int getValue(char c){
+            switch(c){
+                case 'I' : return 1;
+                case 'V' : return 5;
+                case 'X' : return 10;
+                case 'L' : return 50;
+                case 'C' : return 100;
+                case 'D' : return 500;
+                case 'M' : return 1000;
+                default : return 0;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My C code ,AC 15 ms.
+    int romanToInt(char *s) {
+    #define _M 1000
+    #define _D 500
+    #define _C 100
+    #define _L 50
+    #define _X 10
+    #define _V 5
+    #define _I 1
+    
+        int result  = 0;
+        int i;
+        int last = _M;
+        for(i = 0;i < strlen(s);i++)
+        {
+            switch (s[i])
+            {
+                case 'M':
+                    result = (last >= _M ? result + _M:result + _M - (last << 1));
+                    last = _M;        
+                break;
+                case 'D':
+                    result = (last >= _D ? result + _D:result + _D - (last << 1));
+                    last = _D;
+                break;
+                case 'C':
+                    result = (last >= _C ? result + _C:result + _C - (last << 1));
+                    last = _C;
+                break;
+                case 'L':
+                    result = (last >= _L ? result + _L:result + _L - (last << 1));
+                    last = _L;
+                break;
+                case 'X':
+                    result = (last >= _X ? result + _X:result + _X - (last << 1));
+                    last = _X;
+                break;
+                case 'V':
+                    result = (last >= _V ? result + _V:result + _V - (last << 1));
+                    last = _V;
+                break;
+                case 'I':
+                    result = (last >= _I ? result + _I:result + _I - (last << 1));
+                    last = _I;
+                break;
+            }
+            
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+My straightforward Java solution using hashmap
+I am quite strange to Roman numeric, I came up with this solution after I referred to Wikipedia. This solution is quite straightforward. Run-time: 452 ms
+
+    public int romanToInt(String s) {
+        HashMap<Character, Integer> map = new HashMap<>();
+        map.put('I', 1);
+        map.put('V', 5);
+        map.put('X', 10);
+        map.put('L', 50);
+        map.put('C', 100);
+        map.put('D', 500);
+        map.put('M', 1000);
+        int len = s.length();
+        int index = 0, result = 0;
+        while (index < len) {
+            Character chCur = s.charAt(index);
+            Character chNext = null;
+            if (index + 1 < len)
+                chNext = s.charAt(index + 1);
+            if(chNext != null && map.get(chCur) < map.get(chNext))
+                result -= map.get(chCur);
+            else
+                result += map.get(chCur);
+            index++;
+        }
+        return result;
+    }
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Share python code

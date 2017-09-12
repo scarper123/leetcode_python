@@ -1,0 +1,501 @@
+My Accepted Java Solution
+Hi everyone, this is my accepted recursive Java solution. I get overflow problems at first because I didn't use mid - 1 and mid + 1 as the bound. Hope this helps :)
+
+    public TreeNode sortedArrayToBST(int[] num) {
+        if (num.length == 0) {
+            return null;
+        }
+        TreeNode head = helper(num, 0, num.length - 1);
+        return head;
+    }
+    
+    public TreeNode helper(int[] num, int low, int high) {
+        if (low > high) { // Done
+            return null;
+        }
+        int mid = (low + high) / 2;
+        TreeNode node = new TreeNode(num[mid]);
+        node.left = helper(num, low, mid - 1);
+        node.right = helper(num, mid + 1, high);
+        return node;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Iterative Solution
+I came up with the recursion solution first and tried to translate it into an iterative solution. It is very similar to doing a tree inorder traversal, I use three stacks -  nodeStack stores the node I am going to process next, and  **leftIndexStack** and **rightIndexStack** store the range where this node need to read from the **nums**.
+
+    public class Solution {
+        
+        public TreeNode sortedArrayToBST(int[] nums) {
+            
+            int len = nums.length;
+            if ( len == 0 ) { return null; }
+            
+            // 0 as a placeholder
+            TreeNode head = new TreeNode(0); 
+            
+            Deque<TreeNode> nodeStack       = new LinkedList<TreeNode>() {{ push(head);  }};
+            Deque<Integer>  leftIndexStack  = new LinkedList<Integer>()  {{ push(0);     }};
+            Deque<Integer>  rightIndexStack = new LinkedList<Integer>()  {{ push(len-1); }};
+            
+            while ( !nodeStack.isEmpty() ) {
+                TreeNode currNode = nodeStack.pop();
+                int left  = leftIndexStack.pop();
+                int right = rightIndexStack.pop();
+                int mid   = left + (right-left)/2; // avoid overflow
+                currNode.val = nums[mid];
+                if ( left <= mid-1 ) {
+                    currNode.left = new TreeNode(0);  
+                    nodeStack.push(currNode.left);
+                    leftIndexStack.push(left);
+                    rightIndexStack.push(mid-1);
+                }
+                if ( mid+1 <= right ) {
+                    currNode.right = new TreeNode(0);
+                    nodeStack.push(currNode.right);
+                    leftIndexStack.push(mid+1);
+                    rightIndexStack.push(right);
+                }
+            }
+            return head;
+        }
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ recursive solution within a single method
+Recursively call the **sortedArrayToBST()** method providing new vector for each call to construct left and right children: 
+
+    class Solution {
+    public:
+        TreeNode *sortedArrayToBST(vector<int> &num) {
+            if(num.size() == 0) return NULL;
+            if(num.size() == 1)
+            {
+                return new TreeNode(num[0]);
+            }
+            
+            int middle = num.size()/2;
+            TreeNode* root = new TreeNode(num[middle]);
+            
+            vector<int> leftInts(num.begin(), num.begin()+middle);
+            vector<int> rightInts(num.begin()+middle+1, num.end());
+            
+            root->left = sortedArrayToBST(leftInts);
+            root->right = sortedArrayToBST(rightInts);
+            
+            return root;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+An easy Python solution
+The idea is to find the root first, then recursively build each left and right subtree
+
+    # Definition for a  binary tree node
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+    
+    class Solution:
+        # @param num, a list of integers
+        # @return a tree node
+        # 12:37
+        def sortedArrayToBST(self, num):
+            if not num:
+                return None
+    
+            mid = len(num) // 2
+    
+            root = TreeNode(num[mid])
+            root.left = self.sortedArrayToBST(num[:mid])
+            root.right = self.sortedArrayToBST(num[mid+1:])
+    
+            return root
+
+----------------------------------------------------------------------------------------------------
+16 ms C++ solution
+
+    class Solution {
+        TreeNode* sortedArrayToBST(vector<int>& nums, int start, int end){
+            if(end<=start) return NULL; 
+            int midIdx=(end+start)/2;
+            TreeNode* root=new TreeNode(nums[midIdx]);
+            root->left=sortedArrayToBST(nums, start, midIdx);
+            root->right=sortedArrayToBST(nums, midIdx+1,end);
+            return root;
+        }
+    public:
+        TreeNode* sortedArrayToBST(vector<int>& nums) {
+            return sortedArrayToBST(nums, 0,nums.size());
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution
+    public class Solution {
+        public TreeNode sortedArrayToBST(int[] nums) {
+            if (nums == null || nums.length ==0){
+                return null;
+            }
+            return getTreeNode(nums, 0, nums.length-1);
+        }
+        
+        private TreeNode getTreeNode(int[] nums, int start, int end){
+            if (start > end){
+                return null;
+            }
+            int middle = start + (end-start)/2;
+            TreeNode n = new TreeNode(nums[middle]);
+            n.left = getTreeNode(nums, start, middle-1);
+            n.right = getTreeNode(nums, middle+1, end);
+            return n;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My  C solution with  recursion,7ms
+    struct TreeNode* convert(int* nums,int start,int end)
+    {
+         if(start > end)
+              return NULL;
+         else{
+             int mid = (start+end)/2;
+             struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
+             node->val = nums[mid];
+             node->left = convert(nums,start,mid-1);
+             node->right = convert(nums,mid+1,end);
+             return node;
+         }
+    }
+ 
+
+    struct TreeNode* sortedArrayToBST(int* nums, int numsSize) {
+            return convert(nums,0,numsSize-1);
+    }
+
+----------------------------------------------------------------------------------------------------
+Smallest and fastest Python solution. 147 ms
+    class Solution:
+
+        def sortedArrayToBST(self, num):
+
+            if not num:
+                return None
+
+            median  = len(num)/2
+            new_node = TreeNode(num[median])
+    
+            new_node.left = self.sortedArrayToBST(num[:median])
+            new_node.right = self.sortedArrayToBST(num[median+1:])
+            
+            return new_node
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ solution w&#x2F;o constructing new vectors
+As far as I know, construction of "subvectors" could be expensive ( O(n) operation). So I tried to avoid creating new vectors for performance. Here's my solution.
+
+
+    class Solution {
+        TreeNode *dfs(vector<int> &num, int start, int end) {
+            int idx = start + (end-start)/2;
+            TreeNode *node = new TreeNode(num[idx]);
+            
+            //Base case
+            if(end == start) 
+                return node;  
+                
+            //recurse if valid
+            if(start <= idx-1)
+                node->left = dfs(num, start, idx-1);
+            if(idx+1 <= end)
+                node->right = dfs(num, idx+1, end);
+            
+            return node;
+        }
+    public:
+        TreeNode *sortedArrayToBST(vector<int> &num) {
+            if(num.empty()) return nullptr;    //check empty case
+            
+            return dfs(num, 0, num.size()-1);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Iterative Java Solution Using Stack
+Try to solve it iteratively, need an extra class to store:
+
+1. current TreeNode's coverage [low, up]
+
+2. current TreeNode entity
+
+()
+
+    public class Solution {
+        class Node{ // need another class to store multi information
+            int low, up; // means the TreeNode covers [low, up], low and up are all index
+            TreeNode t;
+            Node(int l, int p, TreeNode node){
+                low = l;
+                up = p;
+                t = node;
+            }
+        }
+        public TreeNode sortedArrayToBST(int[] num) {
+            if(num == null || num.length == 0) return null;
+            Stack<Node> stack = new Stack<Node>();
+            // initialize
+            TreeNode root = new TreeNode(num[(num.length-1)/2]);
+            Node rootNode = new Node(0,num.length-1,root);
+            stack.push(rootNode);
+            // iteration
+            while(!stack.isEmpty()){
+                Node node = stack.pop();
+                int middle = (node.low+node.up)/2; // cut half for [low, up]
+                
+                // [low, middle-1]
+                if(middle-1 >= node.low){
+                    TreeNode leftnode = new TreeNode(num[(middle-1+node.low)/2]);
+                    node.t.left = leftnode;
+                    Node left = new Node(node.low, middle-1, leftnode);
+                    stack.push(left);
+                }
+                // [middle+1, up]
+                if(middle+1 <= node.up){
+                    TreeNode rightnode = new TreeNode(num[(middle+1+node.up)/2]);
+                    node.t.right = rightnode;
+                    Node right = new Node(middle+1, node.up, rightnode);
+                    stack.push(right);
+                }
+            }
+            return root;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+6-lines Java Accepted Solution
+
+The idea is making the middle element as root and recursively calling the method until the length of the array is zero.
+
+    
+    public class Solution {
+            public TreeNode sortedArrayToBST(int[] nums) {
+                if(nums.length==0)return null;
+                int ptr=nums.length/2;
+                TreeNode root=new TreeNode(nums[ptr]);
+                root.left=sortedArrayToBST(Arrays.copyOfRange(nums,0,ptr));
+                root.right=sortedArrayToBST(Arrays.copyOfRange(nums,ptr+1,nums.length));
+                return root;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Very Simple Java Solution
+    public class Solution {
+      public TreeNode sortedArrayToBST(int[] nums) {
+        return helper(nums, 0, nums.length-1);
+      }
+    
+      private TreeNode helper(int[] nums, int l, int r){
+        if (l>r) return null;
+        if (l==r) return new TreeNode(nums[l]);
+        int mid = (l+r)/2;
+        TreeNode root = new TreeNode(nums[mid]);
+        root.left = helper(nums, l, mid-1);
+        root.right = helper(nums, mid+1, r);
+        return root;
+      }
+    }
+
+----------------------------------------------------------------------------------------------------
+1ms Java solution, O(1) space, in-place
+    public class Solution {
+        public TreeNode sortedArrayToBST(int[] nums) {
+            // 1:58pm - 2:02pm
+            // divide-and-conquer
+            // divide at the mid number, and then construct left and right sub trees recursively
+            return helper(nums, 0, nums.length-1);
+        }
+        
+        private TreeNode helper(int[] nums, int left, int right) {
+            if (nums == null || left > right) {
+                return null;
+            }
+            int mid = left + (right - left) / 2;
+            TreeNode root = new TreeNode(nums[mid]);
+            root.left = helper(nums, left, mid-1);
+            root.right = helper(nums, mid+1, right);
+            return root;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My java recursive solution
+     public TreeNode sortedArrayToBST(int[] nums) {
+        if(nums == null || nums.length == 0) return null;
+        return dfs(nums,0,nums.length-1);
+    }
+    private TreeNode dfs(int[] nums,int start,int end){
+        if(start > end) return null;
+        int mid = (start + end)/2;
+        TreeNode root  = new TreeNode(nums[mid]);
+        root.left = dfs(nums,start,mid-1);
+        root.right = dfs(nums,mid+1,end);
+        return root;
+    }
+
+----------------------------------------------------------------------------------------------------
+Javascript beats 88% recursive without slicing array
+var sortedArrayToBST = function(nums) {
+    if (!nums) {
+        return null;
+    }
+    return helper(nums, 0, nums.length - 1);
+}
+
+var helper = function(nums, low, high) {
+    if (low > high) { // Done
+        return null;
+    }
+    var mid = (low + (high - low) / 2)>>0;
+    var node = new TreeNode(nums[mid]);
+    node.left = helper(nums, low, mid - 1);
+    node.right = helper(nums, mid + 1, high);
+    return node;
+}
+
+
+----------------------------------------------------------------------------------------------------
+My code shows memory limit exceeded
+
+       TreeNode *sortedArrayToBST(vector<int> &nums) {
+          int l = 0;
+          int r  = nums.size()-1;
+          if(r == -1)return NULL;// if there is no element
+          TreeNode *root = cr(nums,l,r);//create tree
+          return root;
+       }
+       TreeNode *cr(vector<int>nums,int l,int r){//function will return the root of tree
+          if(l > r)return NULL;
+          int mid = (l+r)/2; // take the mid element as root;
+          TreeNode *tmp = new TreeNode(nums[mid]);//create node with mid value
+          tmp->left = cr(nums,l,mid-1); // recursively construct left sub-tree
+          tmp->right = cr(nums,mid+1,r);// and right sub tree
+          return tmp;
+     }
+
+----------------------------------------------------------------------------------------------------
+Where my code called &quot;Memory limited exceed&quot;
+       Memory Limited exceed
+    
+    class Solution {
+        public:
+        	TreeNode *sortedArrayToBST(vector<int> &num) {
+        		int len = num.size();
+        		if (len == 0)
+        		{
+        			return NULL;
+        		}
+        		return sortArr(num,0,len-1);
+        	}
+        	TreeNode *sortArr(vector<int> num, int begin,int end)
+        	{
+        		TreeNode *p = NULL;
+        		if ( begin > end)
+        		{
+        			return p;
+        		}
+        		int mid = (begin+end) / 2;
+        		p = new TreeNode(num[mid]);
+        		p->left = sortArr(num,begin,mid-1);
+        		p->right = sortArr(num,mid+1,end);
+        		return p;
+        	}
+        };
+
+----------------------------------------------------------------------------------------------------
+Output Limit Exceeded in array to Binary search tree
+Does anyone know why i keep receiving Output Limit Exceeded with this code?
+
+    class Solution {
+    public:
+        void makeBST(TreeNode *&root, vector<int> &num, int left, int right){
+            if(left > right){
+                root = NULL;
+                return ;
+            }
+            if(left == right){
+                root = new TreeNode(num[left]);
+                return;
+            }
+            int mid = left + (right-left)/2;
+            root = new TreeNode(num[mid]);
+            makeBST(root->left, num, left, mid);
+            makeBST(root->right, num, mid+1, right);
+        }
+    
+        TreeNode *sortedArrayToBST(vector<int> &num) {
+            TreeNode *root;
+            if(!num.size()) return NULL;
+            makeBST(root, num, 0, num.size()-1);
+            return root;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Could anybody tell me what does this error mean? &quot;Required From Here&quot;
+I got the following error "required from here". Haven't seen this before. Does anyone know what it means? And what's wrong with my code?
+
+Thanks
+
+    template <typename RandomAccessIterator>
+    TreeNode *sortedArrayToBST(RandomAccessIterator first, RandomAccessIterator last)
+    {
+        auto length = distance(first,last);
+        
+        if (length == 0) return NULL;
+        if (length == 1) return new TreeNode(*first);
+        
+        auto mid = (first+length)/2;
+        TreeNode *root = new TreeNode(*mid);
+        
+        root -> left = sortedArrayToBST(first, mid);
+        root -> right = sortedArrayToBST(mid+1,last);
+        
+        return root;
+    }
+    
+    TreeNode *sortedArrayToBST(vector<int> &num) {
+        return sortedArrayToBST(num.begin(),num.end());
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Python simple recursive solution.
+        
+    def sortedArrayToBST1(self, nums):
+        l, r = 0, len(nums)-1
+        if l <= r:
+            mid = l + (r-l)//2
+            root = TreeNode(nums[mid])
+            root.left = self.sortedArrayToBST(nums[:mid])
+            root.right = self.sortedArrayToBST(nums[mid+1:])
+            return root
+            
+    def sortedArrayToBST(self, nums):
+        return self.helper(nums, 0, len(nums)-1)
+    
+    def helper(self, nums, l, r):
+        if l <= r:
+            mid = l + (r-l)//2
+            root = TreeNode(nums[mid])
+            root.left = self.helper(nums, l, mid-1)
+            root.right = self.helper(nums, mid+1, r )
+            return root 
+
+----------------------------------------------------------------------------------------------------

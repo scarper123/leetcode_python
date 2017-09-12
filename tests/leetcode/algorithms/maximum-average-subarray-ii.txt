@@ -1,0 +1,641 @@
+Java Stack Solution O(n) Time O(n) Space
+public int[] exclusiveTime(int n, List<String> logs) {
+    int[] res = new int[n];
+    Stack<Integer> stack = new Stack<>();
+    int prevTime = 0;
+    for (String log : logs) {
+        String[] parts = log.split(":");
+        if (!stack.isEmpty()) res[stack.peek()] +=  Integer.parseInt(parts[2]) - prevTime; 
+        prevTime = Integer.parseInt(parts[2]);
+        if (parts[1].equals("start")) stack.push(Integer.parseInt(parts[0]));
+        else {
+            res[stack.pop()]++;
+            prevTime++;
+        }
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+class SuperStack(object):
+    def __init__(self):
+        self.A = []
+    def append(self, x):
+        self.A.append([x, 0])
+    def pop(self):
+        x, y = self.A.pop()
+        if self.A:
+            self.A[-1][1] += y
+        return x + y
+    def add_across(self, y):
+        if self.A:
+            self.A[-1][1] += y
+
+
+----------------------------------------------------------------------------------------------------
+How is function 1 executing 4 units of time?
+<p>0----1----2----3----4----5----6<br/>
+|----|----|----|----|----|----|----|</p>
+<p>fun0 - 0 to 1, 1 to 2            - 2 time units<br/>
+fun1 - 2 to 3, 3 to 4, 4 to 5 - 3 time units<br/>
+fun0 - 5 to 6                       - 1 time units</p>
+<p>Wondering how fun1 took 4 time units?</p>
+<p>Update -</p>
+<p>figured it, instead of seeing x as clock strike (or coordinate on line), see x as an item</p>
+<p>&#91;0&#93;&#91;1&#93;&#91;2&#93;&#91;3&#93;&#91;4&#93;&#91;5&#93;&#91;6&#93;</p>
+<p>Now it makes sense,<br/>
+fun0 - took first 2 boxes<br/>
+fun1 - took next 4 boxes<br/>
+fun0 - took last 1 box</p>
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Solution - stack
+/**
+ * Every time end an function, deduce its life span from its parent
+ */
+class Solution {
+public:
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        vector<int> times(n, 0);
+        stack<pair<int, int>> starters;
+        for (int i = 0; i < logs.size(); i++) {
+            Line line = getLine(logs[i]);
+            if (line.start) {
+                starters.push({ line.fid, line.time });
+            }
+            else {
+                pair<int, int> starter = starters.top();
+                int lifespan = line.time + 1 - starter.second;
+                starters.pop();
+                times[line.fid] += lifespan;
+                if (!starters.empty()) {
+                    times[starters.top().first] -= lifespan;
+                }
+            }
+        }
+        return times;
+    }
+
+    struct Line {
+        int fid;
+        bool start;
+        int time;
+        Line(int fid, bool start, int time) : fid(fid), start(start), time(time) {};
+    };
+
+    Line getLine(string s) {
+        int colon1 = s.find(":", 0);
+        int colon2 = s.find(":", colon1 + 1);
+        string fid = s.substr(0, colon1);
+        string start = s.substr(colon1 + 1, colon2 - (colon1 + 1));
+        string time = s.substr(colon2 + 1);
+        return Line(stoi(fid), start == "start", stoi(time));
+    }
+
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) stack with explaination
+#include <iostream>
+#include <vector>
+#include <stack>
+#include <sstream>
+#include <cassert>
+
+using namespace std;
+
+struct Log {
+    int id;
+    string status;
+    int timestamp;
+};
+
+class Solution {
+public:
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        vector<int> times(n, 0);
+        stack<Log> st;
+        for(string log: logs) {
+            stringstream ss(log);
+            string temp, temp2, temp3;
+            getline(ss, temp, ':');
+            getline(ss, temp2, ':');
+            getline(ss, temp3, ':');
+
+            Log item = {stoi(temp), temp2, stoi(temp3)};
+            if(item.status == "start") {
+                st.push(item);
+            } else {
+                assert(st.top().id == item.id);
+
+                int time_added = item.timestamp - st.top().timestamp + 1;
+                times[item.id] += time_added;
+                st.pop();
+
+                if(!st.empty()) {
+                    assert(st.top().status == "start");
+                    times[st.top().id] -= time_added;
+                }
+            }
+        }
+
+        return times;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java clean solution with normalized time explained
+    public int[] exclusiveTime(int n, List<String> logs) {
+        int[] res = new int[n];
+        int ptime = 0, running = 0;
+        Stack<Integer> stack = new Stack<>();
+
+        for (String log : logs) {
+            String[] split = log.split(":");
+            int func = Integer.parseInt(split[0]);
+            boolean start = split[1].equals("start");
+            int time = Integer.parseInt(split[2]);
+            if (!start)
+                time++;
+
+            res[running] += (time - ptime);
+            if (start) {
+                stack.push(running);
+                running = func;
+            } else {
+                running = stack.pop();
+            }
+            ptime = time;
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy code(c++) with explaination
+
+
+class Solution {
+private:
+	void parselog(string& s, int& log_id, int& time, string& cmd)
+	{	
+		int first = s.find(':');
+		int second = s.find(':' , first + 1);
+		log_id = stoi(s.substr(0, first));
+		cmd = s.substr(first + 1, second - (first + 1));
+		time = stoi(s.substr(second + 1));
+	}
+public:
+	vector<int> exclusiveTime(int n, vector<string>& logs) 
+	{
+		vector<int> ret(n,0);
+		stack<int> st;
+		if (logs.empty())return ret;
+		string cmd = "";
+		int log_id = -1;
+		int end_point = -1;
+		int start_point = 0;
+		parselog(logs[0], log_id, start_point, cmd);
+		st.push(log_id);
+		for (int j = 1 ; j < logs.size(); j++)
+		{
+			parselog(logs[j], log_id, end_point, cmd);
+			int working_time = end_point - start_point + (cmd == "end");//(1)
+			ret[st.top()] += working_time;
+			if (cmd == "start")st.push(log_id);
+			else st.pop();
+			start_point = end_point + (cmd == "end");//(2)
+		}
+		return ret;
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple O(n) time and O(n) space C++ solution
+class Solution {
+public:
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        int lastTime = 0; // Remember the time in previous log entry
+        stack<int> callStack; 
+        vector<int> runTime( n, 0 );
+        size_t pos;
+        for( int i = 0; i < logs.size(); i++ ) {
+            // Parse the line
+            string str = logs[ i ];
+            pos = str.find( ":" );
+            int funcId = stoi( str.substr( 0, pos ) );
+            str.erase( 0, pos+1 );
+            pos = str.find( ":" );
+            string type = str.substr( 0, pos );
+            str.erase( 0, pos+1 );
+            int currTime = stoi( str );
+            
+            if ( type == "start" ) {
+                // If a new function is called top of stack will contain the execution
+                // context of this function. Update the runTime using that and push 
+                // current function of stack.
+                if ( callStack.size() > 0 ) runTime[ callStack.top() ] += currTime-lastTime;
+                callStack.push( funcId );
+                lastTime = currTime;
+            } else {
+                // If a function has ended the top of stack will tell us its id
+                // Update the runTime using that and pop the function from stack.
+                runTime[ callStack.top() ] += currTime+1-lastTime;
+                callStack.pop();
+                lastTime = currTime+1;
+            }
+        }
+        return runTime;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python Stack Solution
+class Solution(object):
+    def exclusiveTime(self, n, logs):
+        """
+        :type n: int
+        :type logs: List[str]
+        :rtype: List[int]
+        """
+        ans = [0] * n
+        stack = []
+        for log in logs:
+            uid, status, time = map(int, log.replace("start", "1").replace("end", "0").split(":"))
+            if status:
+                stack.append([time, 0])
+            else:
+                start, innerTime = stack.pop()
+                ans[uid] += time - start + 1 - innerTime
+                if stack:
+                    stack[-1][1] += time - start + 1
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution - stack
+public class Solution {
+    public int[] exclusiveTime(int n, List<String> logs) {
+        int[] result = new int[n];
+        Stack<Integer> stack = new Stack<>();
+        String[] log0 = logs.get(0).split(":");
+        
+        stack.push(Integer.parseInt(log0[0]));
+        int currExStartTS = Integer.parseInt(log0[2]);
+        for(int i = 1; i < logs.size(); i++) {
+            String[] logi = logs.get(i).split(":");
+            int logi_fn = Integer.parseInt(logi[0]);
+			int logi_ts = Integer.parseInt(logi[2]);
+            if(logi[1].equals("start")) {
+                if(!stack.isEmpty()) { //check if there is no currently executing fn
+                    int currFn = stack.peek();    
+                    result[currFn] += logi_ts - currExStartTS;
+                }
+                currExStartTS = logi_ts;
+                stack.push(logi_fn);
+            }
+            else {
+                int endedFn = stack.pop();
+                result[endedFn] += logi_ts - currExStartTS + 1;  
+                currExStartTS = logi_ts + 1;
+            }
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java by using stack
+public int[] exclusiveTime(int n, List<String> logs) {
+        Stack<Integer> stack = new Stack<>();
+        int[] res = new int[n]; 
+        
+        String[] temp = logs.get(0).split(":");
+        int time_stamp = Integer.valueOf(temp[0]);
+        int prev = Integer.valueOf(temp[2]);
+        stack.push(time_stamp);
+        
+        for(int i = 1; i < logs.size(); i++) {
+            String cur = logs.get(i);
+            String[] str = cur.split(":");
+            int id = Integer.valueOf(str[0]);
+            boolean end = str[1].equals("end");
+            int time = Integer.valueOf(str[2]);
+            //System.out.println(id+" "+ time+" "+prev);
+            if(end) {
+                res[stack.peek()] += (time + 1 - prev);
+                prev = time + 1;
+                stack.pop();
+            } else {
+                if(stack.isEmpty()) {
+                    stack.push(id);
+                    prev = time;
+                } else {
+                    res[stack.peek()] += time - prev;
+                    prev = time;
+                    stack.push(id);
+                }
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Neat solution in Ruby with explanation
+def exclusive_time(n, logs)
+  res = Array.new(n, 0)
+  stk = []
+  logs.each do |log|
+    num, act, ts = log.split ':'
+    num = num.to_i
+    ts = ts.to_i
+    if act == 'start'
+      stk.push({:n => num, :ts => ts})
+    else
+      l = stk.pop
+      t = ts - l[:ts] + 1
+      res[num] += t
+      top = stk.last
+      if top
+        res[top[:n]] -= t
+      end
+    end
+  end
+  res
+end
+
+
+----------------------------------------------------------------------------------------------------
+java use stack clear solution
+public class Solution {
+    class Function{
+        int id;
+        int time;
+        
+        public Function(int id, int time){
+            this.id = id;
+            this.time = time;
+        }
+    }
+    
+    public int[] exclusiveTime(int n, List<String> logs) {
+        int[] res = new int[n];
+        Stack<Function> stack = new Stack<Function>();
+        int prev = 0;
+        for(int i = 0; i < logs.size(); i++){
+            String log = logs.get(i);
+            String[] str = log.split(":");
+            int id = Integer.parseInt(str[0]);
+            boolean isStart = str[1].equals("start");
+            int time = Integer.parseInt(str[2]);
+            
+            if(stack.isEmpty()){
+                stack.push(new Function(id, time));
+            }else if(isStart){
+                res[stack.peek().id] += (time - prev);
+                stack.push(new Function(id, time));
+            }else{
+                res[id] += (time - prev + 1);
+                stack.pop();
+            }
+            
+            if(isStart){
+                prev = time;
+            }else{
+                prev = time + 1;
+            }
+        }
+
+        return res;
+    }
+}
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Python, O(logs.size) time, O(n) space
+def exclusiveTime(self, n, logs):
+    ans = [0]*n
+    s = []
+    depth = 0
+    
+    # Records net runtime at each depth
+    druntime = collections.defaultdict(int)
+
+    for line in logs:
+        fid, marker, t = line.split(':')
+        fid, t = int(fid), int(t)
+        
+        if marker == 'start':
+            depth += 1
+            s.append((fid, t))
+            druntime[depth+1] = 0                    # Reset inner depth runtime when new function starts
+        else:
+            fid, start_ts = s.pop()
+            runtime = t - start_ts + 1               # Runtime for function just popped
+            druntime[depth] += runtime               # Net runtime for all function calls at this depth
+            ans[fid] += runtime - druntime[depth+1]  # Exclsv time = Runtime - Runtime of inner depth
+            depth -= 1
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+simple c++ using stack
+class Solution {
+public:
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        // based on @awice and @MaskRay 
+        vector<int> result(n);
+        stack<int> s;
+        char typestr[10];
+        int fnid, time, last_time = 0;
+        for ( string & log : logs ) {
+            sscanf(log.c_str(), "%d:%[^:]:%d", &fnid, typestr, &time);
+            if ( 's' == typestr[0] ) {
+                if ( s.size() > 0 )
+                    result[s.top()] += time - last_time;
+                s.push(fnid);
+            } else {
+                result[s.top()] += ++time - last_time;
+                s.pop();
+            }
+            last_time = time;
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - Recursive
+class Solution {
+    func exclusiveTime(_ n: Int, _ logs: [String]) -> [Int] {
+        let log = logs[0]
+        let info = log.components(separatedBy: ":")
+        let startID = info[0]
+        let startTime = info[2]
+        var index = 0
+        var result = [Int](repeatElement(0, count: n))
+
+        helper(startID, startTime, logs, &index, &result)
+        
+        return result
+    }
+    
+    fileprivate func helper(_ startID: String, _ startTime: String, _ logs: [String], _ index: inout Int, _ result: inout [Int]) -> Int {
+        if index >= logs.count {
+            return 0
+        }
+        
+        let log = logs[index]
+        let info = log.components(separatedBy: ":")
+        var exclusive = 0
+        var endTime = ""
+        var cost = 0
+
+        if info[0] == startID && info[1] == "end" {
+            index += 1
+            cost = Int(info[2])! - Int(startTime)! + 1
+            result[Int(startID)!] += cost
+            return cost
+        }
+
+        while index < logs.count {
+            let log = logs[index]
+            let info = log.components(separatedBy: ":")
+            index += 1
+            if info[0] == startID && info[1] == "end" {
+                endTime = info[2]
+                cost = Int(endTime)! - Int(startTime)! + 1
+                result[Int(startID)!] += cost - exclusive
+                break
+            }
+            exclusive += helper(info[0], info[2], logs, &index, &result)
+        }
+        
+        return cost
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java stack solution (42ms).
+public class Solution {
+    public int[] exclusiveTime(int n, List<String> logs) {
+        int[] res = new int[n];
+        Stack<Pair> s = new Stack<>();
+        for(int i=0;i<logs.size();i++){
+            String[] tmp = logs.get(i).split(":");
+            int id = Integer.parseInt(tmp[0]);
+            int time = Integer.parseInt(tmp[2]);
+            if(tmp[1].equals("start")){
+                s.push(new Pair(id,time,0));
+            }
+            else{
+                Pair tmpPair = s.pop();
+                int exclusiveTime = time - tmpPair.t +1;
+                res[id] += exclusiveTime-tmpPair.otherTime;
+                if(!s.empty()){
+                    Pair peek = s.peek();                    
+                    peek.otherTime += exclusiveTime;
+                }
+            }
+        }
+        return res;
+    }
+   class Pair{
+        int id,t,otherTime;
+        Pair(int id, int t,int otherTime){
+            this.id = id;
+            this.t = t;
+            this.otherTime = otherTime;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ straight-forward solution beats 100% now
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        vector<int> time(n, 0);
+        stack<vector<int>> s;
+        for(int i=0;i<logs.size();i++) {
+            vector<int> t=parse(logs[i]);
+            if(t[1]==0) {
+                if(!s.empty()) time[s.top()[0]]+=t[2]-s.top()[1];
+                s.push({t[0], t[2]});
+            }
+            else {
+                time[t[0]]+=t[2]-s.top()[1]+1;
+                s.pop();
+                if(!s.empty()) s.top()[1]=t[2]+1;
+            }
+        }
+        return time;
+    }
+    
+    vector<int> parse(string& s) {
+        vector<int> res;
+        int ct=0;
+        string temp;
+        for(int i=0;i<s.size();i++) {
+            if(s[i]==':') {
+                if(ct==0) res.push_back(stoi(temp));
+                else if(ct==1&&temp=="start") res.push_back(0);
+                else if(ct==1&&temp=="end") res.push_back(1);
+                temp.clear();
+                ct++;
+            }
+            else temp.append(1, s[i]);
+        }
+        res.push_back(stoi(temp));
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution, Stack
+public class Solution {
+    public static int[] exclusiveTime(int n, List<String> logs) {
+        int[] result = new int[n];
+        if (logs == null || logs.size() == 0) return result;
+        
+        int id = 0, time = 0;
+        Stack<Integer> stack = new Stack<>();
+        for (String log : logs) {
+            String[] arr = log.split("\\:");
+            if (arr[1].equals("start")) {
+                if (!stack.isEmpty()) {
+                    id = stack.peek();
+                    result[id] += Integer.parseInt(arr[2]) - time;
+                }
+                stack.push(Integer.parseInt(arr[0]));
+                time = Integer.parseInt(arr[2]);
+            }
+            else { // end
+                id = stack.pop();
+                result[id] += Integer.parseInt(arr[2]) - time + 1;
+                time = Integer.parseInt(arr[2]) + 1;
+            }
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

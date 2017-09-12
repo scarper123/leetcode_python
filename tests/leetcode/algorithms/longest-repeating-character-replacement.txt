@@ -1,0 +1,941 @@
+Java HaspMap, LinkedHashSet, ArrayList (155 ms)
+public class RandomizedCollection {
+    ArrayList<Integer> nums;
+	HashMap<Integer, Set<Integer>> locs;
+	java.util.Random rand = new java.util.Random();
+    /** Initialize your data structure here. */
+    public RandomizedCollection() {
+        nums = new ArrayList<Integer>();
+	    locs = new HashMap<Integer, Set<Integer>>();
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    public boolean insert(int val) {
+        boolean contain = locs.containsKey(val);
+	    if ( ! contain ) locs.put( val, new LinkedHashSet<Integer>() ); 
+	    locs.get(val).add(nums.size());        
+	    nums.add(val);
+	    return ! contain ;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    public boolean remove(int val) {
+        boolean contain = locs.containsKey(val);
+	    if ( ! contain ) return false;
+	    int loc = locs.get(val).iterator().next();
+	    locs.get(val).remove(loc);
+	    if (loc < nums.size() - 1 ) {
+	       int lastone = nums.get( nums.size()-1 );
+	       nums.set( loc , lastone );
+	       locs.get(lastone).remove( nums.size()-1);
+	       locs.get(lastone).add(loc);
+	    }
+	    nums.remove(nums.size() - 1);
+	   
+	    if (locs.get(val).isEmpty()) locs.remove(val);
+	    return true;
+    }
+    
+    /** Get a random element from the collection. */
+    public int getRandom() {
+        return nums.get( rand.nextInt(nums.size()) );
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 128m Solution, Real O(1) Solution
+class RandomizedCollection {
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        auto result = m.find(val) == m.end();
+        
+        m[val].push_back(nums.size());
+        nums.push_back(pair<int, int>(val, m[val].size() - 1));
+        
+        return result;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        auto result = m.find(val) != m.end();
+        if(result)
+        {
+            auto last = nums.back();
+            m[last.first][last.second] = m[val].back();
+            nums[m[val].back()] = last;
+            m[val].pop_back();
+            if(m[val].empty()) m.erase(val);
+            nums.pop_back();
+        }
+        return result;
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom() {
+        return nums[rand() % nums.size()].first;
+    }
+private:
+    vector<pair<int, int>> nums;
+    unordered_map<int, vector<int>> m;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Frugal Python code
+import random
+
+class RandomizedCollection(object):
+
+    def __init__(self):
+        self.vals, self.idxs = [], collections.defaultdict(set)
+        
+
+    def insert(self, val):
+        self.vals.append(val)
+        self.idxs[val].add(len(self.vals) - 1)
+        return len(self.idxs[val]) == 1
+        
+
+    def remove(self, val):
+        if self.idxs[val]:
+            out, ins = self.idxs[val].pop(), self.vals[-1]
+            self.vals[out] = ins
+            if self.idxs[ins]:
+                self.idxs[ins].add(out)
+                self.idxs[ins].discard(len(self.vals) - 1)
+            self.vals.pop()
+            return True
+        return False 
+
+    def getRandom(self):
+        return random.choice(self.vals)
+
+----------------------------------------------------------------------------------------------------
+Clean O(1) Java Solution with HashMap and Set
+public class RandomizedCollection {
+
+    ArrayList<Integer> result;
+    HashMap<Integer, LinkedHashSet<Integer>> map;
+    
+    public RandomizedCollection() {
+        result = new ArrayList<Integer>();
+        map = new HashMap<Integer, LinkedHashSet<Integer>>();
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    public boolean insert(int val) {
+        // Add item to map if it doesn't already exist.
+        boolean alreadyExists = map.containsKey(val);
+        if(!alreadyExists) {
+            map.put(val, new LinkedHashSet<Integer>());
+        }
+        map.get(val).add(result.size());
+        result.add(val);
+        return !alreadyExists;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    public boolean remove(int val) {
+        if(!map.containsKey(val)) {
+            return false;
+        }
+        // Get arbitary index of the ArrayList that contains val
+        LinkedHashSet<Integer> valSet = map.get(val);
+        int indexToReplace = valSet.iterator().next();
+        
+        // Obtain the set of the number in the last place of the ArrayList
+        int numAtLastPlace = result.get(result.size() - 1);
+        LinkedHashSet<Integer> replaceWith = map.get(numAtLastPlace);
+        
+        // Replace val at arbitary index with very last number
+        result.set(indexToReplace, numAtLastPlace);
+        
+        // Remove appropriate index
+        valSet.remove(indexToReplace);
+        
+        // Don't change set if we were replacing the removed item with the same number
+        if(indexToReplace != result.size() - 1) {
+            replaceWith.remove(result.size() - 1);
+            replaceWith.add(indexToReplace);
+        }
+        result.remove(result.size() - 1);
+        
+        // Remove map entry if set is now empty, then return
+        if(valSet.isEmpty()) {
+            map.remove(val);
+        }
+        return true;
+    }
+    
+    /** Get a random element from the collection. */
+    public int getRandom() {
+        // Get linearly random item
+        return result.get((int)(Math.random() * result.size()));
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using map and vector with detailed explanation
+class RandomizedCollection {
+private:
+    map<int, vector<int>> dic;
+    vector<int> arr;
+    
+public:
+    RandomizedCollection() {
+    }
+
+    bool insert(int val) {
+        arr.push_back(val);//add val in arr
+        dic[val].push_back(arr.size() - 1);//add its index in dic[val]
+        return dic[val].size() == 1;
+    }
+    
+    bool remove(int val) {
+        if(dic[val].size() == 0)
+        {
+            return false;
+        }
+        int idx = dic[val].back();//arr[idx] = val
+        dic[val].pop_back();
+       //swap arr[idx] and arr[arr.size()-1] if idx != arr.size()-1
+       //modify the dic at the same time.
+        if(arr.size() - 1 != idx);
+        {
+            int tmp = arr.back();
+            arr[idx] = tmp;
+     //the new index of tmp is now idx, so modify the dic accordingly.
+            dic[tmp].pop_back();
+            dic[tmp].push_back(idx);
+        }
+       //remove the last element in arr
+        arr.pop_back();
+        return true;
+    }
+
+    int getRandom() {
+        return arr[rand()%arr.size()];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy Understanding Java Solution using HashSet
+public class RandomizedCollection {
+
+    List<Integer> nums;
+    Map<Integer, Set<Integer>> map;
+    java.util.Random random;
+
+    /** Initialize your data structure here. */
+    public RandomizedCollection() {
+        nums = new ArrayList<>();
+        map = new HashMap<>();
+        random = new java.util.Random();
+    }
+
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    public boolean insert(int val) {
+        boolean doesContain = map.containsKey(val);
+        if(!doesContain) map.put(val, new HashSet<>());
+        map.get(val).add(nums.size());
+        nums.add(val);
+        return !doesContain;
+    }
+
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    public boolean remove(int val) {
+        if(!map.containsKey(val)) return false;
+        if(!map.get(val).contains(nums.size()-1)) {
+            int currPos = map.get(val).iterator().next();
+            int lastVal = nums.get(nums.size() - 1);
+            map.get(lastVal).remove(nums.size() - 1);
+            map.get(lastVal).add(currPos);
+            map.get(val).remove(currPos);
+            map.get(val).add(nums.size() - 1);
+            nums.set(currPos, lastVal);
+        }
+        map.get(val).remove(nums.size()-1);
+        if(map.get(val).isEmpty()) map.remove(val);
+        nums.remove(nums.size()-1);
+        return true;
+    }
+
+    /** Get a random element from the collection. */
+    public int getRandom() {
+        return nums.get(random.nextInt(nums.size()));
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ updated solution with unordered map and set
+class RandomizedCollection {
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        m[val].insert(v.size());
+        v.push_back(val);
+        return m[val].size() == 1;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        if (!m.count(val)) {
+            return false;
+        }
+        int last = v.back();
+        int pos = *(m[val].rbegin());
+        m[last].erase(*(m[last].rbegin()));
+        m[last].insert(pos);
+        v[pos] = last;
+        v.pop_back();
+        if (m[val].size() > 1) {
+            m[val].erase(*(m[val].rbegin()));
+        } else {
+            m.erase(val);
+        }
+        return true;
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom() {
+        return v[rand() % v.size()];
+    }
+    
+private:
+    vector<int> v;
+    unordered_map<int, set<int>> m;
+};
+
+/**
+ * Your RandomizedCollection object will be instantiated and called as such:
+ * RandomizedCollection obj = new RandomizedCollection();
+ * bool param_1 = obj.insert(val);
+ * bool param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
+
+
+----------------------------------------------------------------------------------------------------
+C++ AC Solution with unordered_map and vector (104ms)
+class RandomizedCollection {
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {}
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        nums.push_back(val);
+        m[val].push_back(nums.size() - 1);
+        return m[val].size() == 1;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        if(m.find(val) == m.end())  return false;
+        int last = nums.back();
+        if(val != last) {   // Reduce redundant access.
+            nums[m[val].back()] = last;
+            m[last].back() = m[val].back();
+        }
+        m[val].pop_back();
+        nums.pop_back();
+        if(m[val].size() == 0)
+            m.erase(val);
+        return true;
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom() {
+        return nums[rand() % nums.size()];
+    }
+
+private:
+    unordered_map<int, vector<int>> m;
+    vector<int> nums;
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with unordered_multimap
+
+class RandomizedCollection {
+    unordered_multimap<int, int> Map;
+    typedef unordered_multimap<int,int>::iterator Itr;
+    vector<Itr> Vec;
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        std::srand(std::time(0));
+        std::srand(std::time(0));
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    bool insert(int val) {
+        bool ret = Map.count(val) == 0;
+        auto it = Map.insert({val,-1});
+        it->second = Vec.size();  //change the -1 to the index in the vector
+        Vec.push_back(it);
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    bool remove(int val) {
+        if(Vec.empty()) return false;
+        auto it = Map.find(val); if(it == Map.end() ) return false;
+        int index = it->second;
+        (Vec.back())->second = index;  //change the object inside the Map
+        swap(Vec[Vec.size()-1], Vec[index]);  //move the object to be removed to the back of vector
+        Vec.pop_back();
+        Map.erase(it);
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    int getRandom() {
+        int random = std::rand();
+        random %= Vec.size();
+        return Vec[random]->first; //First is the value! Don't be careless!
+    }
+};
+
+
+/**
+ * Your RandomizedCollection object will be instantiated and called as such:
+ * RandomizedCollection obj = new RandomizedCollection();
+ * bool param_1 = obj.insert(val);
+ * bool param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
+
+----------------------------------------------------------------------------------------------------
+C++ Solution using a map of vectors to handle duplicates.
+class RandomizedCollection {
+    vector<pair<int, int>> buffer; // pair.first: the actual value stored; pair.second: the index of the pointer in the idx_map[pair.first]; so idx_map[pair.first][pair.second] is the index of the value in the buffer.
+    unordered_map<int, vector<int>> idx_map; // duplicates are stacked into vector<int>
+    default_random_engine rng;
+public:
+    bool insert(int val) {
+        auto is_exist = idx_map.find(val) == idx_map.end() ;
+        idx_map[val].push_back(buffer.size()); 
+        buffer.emplace_back(val, idx_map[val].size() - 1);
+        return is_exist;
+    }
+    bool remove(int val) {
+        if (idx_map.find(val) == idx_map.end())
+            return false;
+        int idx = idx_map[val].back();
+        buffer[idx] = buffer.back();
+        idx_map[buffer.back().first][buffer.back().second] = idx;
+        idx_map[val].pop_back();
+        if (idx_map[val].empty())
+            idx_map.erase(val);
+        buffer.pop_back();
+        return true;
+    }
+    int getRandom() {
+        uniform_int_distribution<int> distribution(0, buffer.size() - 1);
+        int idx = distribution(rng);
+        return buffer[idx].first;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short AC C++ solution with vector, unordered_map, unordered_set
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+Concise Python solution with List, Dict and Set
+import random
+class RandomizedCollection(object):
+    def __init__(self):
+        self.l = []
+        self.d = collections.defaultdict(set)
+
+    def insert(self, val):
+        b = val not in self.d
+        self.d[val].add(len(self.l))
+        self.l.append(val)
+        return b
+
+    def remove(self, val):
+        if val not in self.d:
+            return False
+        i, newVal = self.d[val].pop(), self.l[-1]
+        if len(self.d[val]) == 0:
+            del self.d[val]
+        self.l[i] = newVal
+        if newVal in self.d:
+            self.d[newVal].add(i)
+            self.d[newVal].discard(len(self.l)-1)
+        self.l.pop()
+        return True
+
+    def getRandom(self):
+        return random.choice(self.l)
+
+
+----------------------------------------------------------------------------------------------------
+java using HashMap&lt;Integer,HashSet&lt;Integer&gt;&gt;() and ArrayList. with explaination.151ms
+public class RandomizedCollection {
+
+    /** Initialize your data structure here. */
+    HashMap<Integer,HashSet<Integer>> map;
+    List<Integer> list;
+    java.util.Random r = new java.util.Random();
+    public RandomizedCollection() {
+        map = new HashMap<Integer,HashSet<Integer>>();
+        list = new ArrayList<Integer>();
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    public boolean insert(int val) {
+        list.add(val);
+        if(map.containsKey(val)) {
+            HashSet<Integer> set = map.get(val);
+            set.add(list.size()-1);
+            map.put(val , set);
+            return false;
+        }else {
+            HashSet<Integer> set = new HashSet<Integer>();
+            set.add(list.size()-1);
+            map.put(val , set);
+            return true;
+        }
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    public boolean remove(int val) {
+        if(map.containsKey(val)) {
+            HashSet<Integer> set = map.get(val);
+            Iterator<Integer> it = set.iterator();
+            int index = 0;
+            if(it.hasNext()) {
+                index = it.next();
+            }else {
+                return false;
+            }
+            set.remove(index);
+            if(set.isEmpty()) {
+                map.remove(val);
+            }
+            if(index == list.size()-1) {
+                list.remove(list.size()-1);
+                return true;
+            }else {
+                int deletenum = list.get(index);
+                int lastnum = list.get(list.size()-1);
+                if(lastnum == deletenum) { //if the last number in the list equals to the number to be delete
+                    set.remove(list.size() - 1);
+                    set.add(index);
+                    list.remove(list.size() - 1);
+                }else {
+                    list.set(index , lastnum);
+                    HashSet<Integer> lastnumset = map.get(lastnum);
+                    lastnumset.remove(list.size() - 1);
+                    lastnumset.add(index);
+                    list.remove(list.size() - 1);
+                }
+                return true;
+            }
+        }else {
+            return false;
+        }
+    }
+    
+    /** Get a random element from the collection. */
+    public int getRandom() {
+        int index = r.nextInt(list.size());
+        return list.get(index);
+    }
+}
+
+/**
+ * Your RandomizedCollection object will be instantiated and called as such:
+ * RandomizedCollection obj = new RandomizedCollection();
+ * boolean param_1 = obj.insert(val);
+ * boolean param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
+
+----------------------------------------------------------------------------------------------------
+C++ unordered_multimap and vector solution
+class RandomizedCollection {
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        bool ret = true;
+        if(valToIndexMap.find(val) != valToIndexMap.end())
+            ret = false;
+        
+        vals.push_back(val);
+        valToIndexMap.insert(pair<int,int>(val, vals.size()-1));
+        
+        return ret;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        auto removeItemIt = valToIndexMap.find(val);
+
+		if (removeItemIt == valToIndexMap.end())
+			return false;
+
+		int removeItemIndex = removeItemIt->second;
+		auto replaceItemItRange = valToIndexMap.equal_range(vals[vals.size() - 1]);
+		unordered_multimap<int, int>::iterator replaceItemIt = replaceItemItRange.first;
+		for (auto it = replaceItemItRange.first; it != replaceItemItRange.second; it++){
+			if (it->second > replaceItemIt->second){
+				replaceItemIt = it;
+			}
+		}
+		replaceItemIt->second = removeItemIndex;
+		swap(vals[vals.size() - 1], vals[removeItemIndex]);
+
+		vals.pop_back();
+		valToIndexMap.erase(removeItemIt);
+
+		return true;
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom() {
+        int retIndex = rand() % vals.size();
+        return vals[retIndex];
+    }
+    
+private:
+    unordered_multimap<int, int> valToIndexMap;
+    vector<int> vals;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java ArrayList and two maps solution
+    private final List<Value> values = new ArrayList<>();
+    private final Map<Value, Integer> indexes = new HashMap<>();
+    private final Map<Integer, Integer> counts = new HashMap<>();
+    private final Random random = new Random();
+    
+    public boolean insert(int val) {
+        return appendNewValue(val).wasAddedFirst();
+    }
+
+    private Value appendNewValue(int val) {
+        Value newValue = new Value(val, counts.getOrDefault(val, 0));
+        values.add(newValue);
+        indexes.put(newValue, values.size() - 1);
+        counts.put(val, newValue.number + 1);
+        return newValue;
+    }
+    
+    public boolean remove(int val) {
+        int count = counts.getOrDefault(val, 0);
+        if (count == 0)
+            return false;
+        int index = indexes.get(new Value(val, count - 1));
+        swapWithLastValue(index);
+        removeLastValue();
+        return true;
+    }
+
+    private void swapWithLastValue(int index) {
+        int lastIndex = values.size() - 1;
+        Value temp = values.get(index);
+        Value last = values.get(lastIndex);
+        values.set(index, last);
+        values.set(lastIndex, temp);
+        indexes.put(last, index);
+        indexes.put(temp, lastIndex);
+    }
+
+    private void removeLastValue() {
+        int lastIndex = values.size() - 1;
+        Value value = values.get(lastIndex);
+        values.remove(lastIndex);
+        indexes.remove(value);
+        if (value.wasAddedFirst())
+            counts.remove(value.value);
+        else
+            counts.put(value.value, value.number);
+    }
+    
+    public int getRandom() {
+        return values.get(random.nextInt(values.size())).value;
+    }
+    
+    private static class Value {
+        private final int value;
+        private final int number;
+
+        public Value(int value, int number) {
+            this.value = value;
+            this.number = number;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 13 * hash + this.value;
+            hash = 13 * hash + this.number;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            final Value other = (Value) obj;
+            return this.value == other.value
+                    && this.number == other.number;
+        }
+
+        boolean wasAddedFirst() {
+            return number == 0;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution beats 97%. Totally based on the previous question
+private static Random random = new Random();
+private List<Integer> list;
+private Map<Integer, RandomizedSet> positions;
+
+/** Initialize your data structure here. */
+public RandomizedCollection() {
+    list = new ArrayList<Integer>();
+	positions = new HashMap<Integer, RandomizedSet>();
+}
+
+/** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+public boolean insert(int val) {
+    if (positions.containsKey(val)) {
+		list.add(val);
+		RandomizedSet pVal = positions.get(val);
+		pVal.insert(list.size() - 1);
+        return false;
+	}
+	else {
+		RandomizedSet pVal = new RandomizedSet();
+		list.add(val);
+		pVal.insert(list.size() - 1);
+        positions.put(val, pVal);
+		return true;
+	}
+}
+
+/** Removes a value from the collection. Returns true if the collection contained the specified element. */
+public boolean remove(int val) {
+    if (!positions.containsKey(val))
+		return false;
+	if (val == list.get(list.size() - 1)) {
+		RandomizedSet s = positions.get(val);
+		s.remove(list.size() - 1);
+		if (s.size() == 0)
+            positions.remove(val);
+		list.remove(list.size() - 1);
+		return true;
+	}
+		
+	RandomizedSet pVal = positions.get(val);
+    int pDel = pVal.getRandom();
+	int lastVal = list.get(list.size() - 1);
+    RandomizedSet pLast = positions.get(lastVal);
+	pLast.remove(list.size() - 1);
+    pLast.insert(pDel);			
+	pVal.remove(pDel);
+    if (pVal.size() == 0)
+		positions.remove(val);
+	list.set(pDel, list.get(list.size() - 1));
+	list.remove(list.size() - 1);
+	return true;
+}
+
+/** Get a random element from the collection. */
+public int getRandom() {
+    return list.get(random.nextInt(list.size()));
+}
+
+
+----------------------------------------------------------------------------------------------------
+85ms solution from Insert Delete GetRandom O(1) - Duplicates not allowed
+struct Node {
+    int val;
+    int next;
+
+    Node() : val(0), next(-1) {};
+
+    Node(int v, int n) : val(v), next(n) {};
+
+};
+
+class RandomizedCollection {
+public:
+    unordered_map<int, int> linkb;
+    vector<Node> vec;
+
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        srand(time(nullptr));
+    }
+
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        bool ret = linkb.find(val) == linkb.end();
+        Node t(val, -1);
+        if (!ret) t.next = linkb[val];
+        linkb[val] = vec.size();
+        vec.push_back(t);
+        return ret;
+    }
+
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        if (linkb.find(val) == linkb.end()) return false;
+        int pos = linkb[val];
+        if (vec[pos].next == -1) linkb.erase(val);
+        else linkb[val] = vec[pos].next;
+
+        int p = vec.size() - 1;
+        if(p==pos) {
+            vec.pop_back();
+            return true;
+        }
+        while (vec[p].next != -1 && vec[p].next > pos)
+            p = vec[p].next;
+        vec[pos].val = vec.back().val;
+        vec[pos].next = vec[p].next;
+        vec[p].next = pos;
+        linkb[vec.back().val] = vec.back().next;
+        vec.pop_back();
+        return true;
+    }
+
+    /** Get a random element from the collection. */
+    int getRandom() {
+        return vec[rand() % vec.size()].val;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ two solutions
+
+class RandomizedCollection {
+private:
+    unordered_multimap<int, int> map;
+    vector<int> elements;
+    
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        int count = map.count(val);
+        map.insert(make_pair(val, elements.size()));
+        elements.push_back(val);
+        
+        return !count;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        auto inSet = map.find(val);
+        
+        if(inSet != map.end()){
+            int pos = map.find(val)->second;
+            map.erase (map.find(val), ++map.find(val));
+            
+            int last = elements.back(); elements.pop_back();
+            elements[pos] = last;
+            
+            for(auto findPos = map.find(last); findPos != map.end(); ++findPos){
+                if(findPos->second == elements.size()){
+                    map.erase( findPos, std::next(findPos));
+                    map.insert( make_pair(last, pos));
+                    break;
+                }
+            }
+        }
+        
+        return inSet != map.end();
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom() {
+        int pos = rand() % elements.size();
+        return elements[pos];
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+My c++ solution, easy to understand.
+class RandomizedCollection
+{
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() { }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) 
+    {
+        mNums.push_back(val);
+        LUT[val].push_back(mNums.size() - 1);
+        return LUT[val].size() == 1;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val)
+    {
+        if(LUT[val].size() != 0) 
+        {
+            int idx = LUT[val].back();
+            //Put the last number in the position of idx and delete the last element.
+            mNums[idx] = mNums[mNums.size() - 1];
+            mNums.pop_back();
+            //Update LUT.
+            LUT[mNums[idx]].back() = idx;
+            LUT[val].pop_back();
+            return true;
+        }
+        return false;
+    }
+    
+    /** Get a random element from the collection. */
+    int getRandom()
+    {
+        return mNums[rand() % mNums.size()];
+    }
+    
+private:
+    vector<int> mNums;
+    map<int, vector<int>> LUT;
+};
+
+
+----------------------------------------------------------------------------------------------------

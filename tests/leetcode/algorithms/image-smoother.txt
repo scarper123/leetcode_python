@@ -1,0 +1,488 @@
+Java 4-Liner and O(n) Time Solution
+public List<Integer> findClosestElements(List<Integer> arr, int k, int x) {
+    List<Integer> less = new ArrayList<>(), greater = new ArrayList<>(),
+                  lessResult = new LinkedList<>(), greaterResult = new LinkedList<>();
+ 
+    for (Integer i : arr) {
+        if (i <= x) less.add(i);
+        else greater.add(i);
+    }
+    
+    Collections.reverse(less);
+    int  i = 0, j = 0, n = less.size(), m = greater.size();
+    for (int size=0;size<k;size++) {
+        if (i < n && j < m) {
+            if (Math.abs(less.get(i) - x) <= Math.abs(greater.get(j) - x)) lessResult.add(less.get(i++));
+            else greaterResult.add(greater.get(j++));
+        }
+        else if (i < n) lessResult.add(less.get(i++));
+        else greaterResult.add(greater.get(j++));
+    }
+
+    Collections.reverse(lessResult);
+    lessResult.addAll(greaterResult);
+    return lessResult;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(log n) Java, 1 line O(log(n) + k) Python
+AbstractList
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#x2F;C++&#93; Very simple binary search solution
+    vector<int> findClosestElements(vector<int>& arr, int k, int x) {
+        int index = std::lower_bound(arr.begin(), arr.end(), x) - arr.begin();
+        int i = index - 1, j = index;                                    
+        while(k--) (i<0 || (j<arr.size() && abs(arr[i] - x) > abs(arr[j] - x) ))? j++: i--;
+        return vector<int>(arr.begin() + i + 1, arr.begin() + j );
+    }
+
+
+----------------------------------------------------------------------------------------------------
+easy java
+    public List<Integer> findClosestElements(List<Integer> arr, int k, int x) {
+        List<Integer> result = new LinkedList<>();
+        TreeMap<Integer, List<Integer>> map = new TreeMap<>();
+        for (int a : arr) {
+            int abs = Math.abs(a - x);
+            if (!map.containsKey(abs)) map.put(abs, new LinkedList<>());
+            map.get(abs).add(a);
+        }
+        for (Map.Entry<Integer, List<Integer>> e : map.entrySet()) {
+            for (int i : e.getValue()) {
+                result.add(i);
+                if (result.size() == k) break;
+            }
+            if (result.size() == k) break;
+        }
+        Collections.sort(result);
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python easy solution, O(K+logN)
+def findClosestElements(self, arr, k, x):
+        left = right = bisect.bisect_left(arr, x)
+        while right - left < k:
+            if left == 0: return arr[:k]
+            if right == len(arr): return arr[-k:]
+            if x - arr[left - 1] <= arr[right] - x: left -= 1
+            else: right += 1
+        return arr[left:right]
+
+----------------------------------------------------------------------------------------------------
+Java short O(NlogN) solution and O(logN + k) solution
+    public static List<Integer> findClosestElements2(List<Integer> arr, int k, int x) {
+        if(x < arr.get(0)) return arr.subList(0, k);
+        if(x > arr.get(arr.size()-1)) return arr.subList(arr.size()-k+1, arr.size());
+
+        List<Integer> result = new ArrayList<>();
+        int index = binSearch(arr, x);
+        System.out.println(index);
+        int i = 0; int j = 0;
+        if(arr.get(index) == x) {
+            result.add(x);
+            i = index - 1;
+            j = index + 1;
+        } else {
+            i = index - 1;
+            j = index;
+        }
+
+        while(i >= 0 && j < arr.size() && result.size() != k) {
+           if(Math.abs(arr.get(i) - x) <= Math.abs(arr.get(j) - x)) {
+              result.add(0, arr.get(i--));
+           } else {
+               result.add(arr.get(j++));
+           }
+        }
+
+        if(result.size() == k) {
+        } else if(i < 0) {
+            result.addAll(arr.subList(j, j + k - result.size()));
+        } else {
+            result.addAll(0, arr.subList(i+1-k+result.size(), i+1));
+        }
+
+        return result;
+    }
+
+    public static int binSearch(List<Integer> a, int target) {
+        int st = 0;
+        int end = a.size() - 1;
+        int mid = 0;
+        while(st <= end) {
+            mid = (st + end)/2;
+            if(a.get(mid) == target) {
+                break;
+            } else if (a.get(mid) > target) {
+                end = mid -1;
+            } else {
+                st = mid +1;
+            }
+        }
+        return mid;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Binary Search and Two Pointers  - 18 ms
+public class Solution {
+	public List<Integer> findClosestElements(List<Integer> arr, int k, int x) {
+		int n = arr.size();
+		if (x <= arr.get(0)) {
+			return arr.subList(0, k);
+		} else if (arr.get(n - 1) <= x) {
+			return arr.subList(n - k, n);
+		} else {
+			int index = Collections.binarySearch(arr, x);
+			if (index < 0)
+				index = -index - 1;
+			int low = Math.max(0, index - k - 1), high = Math.min(arr.size() - 1, index + k - 1);
+
+			while (high - low > k - 1) {
+				if (low < 0 || (x - arr.get(low)) <= (arr.get(high) - x))
+					high--;
+				else if (high > arr.size() - 1 || (x - arr.get(low)) > (arr.get(high) - x))
+					low++;
+				else
+					System.out.println("unhandled case: " + low + " " + high);
+			}
+			return arr.subList(low, high + 1);
+		}
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Understand Python Solution
+def findClosestElements(self, arr, k, x):
+    b = collections.defaultdict(list)
+    for i in arr:   
+        b[abs(i - x)] += [i]
+    res = []
+    for i in sorted(b.keys()):  
+        res += b[i]
+    return sorted(res[:k])
+
+----------------------------------------------------------------------------------------------------
+Very Simple and Short Acc Solution - Modifying the Input List
+    public IList<int> FindClosestElements(IList<int> arr, int k, int x)
+    {
+        while(arr.Count>k)
+        {
+            int first = 0;
+            int last = arr.Count - 1;
+            if (Math.Abs(arr[first] - x) <= Math.Abs(arr[last] - x))
+                arr.RemoveAt(last);
+            else
+                arr.RemoveAt(first);
+        }
+        return arr;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple, O(n) Solution
+    def findClosestElements(self, arr, k, x):
+        end = k
+        for i in xrange(k, len(arr)):
+            delta = abs(arr[i] - x) - abs(arr[i - k] - x)
+            if delta > 0:
+                return arr[end - k:end]
+            if delta < 0:
+                end = i + 1
+        return arr[end - k:end]
+
+----------------------------------------------------------------------------------------------------
+Java O(logn + klogk) solution with PriorityQueue and Binary Search
+public class Solution {
+	class Pair implements Comparable<Pair> {
+		int abs;
+		int i;
+		public Pair(int abs, int i) {
+			super();
+			this.abs = abs;
+			this.i = i;
+		}
+		@Override
+		public int compareTo(Pair o) {
+			return abs < o.abs ? -1 : (abs == o.abs ? Integer.valueOf(i).compareTo(Integer.valueOf(o.i)) : 1);
+		}
+		
+	}
+    public List<Integer> findClosestElements(List<Integer> arr, int k, int x) {
+        int index = Collections.binarySearch(arr, x);
+        index = (index < 0) ? - (index + 1) : index;
+        
+        int lo = index - k;
+        int hi = index + k;
+        lo = (lo < 0) ? 0 : lo;
+        hi = (hi >= arr.size()) ? arr.size() - 1 : hi;
+        
+        PriorityQueue<Pair> pq = new PriorityQueue<>();        
+        for(int i = lo; i <= hi; i++) { 
+            pq.add(new Pair(Math.abs(arr.get(i) - x), i));   
+        }
+        
+        List<Integer> result = new ArrayList<>();
+        for(int n = 1; n <= k; n++) {
+        	result.add(arr.get(pq.poll().i));
+        }
+        
+        Collections.sort(result);
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+share my O(log(n)+Klog(K)) solution using java!
+public class Solution {
+    public List<Integer> findClosestElements(List<Integer> arr, int k, int x) { 
+           List<Integer> res = new ArrayList<>();
+           if(k<=0) return res;
+        
+           int index = Collections.binarySearch(arr,x);
+           if(index<0){
+               index=-(index+1);
+           }
+        
+           int left=index-1;
+           int right=index;
+           while(left>=0||right<arr.size()){
+               Integer left_num = left>=0?arr.get(left):null;
+               Integer right_num = right<arr.size()?arr.get(right):null;
+               if(left_num==null){
+                   res.add(right_num);
+                   right++;
+               }else if(right_num==null){
+                   res.add(left_num);
+                   left--;
+               }else{
+                   if(Math.abs(left_num-x)<=Math.abs(right_num-x)){
+                       res.add(left_num);
+                       left--;
+                   }else{
+                       res.add(right_num);
+                       right++;
+                   }
+               }
+               k--;
+               if(k==0){
+                   break;
+               }
+           }
+           Collections.sort(res);
+        
+           return res;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python 1-Liner
+class Solution(object):
+    def findClosestElements(self, arr, k, x):
+        return sorted([n for d, n in sorted([(abs(n-x), n) for n in arr])[:k]])
+
+
+----------------------------------------------------------------------------------------------------
+Python 2 lines
+def findClosestElements(self, arr, k, x):
+    diffTuples = sorted((abs(x - num), num) for num in arr)
+    return sorted(map(lambda x: x[1], diffTuples[:k])) #prefer the smaller number for same diff.
+
+
+----------------------------------------------------------------------------------------------------
+Python, Ternary Search and Scan O(K + logN)
+def findClosestElements(self, A, K, X):
+    def get(i):
+        return abs(A[i] - X), A[i]
+
+    lo, hi = 0, len(A) - 1
+    while lo + 2 < hi:
+        m1 = (2 * lo + hi) / 3
+        m2 = (lo + 2 * hi) / 3
+        if get(m1) < get(m2):
+            hi = m2
+        else:
+            lo = m1
+
+    i = j = min((lo, hi, lo+1 if lo<hi else lo), key = get)
+
+    while j-i+1 < K:
+        if i == 0 or j+1 < len(A) and get(j+1) < get(i-1): 
+            j += 1
+        else:
+            i -= 1
+
+    return A[i:j+1]
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ solution, 5 lines, O(k+logn) time
+vector<int> findClosestElements(vector<int>& arr, int k, int x) {
+    sort(arr.begin(), arr.end(), [x](int a, int b) {
+        int xa = abs(x - a), xb = abs(x - b);
+        return xa < xb || xa == xb && a < b;
+    });
+    arr.resize(k);
+    sort(arr.begin(), arr.end());
+    return arr;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution
+class Solution {
+    func findClosestElements(_ arr: [Int], _ k: Int, _ x: Int) -> [Int] {
+        if arr.count < 2 {
+            return arr
+        }
+        
+        let count = arr.count
+        var closest = 0
+        var minDiff = Int.max
+        var left = 0
+        var right = 0
+        var result = [Int]()
+        
+        for i in 0..<count {
+            let diff = abs(arr[i] - x)
+            if diff < minDiff || arr[i] == x {
+                closest = i
+                minDiff = diff
+            }
+        }
+        
+        left = closest
+        right = closest
+        while right - left + 1 < k {
+            if left - 1 < 0 {
+                right += 1
+            } else if right + 1 > (count - 1) {
+                left -= 1
+            } else if abs(x - arr[left - 1]) <= abs(x - arr[right + 1]) {
+                left -= 1
+            } else {
+                right += 1
+            }
+        }
+        
+        for i in left...right {
+            result.append(arr[i])
+        }
+        
+        return result
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, binary search
+public class Solution {
+    // Binary search to find the crossover point
+    int findCrossOver(List<Integer> arr, int low, int high, int x) {
+        if (arr.get(high) <= x) return high;
+        if (arr.get(low) > x)  return low;
+ 
+        int mid = low + (high - low)/2;
+ 
+        if (arr.get(mid) <= x && arr.get(mid+1) > x) return mid;
+
+        if(arr.get(mid) < x) return findCrossOver(arr, mid+1, high, x);
+        return findCrossOver(arr, low, mid - 1, x);
+    }
+    
+    public List<Integer> findClosestElements(List<Integer> arr, int k, int x) {
+        List<Integer> res = new ArrayList<>();
+        
+        int l = findCrossOver(arr, 0, arr.size() - 1, x); 
+        int r = l + 1;
+        int count = 0;
+ 
+        while (l >= 0 && r < arr.size() && count < k) {
+            if (x - arr.get(l) <= arr.get(r) - x) res.add(arr.get(l--));
+            else res.add(arr.get(r++));
+            count++;
+        }
+
+        while (count < k && l >= 0) {
+            res.add(arr.get(l--));
+            count++;
+        }
+        while (count < k && r < arr.size()) {
+            res.add(arr.get(r++));
+            count++;
+        }
+        
+        Collections.sort(res);
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+2-line python solutioin
+class Solution(object):
+    def findClosestElements(self, arr, k, x):
+        """
+        :type arr: List[int]
+        :type k: int
+        :type x: int
+        :rtype: List[int]
+        """
+        arr.sort(key=lambda t: abs(t - x))
+        return sorted(arr[:k])
+
+
+----------------------------------------------------------------------------------------------------
+Python - Binary Search(O(log n)) + O(k)
+from bisect import *
+class Solution:
+    def findClosestElements(self, arr, k, x):
+        """
+        :type arr: List[int]
+        :type k: int
+        :type x: int
+        :rtype: List[int]
+        """
+        from collections import deque
+        n = len(arr)
+        pos = bisect_left(arr,x)
+        if pos == n: return arr[-k:]
+        if pos==0: return arr[:k]
+        i = pos
+        Q = deque()
+        while k and i<n and arr[i]==x:
+            Q.append(x)
+            i += 1
+            k -= 1
+        j = i
+        i = pos - 1
+        while k and i>=0 and j<n:
+            if x-arr[i]<=arr[j]-x:
+                Q.appendleft(arr[i])
+                i -= 1
+            else:
+                Q.append(arr[j])
+                j += 1
+            k -= 1
+        while k and i>=0:
+            Q.appendleft(arr[i])
+            i -= 1
+            k -= 1
+        while k and j<n:
+            Q.append(arr[j])
+            j += 1
+            k -= 1
+        return list(Q)
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,1597 @@
+Java O(1) Accept Solution Using HashMap, DoubleLinkedList and LinkedHashSet
+public class LFUCache {
+    private Node head = null;
+    private int cap = 0;
+    private HashMap<Integer, Integer> valueHash = null;
+    private HashMap<Integer, Node> nodeHash = null;
+    
+    public LFUCache(int capacity) {
+        this.cap = capacity;
+        valueHash = new HashMap<Integer, Integer>();
+        nodeHash = new HashMap<Integer, Node>();
+    }
+    
+    public int get(int key) {
+        if (valueHash.containsKey(key)) {
+            increaseCount(key);
+            return valueHash.get(key);
+        }
+        return -1;
+    }
+    
+    public void set(int key, int value) {
+        if ( cap == 0 ) return;
+        if (valueHash.containsKey(key)) {
+            valueHash.put(key, value);
+        } else {
+            if (valueHash.size() < cap) {
+                valueHash.put(key, value);
+            } else {
+                removeOld();
+                valueHash.put(key, value);
+            }
+            addToHead(key);
+        }
+        increaseCount(key);
+    }
+    
+    private void addToHead(int key) {
+        if (head == null) {
+            head = new Node(0);
+            head.keys.add(key);
+        } else if (head.count > 0) {
+            Node node = new Node(0);
+            node.keys.add(key);
+            node.next = head;
+            head.prev = node;
+            head = node;
+        } else {
+            head.keys.add(key);
+        }
+        nodeHash.put(key, head);      
+    }
+    
+    private void increaseCount(int key) {
+        Node node = nodeHash.get(key);
+        node.keys.remove(key);
+        
+        if (node.next == null) {
+            node.next = new Node(node.count+1);
+            node.next.prev = node;
+            node.next.keys.add(key);
+        } else if (node.next.count == node.count+1) {
+            node.next.keys.add(key);
+        } else {
+            Node tmp = new Node(node.count+1);
+            tmp.keys.add(key);
+            tmp.prev = node;
+            tmp.next = node.next;
+            node.next.prev = tmp;
+            node.next = tmp;
+        }
+
+        nodeHash.put(key, node.next);
+        if (node.keys.size() == 0) remove(node);
+    }
+    
+    private void removeOld() {
+        if (head == null) return;
+        int old = 0;
+        for (int n: head.keys) {
+            old = n;
+            break;
+        }
+        head.keys.remove(old);
+        if (head.keys.size() == 0) remove(head);
+        nodeHash.remove(old);
+        valueHash.remove(old);
+    }
+    
+    private void remove(Node node) {
+        if (node.prev == null) {
+            head = node.next;
+        } else {
+            node.prev.next = node.next;
+        } 
+        if (node.next != null) {
+            node.next.prev = node.prev;
+        }
+    }
+    
+    class Node {
+        public int count = 0;
+        public LinkedHashSet<Integer> keys = null;
+        public Node prev = null, next = null;
+        
+        public Node(int count) {
+            this.count = count;
+            keys = new LinkedHashSet<Integer>();
+            prev = next = null;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+JAVA O(1) very easy solution using 3 HashMaps and LinkedHashSet
+public class LFUCache {
+    HashMap<Integer, Integer> vals;
+    HashMap<Integer, Integer> counts;
+    HashMap<Integer, LinkedHashSet<Integer>> lists;
+    int cap;
+    int min = -1;
+    public LFUCache(int capacity) {
+        cap = capacity;
+        vals = new HashMap<>();
+        counts = new HashMap<>();
+        lists = new HashMap<>();
+        lists.put(1, new LinkedHashSet<>());
+    }
+    
+    public int get(int key) {
+        if(!vals.containsKey(key))
+            return -1;
+        int count = counts.get(key);
+        counts.put(key, count+1);
+        lists.get(count).remove(key);
+        if(count==min && lists.get(count).size()==0)
+            min++;
+        if(!lists.containsKey(count+1))
+            lists.put(count+1, new LinkedHashSet<>());
+        lists.get(count+1).add(key);
+        return vals.get(key);
+    }
+    
+    public void set(int key, int value) {
+        if(cap<=0)
+            return;
+        if(vals.containsKey(key)) {
+            vals.put(key, value);
+            get(key);
+            return;
+        } 
+        if(vals.size() >= cap) {
+            int evit = lists.get(min).iterator().next();
+            lists.get(min).remove(evit);
+            vals.remove(evit);
+        }
+        vals.put(key, value);
+        counts.put(key, 1);
+        min = 1;
+        lists.get(1).add(key);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ O(1) solution using 3 hash maps with explanation
+class LFUCache {
+    int cap;
+    int size;
+    int minFreq;
+    unordered_map<int, pair<int, int>> m; //key to {value,freq};
+    unordered_map<int, list<int>::iterator> mIter; //key to list iterator;
+    unordered_map<int, list<int>>  fm;  //freq to key list;
+public:
+    LFUCache(int capacity) {
+        cap=capacity;
+        size=0;
+    }
+    
+    int get(int key) {
+        if(m.count(key)==0) return -1;
+        
+        fm[m[key].second].erase(mIter[key]);
+        m[key].second++;
+        fm[m[key].second].push_back(key);
+        mIter[key]=--fm[m[key].second].end();
+        
+        if(fm[minFreq].size()==0 ) 
+              minFreq++;
+        
+        return m[key].first;
+    }
+    
+   void set(int key, int value) {
+        if(cap<=0) return;
+        
+        int storedValue=get(key);
+        if(storedValue!=-1)
+        {
+            m[key].first=value;
+            return;
+        }
+        
+        if(size>=cap )
+        {
+            m.erase( fm[minFreq].front() );
+            mIter.erase( fm[minFreq].front() );
+            fm[minFreq].pop_front();
+            size--;
+        }
+        
+        m[key]={value, 1};
+        fm[1].push_back(key);
+        mIter[key]=--fm[1].end();
+        minFreq=1;
+        size++;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ list with hashmap with explanation
+
+class LFUCache
+{
+ public:
+  struct LRUNode
+  {
+    int freq;
+    list<pair<int, int> > vals;
+    LRUNode(int f = 0) : freq(f) { }
+  };
+
+  typedef list<LRUNode>::iterator iptr;
+  typedef list<pair<int, int> >::iterator jptr;
+
+  LFUCache(int capacity)
+  {
+    capacity_ = capacity;
+  }
+
+  int get(int key)
+  {
+    int val = -1;
+    if (kv_.find(key) != kv_.end()) {
+      kv_[key] = promote(key);
+      val = kv_[key].second->second;
+    }
+    return val;
+  }
+
+  void set(int key, int value)
+  {
+    if (capacity_ <= 0) return;
+    if (kv_.find(key) == kv_.end()) {
+      if (kv_.size() == capacity_) evict();
+      kv_[key] = insert(key, value);
+    } else {
+      kv_[key] = promote(key, value);
+    }
+  }
+
+ private:
+  pair<iptr, jptr> promote(int key, int val = -1)
+  {
+    iptr i; jptr j;
+    tie(i, j) = kv_[key];
+    iptr k = next(i);
+
+    if (val < 0) val = j->second;
+    int freq = i->freq + 1;
+
+    i->vals.erase(j);
+    if (i->vals.empty())
+      cache_.erase(i);
+
+    if (k == cache_.end() || k->freq != freq)
+      i = cache_.insert(k, LRUNode(freq));
+    else i = k;
+    j = i->vals.insert(i->vals.end(), {key, val});
+    return {i, j};
+  }
+
+  void evict()
+  {
+    iptr i = cache_.begin();
+    jptr j = i->vals.begin();
+    kv_.erase(j->first);
+    i->vals.erase(j);
+    if (i->vals.empty())
+      cache_.erase(i);
+  }
+
+  pair<iptr, jptr> insert(int key, int val)
+  {
+    iptr i = cache_.begin();
+    if (i == cache_.end() || i->freq != 1)
+      i = cache_.insert(i, LRUNode(1));
+    jptr j = i->vals.insert(i->vals.end(), {key, val});
+    return {i, j};
+  }
+
+ private:
+  list<LRUNode> cache_;
+  int capacity_;
+  unordered_map<int, pair<iptr, jptr> > kv_;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using PriorityQueue, with detailed explanation
+public class LFUCache {
+    
+    class Cache implements Comparable<Cache> {
+        int key, f, r;
+        public Cache(int k, int f, int r) {key=k;this.f=f;this.r=r;}
+        public boolean equals(Object object) {return key==((Cache) object).key;}
+        public int hashCode() {return key;}
+        public int compareTo(Cache o) {return key==o.key?0:f==o.f?r-o.r:f-o.f;}
+    }
+
+    int capacity,id;
+    HashMap<Integer, Integer> hashMap;
+    HashMap<Integer, Cache> caches;
+    TreeSet<Cache> treeSet;
+
+    public LFUCache(int capacity) {
+        this.capacity=capacity;
+        id=0;
+        hashMap=new HashMap<>();
+        caches=new HashMap<>();
+        treeSet=new TreeSet<>();
+    }
+
+    public int get(int key) {
+        id++;
+        if (hashMap.containsKey(key)) {
+            update(key);
+            return hashMap.get(key);
+        }
+        return -1;
+    }
+
+    public void set(int key, int value) {
+        if (capacity==0) return;
+        id++;
+        if (hashMap.containsKey(key)) {
+            update(key);
+            hashMap.put(key, value);
+            return;
+        }
+        if (hashMap.size()==capacity) {
+            Cache first=treeSet.pollFirst();
+            hashMap.remove(first.key);
+            caches.remove(first.key);
+        }
+        hashMap.put(key, value);
+        Cache cache=new Cache(key, 1, id);
+        caches.put(key, cache);
+        treeSet.add(cache);
+    }
+
+    private void update(int key) {
+        int f=caches.get(key).f;
+        treeSet.remove(caches.get(key));
+        Cache cache=new Cache(key, f+1, id);
+        caches.put(key, cache);
+        treeSet.add(cache);
+    }
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python shitty O(1) solution with two dict and one linkedlist
+class ListNode(object):
+    def __init__(self, key, val):
+        self.prev = None
+        self.next = None
+        self.val = val
+        self.key = key
+
+    def connect(self, nextNode):
+        self.next = nextNode
+        nextNode.prev = self
+
+class LFUCache(object):
+
+    def __init__(self, capacity):
+        """
+        
+        :type capacity: int
+        """
+        self.cap = capacity
+        self.head = ListNode(None, None)
+        self.tail = ListNode(None, None)
+        self.head.connect(self.tail)
+        #use to record the first ListNode of this count number
+        self.cnt = {0: self.tail}
+        # key: key , value:[ListNode, visit count]
+        self.kv = {None:[self.tail, 0]}
+
+    def moveforward(self, key):
+        node, cnt = self.kv[key]
+        self.add('tmp', node.val, cnt + 1)
+        self.remove(key)
+        self.kv[key] = self.kv['tmp']
+        self.kv[key][0].key = key
+        del self.kv['tmp']
+
+    def get(self, key):
+        """
+        :type key: int
+        :rtype: int
+        """
+        if key not in self.kv:
+            return -1
+        self.moveforward(key)
+        return self.kv[key][0].val
+
+    def set(self, key, value):
+        """
+        :type key: int
+        :type value: int
+        :rtype: void
+        """
+        if self.cap == 0:
+            return
+        if key in self.kv:
+            self.kv[key][0].val = value
+            self.moveforward(key)
+            return
+        if len(self.kv) > self.cap:
+            self.remove(self.tail.prev.key)
+        self.add(key, value, 0)
+
+
+    def remove(self, key):
+        node, cnt = self.kv[key]
+        if self.cnt[cnt] != node:
+            node.prev.connect(node.next)
+        elif self.kv[node.next.key][1] == cnt:
+            node.prev.connect(node.next)
+            self.cnt[cnt] = self.cnt[cnt].next
+        else:
+            node.prev.connect(node.next)
+            del self.cnt[cnt]
+        del self.kv[key]
+
+    def add(self, key, value, cnt):
+        if cnt in self.cnt:
+            loc = self.cnt[cnt]
+        else:
+            loc = self.cnt[cnt - 1]
+        node = ListNode(key, value)
+        loc.prev.connect(node)
+        node.connect(loc)
+        self.cnt[cnt] = node
+        self.kv[key] = [node, cnt]
+        
+
+
+# Your LFUCache object will be instantiated and called as such:
+# obj = LFUCache(capacity)
+# param_1 = obj.get(key)
+# obj.set(key,value)
+
+
+----------------------------------------------------------------------------------------------------
+Java solutions of three different ways. PriorityQueue : O(capacity)  TreeMap : O(log(capacity)) DoubleLinkedList  : O(1)
+private int capacity;
+private int count;
+private HashMap<Integer, Tuple> map1; // whether appeared
+private HashMap<Integer, Tuple> finalNodes; // value : the final node of key times
+private Tuple dummyHead;
+private Tuple dummyEnd;
+
+public LFUCache(int capacity) {
+    this.capacity = capacity;
+    count = 0;
+    map1 = new HashMap<Integer, Tuple>();
+    finalNodes = new HashMap<>();
+    dummyHead = new Tuple(0, 0, 0);
+    dummyEnd = new Tuple(0, 0, 0);
+    dummyHead.next = dummyEnd;
+    dummyEnd.prev = dummyHead;
+}
+
+public int get(int key) {
+    if (capacity == 0 || !map1.containsKey(key)) {
+        return -1;
+    }
+    Tuple old = map1.get(key);
+    set(key, old.value);
+    return old.value;
+}
+
+public void set(int key, int value) {
+    if (capacity == 0) {
+        return;
+    }
+    if (map1.containsKey(key)) { // this key has appeared
+        Tuple cur = map1.get(key);
+        if (finalNodes.get(cur.times) == cur && finalNodes.get(cur.times + 1) == null) { // the position should not change
+            finalNodes.put(cur.times, cur.prev.times == cur.times ? cur.prev : null);
+            cur.times++;
+            cur.value = value;
+            finalNodes.put(cur.times, cur);
+            return;
+        }
+        removeNode(cur); // remove node cur
+        if (finalNodes.get(cur.times) == cur) {
+            finalNodes.put(cur.times, cur.prev.times == cur.times ? cur.prev : null);
+        }
+        cur.times++;
+        cur.value = value;
+        Tuple finalNode = finalNodes.get(cur.times) == null ? finalNodes.get(cur.times - 1) : finalNodes.get(cur.times);
+        insertNode(finalNode, cur); 
+        finalNodes.put(cur.times, cur); // cur is the final node whitch appeared cur.times
+    } else if (count == capacity) { // reach limt of the cache
+        Tuple head = dummyHead.next;
+        removeNode(head); //remove the first which appeared least times and is the least Used
+        map1.remove(head.key);
+        if (finalNodes.get(head.times) == head) {
+            finalNodes.remove(head.times);
+        }
+        Tuple cur = new Tuple(key, value, 1);
+        if (finalNodes.get(1) == null) {
+            insertNode(dummyHead, cur);
+        } else {
+            Tuple finalNode = finalNodes.get(1);
+            insertNode(finalNode, cur);
+        }
+        finalNodes.put(1, cur);
+        map1.put(key, cur);
+    } else {
+        count++;
+        Tuple cur = new Tuple(key, value, 1);
+        if (finalNodes.get(1) == null){
+           insertNode(dummyHead, cur);
+        } else {
+            Tuple finalNode = finalNodes.get(1);
+            insertNode(finalNode, cur);
+        }
+        finalNodes.put(1, cur);
+        map1.put(key, cur);
+    }
+}
+
+public void insertNode(Tuple t1, Tuple t2) {
+    t2.next = t1.next;
+    t1.next.prev = t2;
+    t1.next = t2;
+    t2.prev = t1;
+}
+
+public void removeNode(Tuple node) {
+    node.next.prev = node.prev;
+    node.prev.next = node.next;
+}
+class Tuple {
+    int key;
+    int value;
+    int times;
+    Tuple prev;
+    Tuple next;
+    public Tuple(int key, int value, int times) {
+        this.key = key;
+        this.value = value;
+        this.times = times;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with Detailed Explanations Using Indexed Priority Queue (i.e., HashMap + Priority Queue)
+class LFUCache {
+public:
+    struct Node {
+        int key; // key of the element.
+        int val; // value of the ement.
+        int fre; // usage frequency
+        int timeStamp; // the latest time stamp when this element is accessed.
+        Node(): key(-1), val(-1), timeStamp(-1), fre(0) {}
+        Node(int k, int v, int ts): key(k), val(v), timeStamp(ts), fre(1) {}
+    };
+
+    LFUCache(int capacity) {
+        Cap = capacity;
+        Node* dummy = new Node();
+        pq.push_back(dummy); // The pq start from pq[1].
+        ts = 0;
+    }
+    
+    int get(int key) {
+        if(!mp.count(key)) return -1;
+        int index = mp[key];
+        int val = pq[index]->val;
+	pq[index]->fre++;
+	pq[index]->timeStamp = ++ts;
+        sink(index);
+        return val;
+    }
+    
+    void set(int key, int value) {
+        if(Cap <= 0) return;
+	if(mp.count(key)) {
+	   int index = mp[key];
+	   pq[index]->val = value;
+	   get(key);
+	}
+	else {
+	    if(pq.size() - 1 == Cap) {
+	        int oldKey = pq[1]->key;
+		mp.erase(oldKey);
+		Node* newnode = new Node(key, value, ++ts);
+		pq[1] = newnode;
+		mp[key] = 1;
+		sink(1);
+	    }
+	    else {
+	        Node* newnode = new Node(key, value, ++ts);
+		pq.push_back(newnode);
+		mp[key] = pq.size() - 1;
+		swim(pq.size() - 1);
+	    }
+	}
+    }
+    
+private:
+	vector<Node*> pq; // A priority queue, with the least usage frequency and least recently used element at the top.
+	unordered_map<int, int> mp; // A mapping from the key of the element to its index in the priority queue.
+	int Cap; // Capcity of the cache
+	int ts; // time-stamp: indicate the time stamp of the latest operation of an element. According to the requirement of LFU cache, when we need to evict an element from the cache, but there are multiple elements with the same minimum frequency, then the least recently used element should be evicted.
+
+    /*
+     * Recursively sink a node in priority queue. A node will be sinked, when its frequency is larger than any of its
+     * children nodes, or the node has the same frequency with a child, but it is recently updated. 
+     */
+	void sink(int index) {
+	    int left = 2 * index, right = 2 * index + 1, target = index;
+	    if(left < pq.size() && pq[left]->fre <= pq[target]->fre) // If the left child has the same frequency, we probably need to swap the parent node and the child node, because the parent node is recently accessed, and the left child node was accessed at an older time stamp.
+               target = left;
+            if(right < pq.size()) { 
+                if(pq[right]->fre < pq[target]->fre || (pq[right]->fre == pq[target]->fre && pq[right]->timeStamp < pq[target]->timeStamp)) // If right child has the same frequency and an older time stamp, we must swap it.
+                     target = right;
+		}
+		if(target != index) {
+		    myswap(target, index);
+	            sink(target);
+		}
+	}
+    
+    /*a
+     * Recursively swim a node in priority queue. A node will be swimmed, when its frequency is less than its
+     * parent node. If the node has the same frequency with its parent, it is not needed to be swimmed, because
+     * it is recently accessed.
+     */
+	void swim(int index) {
+	    int par = index / 2;
+	    while(par > 0 && pq[par]->fre > pq[index]->fre) {
+	        myswap(par, index);
+		index = par;
+		par /= 2;
+	    }
+	}
+
+	void myswap(int id1, int id2) {
+	    swap(pq[id1], pq[id2]);
+	    mp[pq[id1]->key] = id1;
+	    mp[pq[id2]->key] = id2;
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Concise Python O(1) beats 95% using two maps.
+PREV,NEXT,KEY,VAL,FREQ = 0,1,2,3,4
+class LFUCache(object):
+
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.freq_map = {}
+        self.key_map = {}
+        self.min_freq = 1
+
+    def get(self, key):
+        key_map, freq_map = self.key_map, self.freq_map
+        if key not in key_map:
+            return -1
+        else:
+            val_node = key_map[key]
+            val_node[PREV][NEXT],val_node[NEXT][PREV] = val_node[NEXT],val_node[PREV]
+            if freq_map[self.min_freq] is freq_map[self.min_freq][NEXT]:
+                self.min_freq+=1
+            freq = val_node[FREQ]
+            root = freq_map.setdefault(freq+1,[])
+            if not root:
+                root[:] = [root,root,None,None,freq+1]
+            val_node[PREV],val_node[NEXT] = root[PREV],root
+            val_node[FREQ]+=1
+            root[PREV][NEXT] = root[PREV] = val_node
+            return key_map[key][VAL]
+
+    def set(self, key, value):
+        key_map, freq_map, cap = self.key_map, self.freq_map, self.capacity
+        if not cap:
+            return
+        if key in key_map:
+            key_map[key][VAL] = value
+            self.get(key)
+        else:
+            if len(key_map) == cap:
+                root = freq_map[self.min_freq]
+                node_evict = root[NEXT]
+                root[NEXT],node_evict[NEXT][PREV] = node_evict[NEXT], root
+                del key_map[node_evict[KEY]]
+            self.min_freq = 1
+            val_node = [None,None,key,value,1]
+            root = freq_map.setdefault(1,[])
+            if not root:
+                root[:] = [root,root,None,None,1]
+            val_node[PREV],val_node[NEXT] = root[PREV],root
+            root[PREV][NEXT] = root[PREV] = val_node
+            key_map[key] = val_node
+
+
+----------------------------------------------------------------------------------------------------
+Java O(1) Solution Using Two HashMap and One DoubleLinkedList
+public class LFUCache {
+    class Node {
+        int key, val, cnt;
+        Node prev, next;
+        Node(int key, int val) {
+            this.key = key;
+            this.val = val;
+            cnt = 1;
+        }
+    }
+    
+    class DLList {
+        Node head, tail;
+        int size;
+        DLList() {
+            head = new Node(0, 0);
+            tail = new Node(0, 0);
+            head.next = tail;
+            tail.prev = head;
+        }
+        
+        void add(Node node) {
+            head.next.prev = node;
+            node.next = head.next;
+            node.prev = head;
+            head.next = node;
+            size++;
+        }
+        
+        void remove(Node node) {
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+            size--;
+        }
+        
+        Node removeLast() {
+            if (size > 0) {
+                Node node = tail.prev;
+                remove(node);
+                return node;
+            }
+            else return null;
+        }
+    }
+    
+    int capacity, size, min;
+    Map<Integer, Node> nodeMap;
+    Map<Integer, DLList> countMap;
+    public LFUCache(int capacity) {
+        this.capacity = capacity;
+        nodeMap = new HashMap<>();
+        countMap = new HashMap<>();
+    }
+    
+    public int get(int key) {
+        Node node = nodeMap.get(key);
+        if (node == null) return -1;
+        update(node);
+        return node.val;
+    }
+    
+    public void put(int key, int value) {
+        if (capacity == 0) return;
+        Node node;
+        if (nodeMap.containsKey(key)) {
+            node = nodeMap.get(key);
+            node.val = value;
+            update(node);
+        }
+        else {
+            node = new Node(key, value);
+            nodeMap.put(key, node);
+            if (size == capacity) {
+                DLList lastList = countMap.get(min);
+                nodeMap.remove(lastList.removeLast().key);
+                size--;
+            }
+            size++;
+            min = 1;
+            DLList newList = countMap.getOrDefault(node.cnt, new DLList());
+            newList.add(node);
+            countMap.put(node.cnt, newList);
+        }
+    }
+    
+    private void update(Node node) {
+        DLList oldList = countMap.get(node.cnt);
+        oldList.remove(node);
+        if (node.cnt == min && oldList.size == 0) min++; 
+        node.cnt++;
+        DLList newList = countMap.getOrDefault(node.cnt, new DLList());
+        newList.add(node);
+        countMap.put(node.cnt, newList);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution using Hash Table and Binary Search Tree
+struct CacheNode{
+    int key;
+    int val;
+    int freq;
+    CacheNode(int k, int v):freq(1), key(k), val(v){}
+};
+
+struct Compare{
+    bool operator()(const CacheNode& a, const CacheNode& b){
+        return a.freq < b.freq;
+    }
+};
+
+class LFUCache {
+public:
+    LFUCache(int capacity) {
+        size = capacity;
+    }
+    
+    int get(int key) {
+        auto it = cacheMap.find(key);
+        if (size == 0 || it == cacheMap.end()) return -1;
+        CacheNode temp = *(it->second);
+        temp.freq++;
+        cacheSet.erase(it->second);
+        cacheMap[key] = cacheSet.insert(temp);
+        return temp.val;
+    }
+    
+    void set(int key, int value) {
+        if(size == 0) return;
+        auto it = cacheMap.find(key);
+        if (it == cacheMap.end()){
+            if(cacheMap.size() == size){
+                cacheMap.erase((cacheSet.begin())->key);
+                cacheSet.erase(cacheSet.begin());
+            }
+            CacheNode temp = CacheNode(key, value);
+            cacheMap[key] = cacheSet.insert(temp);
+            return;
+        }
+        CacheNode temp = *(it->second);
+        temp.freq++;
+        temp.val = value;
+        cacheSet.erase(it->second);
+        cacheMap[key] = cacheSet.insert(temp);
+    }
+    
+private:
+    int size;
+    std::multiset<CacheNode, Compare> cacheSet;
+    unordered_map<int, std::multiset<CacheNode, Compare>::iterator> cacheMap;
+};
+
+
+----------------------------------------------------------------------------------------------------
+A mistake in test case?
+<p>For test case<br/>
+Input:<br/>
+&#91;&#34;LFUCache&#34;,&#34;set&#34;,&#34;set&#34;,&#34;get&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;&#93;<br/>
+&#91;&#91;2&#93;,&#91;1,1&#93;,&#91;2,2&#93;,&#91;1&#93;,&#91;3,3&#93;,&#91;2&#93;,&#91;3&#93;,&#91;4,4&#93;,&#91;1&#93;,&#91;3&#93;,&#91;4&#93;&#93;<br/>
+Output:<br/>
+&#91;null,null,null,1,null,-1,3,null,-1,3,4&#93;<br/>
+Expected:<br/>
+&#91;null,null,null,1,null,1,3,-1,null,-1,-1,4&#93;</p>
+<p>As the describe, the output should be correct, but the expected is wrong.</p>
+
+
+----------------------------------------------------------------------------------------------------
+My crappy accepted Java code
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+Test Case Seems Wrong
+<p>I think the following test case seems incorrect. This test case seems to be picking a recently &#34;set&#34; item over a less recently &#34;get&#34; item for eviction.</p>
+<p>set 1,1<br/>
+set 2,2<br/>
+get 2<br/>
+get 1<br/>
+get 2<br/>
+set 3,3  &lt;-- 3,3 is now more recent than 2,2 or 1,1 (However, the test case seems to be imply the opposite.)</p>
+<p>Or am I missing something?</p>
+<p>&#91;&#34;LFUCache&#34;,&#34;set&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;,&#34;set&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;&#93;<br/>
+&#91;&#91;3&#93;,&#91;2,2&#93;,&#91;1,1&#93;,&#91;2&#93;,&#91;1&#93;,&#91;2&#93;,&#91;3,3&#93;,&#91;4,4&#93;,&#91;3&#93;,&#91;2&#93;,&#91;1&#93;,&#91;4&#93;&#93;<br/>
+Output:<br/>
+&#91;null,null,null,2,1,2,null,null,3,2,-1,4&#93;<br/>
+Expected:<br/>
+&#91;null,null,null,2,1,2,null,null,-1,2,1,4&#93;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Short Java O(1) solution using LinkedHashMap and HashMap with explaination
+public class LFUCache {
+
+    Map<Integer, LinkedHashMap<Integer, Integer>> freqToEntry;
+    Map<Integer, Integer> keyToFreq;
+    int capacity;
+    int min;
+
+    public LFUCache(int capacity) {
+        freqToEntry = new HashMap<>();
+        keyToFreq = new HashMap<>();
+        this.capacity = capacity;
+        this.min = 0;
+    }
+    
+    public int get(int key) {
+        if(capacity==0 || !keyToFreq.containsKey(key)) {
+            return -1;
+        }else{
+            int freq = keyToFreq.get(key);
+            int value = freqToEntry.get(freq).get(key);
+            keyToFreq.put(key, freq+1);
+            freqToEntry.get(freq).remove(key);
+            freqToEntry.computeIfAbsent(freq+1, x->new LinkedHashMap<>()).put(key, value);
+            if(freq==min && freqToEntry.get(freq).size()==0) min = min+1;
+            return value;
+        }
+    }
+    
+    public void set(int key, int value) {
+        if(capacity==0) return;
+        if(keyToFreq.containsKey(key)){
+            int freq = keyToFreq.get(key);
+            keyToFreq.put(key, freq+1);
+            freqToEntry.get(freq).remove(key);
+            freqToEntry.computeIfAbsent(freq+1, x->new LinkedHashMap<>()).put(key, value);
+            if(freq==min && freqToEntry.get(freq).size()==0) min = min+1;
+        }else{
+            if(keyToFreq.size()==capacity) removeOldest();
+            keyToFreq.put(key, 1);
+            freqToEntry.computeIfAbsent(1, x->new LinkedHashMap<>()).put(key, value);
+            min = 1;
+        }
+    }
+    
+    private void removeOldest(){
+        int rmKey = freqToEntry.get(min).keySet().iterator().next();
+        keyToFreq.remove(rmKey);
+        freqToEntry.get(min).remove(rmKey);
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Test case is wrong the expected and output  does not match. &#91;&quot;LFUCache&quot;,&quot;set&quot;,&quot;set&quot;,&quot;get&quot;,&quot;get&quot;,&quot;get&quot;,&quot;set&quot;,&quot;set&quot;,&quot;get&quot;,&quot;get&quot;,&quot;get&quot;,&quot;get&quot;&#93;
+<p>Test case is wrong the expected and output  does not match.<br/>
+&#91;&#34;LFUCache&#34;,&#34;set&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;,&#34;set&#34;,&#34;set&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;,&#34;get&#34;&#93;<br/>
+&#91;&#91;3&#93;,&#91;2,2&#93;,&#91;1,1&#93;,&#91;2&#93;,&#91;1&#93;,&#91;2&#93;,&#91;3,3&#93;,&#91;4,4&#93;,&#91;3&#93;,&#91;2&#93;,&#91;1&#93;,&#91;4&#93;&#93;<br/>
+My answer: &#91;null,null,null,2,1,2,null,null,3,2,-1,4&#93;</p>
+<p>and the out from the leetcode &#91;null,null,null,2,1,2,null,null,-1,2,1,4&#93;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java O(1) solution using 2 HashMaps and a LinkedHashMap with comments
+public class LFUCache {
+
+    int min;
+    Map<Integer, Integer> map;
+    Map<Integer, Map<Integer, Integer>> freq;
+    int capacity;
+    
+    public LFUCache(int capacity) {
+        
+        min = 0;
+        map = new HashMap();
+        freq = new HashMap();
+        this.capacity = capacity;
+    }
+    
+    private int update(int key, int v)
+    {
+        //get frequency of key and freq map
+        int count = map.get(key);
+        Map<Integer, Integer> values = freq.get(count);
+        
+        //remove the key from values map
+        int ans = values.remove(key);
+        
+        //values map is empty remove freq bucket and update min
+        if(values.size() == 0)
+        {
+            if(min == count) min = count + 1;
+            freq.remove(count);
+        }
+        
+        count++;
+        //create new freq bucket and add key and ans to its values
+        if(!freq.containsKey(count))
+            freq.put(count, new LinkedHashMap());
+            
+        freq.get(count).put(key, v == Integer.MIN_VALUE ? ans : v);
+        map.put(key, count);
+        
+        return ans;
+    }
+    
+    public int get(int key) {
+        
+        if(!map.containsKey(key) || capacity == 0) return -1;
+        
+        return update(key, Integer.MIN_VALUE);
+    }
+    
+    public void set(int key, int value) {
+        
+        if(capacity == 0) return;
+        
+        if(map.containsKey(key))
+        {
+            update(key, value);
+            return;
+        }
+        
+        if(map.size() == capacity)
+        {
+            Map<Integer, Integer> values = freq.get(min);
+            Integer firstKey = values.keySet().iterator().next();
+            
+            values.remove(firstKey);
+        
+            //values map is empty remove freq bucket
+            if(values.size() == 0)
+            {
+                freq.remove(min);
+            }   
+            
+            map.remove(firstKey);
+        }
+        
+        //create new freq bucket and add key and value to its values
+        if(!freq.containsKey(1))
+            freq.put(1, new LinkedHashMap());
+            
+        freq.get(1).put(key, value);
+        map.put(key, 1);
+        min = 1;
+    }
+}
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache obj = new LFUCache(capacity);
+ * int param_1 = obj.get(key);
+ * obj.set(key,value);
+ */
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+class Node(object):
+    def __init__(self, key, value):
+        self.key, self.value = key, value
+        self.prev, self.nxt = None, None 
+        return
+
+class DoubleLinkedList(object):
+    def __init__(self):
+        self.head_sentinel, self.tail_sentinel, self.count = Node(None, None), Node(None, None), 0
+        self.head_sentinel.nxt, self.tail_sentinel.prev = self.tail_sentinel, self.head_sentinel
+        self.count = 0
+ 
+    def insert(self, x, node):
+        if node == None:
+            raise
+        temp = x.nxt
+        x.nxt, node.prev = node, x
+        node.nxt, temp.prev = temp, node
+        self.count += 1
+
+    def appendleft(self, node):
+        if node == None:
+            raise
+        self.insert(self.head_sentinel, node)
+
+    def append(self, node):
+        if node == None:
+            raise
+        self.insert(self.get_tail(), node)
+
+    def remove(self, node):
+        if node == None:
+            raise
+        prev_node = node.prev
+        prev_node.nxt, node.nxt.prev = node.nxt, prev_node
+        self.count -= 1
+
+    def pop():
+        if self.size() < 1:
+            raise
+        self.remove(self.get_tail())
+
+    def popleft():
+        if self.size() < 1:
+            raise
+        self.remove(self.get_head())
+
+    def size(self):
+        return self.count
+
+    def get_head(self):
+        return self.head_sentinel.nxt if self.count > 0 else None
+    
+    def get_tail(self):
+        return self.tail_sentinel.prev if self.count > 0 else None        
+
+class LinkedHashSet():
+    def __init__(self):
+        self.node_map, self.dll = {}, DoubleLinkedList()
+
+    def size(self):
+        return len(self.node_map)
+        
+    def contains(self, key):
+        return key in self.node_map
+    
+    def search(self, key):
+        if self.contains(key) == False:
+            raise
+        return self.node_map[key].value
+
+    def appendleft(self, key, value):
+        if self.contains(key) == False:
+            node = Node(key, value)
+            self.dll.appendleft(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.moveleft(key)
+
+    def append(self, key, value):
+        if self.contains(key) == False:
+            node = Node(key, value)
+            self.dll.append(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.moveright(key)
+    
+    def moveleft(self, key):
+        if self.contains(key) == False:
+            raise
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.dll.appendleft(node)
+
+    def moveright(self, key):
+        if self.contains(key) == False:
+            raise
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.dll.append(node)
+
+    def remove(self, key):
+        if self.contains(key) == False:
+            raise
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.node_map.pop(key)
+    
+    def popleft(self):
+        key = self.dll.get_head().key
+        self.remove(key)
+        return key
+
+    def pop(self):
+        key = self.dll.get_tail().key
+        self.remove(key)
+        return key
+
+from collections import defaultdict
+class LFUCache(object):
+    def __init__(self, capacity):
+        """
+        :type capacity: int
+        """
+        self.cap = capacity
+        self.min_f = -1
+        self.cache = {} #key:(value, frequency)
+        self.freq_map = defaultdict(LinkedHashSet) #frequency:LinkedHashSet
+
+    def get(self, key):
+        """
+        :type key: int
+        :rtype: int
+        """
+        if key in self.cache:
+            # Update new frequency
+            # Update freq_map
+            # Move key to front in its linkedHashSet
+            # Update new minimum frequency
+            v, f = self.cache[key][0], self.cache[key][1]
+            self.cache[key][1] += 1
+            
+            f_count_zero = False
+            self.freq_map[f].remove(key)
+            if self.freq_map[f].size() == 0:
+                f_count_zero = True
+                self.freq_map.pop(f)
+            self.freq_map[f+1].appendleft(key, v)
+                
+            if f == self.min_f and f_count_zero == True:
+                self.min_f += 1  
+            return v
+        return -1
+                
+
+    def put(self, key, value):
+        """
+        :type key: int
+        :type value: int
+        :rtype: void
+        """
+        if self.cap == 0:
+            return None
+        if key in self.cache:
+            self.cache[key][0] = value
+            self.get(key)
+        else:
+            curr_size = len(self.cache)
+            if curr_size == self.cap:
+                min_list = self.freq_map[self.min_f]
+                x = min_list.pop()
+                self.cache.pop(x)
+            
+            self.cache[key] = [value, 1]
+            self.freq_map[1].appendleft(key, value)
+            self.min_f = 1
+            return
+
+# Your LFUCache object will be instantiated and called as such:
+# obj = LFUCache(capacity)
+# param_1 = obj.get(key)
+# obj.set(key,value)
+
+
+----------------------------------------------------------------------------------------------------
+C++ 89ms beats 99.8% using unordered_map &amp; list of list
+class LFUCache {
+public:
+    struct info
+    {
+        int val;
+        list<pair<int, list<int>>>::iterator it_pair;
+        list<int>::iterator it_key;
+    };
+
+    LFUCache(int capacity) {
+        cap_ = capacity;
+    }
+
+    int get(int key) {
+        auto it = map_.find(key);
+        
+        if (it == map_.end())
+        {
+            return -1;
+        }
+        else
+        {
+            visit(it, key);
+            return it->second.val;
+        }
+    }
+
+    void put(int key, int value) {
+        auto it = map_.find(key);
+        
+        // exist
+        if (it != map_.end())
+        {
+            visit(it, key);
+            it->second.val = value;
+        }
+        else
+        {
+            if (cap_ == 0) return;
+
+            // del
+            if (map_.size() == cap_)
+            {
+                auto it = list_.front().second.begin();
+                map_.erase(*it);
+                list_.front().second.erase(it);
+
+                if (list_.front().second.size() == 0)
+                    list_.erase(list_.begin());
+            }
+            // insert
+            if (list_.empty() || list_.front().first != 1)
+            {
+                list_.push_front({1, {key}});
+            }
+            else
+            {
+                list_.front().second.push_back(key);
+            }
+            map_[key] = {value, list_.begin(), std::prev(list_.front().second.end())};
+        }
+    }
+
+protected:
+    void visit(unordered_map<int, info>::iterator it, int key)
+    {
+        auto it_pair = it->second.it_pair;
+        auto it_key = it->second.it_key;
+        int count = it_pair->first + 1;
+
+        it_pair->second.erase(it_key);
+        if (it_pair->second.size() == 0)
+            it_pair = list_.erase(it_pair);
+        else
+            std::advance(it_pair, 1);
+
+        if (it_pair == list_.end() || it_pair->first != count)
+        {
+            it_pair = list_.insert(it_pair, {count, {key}});
+        }
+        else
+        {
+            it_pair->second.push_back(key);
+        }
+        it->second.it_pair = it_pair;
+        it->second.it_key = std::prev(it_pair->second.end());
+    }
+
+    int cap_;
+    list<pair<int, list<int>>> list_;
+    unordered_map<int, info> map_;
+};
+
+
+----------------------------------------------------------------------------------------------------
+160ms O(1) solution using 1 HashMap
+public class LFUCache {
+    //head and tail of double linked list
+    //the closer to the tail, the less count and the less recently used
+    private final Element head, tail;
+    
+    private final int capacity;
+    
+    //keyed hash array
+    private final Element[] elementArray;
+    
+    //for every count as map key, the value is the most recent element 
+    //e.g.
+    //["LFUCache","set","set"]
+    //[[2],[1,1],[2,2]]
+    //after first "set", recentMap.get(0).val = 1
+    //after second "set", recentMap.get(0).val = 2
+    private final Map<Integer, Element> recentMap;
+    
+    //num elements added so far
+    private int total = 0;
+
+    public LFUCache(int capacity) {
+        this.capacity = capacity;
+        
+        //1.5 times the hash array size to alleviate hash collision
+        //also tested that the code works if we do not enlarge the hash array
+        elementArray = new Element[capacity + (capacity>>1)];
+        
+        recentMap = new HashMap<>();
+        
+        head = new Element(0, 0);
+        tail = new Element(0, 0);
+        head.next = tail;
+        tail.prev = head;
+    }
+    
+    public int get(int key) {
+        if(capacity == 0) {
+            return -1;
+        }
+        
+        final int hash = hash(key);
+
+        final Element element = findInLink(key, hash);
+        
+        if(element == null) {
+            return -1;
+        }
+        
+        //maintain recentMap before increase the access count
+        maintainMapThenIncreaseCount(element);
+
+        //swap to be the first in double linked list that has same count
+        swap(element);
+        
+        return element.val;
+    }
+    
+    public void set(int key, int value) {
+        if(capacity == 0) {
+            return;
+        }
+        
+        final int hash = hash(key);
+        
+        Element element = findInLink(key, hash);
+        
+        if (element == null) {
+            assureCapacity();
+                
+            final Element newElement = new Element(key, value);
+                
+            //set as first of hash link
+            newElement.linkNext = elementArray[hash];
+            elementArray[hash] = newElement;
+
+            //append to the end of double linked list or swap to be the first in double linked list that has 0 count
+            appendOrSwap(newElement);
+            return;
+        }
+        
+        element.val = value;
+        
+        maintainMapThenIncreaseCount(element);
+
+        //swap to be the first in double linked list that has same count
+        swap(element);
+    }
+    
+    private void maintainMapThenIncreaseCount(final Element element) {
+        //if element is the most recent, set most recent to its next or remove the count from map
+        if(recentMap.get(element.count) == element) {
+            if(element.next.count == element.count) {
+                recentMap.put(element.count, element.next);
+            }else {
+                recentMap.remove(element.count);
+            }
+        }  
+        
+        element.count++;
+    }
+    
+    //method for newly created element
+    //in such case, the input element is NOT in the double linked list
+    private void appendOrSwap(final Element element) {
+        if(!recentMap.containsKey(element.count)) {
+            //add to end of double linked list
+            element.prev = tail.prev;
+            tail.prev.next = element;
+            tail.prev = element;
+            element.next = tail;
+        }else{
+            reorder(recentMap.get(element.count), element);
+        }
+        
+        recentMap.put(element.count, element);
+    }
+    
+    //method for element already in the double linked list
+    private void swap(final Element element) {
+        final Element temp;
+        if(recentMap.containsKey(element.count)) {
+            //same count already exists
+            temp = recentMap.get(element.count);
+        }else if(element.prev != head && element.prev.count < element.count) {
+            //same count non-exist, element will be put before recentMap.get(element.prev.count)
+            temp = recentMap.get(element.prev.count);
+        }else {
+            //same count non-exit, and either element.prev.count > element.count or element.prev == head
+            temp = null;
+        }
+        
+        if(temp != null){
+            //take element out of double linked list
+            element.prev.next = element.next;
+            element.next.prev = element.prev;
+
+            reorder(temp, element);
+        }
+        
+        recentMap.put(element.count, element);
+    }
+    
+    private void reorder(final Element first, final Element element) {
+        final Element begin = first.prev;
+        
+        //begin <-> element <-> first;
+        begin.next = element;
+        element.next = first;
+        first.prev = element;
+        element.prev = begin;
+    }
+    
+    private void assureCapacity() {
+        if(++total > capacity) {
+            removeLast();
+        }
+    }
+    
+    //the last element has smallest count and is least recently used
+    private void removeLast() {
+        final Element element = tail.prev;
+        
+        if(recentMap.get(element.count) == element) {
+            recentMap.remove(element.count);
+        }
+        
+        //take element out of double linked list
+        tail.prev = tail.prev.prev;
+        tail.prev.next = tail;
+        
+        //take element out of hash link
+        final int hash = hash(element.key);
+        if(elementArray[hash] == element) {
+            elementArray[hash] = element.linkNext;
+        }else{
+            Element current = elementArray[hash];
+            while(current.linkNext != element) {
+                current = current.linkNext;
+            }
+            current.linkNext = element.linkNext;
+        }
+        
+        total--;
+    }
+    
+    //find key in the hash link
+    private Element findInLink(final int key, final int hash) {
+        Element element = elementArray[hash];
+        
+        while(element != null && element.key != key) {
+            element = element.linkNext;
+        }
+        
+        return element;        
+    }
+    
+    private int hash(final int key) {
+        final int res = key % elementArray.length;
+        return res >= 0 ? res : (elementArray.length + res);
+    }
+    
+    private class Element {
+        //next element in double linked list
+        Element next;
+        
+        //previous element in double linked list
+        Element prev;
+        
+        //next element in hash link, so as to tackle hash collision
+        Element linkNext;
+        
+        int key;
+        int val;
+        
+        //used count of this element
+        int count;
+        
+        Element(final int key, final int val) {
+            this.key = key;
+            this.val = val;
+        }
+    }
+}
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache obj = new LFUCache(capacity);
+ * int param_1 = obj.get(key);
+ * obj.set(key,value);
+ */
+
+
+----------------------------------------------------------------------------------------------------

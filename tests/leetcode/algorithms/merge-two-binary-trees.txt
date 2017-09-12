@@ -1,0 +1,1011 @@
+Java Solution, Convex Hull Algorithm - Gift wrapping aka Jarvis march
+public class Solution {
+    public List<Point> outerTrees(Point[] points) {
+        Set<Point> result = new HashSet<>();
+        
+        // Find the leftmost point
+        Point first = points[0];
+        int firstIndex = 0;
+        for (int i = 1; i < points.length; i++) {
+            if (points[i].x < first.x) {
+                first = points[i];
+                firstIndex = i;
+            }
+        }
+        result.add(first);
+        
+        Point cur = first;
+        int curIndex = firstIndex;
+        do {
+            Point next = points[0];
+            int nextIndex = 0;
+            for (int i = 1; i < points.length; i++) {
+                if (i == curIndex) continue;
+                int cross = crossProductLength(cur, points[i], next);
+                if (nextIndex == curIndex || cross > 0 ||
+                        // Handle collinear points
+                        (cross == 0 && distance(points[i], cur) > distance(next, cur))) {
+                    next = points[i];
+                    nextIndex = i;
+                }
+            }
+            // Handle collinear points
+            for (int i = 0; i < points.length; i++) {
+                if (i == curIndex) continue;
+                int cross = crossProductLength(cur, points[i], next);
+                if (cross == 0) {
+                    result.add(points[i]);
+                }
+            }
+
+            cur = next;
+            curIndex = nextIndex;
+            
+        } while (curIndex != firstIndex);
+        
+        return new ArrayList<Point>(result);
+    }
+    
+    private int crossProductLength(Point A, Point B, Point C) {
+        // Get the vectors' coordinates.
+        int BAx = A.x - B.x;
+        int BAy = A.y - B.y;
+        int BCx = C.x - B.x;
+        int BCy = C.y - B.y;
+    
+        // Calculate the Z coordinate of the cross product.
+        return (BAx * BCy - BAy * BCx);
+    }
+
+    private int distance(Point p1, Point p2) {
+        return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Graham scan with adapted sorting to deal with collinear points
+public class Solution {
+
+    public List<Point> outerTrees(Point[] points) {
+        if (points.length <= 1)
+            return Arrays.asList(points);
+        sortByPolar(points, bottomLeft(points));
+        Stack<Point> stack = new Stack<>(); 
+        stack.push(points[0]);                      
+        stack.push(points[1]);                              
+        for (int i = 2; i < points.length; i++) {
+            Point top = stack.pop();                                
+            while (ccw(stack.peek(), top, points[i]) < 0)
+                top = stack.pop();
+            stack.push(top);
+            stack.push(points[i]);
+        }       
+        return new ArrayList<>(stack);
+    }                               
+
+    private static Point bottomLeft(Point[] points) {
+        Point bottomLeft = points[0];
+        for (Point p : points)          
+            if (p.y < bottomLeft.y || p.y == bottomLeft.y && p.x < bottomLeft.x)
+                bottomLeft = p;                 
+        return bottomLeft;                                                  
+    }
+
+    /**
+     * @return positive if counter-clockwise, negative if clockwise, 0 if collinear
+     */
+    private static int ccw(Point a, Point b, Point c) {
+        return a.x * b.y - a.y * b.x + b.x * c.y - b.y * c.x + c.x * a.y - c.y * a.x;       
+    }
+
+    /**
+     * @return distance square of |p - q|
+     */
+    private static int dist(Point p, Point q) {
+        return (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
+    }
+                              
+    private static void sortByPolar(Point[] points, Point r) {
+        Arrays.sort(points, (p, q) -> {
+            int compPolar = ccw(p, r, q);
+            int compDist = dist(p, r) - dist(q, r); 
+            return compPolar == 0 ? compDist : compPolar;
+        });     
+        // find collinear points in the end positions
+        Point p = points[0], q = points[points.length - 1];
+        int i = points.length - 2;
+        while (i >= 0 && ccw(p, q, points[i]) == 0)
+            i--;    
+        // reverse sort order of collinear points in the end positions
+        for (int l = i + 1, h = points.length - 1; l < h; l++, h--) {
+            Point tmp = points[l];
+            points[l] = points[h];
+            points[h] = tmp;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, AM Chain with Explanation
+def outerTrees(self, A):
+    def sign(p, q, r):
+        return cmp((p.x - r.x)*(q.y - r.y), (p.y - r.y)*(q.x - r.x))
+    
+    def drive(hull, r):
+        hull.append(r)
+        while len(hull) >= 3 and sign(*hull[-3:]) < 0:
+            hull.pop(-2)
+        return hull
+    
+    A.sort(key = lambda p: (p.x, p.y))
+    lower = reduce(drive, A, [])
+    upper = reduce(drive, A[::-1], [])
+    return list(set(lower + upper))
+
+
+----------------------------------------------------------------------------------------------------
+C++ and Python easy wiki solution
+# http://www.algorithmist.com/index.php/Monotone_Chain_Convex_Hull.py
+
+
+class Solution(object):
+
+    def outerTrees(self, points):
+        """Computes the convex hull of a set of 2D points.
+
+        Input: an iterable sequence of (x, y) pairs representing the points.
+        Output: a list of vertices of the convex hull in counter-clockwise order,
+          starting from the vertex with the lexicographically smallest coordinates.
+        Implements Andrew's monotone chain algorithm. O(n log n) complexity.
+        """
+
+        # Sort the points lexicographically (tuples are compared lexicographically).
+        # Remove duplicates to detect the case we have just one unique point.
+        # points = sorted(set(points))
+        points = sorted(points, key=lambda p: (p.x, p.y))
+
+        # Boring case: no points or a single point, possibly repeated multiple times.
+        if len(points) <= 1:
+            return points
+
+        # 2D cross product of OA and OB vectors, i.e. z-component of their 3D cross product.
+        # Returns a positive value, if OAB makes a counter-clockwise turn,
+        # negative for clockwise turn, and zero if the points are collinear.
+        def cross(o, a, b):
+            # return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+            return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
+
+        # Build lower hull
+        lower = []
+        for p in points:
+            while len(lower) >= 2 and cross(lower[-2], lower[-1], p) < 0:
+                lower.pop()
+            lower.append(p)
+
+        # Build upper hull
+        upper = []
+        for p in reversed(points):
+            while len(upper) >= 2 and cross(upper[-2], upper[-1], p) < 0:
+                upper.pop()
+            upper.append(p)
+
+        # Concatenation of the lower and upper hulls gives the convex hull.
+        # Last point of each list is omitted because it is repeated at the
+        # beginning of the other list.
+        # return lower[:-1] + upper[:-1]
+        return list(set(lower[:-1] + upper[:-1]))
+
+
+----------------------------------------------------------------------------------------------------
+Find convex hull using scipy with explanation
+def outerTrees(self, points):
+        from scipy.spatial import ConvexHull
+        import numpy as np
+
+        def isHull(point, hull, tol=1e-12):
+            return any((abs(np.dot(eq[:-1], point) + eq[-1]) < tol) for eq in hull.equations)
+        try:
+            hull = ConvexHull([(p.x, p.y) for p in points])
+            return [p for p in points if isHull((p.x, p.y), hull)]
+        except:
+            return points
+
+----------------------------------------------------------------------------------------------------
+c++ Graham Scan&#x2F;Monotone Chain dealing with collinear cases
+class Solution {
+public:
+    static bool pointCompare(const Point& a, const Point& b) {
+        //Sort the points by x-coordinates, break a tie by y-coordinate
+        return (a.x < b.x) || ((a.x == b.x) && (a.y < b.y));
+    }
+    
+    bool isEqual(const Point& a, const Point& b) {
+        return (a.x == b.x) && (a.y == b.y);    
+    }
+    
+    int crossProduct(const Point& a, const Point& b, const Point& c) {
+        // > 0 if a,b,c forms a counter clockwise turn
+        // < 0 if a,b,c forms a clockwise turn
+        // = 0 if a,b,c are collinear
+        return (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x);
+    }
+    
+    vector<Point> outerTrees(vector<Point>& points) {
+        //Sort the points
+        sort(points.begin(), points.end(), pointCompare);
+        vector<Point> upper;
+        vector<Point> lower;
+        //Find upper hull, in the dereasing order of x-coordinate
+        for (int i = points.size() - 1; i >= 0; --i) {
+            //Pop the top point if next_to_top, top, points[i] forms a right turn (in clockwise turn)
+            while ((upper.size() > 1) 
+                && (crossProduct(upper[upper.size() - 2], upper[upper.size() - 1], points[i]) < 0)) {
+                upper.pop_back();
+            }
+            upper.push_back(points[i]);
+        }
+        //Find lower hull, in the increasing order of x-coordinate 
+        for (int i=0; i<points.size(); i++) {
+            //Pop the top point if next_to_top, top, points[i] forms a right turn (in clockwise turn)
+            while ((lower.size() > 1) 
+                && (crossProduct(lower[lower.size() - 2], lower[lower.size() - 1], points[i]) < 0)) {
+                lower.pop_back();
+            }
+            lower.push_back(points[i]);            
+        }
+        //Check the degenerate case if the convex hull is a line
+        //In this case, lower == upper, we only need to check if upper[1] == lower[lower.size() - 2]
+        if ((points.size() == 1) || (isEqual(upper[1],lower[lower.size() - 2]))) {
+            return vector<Point>(upper.begin(), upper.end());
+        }
+        //In non-degenerate case, remove the starting point for both hulls
+        //The right most one and the left most one is duplicated in both hulls
+        vector<Point> vertices(upper.begin() + 1, upper.end());
+        vertices.insert(vertices.end(), lower.begin() + 1, lower.end());
+        return vertices;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Detailed explanation of Graham scan in 14 lines (Python)
+def outerTrees(self, points):
+    # Computes the cross product of vectors p1p2 and p2p3
+    # value of 0 means points are colinear; < 0, cw; > 0, ccw
+    def cross(p1, p2, p3):
+        return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x)
+        
+    # Computes slope of line between p1 and p2
+    def slope(p1, p2):
+        return 1.0*(p1.y-p2.y)/(p1.x-p2.x) if p1.x != p2.x else float('inf')
+        
+    # Find the smallest left point and remove it from points
+    start = min(points, key=lambda p: (p.x, p.y))
+    points.pop(points.index(start))
+    
+    # Sort points so that traversal is from start in a ccw circle.
+    points.sort(key=lambda p: (slope(p, start), -p.y, p.x))
+    
+    # Add each point to the convex hull.
+    # If the last 3 points make a cw turn, the second to last point is wrong. 
+    ans = [start]
+    for p in points:
+        ans.append(p)
+        while len(ans) > 2 and cross(ans[-3], ans[-2], ans[-1]) < 0:
+            ans.pop(-2)
+    
+    return ans
+
+----------------------------------------------------------------------------------------------------
+QuickHull C++ solution 29ms
+class Solution {
+public:
+    static bool mycmp(Point &a, Point &b) {
+        return a.x < b.x;
+    }
+    
+    int testSide(Point &a, Point &b, Point &c) {
+        // cross product of (AB and AC vectors)
+        return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    }
+    
+    double distPointLine(Point &A, Point &B, Point &C) {
+        // dist(line: ax+by+c=0, and point(x0, y0)): (a*x0 + b*y0 + c)/sqrt(a^2+b^2)
+        // line: (y2-y1)*x - (x2-x1)*y + x2*y1 - y2*x1 = 0
+        int a = B.y - A.y, b = B.x - A.x;
+        return abs((a*C.x - b*C.y + B.x*A.y - B.y*A.x)/sqrt(a*a + b*b));
+    }
+    
+    void FindHull(vector<Point> &points, Point &A, Point &B) {
+        if (points.empty())
+            return;
+        
+        int idx = 0;
+        double dist = distPointLine(A, B, points[0]);
+        for (int i=1; i<points.size(); i++) {
+            if (distPointLine(A, B, points[i]) > dist) {
+                dist = distPointLine(A, B, points[i]);
+                idx = i;
+            }
+        }
+        ret.push_back(points[idx]);
+        
+        vector<Point> R, T;
+        for (int i=0; i<points.size(); i++) {
+            if (i != idx) {
+                int tmp = testSide(A, points[idx], points[i]);
+                if (tmp >= 0)
+                    R.push_back(points[i]);
+                else {
+                    tmp = testSide(points[idx], B, points[i]);
+                    if (tmp >= 0)
+                        T.push_back(points[i]);
+                }
+            }
+        }
+        FindHull(R, A, points[idx]);
+        FindHull(T, points[idx], B);
+        
+        return;
+    }
+    
+    vector<Point> ret;
+    
+    vector<Point> outerTrees(vector<Point>& points) {
+        // find the convex hull; use QuickHull algorithm
+        if (points.size() <= 1)
+            return points;
+        
+        // find the left most and right most two points
+        sort(points.begin(), points.end(), mycmp);
+        ret.push_back(points[0]);
+        ret.push_back(points.back());
+        
+        // test whether a point on the left side right side or on the line
+        vector<Point> Left, Right, Online;
+        for (int i=1; i<points.size()-1; i++) {
+            int tmp = testSide(points[0], points.back(), points[i]);
+            if (tmp < 0)
+                Right.push_back(points[i]);
+            else if (tmp > 0)
+                Left.push_back(points[i]);
+            else
+                Online.push_back(points[i]);
+        }
+        // if Upper or Down is empty, Online should be pushed into ret
+        if (Left.empty() || Right.empty())
+            for (int i=0; i<Online.size(); i++)
+                ret.push_back(Online[i]);
+
+        FindHull(Left, points[0], points.back());
+        FindHull(Right, points.back(), points[0]);
+        
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+problem with qsort()
+<p>Hi there,<br/>
+I have tried to use this implementation of the convex hull<br/>
+<a href="http://www.sanfoundry.com/cpp-program-implement-graham-scan-algorithm-find-convex-hull/" rel="nofollow">http://www.sanfoundry.com/cpp-program-implement-graham-scan-algorithm-find-convex-hull/</a><br/>
+but the LeetCode compiler complained about the improper use of the qsort() function.<br/>
+I tested the code on <a href="http://repl.it" rel="nofollow">repl.it</a> and it worked smoothly. Any idea what the issue might be here?<br/>
+Thanks,</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java solution(use cos(theta) to tell the directions)
+/**
+ * Definition for a point.
+ * class Point {
+ *     int x;
+ *     int y;
+ *     Point() { x = 0; y = 0; }
+ *     Point(int a, int b) { x = a; y = b; }
+ * }
+ */
+public class Solution {
+    public List<Point> outerTrees(Point[] points) {
+        List<Point> resTmp=new ArrayList();
+        if(points==null||points.length==0) return resTmp;
+        if(points.length<4) {
+            for(Point pt:points) resTmp.add(pt);
+            return resTmp;
+        }
+        int len=points.length;
+
+        boolean []visited=new boolean[len];
+        
+        Arrays.sort(points,(a,b)->((a.x==b.x)?(a.y-b.y):(a.x-b.x)));
+        
+        Point start=points[0];
+        Point end=new Point(Integer.MIN_VALUE,Integer.MIN_VALUE);
+        
+        int []v1={0,1};
+        int []v2={0,1};
+        double []cosAll=new double[len];
+        
+        while(!(start.x==end.x&&start.y==end.y)){
+            Point tmp=null;
+            if(end.x==Integer.MIN_VALUE) tmp=start;
+            else tmp=end;
+            double maxCos=-2.0;
+
+            for(int i=0;i<len;i++)
+            {
+                if(visited[i]) continue;
+                Point pt=points[i];
+                v2[0]=pt.x-tmp.x;v2[1]=pt.y-tmp.y;
+                if(v2[0]==0&&v2[1]==0) continue;
+                double cos=cosine(v1,v2);
+                cosAll[i]=cos;
+                if(cos>maxCos) {maxCos=cos;}
+            }
+            end=null;
+            for(int i=0;i<len;i++)
+            {
+                if(visited[i]) continue;
+                Point pt=points[i];
+                if(Math.abs(cosAll[i]-maxCos)<1e-8) {
+                    resTmp.add(pt);
+                    visited[i]=true;
+                    if(end!=null){
+                        if(distance2(pt,tmp)>distance2(end,tmp)) end=pt;
+                    }
+                    else end=pt;
+                        
+                    v1[0]=pt.x-tmp.x;
+                    v1[1]=pt.y-tmp.y;
+                }
+            }
+        }
+        return resTmp;
+    }
+    
+    private double cosine(int []v1,int []v2){
+        return (v1[0]*v2[0]+v1[1]*v2[1])/Math.sqrt(v1[0]*v1[0]+v1[1]*v1[1])/Math.sqrt(v2[0]*v2[0]+v2[1]*v2[1]);
+    }
+    
+    private int distance2(Point a,Point b){
+        return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
+    }
+    
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution 42ms
+class PComp implements Comparator<Point> {
+
+    Point p;
+
+    public PComp(Point p){
+        this.p = p;
+    }
+
+    @Override
+    public int compare(Point o1, Point o2) {
+        long dx1 = 1L * o1.x - 1L * p.x;
+        long dy1 = 1L * o1.y - 1L * p.y;
+        long dx2 = 1L * o2.x - 1L * p.x;
+        long dy2 = 1L * o2.y - 1L * p.y;
+        long left = dx2 * dy1;
+        long right = dx1 * dy2;
+        return left == right ? Long.compare(dx1 * dx1 + dy1 * dy1, dx2 * dx2 + dy2 * dy2) : Long.compare(left, right);
+    }
+
+    public int compare(Point o1, Point o2, Point o3) {
+        long dx1 = 1L * o2.x - 1L * o1.x;
+        long dy1 = 1L * o2.y - 1L * o1.y;
+        long dx2 = 1L * o3.x - 1L * o2.x;
+        long dy2 = 1L * o3.y - 1L * o2.y;
+        long left = dx1 * dy2;
+        long right = dx2 * dy1;
+        return Long.compare(left, right);
+    }
+
+}
+
+public class Solution {
+    public List<Point> outerTrees(Point[] points) {
+        Point bl = null;
+        for(Point p : points){
+            if(bl == null) bl = p;
+            else if(p.y < bl.y || p.y == bl.y && p.x < bl.x){
+                bl = p;
+            }
+        }
+        if(bl == null) return new ArrayList<Point>();
+        PComp comp = new PComp(bl);
+        Arrays.sort(points, comp);
+        List<Point> res = new Stack<>();
+        for(Point p : points){
+            if(res.size() < 2) res.add(p);
+            else{
+                while(res.size() > 1 && comp.compare(res.get(res.size()-2), res.get(res.size() - 1), p) < 0){
+                    res.remove(res.size() - 1);
+                }
+                res.add(p);
+            }
+        }
+// The last edge is traversed outward, thus missing some vertices, need to find them back.
+        if(res.size() != points.length) {
+            int i = points.length - 2;
+            Point last = points[points.length - 1];
+            while (i >= 0) {
+                if (comp.compare(bl, points[i], last) == 0) {
+                    res.add(points[i]);
+                    i--;
+                } else {
+                    break;
+                }
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+system has some problems?
+<p>Click run code can get the correct results;<br/>
+while click submit, return the wrong results.</p>
+<p>The snapshot attached: the upper part is run by click submit; the bottom part is run by click &#34;run code&#34;. which shows inconsistent results.</p>
+<p><img src="/uploads/files/1494773201085-screen-shot-2017-05-13-at-8.31.10-pm.png" alt="0_1494773195381_Screen Shot 2017-05-13 at 8.31.10 PM.png" class="img-responsive img-markdown"/></p>
+
+
+----------------------------------------------------------------------------------------------------
+Monotone Chain Convex Hull in Python
+class Solution(object):
+    def outerTrees(self, points):
+        """
+        :type points: List[Point]
+        :rtype: List[Point]
+        """
+        if len(points) == 1:
+            return points
+        def direction(p, q, r):
+            return cmp((p.x - r.x) * (q.y - r.y), (p.y - r.y) * (q.x - r.x))
+        
+        points.sort(key=lambda x:(x.x, x.y))
+        upper = []
+        lower = []
+        for point in points:
+            while len(lower) >= 2 and direction(lower[-2], lower[-1], point) < 0:
+                lower.pop()
+            lower.append(point)
+        
+        for point in reversed(points):
+            while len(upper) >= 2 and direction(upper[-2], upper[-1], point) < 0:
+                upper.pop()
+            upper.append(point)
+        
+        return list(set(upper[1:] + lower[1:]))
+
+
+----------------------------------------------------------------------------------------------------
+Using divide and conquer
+public List<Point> outerTrees(Point[] points) {
+		List<Point> pp = new ArrayList<>();
+		for (Point p : points){
+			pp.add(p);
+		}
+		helper(pp,true);
+		helper(pp, false);
+		return new ArrayList<>(ans);
+	}
+	
+	Set<Point> ans = new HashSet<>();
+	private void helper(List<Point> points, boolean calcuConvex){
+		if (points.size() == 0) return;
+		Collections.sort(points, new Comparator<Point>() {
+			@Override
+			public int compare(Point o1, Point o2) {
+				return o1.x != o2.x ? o1.x - o2.x : o1.y - o2.y;
+			}
+		});
+		int fir = 0;
+		int lst = points.size() - 1;
+
+		ans.add(points.get(fir));
+		ans.add(points.get(lst));
+
+		if (points.size() == 2)
+			return;
+
+		// oneLine
+		boolean isLine = true;
+		for (int i = 0; i < points.size(); i++) {
+			if (i == fir || i == lst)
+				continue;
+			if (calcuTriangle(points.get(fir), points.get(lst), points.get(i)) != 0) {
+				isLine = false;
+				break;
+			}
+		}
+		if (isLine) {
+			ans.addAll(points);
+			return;
+		}
+
+		int maxIndex = -1;
+		int max = 0;
+		for (int i = 0; i < points.size(); i++) {
+			if (i == fir || i == lst)
+				continue;
+			if (calcuConvex && calcuTriangle(points.get(fir), points.get(lst), points.get(i)) > max) {
+				maxIndex = i;
+				max = calcuTriangle(points.get(fir), points.get(lst), points.get(i));
+			}
+			if (!calcuConvex && -calcuTriangle(points.get(fir), points.get(lst), points.get(i)) > max) {
+				maxIndex = i;
+				max = -calcuTriangle(points.get(fir), points.get(lst), points.get(i));
+			}
+		}
+
+		if (maxIndex == -1) {
+			return;
+		}
+
+		List<Point> c1 = new ArrayList<>();
+		split(fir, maxIndex, points, c1, calcuConvex);
+		helper(c1,calcuConvex);
+
+		List<Point> c2 = new ArrayList<>();
+		split(lst, maxIndex, points, c2, !calcuConvex);
+		helper(c2,calcuConvex);
+	}
+	
+	private void split(int a1, int a2, List<Point> points, List<Point> part1, boolean isConvex) {
+		for (int i = 0; i < points.size(); i++) {
+			if (i == a1 || i == a2) {
+				part1.add(points.get(i));
+				continue;
+			}
+			if (isConvex && calcuTriangle(points.get(a1), points.get(a2), points.get(i)) >= 0) {
+				part1.add(points.get(i));
+			}
+
+			if (!isConvex && calcuTriangle(points.get(a1), points.get(a2), points.get(i)) <= 0) {
+				part1.add(points.get(i));
+			}
+		}
+	}
+	
+	private int calcuTriangle(Point a1, Point a2, Point a3) {
+		return a1.x * a2.y + a3.x * a1.y + a2.x * a3.y 
+				- a3.x * a2.y - a2.x * a1.y - a1.x * a3.y;
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Graham&#x27;s scan in Python3
+class Solution:
+    def ccw(self, a, b, c):
+        return (b.x-a.x)*(c.y-a.y) - (c.x-a.x)*(b.y-a.y)
+    
+    def outerTrees(self, points):
+        """
+        :type points: List[Point]
+        :rtype: List[Point]
+        """
+        if len(points) <= 2:
+            return points
+        points = sorted(points, key=lambda x:[x.x, x.y])
+        result = [points[0]]
+        used = set()
+        for i in range(1, len(points)):
+            if len(result) < 2:
+                result.append(points[i])
+                used.add(points[i])
+            else:
+                l = len(result)
+                while l >= 2 and self.ccw(result[l-2], result[l-1], points[i]) < 0:
+                    used.remove(result[-1])
+                    result.pop()
+                    l = len(result)
+                result.append(points[i])
+                used.add(points[i])
+        for i in range(len(points)-2, -1, -1):
+            if points[i] in used:
+                continue
+            if len(result) < 2:
+                result.append(points[i])
+            else:
+                l = len(result)
+                while l >= 2 and self.ccw(result[l-2], result[l-1], points[i]) < 0:
+                    result.pop()
+                    l = len(result)
+                result.append(points[i])
+        return result[:-1]
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) Graham Scan - Handling the Co-linear Case
+int operator*(Point pa, Point pb) //cross product
+{
+    return pa.x * pb.y - pa.y * pb.x;
+}
+bool operator<(Point pa, Point pb)//assuming pa != pb
+{
+    if (pa * pb == 0)
+        return pa.x*pa.x + pa.y*pa.y < pb.x*pb.x + pb.y*pb.y;
+   return pa * pb > 0;
+}
+Point operator-(Point pa, Point pb)
+{
+    return Point{pa.x - pb.x, pa.y - pb.y};
+}
+Point operator+(Point pa, Point pb)
+{
+    return Point{pa.x + pb.x, pa.y + pb.y};
+}
+class Solution {
+public:
+    vector<Point> outerTrees(vector<Point>& points) {
+        if (points.size() <= 3)
+            return points;
+        auto miniter = min_element(points.begin(), points.end(), [](Point a, Point b){return a.y < b.y || (a.y == b.y && a.x < b.x);});
+        Point low_pt = *miniter;
+        swap(*miniter, *points.begin());
+        transform(points.begin(), points.end(), points.begin(), [low_pt](Point p){return p - low_pt;});
+        sort(points.begin() + 1, points.end());
+        vector<Point> pt_stack {points[0], points[1], points[2]};
+        for (int i = 3; i < points.size();)
+        {
+            auto last = pt_stack.back(), second_last = pt_stack[pt_stack.size() - 2];
+            Point base = last - second_last, test = points[i] - second_last;
+            if (test * base > 0) // test if the new segment is to the right of last one
+                pt_stack.pop_back();
+            else
+                pt_stack.push_back(points[i ++]);
+        }
+        for (int i = points.size() - 2; i >= 0 && points[i] * points.back() == 0; -- i)
+                pt_stack.push_back(points[i]);
+        transform(pt_stack.begin(), pt_stack.end(), pt_stack.begin(), [low_pt](Point p){return p + low_pt;});
+        return pt_stack;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) Solution
+    vector<Point> outerTrees(vector<Point>& points) {
+        if(points.size() < 3) return points;
+        auto cmp = [](Point& a, Point& b) -> bool {
+            return a.x < b.x || (a.x == b.x && a.y < b.y);
+        };
+        sort(points.begin(), points.end(), cmp);
+        vector<Point> stack;
+        stack.push_back(points[0]);
+        stack.push_back(points[1]);
+        //left to right;
+        for(int i = 2; i < points.size(); ++i) {
+            while(stack.size() > 1) {
+                auto &t1 = stack.back();
+                auto &t2 = stack[stack.size() - 2];
+                if(isRightTurn(t2, t1, points[i])) break;
+                else stack.pop_back();
+            }
+            stack.push_back(points[i]);
+        }
+        int n = stack.size();
+        if(n == points.size()) return stack; //check if linear
+        stack.push_back(points[points.size() - 2]);
+        //right to left;
+        for(int i = points.size() - 3; i >= 0; --i) {
+            while(stack.size() > n) {
+                auto &t1 = stack.back();
+                auto &t2 = stack[stack.size() - 2];
+                if(isRightTurn(t2, t1, points[i])) break;
+                else stack.pop_back();
+            }
+            stack.push_back(points[i]);
+        }
+        stack.pop_back();
+        return stack;
+    }
+    
+    bool isRightTurn(Point &a, Point &b, Point &c) {
+        return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) <= 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Modified QuickHull
+/**
+ * Definition for a point.
+ * class Point {
+ *     int x;
+ *     int y;
+ *     Point() { x = 0; y = 0; }
+ *     Point(int a, int b) { x = a; y = b; }
+ * }
+ */
+public class Solution {
+       
+    public List<Point> outerTrees(Point[] points) {
+        Set<Point> convexHull = new HashSet<Point>();
+        List<Point> pointsList = new ArrayList<Point>(Arrays.asList(points));
+        if (pointsList.size() < 3)
+            return pointsList;
+ 
+        // Find left and right most points, say A & B, and add A & B to convex hull
+        Point minPoint = null;
+        Point maxPoint = null;
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        for (Point p : pointsList)
+        {
+            if (p.x < minX) {
+                minX = p.x;
+                minPoint = p;
+            }
+            if (p.x > maxX) {
+                maxX = p.x;
+                maxPoint = p;
+            }
+        }
+        convexHull.add(minPoint);
+        convexHull.add(maxPoint);
+        pointsList.remove(minPoint);
+        pointsList.remove(maxPoint);
+ 
+        // Segment AB divides the remaining (n-2) points into 2 groups S1 and S2 
+        //   where S1 are points in S that are on the right side of the oriented line from A to B, 
+        //   and S2 are points in S that are on the right side of the oriented line from B to A 
+        List<Point> leftSet = new ArrayList<Point>();
+        List<Point> rightSet = new ArrayList<Point>();
+ 
+        for (Point p : pointsList)
+        {
+            if (pointLocation(minPoint, maxPoint, p) == -1) {
+                leftSet.add(p);
+            } else if (pointLocation(minPoint, maxPoint, p) == 1) {
+                rightSet.add(p);
+            } else {
+                // Normally we'd ignore co-linear points but in this case we're adding them to the both sets
+                leftSet.add(p);
+                rightSet.add(p);
+            }
+        }
+        findHull(minPoint, maxPoint, rightSet, convexHull);
+        findHull(maxPoint, minPoint, leftSet, convexHull);
+ 
+        return new ArrayList(convexHull);
+    }
+    
+    public int pointLocation(Point A, Point B, Point P)
+    {
+        int cp1 = (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+        if (cp1 > 0) {
+            return 1;
+        } else if (cp1 == 0) {
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+    
+    public int distance(Point A, Point B, Point C)
+    {
+        int ABx = B.x - A.x;
+        int ABy = B.y - A.y;
+        int num = ABx * (A.y - C.y) - ABy * (A.x - C.x);
+        if (num < 0)
+            num = -num;
+        return num;
+    }
+ 
+    public void findHull(Point A, Point B, List<Point> set,
+            Set<Point> hull)
+    {
+        // Find points on convex hull from the set Sk of points 
+        // that are on the right side of the oriented line from P to Q
+        
+        // If Sk has no point, then return. 
+        if (set.size() == 0) {
+            return;
+        } else if (set.size() == 1) {
+            Point p = set.get(0);
+            set.remove(p);
+            hull.add(p);
+            return;
+        }
+        
+        // From the given set of points in Sk, find farthest point, say C, from segment PQ 
+        int dist = Integer.MIN_VALUE;
+        List<Point> furthestPoints = new ArrayList<Point>();
+        for (Point p : set)
+        {
+            int distance = distance(A, B, p);
+            if (distance >= dist)
+            {
+                dist = distance;
+                if (dist > 0) {
+                    furthestPoints.clear();
+                }
+                furthestPoints.add(p);
+            }
+        }
+        // Normally we'd ignore co-linear points but in this case we're adding them to the hull
+        if (dist == 0) {
+            hull.addAll(furthestPoints);
+            return;
+        }
+        
+        // Add point C to convex hull at the location between P and Q
+        Point P = furthestPoints.get(0);
+        set.remove(P);
+        hull.add(P);
+ 
+        // Three points P, Q, and C partition the remaining points of Sk into 3 subsets: S0, S1, and S2 
+        //   where S0 are points inside triangle PCQ, S1 are points on the right side of the oriented 
+        //   line from  P to C, and S2 are points on the right side of the oriented line from C to Q.
+        List<Point> leftSetAP = new ArrayList<Point>();
+        List<Point> leftSetPB = new ArrayList<Point>();
+        for (Point M : set)
+        {
+            // Determine who's to the left of AP
+            if (pointLocation(A, P, M) >= 0)
+            {
+                leftSetAP.add(M);
+            }
+            // Determine who's to the left of PB
+            if (pointLocation(P, B, M) >= 0)
+            {
+                leftSetPB.add(M);
+            }
+        }
+        
+        findHull(A, P, leftSetAP, hull);
+        findHull(P, B, leftSetPB, hull);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Graham Scan, simple and short
+    def outerTrees(self, A):
+        """
+        :type points: A[Point]
+        :rtype: List[Point]
+        """
+        def comparator(p1,p2):
+            if p1.x==p2.x: return p1.y-p2.y
+            else: 
+                return p1.x-p2.x
+                
+        def onleftside(p0,p1,p2):
+            x1,x2=p1.x-p0.x,p2.x-p1.x
+            y1,y2=p1.y-p0.y,p2.y-p1.y
+            cross=x1*y2-x2*y1
+            return cross>0
+            
+        def findHull(s,p):
+            while len(s)>=2 and onleftside(s[-2],s[-1],p):
+                s.pop()
+            s.append(p)
+        
+        n= len(A)
+        if n<4: return A
+        A.sort(cmp=comparator)
+        
+        upHull,bottemHull=[A[0]],[A[-1]]
+        for i in xrange(1,n):
+            findHull(upHull,A[i])
+        for i in xrange(n-2,-1,-1):
+            findHull(bottemHull,A[i])
+
+        for p in bottemHull:
+            if p not in upHull:
+                upHull.append(p)
+        return upHull
+
+
+----------------------------------------------------------------------------------------------------

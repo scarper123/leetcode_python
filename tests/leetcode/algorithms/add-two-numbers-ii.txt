@@ -1,0 +1,617 @@
+0ms simple C++ solution
+class Solution {
+public:
+    string decodeString(const string& s, int& i) {
+        string res;
+        
+        while (i < s.length() && s[i] != ']') {
+            if (!isdigit(s[i]))
+                res += s[i++];
+            else {
+                int n = 0;
+                while (i < s.length() && isdigit(s[i]))
+                    n = n * 10 + s[i++] - '0';
+                    
+                i++; // '['
+                string t = decodeString(s, i);
+                i++; // ']'
+                
+                while (n-- > 0)
+                    res += t;
+            }
+        }
+        
+        return res;
+    }
+
+    string decodeString(string s) {
+        int i = 0;
+        return decodeString(s, i);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution using Stack
+public class Solution {
+    public String decodeString(String s) {
+        String res = "";
+        Stack<Integer> countStack = new Stack<>();
+        Stack<String> resStack = new Stack<>();
+        int idx = 0;
+        while (idx < s.length()) {
+            if (Character.isDigit(s.charAt(idx))) {
+                int count = 0;
+                while (Character.isDigit(s.charAt(idx))) {
+                    count = 10 * count + (s.charAt(idx) - '0');
+                    idx++;
+                }
+                countStack.push(count);
+            }
+            else if (s.charAt(idx) == '[') {
+                resStack.push(res);
+                res = "";
+                idx++;
+            }
+            else if (s.charAt(idx) == ']') {
+                StringBuilder temp = new StringBuilder (resStack.pop());
+                int repeatTimes = countStack.pop();
+                for (int i = 0; i < repeatTimes; i++) {
+                    temp.append(res);
+                }
+                res = temp.toString();
+                idx++;
+            }
+            else {
+                res += s.charAt(idx++);
+            }
+        }
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java short and easy-understanding solution using stack
+public class Solution {
+    public String decodeString(String s) {
+        Stack<Integer> count = new Stack<>();
+        Stack<String> result = new Stack<>();
+        int i = 0;
+        result.push("");
+        while (i < s.length()) {
+            char ch = s.charAt(i);
+            if (ch >= '0' && ch <= '9') {
+                int start = i;
+                while (s.charAt(i + 1) >= '0' && s.charAt(i + 1) <= '9') i++;
+                count.push(Integer.parseInt(s.substring(start, i + 1)));
+            } else if (ch == '[') {
+                result.push("");
+            } else if (ch == ']') {
+                String str = result.pop();
+                StringBuilder sb = new StringBuilder();
+                int times = count.pop();
+                for (int j = 0; j < times; j += 1) {
+                    sb.append(str);
+                }
+                result.push(result.pop() + sb.toString());
+            } else {
+                result.push(result.pop() + ch);
+            }
+            i += 1;
+        }
+        return result.pop();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my Python Stack Simple Solution (Easy to understand)
+class Solution(object):
+    def decodeString(self, s):
+        stack = []
+        stack.append(["", 1])
+        num = ""
+        for ch in s:
+            if ch.isdigit():
+              num += ch
+            elif ch == '[':
+                stack.append(["", int(num)])
+                num = ""
+            elif ch == ']':
+                st, k = stack.pop()
+                stack[-1][0] += st*k
+            else:
+                stack[-1][0] += ch
+        return stack[0][0]
+
+
+----------------------------------------------------------------------------------------------------
+3 lines Python, 2 lines Ruby, regular expression
+def decode_string(s)
+  1 while s.gsub!(/(\d+)\[([a-z]*)\]/) { $2 * $1.to_i }
+  s
+end
+
+
+----------------------------------------------------------------------------------------------------
+Python solution using stack
+class Solution(object):
+    def decodeString(self, s):
+        stack = []; curNum = 0; curString = ''
+        for c in s:
+            if c == '[':
+                stack.append(curString)
+                stack.append(curNum)
+                curString = ''
+                curNum = 0
+            elif c == ']':
+                num = stack.pop()
+                prevString = stack.pop()
+                curString = prevString + num*curString
+            elif c.isdigit():
+                curNum = curNum*10 + int(c)
+            else:
+                curString += c
+        return curString
+
+
+----------------------------------------------------------------------------------------------------
+Java Simple Recursive solution
+    if (s.length() == 0) return "";
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < s.length(); i ++) {
+        char c = s.charAt(i);
+        if (Character.isDigit(c)) {
+            int digit_begin = i;
+            while (s.charAt(i) != '[') i++;
+            int num = Integer.valueOf(s.substring(digit_begin, i));
+            int count = 1;
+            int str_begin = i+1;
+            i ++;
+            while (count != 0) {
+                if (s.charAt(i) == '[') count ++;
+                else if (s.charAt(i) == ']') count --;
+                i ++;
+            }
+            i--;
+            String str = decodeString(s.substring(str_begin, i));
+            for (int j = 0; j < num; j ++) {
+                sb.append(str);
+            }
+        } else {
+            sb.append(c);
+        }
+    }
+    return sb.toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ Recursive Solution with Explanation
+class Solution {
+public:
+    string decodeString(string s) {
+        int pos = 0;
+        return helper(pos, s);
+    }
+    
+    string helper(int& pos, string s) {
+        int num=0;
+        string word = "";
+        for(;pos<s.size(); pos++) {
+            char cur = s[pos];
+            if(cur == '[') {
+                string curStr = helper(++pos, s);
+                for(;num>0;num--) word += curStr;
+            } else if (cur >= '0' && cur <='9') {
+                num = num*10 + cur - '0';
+            } else if (cur == ']') {
+                return word;
+            } else {    // Normal characters
+                word += cur;
+            }
+        }
+        return word;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple and clear solution
+class Solution {
+public:
+    string decodeString(string s) {
+        stack<string> chars;
+        stack<int> nums;
+        string res;
+        int num = 0;
+        for(char c : s) {
+            if(isdigit(c)) {
+                num = num*10 + (c-'0');                              
+            }
+            else if(isalpha(c)) {
+                res.push_back(c);                
+            }
+            else if(c == '[') {
+                chars.push(res);
+                nums.push(num);
+                res = "";
+                num = 0;
+            }
+            else if(c == ']') {
+                string tmp = res;
+                for(int i = 0; i < nums.top()-1; ++i) {
+                    res += tmp;
+                }
+                res = chars.top() + res;
+                chars.pop(); nums.pop();
+            }
+        }
+        return res;
+     }
+};
+
+
+----------------------------------------------------------------------------------------------------
+NO STACK, O(n) recursive solution in Python
+def helper(s):
+    res = ""
+    while s:
+        num = ""
+        while s and s[-1] in '0123456789':
+            num += s.pop()
+        if num:
+            num = int(num)
+            s.pop()
+            res += helper(s) * num
+        else:
+            c = s.pop()
+            if c not in "[]":
+                res += c
+            if c == ']':
+                break
+    return res
+
+class Solution(object):
+    def decodeString(self, s):
+        return helper(list(s)[::-1])
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution (Single Stack, 5ms)
+Input String: 2[2[ab]]
+
+Stack steps:
+[2]
+[[, 2]
+[2, [, 2]
+[[, 2, [, 2]
+[a, [, 2, [, 2]
+[b, a, [, 2, [, 2]
+[abab, [, 2]
+[abababab]
+
+Output String: abababab
+
+
+----------------------------------------------------------------------------------------------------
+Can we do the encode way? I post one, the return is the shortest length of encoded string
+// this function is used to check if a string is combined by repeating a substring. 
+// Also Here can be replaced by doing KMP algorithm for whole string to improvement
+bool checkRepeating(string& s, int l, int r, int start, int end){  
+    if((end-start+1)%(r-l+1) != 0)
+        return false;
+    int len = r-l+1;
+    bool res = true;
+    for(int i=start; i<=end; i++){
+        if(s[(i-start)%len+l] != s[i]){
+            res = false;
+            break;
+        }
+    }
+    return res;
+}
+
+// this function is used to get the length of the current number
+int getLength(int l1, int l2){
+    return (int)(log10(l2/l1+1)+1);
+}
+
+string shortestEncodeString(string s){
+    int len = s.length();
+
+    vector< vector<int> > res(len, vector<int>(len, 0));
+    //Initial the matrix 
+    for(int i=0; i<len; i++){
+        for(int j=0; j<=i; j++){
+            res[j][i] = i-j+1;
+        }
+    }
+
+    unordered_map<string, string> record;
+
+    for(int i=0; i<len; i++){
+        for(int j=i; j>=0; j--){
+
+            string temp = s.substr(j, i-j+1);
+/* if the current substring has showed before, then no need to compute again
+ * Here is a example for this part: if the string is "abcabc".
+ * if we see the second "abc", then no need to compute again, just use the
+ * result from first "abc".
+**/
+            if(record.find(temp) != record.end()){
+                res[j][i] = record[temp].size();
+                continue;
+            }
+            string ans = temp;
+            for(int k=j; k<i; k++){
+
+                string str1 = s.substr(j, k-j+1);
+                string str2 = s.substr(k+1, i-k);
+                if(res[j][i] > res[j][k] + res[k+1][i]){
+                    res[j][i] = res[j][k]+res[k+1][i];
+                    ans = record[str1] + record[str2];
+                }
+
+                if(checkRepeating(s, j, k, k+1, i) == true && res[j][i] > 2+getLength(k-j+1, i-k)+res[j][k]){
+                    res[j][i] = 2+getLength(k-j+1, i-k)+res[j][k];
+                    ans = to_string((i-j+1)/(k-j+1)) + '[' + record[str1] +']';
+                }
+            }
+            record[temp] = ans;
+        }
+
+    }
+
+    return record[s];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java DFS Solution
+public class Solution {
+    private int pos = 0;
+    public String decodeString(String s) {
+        StringBuilder sb = new StringBuilder();
+        String num = "";
+        for (int i = pos; i < s.length(); i++) {
+            if (s.charAt(i) != '[' && s.charAt(i) != ']' && !Character.isDigit(s.charAt(i))) {
+                sb.append(s.charAt(i));
+            } else if (Character.isDigit(s.charAt(i))) {
+                num += s.charAt(i);
+            } else if (s.charAt(i) == '[') {
+                pos = i + 1;
+                String next = decodeString(s);
+                for (int n = Integer.valueOf(num); n > 0; n--) sb.append(next);
+                num = "";
+                i = pos;
+            } else if (s.charAt(i) == ']') {
+                pos = i;
+                return sb.toString();
+            }
+        }
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 2 Stacks Solution - Reference Basic Calculator
+public String decodeString(String s) {
+        if (s.length() == 0) return "";
+        Stack<String> letter = new Stack<>();
+        Stack<Integer> times = new Stack<>();
+        StringBuilder sb = new StringBuilder();
+        
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isLetter(s.charAt(i))) {
+                sb.append(s.charAt(i));
+            }
+            else if (Character.isDigit(s.charAt(i))) {
+                int time = s.charAt(i) - '0';
+                while (i + 1 < s.length() && Character.isDigit(s.charAt(i + 1))) {
+                    time = time * 10 + s.charAt(i + 1) - '0';
+                    i++;
+                } 
+                times.push(time);
+                letter.push(sb.toString());
+                sb = new StringBuilder();
+            }
+            else if (s.charAt(i) == ']') {
+                sb = constructStringBuidler(sb, letter, times);
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    private StringBuilder constructStringBuidler(StringBuilder sb, Stack<String> letter,        Stack<Integer> times) {
+        StringBuilder res = new StringBuilder();
+        int time = times.pop();
+        String prev = letter.pop(), curr = sb.toString();
+        res.append(prev);
+        
+        for (int i = 0; i < time; i++) {
+            res.append(sb);
+        }
+        
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+public class Solution {
+    public String decodeString(String s) 
+    {
+        Stack<Character> sta = new Stack<Character>();
+        for (char c:s.toCharArray())
+        {
+            if(c==']')
+            {
+                String repeat="";
+                while(sta.peek()!='[')
+                {
+                    repeat=sta.peek()+repeat;
+                    sta.pop();
+                }
+                sta.pop();
+                String num="";
+                while(!sta.isEmpty())
+                {
+                    char n = sta.peek();
+                    if(!Character.isDigit(n))break;
+                    else
+                    {
+                        num = n+num;
+                        sta.pop();
+                    }
+                }
+                int re=0;
+                if(num.equals(""))re=1;
+                else re=Integer.parseInt(num);
+                while(re-->0)
+                {
+                    for(char c1:repeat.toCharArray())
+                        sta.push(c1);
+                }
+            }
+            else
+            {
+                sta.push(c);
+            }
+        }
+        String res="";
+        while(!sta.isEmpty())
+        {
+            
+            res=sta.peek()+res;
+            sta.pop();
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Follow up question. How to encode string?
+<p>Seems to be a lot harder than decode</p>
+
+
+----------------------------------------------------------------------------------------------------
+We have #394 Decode String, people were often asked the shortest encode as a followup.
+<p>Today I saw some people were asked the encoding as a follow up for leetcode #394 decode string. Most of the them only gave a brief direction during the interview and didn&#39;t write any code. But I would like to ask for more thoughts.</p>
+<p>I may think about using dynamic programming. For string s, the shortest encoding from the i<sup>th</sup> character to the j<sup>th</sup> character is denoted by dp&#91;i&#93;&#91;j&#93;, then we have:</p>
+<ul>
+<li>If i+2 &gt; j, dp&#91;i&#93;&#91;j&#93; = s&#91;i-1:j &#93;, i.e. just keep those characters.</li>
+<li>else If s&#91;i-1:j &#93; can be represented as repeating patterns, then encode it as repeating_times&#91;repeating_pattern&#93;, using the finest repeating pattern.</li>
+<li>otherwise dp&#91;i&#93;&#91;j&#93; = min_length(dp&#91;i&#93;&#91;k&#93; + dp&#91;k+1&#93;&#91;j&#93;) where i &lt; k &lt; j</li>
+</ul>
+<p>It runs in O(n<sup>3</sup>) time however, where n is the length of the string to be encoded.<br/>
+Does this work? What do you think about it?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python simple solution
+class Solution(object):
+    def decodeString(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        if len(s) < 2:
+            return s
+        prefix, suffix = None, None
+        for i in range(len(s)):
+            if s[i].isdigit():
+                prefix, numStart, numEnd = s[:i], i, i 
+                while s[numEnd].isdigit():
+                    numEnd += 1
+                multiplier = int(s[numStart:numEnd])
+                bracketStart, bracketEnd, cnt = numEnd, numEnd+1, 1
+                while cnt > 0:
+                    cnt = cnt + 1 if s[bracketEnd] == '[' else cnt - 1 if s[bracketEnd] == ']' else cnt
+                    bracketEnd += 1
+                suffix = "" if bracketEnd == len(s) else s[bracketEnd:]
+                return prefix + multiplier * self.decodeString(s[bracketStart+1:bracketEnd-1]) + self.decodeString(suffix)
+        return s
+
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution.
+public class Solution {
+    int helper(char[] cc, int s, StringBuilder str){
+        int i=s;
+        for (; i< cc.length; i++) {
+            if (cc[i] >='0' && cc[i] <='9') { // find repeat pattern
+                int count = (int) (cc[i++] -'0');
+                while (cc[i] != '[') {  // count repeating time
+                    count = count*10 + (int) (cc[i++] -'0');
+                }
+                int start = ++i;
+                StringBuilder inner = new StringBuilder(); 
+                int end = helper( cc, start, inner ); // build the inner string of this repeat pattern
+                while ( count-- > 0 ) { 
+                    str.append(inner); 
+                }
+                i=end; // move index to the next non-visited char
+            } else if (cc[i]==']') { // ending of an inner pattern
+                return i; 
+            } else { // not a repeat pattern
+                str.append(cc[i]);
+            }
+        }
+        return i; // end of string s
+    }
+    
+    public String decodeString(String s) {
+        if ( s==null || s.length() == 0) return "";
+        StringBuilder ret = new StringBuilder();
+        helper(s.toCharArray(), 0, ret);
+        return ret.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 0ms 1 Stack solution with explanation
+class Solution {
+public:
+    string decodeString(string s) {
+        using P = pair<int,string>; 
+        stack<P> st;                        // stack stores pair of {k,encoded_string}
+        int k = 0;                          // k-value
+        string res = "";                    // result
+        for (const auto& c: s) {
+            if (isdigit(c))             // if char is digit, then evaluate k-value
+                k = k * 10 + c - '0';
+            else if (c == '[') {          // push k, and a placeholder string on stack
+                st.push({k,""});
+                k = 0;          
+            } else if (c == ']') {                  // found ']', get stack top element
+                P top = st.top(); st.pop();
+                while (top.first-- > 0) {
+                    if (st.empty())              // stack empty means, '[' ']' non-nested case, so add to result directly
+                        res += top.second;
+                    else 
+                        st.top().second += top.second;   // nested case, so append to next stack entry
+                }
+            } else {
+                if (!st.empty())    
+                    st.top().second += c;
+                else
+                    res += c;                   // 2[abc]3[cd]ef: to handle non-encoded chars (ef), add to result directly 
+            }
+        }
+        
+        while(!st.empty()) {                // populate result if stack not empty (nested case)
+            P top = st.top(); st.pop();
+            while (top.first-- > 0)
+                res += top.second;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,550 @@
+Java solution without knowing the difference in len!
+I found most solutions here preprocess linkedlists to get the difference in len. 
+Actually we don't care about the "value" of difference, we just want to make sure two pointers reach the intersection node at the same time.
+
+We can use two iterations to do that. In the first iteration, we will reset the pointer of one linkedlist to the head of another linkedlist after it reaches the tail node. In the second iteration, we will move two pointers until they points to the same node. Our operations in first iteration will help us counteract the difference. So if two linkedlist intersects, the meeting point in second iteration must be the intersection point. If the two linked lists have no intersection at all, then the meeting pointer in second iteration must be the tail node of both lists, which is null
+
+Below is my commented Java code:
+
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        //boundary check
+        if(headA == null || headB == null) return null;
+        
+        ListNode a = headA;
+        ListNode b = headB;
+        
+        //if a & b have different len, then we will stop the loop after second iteration
+        while( a != b){
+        	//for the end of first iteration, we just reset the pointer to the head of another linkedlist
+            a = a == null? headB : a.next;
+            b = b == null? headA : b.next;    
+        }
+        
+        return a;
+    }
+
+----------------------------------------------------------------------------------------------------
+My accepted simple and shortest C++ code with comments explaining the algorithm.  Any comments or improvements?
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) 
+    {
+        ListNode *p1 = headA;
+        ListNode *p2 = headB;
+            
+        if (p1 == NULL || p2 == NULL) return NULL;
+    
+        while (p1 != NULL && p2 != NULL && p1 != p2) {
+            p1 = p1->next;
+            p2 = p2->next;
+
+            //
+            // Any time they collide or reach end together without colliding 
+            // then return any one of the pointers.
+            //
+            if (p1 == p2) return p1;
+
+            //
+            // If one of them reaches the end earlier then reuse it 
+            // by moving it to the beginning of other list.
+            // Once both of them go through reassigning, 
+            // they will be equidistant from the collision point.
+            //
+            if (p1 == NULL) p1 = headB;
+            if (p2 == NULL) p2 = headA;
+        }
+            
+        return p1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution, O(1) memory O(n) time
+1, Get the length of the two lists.
+
+2, Align them to the same start point.
+
+3, Move them together until finding the intersection point, or the end null
+
+
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        int lenA = length(headA), lenB = length(headB);
+        // move headA and headB to the same start point
+        while (lenA > lenB) {
+            headA = headA.next;
+            lenA--;
+        }
+        while (lenA < lenB) {
+            headB = headB.next;
+            lenB--;
+        }
+        // find the intersection until end
+        while (headA != headB) {
+            headA = headA.next;
+            headB = headB.next;
+        }
+        return headA;
+    }
+    
+    private int length(ListNode node) {
+        int length = 0;
+        while (node != null) {
+            node = node.next;
+            length++;
+        }
+        return length;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution (5 lines)
+Move cur1 (cur2) forward from headA (headB) and loop back to headB (headA), eventually cur1 and cur2 will meet at the intersection point or nullptr.
+
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode *cur1 = headA, *cur2 = headB;
+        while(cur1 != cur2){
+            cur1 = cur1?cur1->next:headB;
+            cur2 = cur2?cur2->next:headA;
+        }
+        return cur1;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Concise python code with comments
+    class Solution:
+        # @param two ListNodes
+        # @return the intersected ListNode
+        def getIntersectionNode(self, headA, headB):
+            if headA is None or headB is None:
+                return None
+    
+            pa = headA # 2 pointers
+            pb = headB
+    
+            while pa is not pb:
+                # if either pointer hits the end, switch head and continue the second traversal, 
+                # if not hit the end, just move on to next
+                pa = headB if pa is None else pa.next
+                pb = headA if pb is None else pb.next
+    
+            return pa # only 2 ways to get out of the loop, they meet or the both hit the end=None
+    
+    # the idea is if you switch head, the possible difference between length would be countered. 
+    # On the second traversal, they either hit or miss. 
+    # if they meet, pa or pb would be the node we are looking for, 
+    # if they didn't meet, they will hit the end at the same iteration, pa == pb == None, return either one of them is the same,None
+
+----------------------------------------------------------------------------------------------------
+Share my simple java solution O(n) time, O(1) space
+1. Scan both lists
+2. For each list once it reaches the end, continue scanning the other list
+3. Once the two runner equal to each other, return the position
+
+Time O(n+m), space O(1)
+
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+    		if( null==headA || null==headB )
+    			return null;
+    		
+    		ListNode curA = headA, curB = headB;
+    		while( curA!=curB){
+    			curA = curA==null?headB:curA.next;
+    			curB = curB==null?headA:curB.next;
+    		}
+    		return curA;
+        }
+
+----------------------------------------------------------------------------------------------------
+My C++ Accepted Solution with O(n) time and O(1) memory (72ms)
+The main idea of this solution is using the values of the intersecting nodes.
+
+First, calculate the total amount of value of nodes in listB.
+
+Second, add 1 to all the nodes in listA.
+
+Third, re-calculate the total amount of value in listB.
+
+If there exists some nodes intersecting, the re-calculated amount must be different from the previous one, otherwise, there is no any node intersecting. And we can also derive the first intersecting node through the difference between two amounts.
+
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode *tmp = headB;
+        int amoutB = 0,lengthB=0;
+    
+        //calculate the amount of values in listB and get the length of listB
+        while (tmp!=NULL)
+        {
+            amoutB += tmp->val;
+            lengthB ++;
+            tmp = tmp->next;
+        }
+        
+        //add 1 value to all nodes in listA
+        tmp = headA;
+        while (tmp!=NULL)
+        {
+            tmp->val++;
+            tmp = tmp->next;
+        }
+        
+        //re-calculate the amount of values in listB again
+        tmp = headB;
+        int newamoutB = 0;
+        while (tmp!=NULL)
+        {
+            newamoutB += tmp->val;
+            tmp = tmp->next;
+        }
+        tmp = headA;
+    
+        //subtract 1 from all the nodes in listA
+        while (tmp!=NULL)
+        {
+            tmp->val--;
+            tmp = tmp->next;
+        }
+        
+        //if two amounts are the same, there is no node intersecting
+        if(newamoutB==amoutB)
+           return NULL;
+        //the difference of two amounts means the number of intersecting nodes, 
+        //we can get the first one by comparing it with number of nodes in listB
+        else
+        {
+            tmp = headB;
+            for(int i=0; i<lengthB-(newamoutB-amoutB);i++)
+                tmp = tmp->next;
+            return tmp;
+        }
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explaination
+At the first glance, the problem seems a bit hard for me. Because I have no idea how to locate the meeting point of the 2 different linked-list. After seeing some related implementation. 
+I got the idea and let me explain the details for you:
+We set 2 pointers "curA" and "curB" to point to linked-list headA and headB.
+Then set the 
+
+         [#length of linked-list headA]=L1
+
+         [#length of linked-list headB]=L2
+
+         assuming that L1<L2
+
+so, the curA will first move the tail of the headA, we have moved step T=L1
+
+by setting the curA to headB we move the curA and the curB at the same time
+
+           [#distance-from-curB-to-tail]=L2-L1
+
+when we move the curB to the tail of the headB then we set the curB to the headA, at the same time, 
+
+            [#distance-from-headB-to-curA]=L2-L1
+
+So we have the
+  
+            [#distance-from-curB-to-meet-point] ==  [#distance-from-curA-to-meet-point]
+
+We just move the curA and curB at the same time, then we get the meeting point .
+
+The only corner cases happen when the 2 linked-list do not meet, so we need to return NULL once the 
+
+          curA==NULL and curB==NULL before to change the curA and curB
+
+Here is my implementation .
+
+   
+
+     class Solution {
+        public:
+            ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+                if(!headA || !headB)    return NULL;
+                ListNode *curA=headA, *curB=headB;
+                while(curA && curB){
+                    if(curA==curB)  return curA;
+                    curA=curA->next;
+                    curB=curB->next;
+                    /*corner cases for my code :
+                    when the 2 linked-list do not meet, all the 2 pointers will be NULL at the same time.
+                    the 2 pointers can be NULL at the same time, if we continue processing, the loop will
+                    never end*/
+                    if(curA==curB)  return curA;
+                    if(curA==NULL)  curA=headB;
+                    if(curB==NULL)  curB=headA;
+                }
+                return curA;
+            }
+        };
+
+
+PS: This post deserves your up votes !
+
+----------------------------------------------------------------------------------------------------
+Python solution for intersection of two singly linked lists
+    # Definition for singly-linked list.
+    # class ListNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.next = None
+    
+    class Solution:
+        # @param two ListNodes
+        # @return the intersected ListNode
+        def getIntersectionNode(self, headA, headB):
+            curA,curB = headA,headB
+            lenA,lenB = 0,0
+            while curA is not None:
+                lenA += 1
+                curA = curA.next
+            while curB is not None:
+                lenB += 1
+                curB = curB.next
+            curA,curB = headA,headB
+            if lenA > lenB:
+                for i in range(lenA-lenB):
+                    curA = curA.next
+            elif lenB > lenA:
+                for i in range(lenB-lenA):
+                    curB = curB.next
+            while curB != curA:
+                curB = curB.next
+                curA = curA.next
+            return curA
+
+
+The solution is straightforward: maintaining two pointers in the lists under the constraint that both lists have the same number of nodes starting from the pointers. We need to calculate the length of each list though. So O(N) for time and O(1) for space.
+
+----------------------------------------------------------------------------------------------------
+Stupid and short c++ solution without any list cycles O(N) time, O(1) memory
+Just  store addition information in 'next' pointers.
+It's work because memory alignment
+
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        for (ListNode *cur = headA; cur;) {
+            unsigned long *ptr = (unsigned long *)&cur->next;
+            cur = cur->next;
+            *ptr |= 1;
+        }
+    
+        ListNode *result = nullptr;
+        for (ListNode *cur = headB; cur; cur = cur->next) {
+            unsigned long ptr = (unsigned long)cur->next;
+            if (ptr & 1) {
+                result = cur;
+                break;
+            }
+        }
+        
+        for (ListNode *cur = headA; cur; cur = cur->next) {
+            unsigned long *ptr = (unsigned long *)&cur->next;
+            *ptr &= (~0ULL << 1);
+        }
+    
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise 48ms C++ solution with description and comment on trees
+The idea is to first fast forward each pointer to the end to find their distances from the end. Then we can fast forward the farther pointer so they're the same distance from the end. Finally we can fast forward both at the same time until they coincide.
+
+This same exact approach can also be used to find the least common ancestor (LCA) of two nodes in a tree where nodes have parent pointers.
+
+    class Solution {
+    public:
+        ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+            
+            auto currA = headA, currB = headB;
+            int countA = 0, countB = 0;
+            
+            while (currA) { 
+                currA = currA->next, countA++;
+            }
+            while (currB) {
+                currB = currB->next, countB++;
+            }
+            int diff = std::abs(countA - countB);
+            if (countB > countA) { swap(headA, headB); }
+            while (diff--) { 
+                headA = headA->next;
+            }
+            while (headA != headB) {
+                headA = headA->next, headB = headB->next;
+            }
+            return headA;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean Java code, easy to understand, explanation, O(m+n) time, O(1)  space.
+If we add list A to the end of B, and add B to the end of A, then if they have intersection, the intersection would  located at the end of the combined list, and plus! they have the same index. Awesome!
+To return the right ListNode, we cannot actually combine them, just "next" the end to another list. The first equal element is what we want to find.
+
+
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if(headA==null || headB==null)retur**n** null;
+        
+        ListNode a=headA;
+        ListNode b=headB;
+        while(a!=b){
+            a=a==null?headB:a.next;
+            b=b==null?headA:b.next;
+            
+        }return b;
+   
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; Beats 99.56%
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        ListNode p1 = headA, p2 = headB;
+        int len1 = 0, len2 = 0;
+        while (p1 != null) {
+            p1 = p1.next;
+            len1++;
+        }
+        while (p2 != null) {
+            p2 = p2.next;
+            len2++;
+        }
+        p1 = headA;
+        p2 = headB;
+        if (len1 > len2) {
+            for (int i = 0;i < len1 - len2; i++) {
+                p1 = p1.next;
+            }
+        } else {
+            for (int i = 0;i < len2 - len1; i++) {
+                p2 = p2.next;
+            }
+        }
+        while (p1 != p2) {
+            p1 = p1.next;
+            p2 = p2.next;
+        }
+        return p1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python AC solution with clear explanation
+If two linked lists have intersection, we can find two observations:
+
+ 1. They must have same tail from the intersection point.
+ 2. L1+L2 must have same tail from the intersection point as L2 + L1. For example, 
+
+
+----------
+
+
+     L1 = 1,2,3 
+
+
+----------
+
+
+     L2 = 6,5,2,3
+
+
+----------
+
+
+    L1+L2 = 1,2,3,6,5,2,3
+
+
+----------
+
+
+    L2+L1 = 6,5,2,3,1,2,3
+
+
+----------
+
+To implement L1+L2 as well as L2+L1, we can simply jump to another list's head 
+after traveling through certain list!
+
+But, you need to notice that if the two lists have no intersection at all, 
+you should stop after checking L1+L2, so we need a flag to ensure it!
+
+Followings are my code!
+----------
+
+
+
+
+    def getIntersectionNode(self, headA, headB):
+        if not headA or not headB:
+            return None
+        ptA, ptB, jumpA = headA, headB, False
+        while True:
+            if id(ptA) == id(ptB):
+                return ptA
+            ptA, ptB = ptA.next, ptB.next
+            if not ptA:
+                if not jumpA:
+                    jumpA = True
+                    ptA = headB
+                else:
+                    return None
+            if not ptB:
+                ptB = headA
+
+----------------------------------------------------------------------------------------------------
+Python Solution: O(n) time and O(1) space
+This problem could be considered as the derivation of linked list cycle. 
+Let say there are two linked lists named l1 and l2. And h1 and t1 are the head and last nodes of l1 respectively, and h2 is the head node of l2.
+
+1. Concat h1 and t1
+2. Check whether there exists a cycle of linked list l2.
+3. Find that intersection if 2 is a truth.
+
+Before doing the above steps, there are two linked lists in the picture:
+![enter image description here][1]
+
+After step 1:
+![enter image description here][2]
+
+Then let's try to make the linked lists easier to understood.
+![enter image description here][3]
+Node 8 is what we want.  We can use then solve it by finding the start node of the cycle like the problem "linked list cycle II"
+
+Here is my code:
+
+	def getIntersectionNode(self, headA, headB):
+		"""
+		:type head1, head1: ListNode
+		:rtype: ListNode
+		""" 
+		if not headA or not headB: return None
+		
+		p = headA
+		while p.next:
+			p = p.next
+		mark = p
+		#make a cycled list
+		mark.next = headA
+		
+		rst = None
+		p1 = headB
+		p2 = headB
+		while p1 and p2:
+			p1 = p1.next
+			p2 = p2.next
+			if p2: p2 = p2.next
+			if p1 == p2: break
+
+		if p1 and p2 and p1 == p2:
+			p1 = headB
+			while p1 != p2:
+				p1 = p1.next
+				p2 = p2.next
+			rst = p1
+
+		#unmake the cycle
+		mark.next = None
+
+		return rst
+
+
+  [1]: http://b52.imgup.net/original15aa.jpg
+  [2]: http://h04.imgup.net/concatedfe73.jpg
+  [3]: http://g12.imgup.net/understood69a3.jpg
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time O(1) space solution by using &quot;assume there are no cycles&quot;

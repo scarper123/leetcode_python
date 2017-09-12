@@ -1,0 +1,397 @@
+c++ using stringstream
+class Solution {
+public:
+    string complexNumberMultiply(string a, string b) {
+        int ra, ia, rb, ib;
+        char buff;
+        stringstream aa(a), bb(b), ans;
+        aa >> ra >> buff >> ia >> buff;
+        bb >> rb >> buff >> ib >> buff;
+        ans << ra*rb - ia*ib << "+" << ra*ib + rb*ia << "i";
+        return ans.str();
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java 3-liner
+public String complexNumberMultiply(String a, String b) {
+    int[] coefs1 = Stream.of(a.split("\\+|i")).mapToInt(Integer::parseInt).toArray(), 
+          coefs2 = Stream.of(b.split("\\+|i")).mapToInt(Integer::parseInt).toArray();
+    return (coefs1[0]*coefs2[0] - coefs1[1]*coefs2[1]) + "+" + (coefs1[0]*coefs2[1] + coefs1[1]*coefs2[0]) + "i";
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java - (a1+b1)*(a2+b2) = (a1a2 + b1b2 + (a1b2+b1a2))
+public String complexNumberMultiply(String a, String b) {
+    String result = "";
+    String[] A = a.split("\\+");
+    String[] B = b.split("\\+");
+    int a1 = Integer.parseInt(A[0]);
+    int b1 = Integer.parseInt(A[1].replace("i",""));
+
+    int a2 = Integer.parseInt(B[0]);
+    int b2 = Integer.parseInt(B[1].replace("i",""));
+
+    int a1a2 = a1 * a2;
+    int b1b2 = b1 * b2;
+    int a1b2a2b1 = (a1 * b2) + (b1 * a2);
+
+    String afinal = (a1a2 + (-1 * b1b2)) + "";
+    String bfinal = a1b2a2b1 + "i";
+    result = afinal+"+"+bfinal;
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+python simple 3 lines solution
+class Solution(object):
+    def complexNumberMultiply(self, a, b):
+        """
+        :type a: str
+        :type b: str
+        :rtype: str
+        """
+        a1, a2 = map(int, a[:-1].split('+'))
+        b1, b2 = map(int, b[:-1].split('+'))
+        return '%d+%di' % (a1 * b1 - a2 * b2, a1 * b2 + a2 * b1)
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def convert_to_tuple(S):
+  first, second = S.split('+')
+  second = second[:-1]
+  return int(first), int(second)
+
+ar, ai = convert_to_tuple(a)
+br, bi = convert_to_tuple(b)
+real = ar * br - ai * bi
+imag = ar * bi + br * ai
+return "{}+{}i".format(real, imag)
+
+
+----------------------------------------------------------------------------------------------------
+2 lines Python
+def complexNumberMultiply(self, a, b):
+    a, ai, b, bi = map(int, re.findall('-?\d+', a+b))
+    return '%d+%di' % (a*b - ai*bi, a*bi + ai*b)
+
+----------------------------------------------------------------------------------------------------
+Java 7ms easy to understand solution
+public class Solution {
+    public String complexNumberMultiply(String a, String b) {
+        int[] valA = getValue(a);
+        int[] valB = getValue(b);
+        
+        int real = valA[0] * valB[0] - valA[1] * valB[1];
+        int img = valA[0] * valB[1] + valA[1] * valB[0];
+        
+        return real + "+" + img + "i";
+    }
+    
+    private int[] getValue(String s) {
+        String[] str = s.split("\\+");
+        int[] val = new int[2];
+        val[0] = Integer.valueOf(str[0]);
+        int indexOfI = str[1].indexOf("i");
+        val[1] = Integer.valueOf(str[1].substring(0, indexOfI));
+        
+        return val;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution
+class Solution {
+public:
+    string complexNumberMultiply(string a, string b) {
+        pair<int, int> av = parse(a);
+        pair<int, int> bv = parse(b);
+        int ra = av.first * bv.first - av.second * bv.second;
+        int rb = av.first * bv.second + av.second * bv.first;
+        return to_string(ra) + "+" + to_string(rb) + "i";
+    }
+
+    pair<int, int> parse(const string& a) {
+        int plus = find(a.begin(), a.end(), '+') - a.begin();
+        int i = find(a.begin(), a.end(), 'i') - a.begin();
+        int ra = stoi(a.substr(0, plus));
+        int rb = stoi(a.substr(plus + 1, i - plus));
+        return {ra, rb};
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+c solution with sscanf, snprintf, strdup.
+#define FORMAT "%d+%di"
+#define BUF_SIZE 128
+
+char* complexNumberMultiply(char* a, char* b) {
+	int a1, a2, b1, b2;
+	char buf[BUF_SIZE];
+	sscanf(a, FORMAT, &a1, &a2);
+	sscanf(b, FORMAT, &b1, &b2);
+	snprintf(buf, BUF_SIZE, FORMAT, a1 * b1 - a2 * b2, a1 * b2 + a2 * b1);
+	return strdup(buf);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python regex solution
+		import re
+		pattern = '([-]?\d+)\+([-]?\d+)i'
+		match = re.search(pattern, a)
+		x,y = int(match.group(1)),int(match.group(2))
+		match = re.search(pattern, b)
+		m,n = int(match.group(1)),int(match.group(2))
+		return '%d+%di'%(x*m-y*n, y*m+x*n)
+
+
+----------------------------------------------------------------------------------------------------
+Java OOP Solution
+public class Solution {
+    public class ComplexNumber {
+        public int a;
+        public int b;
+        public ComplexNumber(int a, int b) {
+            this.a = a;
+            this.b = b;
+        }
+        public ComplexNumber(String s) {
+            String[] tokens = s.split("[+i]");
+            a = Integer.parseInt(tokens[0]);
+            b = Integer.parseInt(tokens[1]);
+        }
+        public ComplexNumber multiply(ComplexNumber o) {
+            return new ComplexNumber(this.a * o.a - this.b * o.b, this.a * o.b + this.b * o.a);
+        }
+        public String toString() {
+            return String.format("%d+%di", a, b);    
+        }
+    }
+    
+    public String complexNumberMultiply(String a, String b) {
+        ComplexNumber ca = new ComplexNumber(a);
+        ComplexNumber cb = new ComplexNumber(b);
+        return ca.multiply(cb).toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Cross Products
+public class Solution {
+    public String complexNumberMultiply(String a, String b) {
+        int[] aa = parseComplex(a);
+        int[] bb = parseComplex(b);
+        
+        int real = aa[0] * bb[0] - aa[1] * bb[1];
+        int imag = aa[0] * bb[1] + aa[1] * bb[0];
+        
+        String result = real + "+" + imag + "i";
+        
+        return result;
+    }
+    
+    private int[] parseComplex(String s) {
+        int[] res = new int[2];
+        
+        int i = 0, j = 1;
+        while (j < s.length() && s.charAt(j) != '+') j++;
+        res[0] = Integer.parseInt(s.substring(i, j));
+        
+        j++; i = j;
+        while (j < s.length() && s.charAt(j) != 'i') j++;
+        res[1] = Integer.parseInt(s.substring(i, j));
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+3-lines Python with explanation
+class Solution(object):
+    def complexNumberMultiply(self, a, b):
+        a_s, b_s = a.strip('i').split('+'), b.strip('i').split('+')
+        ar, ai, br, bi = int(a_s[0]), int(a_s[1]),  int(b_s[0]), int(b_s[1]) #unnecessary, for clarity
+        return str(ar*br-ai*bi)+"+"+str(ar*bi+ai*br)+"i"
+
+
+----------------------------------------------------------------------------------------------------
+javascript simple solution
+const matchVars = (str) => str.slice(0, -1).split('+').map(n => Number.parseInt(n, 10))
+
+/**
+ * @param {string} a
+ * @param {string} b
+ * @return {string}
+ */
+const complexNumberMultiply = function(a, b) {
+  const [arl, aim] = matchVars(a)
+  const [brl, bim] = matchVars(b)
+
+  const [r, i] = [arl * brl + aim * bim * -1, arl * bim + aim * brl]
+  return `${r}+${i}i`
+}
+
+
+----------------------------------------------------------------------------------------------------
+Complex Multiplication in C++ using regex
+#include <regex>
+class Solution {
+public:
+    string complexNumberMultiply(string a, string b) {
+        regex e("([-]*)([0-9]*)([+])([-]*)([0-9]*)([i]*)");
+        smatch m1, m2;
+        int r1=0,r2=0,i1=0,i2=0;
+        regex_search(a,m1,e);
+        regex_search(b,m2,e);
+           
+        r1 = stoi(m1[2].str());
+        r2 = stoi(m2[2].str());
+        i1 = stoi(m1[5].str());
+        i2 = stoi(m2[5].str());
+        
+        if(m1[1].str() == "-")
+            r1 = -r1;
+        if(m1[4].str() == "-")
+            i1 = -i1;
+        if(m2[1].str() == "-")
+            r2 = -r2;
+        if(m2[4].str() == "-")
+            i2 = -i2;
+          
+        int real = r1*r2 - i1*i2;
+        int imag = r1*i2 + r2*i1;
+        string res = to_string(real) + "+" + to_string(imag) + "i" ;
+        
+        return res;
+        
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+JavaScript Confusion
+var complexNumberMultiply = function(a, b) {
+    var a1 = parseInt(a),
+    	b1 = parseInt(b),
+    	c = a1*a1-b1*b1,
+    	d = a1*b1*2;
+    	if(c<0){str = '-'+Math.abs(c)+'+'+d+'i';}
+	else if(d<0){str = c+'+'+'-'+Math.abs(d)+'i';}
+	else{str = c+'+'+d+'i';}
+    return str;
+};
+
+
+----------------------------------------------------------------------------------------------------
+python o(n) solution, maybe a little bit tedious
+def complexNumberMultiply(self, a, b):
+    """
+    :type a: str
+    :type b: str
+    :rtype: str
+    """
+    a_real, a_img = self.discompose(a)[0], self.discompose(a)[1]
+    b_real, b_img = self.discompose(b)[0], self.discompose(b)[1]
+    real = a_real * b_real - a_img * b_img
+    img = a_real * b_img + a_img * b_real
+    return '{}+{}i'.format(str(real), str(img))
+    
+def discompose(self, s):
+    real = 0
+    i = 0 if s[0].isdigit() else 1
+    sign_real = 1 - 2 * (s[0] == '-')
+    while s[i] != '+':
+        real = real * 10 + int(s[i]) 
+        i += 1
+    real *= sign_real
+        
+    img = 0
+    j = i + 1 if s[i + 1].isdigit() else i + 2
+    sign_img = 1 - 2 * (s[i + 1] == '-')
+    while s[j] != 'i':
+        img = img * 10 + int(s[j])
+        j += 1
+    img *= sign_img
+    
+    return real, img
+
+----------------------------------------------------------------------------------------------------
+use StringBuilder of Java.
+    public String complexNumberMultiply(String a, String b) {
+        StringBuilder sb = new StringBuilder();
+        String[] parta = a.split("\\+");
+        String[] partb = b.split("\\+");
+        
+        int a1 = Integer.parseInt(parta[0]);
+        int b1 = Integer.parseInt(parta[1].substring(0, parta[1].length() - 1));
+        
+        int a2 = Integer.parseInt(partb[0]);
+        int b2 = Integer.parseInt(partb[1].substring(0, partb[1].length() - 1));
+        
+        int res_a = a1 * a2 - b1 * b2;
+        sb.append(res_a);
+        sb.append("+");
+        int res_b = a1 * b2 + a2 * b1;
+        sb.append(res_b);
+        sb.append("i");
+        
+        return sb.toString();
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python 3 - OOP solution with multiplication overriding
+class Complex(object):
+    def __init__(self, real, imaginary):
+        self.real = real
+        self.imaginary = imaginary
+    
+    def __mul__(self, other):
+        #assuming other is a Complex object. Though we can run a check if we want
+        real = (self.real*other.real - self.imaginary*other.imaginary)
+        imaginary = (self.real*other.imaginary+other.real*self.imaginary)
+        return Complex(real, imaginary)
+        
+    @staticmethod
+    def from_string(text):
+        parts = text.split('+')
+        real = int(parts[0])
+        imaginary = int(parts[1][:-1])
+        return Complex(real, imaginary)
+        
+    def __repr__(self):
+        return "{}+{}i".format(self.real, self.imaginary)
+        
+class Solution(object):
+    def complexNumberMultiply(self, a, b):
+        """
+        :type a: str
+        :type b: str
+        :rtype: str
+        """
+        a = Complex.from_string(a)
+        b = Complex.from_string(b)
+        return str(a*b)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution
+    public String complexNumberMultiply(String a, String b) {
+        String[] num1 = a.split("\\+");
+        String[] num2 = b.split("\\+");
+        int x1 = Integer.valueOf(num1[0]);
+        int y1 = Integer.valueOf(num1[1].substring(0, num1[1].length() - 1));
+        int x2 = Integer.valueOf(num2[0]);
+        int y2 = Integer.valueOf(num2[1].substring(0, num2[1].length() - 1));
+        return x1 * x2 - y1 * y2 + "+" + (x1 * y2 + x2 * y1) + "i";
+    }
+
+
+----------------------------------------------------------------------------------------------------

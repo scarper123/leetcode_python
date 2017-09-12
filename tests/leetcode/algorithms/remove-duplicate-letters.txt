@@ -1,0 +1,356 @@
+Two AC solution in Java using BFS and DFS with explanation
+This question asks for an order in which prerequisite courses must be taken first. This prerequisite relationship reminds one of directed graphs. Then, the problem reduces to find a topological sort order of the courses, which would be a DAG if it has a valid order.
+
+    public int[] findOrder(int numCourses, int[][] prerequisites) {
+        int[] incLinkCounts = new int[numCourses];
+        List<List<Integer>> adjs = new ArrayList<>(numCourses);
+        initialiseGraph(incLinkCounts, adjs, prerequisites);
+        //return solveByBFS(incLinkCounts, adjs);
+        return solveByDFS(adjs);
+    }
+
+The first step is to transform it into a directed graph. Since it is likely to be sparse,we use adjacency list graph data structure. 1 -> 2 means 1 must be taken before 2.
+
+    private void initialiseGraph(int[] incLinkCounts, List<List<Integer>> adjs, int[][] prerequisites){
+        int n = incLinkCounts.length;
+        while (n-- > 0) adjs.add(new ArrayList<>());
+        for (int[] edge : prerequisites) {
+            incLinkCounts[edge[0]]++;
+            adjs.get(edge[1]).add(edge[0]);
+        }
+    }
+
+How can we obtain a topological sort order of a DAG?
+
+We observe that if a node has incoming edges, it has prerequisites. Therefore, the first few in the order must be those with no prerequisites, i.e. no incoming edges. Any non-empty DAG must have at least one node without incoming links. You can draw a small graph to convince yourself. If we visit these few and remove all edges attached to them, we are left with a smaller DAG, which is the same problem. This will then give our BFS solution.
+
+    private int[] solveByBFS(int[] incLinkCounts, List<List<Integer>> adjs){
+        int[] order = new int[incLinkCounts.length];
+        Queue<Integer> toVisit = new ArrayDeque<>();
+        for (int i = 0; i < incLinkCounts.length; i++) {
+            if (incLinkCounts[i] == 0) toVisit.offer(i);
+        }
+        int visited = 0;
+        while (!toVisit.isEmpty()) {
+            int from = toVisit.poll();
+            order[visited++] = from;
+            for (int to : adjs.get(from)) {
+                incLinkCounts[to]--;
+                if (incLinkCounts[to] == 0) toVisit.offer(to);
+            }
+        }
+        return visited == incLinkCounts.length ? order : new int[0]; 
+    }
+
+Another way to think about it is the last few in the order must be those which are not prerequisites of other courses. Thinking it recursively means if one node has unvisited child node, you should visit them first before you put this node down in the final order array. This sounds like the post-order of a DFS. Since we are putting nodes down in the reverse order, we should reverse it back to correct ordering or use a stack.
+
+    private int[] solveByDFS(List<List<Integer>> adjs) {
+        BitSet hasCycle = new BitSet(1);
+        BitSet visited = new BitSet(adjs.size());
+        BitSet onStack = new BitSet(adjs.size());
+        Deque<Integer> order = new ArrayDeque<>();
+        for (int i = adjs.size() - 1; i >= 0; i--) {
+            if (visited.get(i) == false && hasOrder(i, adjs, visited, onStack, order) == false) return new int[0];
+        }
+        int[] orderArray = new int[adjs.size()];
+        for (int i = 0; !order.isEmpty(); i++) orderArray[i] = order.pop();
+        return orderArray;
+    }
+    
+    private boolean hasOrder(int from, List<List<Integer>> adjs, BitSet visited, BitSet onStack, Deque<Integer> order) {
+        visited.set(from);
+        onStack.set(from);
+        for (int to : adjs.get(from)) {
+            if (visited.get(to) == false) {
+                if (hasOrder(to, adjs, visited, onStack, order) == false) return false;
+            } else if (onStack.get(to) == true) {
+                return false;
+            }
+        }
+        onStack.clear(from);
+        order.push(from);
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+20+ lines C++ BFS&#x2F;DFS Solutions
+Well, this problem is spiritually similar to to [Course Schedule][1]. You only need to store the nodes in the order you visit into a vector during BFS or DFS. Well, for DFS, a final reversal is required. 
+
+----------
+**BFS**
+
+    class Solution {
+    public:
+        vector<int> findOrder(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph = make_graph(numCourses, prerequisites);
+            vector<int> degrees = compute_indegree(graph);
+            queue<int> zeros;
+            for (int i = 0; i < numCourses; i++)
+                if (!degrees[i]) zeros.push(i);
+            vector<int> toposort;
+            for (int i = 0; i < numCourses; i++) {
+                if (zeros.empty()) return {};
+                int zero = zeros.front();
+                zeros.pop();
+                toposort.push_back(zero);
+                for (int neigh : graph[zero]) {
+                    if (!--degrees[neigh])
+                        zeros.push(neigh);
+                }
+            }
+            return toposort;
+        }
+    private:
+        vector<unordered_set<int>> make_graph(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph(numCourses);
+            for (auto pre : prerequisites)
+                graph[pre.second].insert(pre.first);
+            return graph; 
+        }
+        vector<int> compute_indegree(vector<unordered_set<int>>& graph) {
+            vector<int> degrees(graph.size(), 0);
+            for (auto neighbors : graph)
+                for (int neigh : neighbors)
+                    degrees[neigh]++;
+            return degrees;
+        }
+    };
+
+----------
+**DFS**
+
+    class Solution {
+    public:
+        vector<int> findOrder(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph = make_graph(numCourses, prerequisites);
+            vector<int> toposort;
+            vector<bool> onpath(numCourses, false), visited(numCourses, false);
+            for (int i = 0; i < numCourses; i++)
+                if (!visited[i] && dfs(graph, i, onpath, visited, toposort))
+                    return {};
+            reverse(toposort.begin(), toposort.end());
+            return toposort;
+        }
+    private:
+        vector<unordered_set<int>> make_graph(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph(numCourses);
+            for (auto pre : prerequisites)
+                graph[pre.second].insert(pre.first);
+            return graph;
+        }
+        bool dfs(vector<unordered_set<int>>& graph, int node, vector<bool>& onpath, vector<bool>& visited, vector<int>& toposort) { 
+            if (visited[node]) return false;
+            onpath[node] = visited[node] = true; 
+            for (int neigh : graph[node])
+                if (onpath[neigh] || dfs(graph, neigh, onpath, visited, toposort))
+                    return true;
+            toposort.push_back(node);
+            return onpath[node] = false;
+        }
+    };
+
+  [1]: https://leetcode.com/problems/course-schedule/ 
+  [2]: https://leetcode.com/discuss/42543/c-bfs-and-dfs-solutions-with-explanations
+  [3]: https://en.wikipedia.org/wiki/Topological_sorting#Algorithms
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS double cache visiting each vertex once 433ms
+    public class Solution {
+        public int[] findOrder(int numCourses, int[][] prerequisites) {
+            List<List<Integer>> adj = new ArrayList<>(numCourses);
+            for (int i = 0; i < numCourses; i++) adj.add(i, new ArrayList<>());
+            for (int i = 0; i < prerequisites.length; i++) adj.get(prerequisites[i][1]).add(prerequisites[i][0]);
+            boolean[] visited = new boolean[numCourses];
+            Stack<Integer> stack = new Stack<>();
+            for (int i = 0; i < numCourses; i++) {
+                if (!topologicalSort(adj, i, stack, visited, new boolean[numCourses])) return new int[0];
+            }
+            int i = 0;
+            int[] result = new int[numCourses];
+            while (!stack.isEmpty()) {
+                result[i++] = stack.pop();
+            }
+            return result;
+        }
+        
+        private boolean topologicalSort(List<List<Integer>> adj, int v, Stack<Integer> stack, boolean[] visited, boolean[] isLoop) {
+            if (visited[v]) return true;
+            if (isLoop[v]) return false;
+            isLoop[v] = true;
+            for (Integer u : adj.get(v)) {
+                if (!topologicalSort(adj, u, stack, visited, isLoop)) return false;
+            }
+            visited[v] = true;
+            stack.push(v);
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python dfs, bfs solutions with comments.
+     
+    # BFS
+    def findOrder1(self, numCourses, prerequisites):
+        dic = {i: set() for i in xrange(numCourses)}
+        neigh = collections.defaultdict(set)
+        for i, j in prerequisites:
+            dic[i].add(j)
+            neigh[j].add(i)
+        # queue stores the courses which have no prerequisites
+        queue = collections.deque([i for i in dic if not dic[i]])
+        count, res = 0, []
+        while queue:
+            node = queue.popleft()
+            res.append(node)
+            count += 1
+            for i in neigh[node]:
+                dic[i].remove(node)
+                if not dic[i]:
+                    queue.append(i)
+        return res if count == numCourses else []
+        
+    # DFS
+    def findOrder(self, numCourses, prerequisites):
+        dic = collections.defaultdict(set)
+        neigh = collections.defaultdict(set)
+        for i, j in prerequisites:
+            dic[i].add(j)
+            neigh[j].add(i)
+        stack = [i for i in xrange(numCourses) if not dic[i]]
+        res = []
+        while stack:
+            node = stack.pop()
+            res.append(node)
+            for i in neigh[node]:
+                dic[i].remove(node)
+                if not dic[i]:
+                    stack.append(i)
+            dic.pop(node)
+        return res if not dic else []
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution based on BFS with comments
+    public int[] findOrder(int numCourses, int[][] prerequisites) { 
+        if (numCourses == 0) return null;
+        // Convert graph presentation from edges to indegree of adjacent list.
+        int indegree[] = new int[numCourses], order[] = new int[numCourses], index = 0;
+        for (int i = 0; i < prerequisites.length; i++) // Indegree - how many prerequisites are needed.
+            indegree[prerequisites[i][0]]++;    
+    
+        Queue<Integer> queue = new LinkedList<Integer>();
+        for (int i = 0; i < numCourses; i++) 
+            if (indegree[i] == 0) {
+                // Add the course to the order because it has no prerequisites.
+                order[index++] = i;
+                queue.offer(i);
+            }
+    
+        // How many courses don't need prerequisites. 
+        while (!queue.isEmpty()) {
+            int prerequisite = queue.poll(); // Already finished this prerequisite course.
+            for (int i = 0; i < prerequisites.length; i++)  {
+                if (prerequisites[i][1] == prerequisite) {
+                    indegree[prerequisites[i][0]]--; 
+                    if (indegree[prerequisites[i][0]] == 0) {
+                        // If indegree is zero, then add the course to the order.
+                        order[index++] = prerequisites[i][0];
+                        queue.offer(prerequisites[i][0]);
+                    }
+                } 
+            }
+        }
+    
+        return (index == numCourses) ? order : new int[0];
+    }
+
+----------------------------------------------------------------------------------------------------
+Expected: Special judge: No expected output available.
+Python:
+
+    Input:	1, []
+    Output:	[]
+    Expected:	Special judge: No expected output available.
+
+Why?
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Using 3 colored approach
+Here, i have used 3 colored approach. Here w -> represent white means vertex yet not visited.
+g -> gray , it means it is under DFS recursion and we again found the same node. This means cycle exists and return false.
+b -> black node when DFS is done visiting the node. 
+This method checks cycle as well as keeps storing answer in stack in case cycle doesn't exists.
+
+    
+
+    class Graph {
+        public:
+        int v;
+        list <int> *adj;
+        Graph(int v)
+        {
+            this->v=v;
+            adj = new list<int> [v];
+        }
+        void addedges(int src , int dest)
+           {
+    	     adj[dest].push_back(src);
+           }	
+    };
+    class Solution {
+    public:
+        stack <int> st;
+        vector<int> findOrder(int numCourses, vector<pair<int, int>>& prerequisites) {
+            Graph g(numCourses);
+            for (int i=0 ; i < prerequisites.size() ; i++)
+                    g.addedges(prerequisites[i].first , prerequisites[i].second);        
+            vector <int> ans;
+            if(!courseScheduleCheck(g))
+                    return ans;              
+            while(!st.empty())
+                {
+                    ans.push_back(st.top());
+                    st.pop();
+                }
+            return ans;       
+        }
+       bool courseScheduleCheck(Graph g)
+        {
+            int v = g.v;    
+            vector <char> visit(v,'w');
+            for(int i=0 ; i<v;i++)
+            {        
+               if(visit[i]== 'w')
+                    if(iscycle(g,i,visit))
+                        return false;
+            }
+            return true;
+        }  
+        bool iscycle(Graph g , int i, vector <char> & visit)
+        {
+            list <int> ::iterator it;
+            for(it = g.adj[i].begin() ; it!=g.adj[i].end() ; it++)
+            {
+                if(visit[*it]== 'g')
+                    return true;
+                else
+                {
+                    if(visit[*it] != 'b')
+                     {
+                         visit[*it] = 'g';
+                         if(iscycle(g,*it,visit))
+                            return true;
+                     }        
+                }     
+            }
+             visit[i]='b';
+             st.push(i);           
+            return false;
+        }            
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+DFS-based topological sorting (clean Java implementation with detailed comments)

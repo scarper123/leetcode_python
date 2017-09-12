@@ -1,0 +1,624 @@
+Java Solution, DP
+public class Solution {
+    public int findIntegers(int num) {
+        StringBuilder sb = new StringBuilder(Integer.toBinaryString(num)).reverse();
+        int n = sb.length();
+        
+        int a[] = new int[n];
+        int b[] = new int[n];
+        a[0] = b[0] = 1;
+        for (int i = 1; i < n; i++) {
+            a[i] = a[i - 1] + b[i - 1];
+            b[i] = a[i - 1];
+        }
+        
+        int result = a[n - 1] + b[n - 1];
+        for (int i = n - 2; i >= 0; i--) {
+            if (sb.charAt(i) == '1' && sb.charAt(i + 1) == '1') break;
+            if (sb.charAt(i) == '0' && sb.charAt(i + 1) == '0') result -= b[i];
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++, Non-DP, O(32) Fibonacci solution
+class Solution {
+public:
+    int findIntegers(int num) {
+        int f[32];
+        f[0] = 1;
+        f[1] = 2;
+        for (int i = 2; i < 32; ++i)
+            f[i] = f[i-1]+f[i-2];
+        int ans = 0, k = 30, pre_bit = 0;
+        while (k >= 0) {
+            if (num&(1<<k)) {
+                ans += f[k];
+                if (pre_bit) return ans;
+                pre_bit = 1;
+            }
+            else
+                pre_bit = 0;
+            --k;
+        }
+        return ans+1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ 4 lines DP&#x2F;Fibonacci 6 ms
+int findIntegers(int num) {
+    static int fb[31] = { 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946,
+        17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229, 832040, 1346269, 2178309, 3524578 };
+    if (num < 3) return num + 1;
+    for (int bt = 29; bt >= 0; --bt) // bt should start from 30, but OJ accepts it from 29.
+        if (num & (1 << bt)) return num & (1 << (bt - 1)) ? fb[bt] : fb[bt - 1] + findIntegers((num & ~(1 << bt)));
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(1) time O(1) space DP Solution
+public class Solution {
+    public int findIntegers(int num) {
+        //one:all bit before cur is less than num and no continues 1 and cur bit is at one;
+        //zero:all bit before cur is less than num and no continues 1 and cur bit is at zero;
+        int one=0,zero=0,temp;
+        boolean isNum=true;
+        for(int i=31;i>=0;i--){
+            temp=zero;
+            zero+=one;
+            one=temp;
+            if(isNum&&((num>>i)&1)==1){
+                zero+=1;
+            }
+            if(((num>>i)&1)==1&&((num>>i+1)&1)==1){
+                isNum=false;
+            }
+            
+        }
+        return one+zero+(isNum?1:0);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+python dp solution easily understood
+class Solution(object):
+    def findIntegers(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        # A[0] is the lowest bit, A[-1] is the highest bit
+        A=bin(num)[2:][::-1]
+        # dp[i][0] is the number of integers with (i+1)bits, highest bit is 0 and without consecutive ones
+        # dp[i][1] is the number of integers with (i+1)bits, highest bit is 1 and without consecutive ones
+        dp=[[1,1] for _ in range(len(A))]
+        # res is the number of integers less than A[:i] without consecutive ones.
+        res=1 if A[0]=='0' else 2
+        for i in range(1, len(A)):
+            dp[i][0]=dp[i-1][0]+dp[i-1][1]
+            dp[i][1]=dp[i-1][0]
+            # try to get the number of integers less than A[:i+1]
+            if A[i-1:i+1]=='01':
+                # if A[i-1:i+1]=='01', we can append '1' after integers less than A[:i] without consecutive ones, 
+                # also any integer with (i+1) bits, highest bit is '0', without consecutive ones
+                # is less than A[:i+1]
+                res+=dp[i][0]
+            elif A[i-1:i+1]=='11':
+                # if A[i-1:i+1]=='11', then any integer with i+1 bits and without consecutive ones 
+                # is less than A[:i+1]
+                res=dp[i][0]+dp[i][1]
+            # if A[i]=='0', the number of integers  with i+1 bits, less than A[:i+1]  and without 
+            # consecutive ones is the same as A[:i]
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Java Memoized DP Solution
+public int findIntegers(int num) {
+  return findIntegers(num, new HashMap<>());
+}    
+
+public int findIntegers(int num, Map<Integer, Integer> memo) {
+    if (num <= 2) return num + 1; // base case
+    if (memo.containsKey(num)) return memo.get(num); // check if this result has already been computed   
+    
+    int msb = 31 - Integer.numberOfLeadingZeros(num); // retrieve index of most significant bit
+    int subNum = (1 << msb) - 1, subNum2 = ~(1 << msb) & num;
+    if (subNum2 >= 1 << msb - 1) subNum2 = subNum >> 1;
+    int result = findIntegers(subNum, memo) + findIntegers(subNum2, memo);
+    
+    memo.put(num, result); // add result to memo
+    return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def findIntegers(self, X):
+    A = map(int, bin(X)[2:])
+    N = len(A)
+    dp = [[0, 0] for _ in xrange(N+2)]
+    dp[N] = dp[N+1] = [1, 1]
+    
+    for i in xrange(N-1, -1, -1):
+        dp[i][0] = dp[i+1][A[i]] + A[i] * dp[i+2][i+1 < N and A[i+1]]
+        dp[i][1] = dp[i+1][1] + dp[i+2][1]
+
+    return dp[0][0]
+
+
+----------------------------------------------------------------------------------------------------
+JAVA 31 ms DP Solution with Explanation
+public class Solution {
+    public int findIntegers(int num) {
+        if(num < 3){
+            return num + 1;
+        }
+        
+        int len = 1;
+        int tmp = num;
+        // get the bit length of the input number
+        while(tmp / 2 > 0){
+            len++;
+            tmp /= 2;
+        }
+        
+        int[] include = new int[len + 1];
+        int[] exclude = new int[len + 1];
+        boolean flag;
+        
+// initial state
+        include[0] = 1;
+        exclude[0] = 0;
+        
+        if((num & 1) == 1){
+            include[1] = 2;
+            exclude[1] = 0;
+            flag = false;
+        }
+        else{
+            include[1] = 1;
+            exclude[1] = 1;
+            flag = true;
+        }
+        
+        
+        
+        for(int i = 2; i <= len; i++){
+            num >>>= 1;
+            if((num & 1) == 1){
+                include[i] = exclude[i - 1] + include[i - 1] + (flag ? include[i - 1] : include[i - 2] + exclude[i - 2]);
+                exclude[i] = flag ? exclude[i - 2] : 0;
+                flag = false;
+            }
+            
+            else{
+                include[i] = include[i - 1];
+                exclude[i] = exclude[i - 1] + include[i - 2] + exclude[i - 2]; 
+                
+                flag = true;
+            }
+        }
+         
+        return include[len];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+nonnegative integer i am having tle
+class Solution {
+public:
+
+int bin(int n)
+{
+unsigned i;
+long unsigned j;
+    int flag;
+
+    int out;
+    long int c=0;
+
+    for(j=0;j<=n;j++)
+    {
+        flag=0;
+        out=0;
+
+    for (i=1<<31 ; i > 0; i = i / 2)
+    {
+        if( (j & i) && (flag==0) )
+            {//printf("1");
+                flag=1;
+            }
+        else if((j & i) && (flag==1))
+            {//printf("1");
+            out=1;
+            break;}
+
+        else
+            //printf("0");
+            flag=0;
+
+    }
+
+
+    if((flag==0 || flag ==1) && (out!=1))
+    {
+        c++;
+        //printf("value of %d",c);
+        flag=0;
+       // printf("\n");
+    }
+else{
+    //printf("\n");
+    continue;
+}
+
+    }
+return c;
+}
+
+    int findIntegers(int num) {
+   return bin(num);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution
+    public int findIntegers(int num) {
+        if (num < 0)
+            return 0;
+
+        return num - dp(num) + 1;
+    }
+    
+    Map<Integer, Integer> map = new HashMap<>();
+    
+    // get count of number with consecutive 1s
+    public int dp(int num) {
+        if (num < 3)
+            return 0;
+        Integer count = map.get(num);
+        if (count != null)
+            return count;
+        int i = 31;
+        while (i > 0 && ((1 << i) & num) == 0)
+            i--;
+        if (i <= 0)
+            return 0;
+          
+        int next, result;  
+        if ((1 << (i - 1) & num) > 0) {
+            next = num - (1 << i) - (1 << (i-1));
+            result = next + 1 + dp(num - next - 1);
+        } else {
+            next = num - (1 << i);
+            result = dp(next) + dp((1 << i) - 1);
+        }
+        map.put(num, result);
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(1) time&#x2F;space complexity in python, explanation included.
+class Solution:
+    def findIntegers(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+
+        i = 0               # the index of next bit to process, or the number of bits we have processed
+        n_end_with_0 = 1    # number of values that use i bit(s), ending with 0 and have no consecutive 1s
+        n_end_with_1 = 0    # number of values that use i bit(s), ending with 1 and have no consecutive 1s
+        n = 0               # the number of values that has no consecutive 1s.
+        last_bit_mask = 0x1
+
+        num += 1                # Since the our algorithm only looks at numbers
+                                # in [0, num), we add the original num by 1.
+                                # You shall see this after reading the comments
+                                # in the loop body
+        while num > 0:
+            # Notation:
+            # - x: the bit being processed in this iteration
+            # - p: bits before the bit x, named after prefix.
+            # - We call a number that has no consecutive 1's a DESIRED number
+            #
+            # In each iteration, we compute the number of values in [ p00..0, px0..0 )
+            # - if p is a desired number or x is 0, then 0
+            # - else the number is equal to the count of desired numbers in [000...0, 100...0),
+            #   or [000...0, 011...1], this problem can be solver by DP.
+
+            num >>= 1           # note now p == num
+            # (x & (x << 1)): quick way to test if x has consecutive 1s, be careful with overflow.
+            if (num & (num << 1)) == 0 and (num & last_bit_mask) == 1:
+                    n += n_end_with_1 + n_end_with_0
+
+            i += 1
+            n_end_with_0, n_end_with_1 = n_end_with_1 + n_end_with_0, n_end_with_0
+
+        return n
+
+
+----------------------------------------------------------------------------------------------------
+Python DP Solution
+class Solution(object):
+    def __init__(self):
+        self.dp = {'': 1, '1': 2, '10': 3, '11': 3}
+
+    def findIntegers(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        b = "{0:b}".format(num).lstrip('0')
+        if b in self.dp:
+            return self.dp[b]
+        s, e = b[:2], b[2:]
+        if s=='10':
+            res = self.findIntegers(int(e, 2)) + self.findIntegers(int('10' + len(e[1:])*'1', 2))
+        else:
+            res = self.findIntegers(int(len(e)*'1', 2)) + self.findIntegers(int('10' + len(e[1:])*'1', 2))
+        self.dp[b] = res
+        # print self.dp
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Python O(1) space simple solution
+class Solution(object):
+    def findIntegers(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        if num <= 1:
+            return num + 1
+        e0 = 1
+        e1 = 1
+        #c1: consecutive 1 appears in the number
+        c1 = False
+        n = len(bin(num)) - 2
+        for i in range(n-2, -1, -1):
+            # pre: previous bit, curr: current bit
+            pre = (1 << i) & num
+            curr = (1 << (i + 1)) & num
+            e0, e1 = e1 + e0, e0
+            if not pre and not curr and not c1:
+                e1 -= 1
+            if not c1 and pre and curr:
+                c1 = True
+        return e0 + e1
+
+
+----------------------------------------------------------------------------------------------------
+Java Recursive solution Time&#x2F;Space Complexity  O(logN)
+import java.util.*;
+
+public class Solution {
+
+    static long[] x = new long[30];    // all valid numbers with ith digit to be 1.
+    static long[] sums = new long[30];  // all valid numbers with #digits  <= i
+
+    static {
+        x[0] = 1;
+        x[1] = 1;
+        sums[0] = 1;
+        sums[1] = 2;
+        for(int w = 2;  w < x.length; w++){
+            x[w] = sums[w-2];
+            sums[w] = x[w] + sums[w-1];
+        }
+    }
+
+// # of valid numbers <= the first ind digits of a;
+    private long aux(int[] a, int ind){
+        if(ind < 0) return 1;
+        if(ind == 0) return a[ind] == 0 ? 1 : 2;
+        return a[ind] == 0 ? aux(a, ind - 1) : (sums[ind] + (a[ind-1] == 0? aux(a, ind - 2) : sums[ind-1]));
+    }
+
+    public int findIntegers(int num) {
+        List<Integer> list = new ArrayList<>();
+        while(num != 0){
+            list.add(num%2);
+            num/=2;
+        }
+        int[] a = new int[list.size()];
+        for(int i = 0; i < list.size(); i++){
+            a[i] = list.get(i);
+        }
+        return (int)aux(a, a.length-1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP dfs &amp; Memozied
+    int val = 1 << (len - 1);
+    if (num >= val)
+        return dp[len - 1][0] + dfs(len - 2, num - val);
+    else
+        return dfs(len - 1, num);
+    
+}
+int findIntegers(int num) {
+    init();
+    int len = 0;
+    int n = num;
+    
+    while (n)
+    {
+        len++;
+        n >>= 1;
+    }
+    
+    return dfs(len, num);
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Simple O(1) Space Solution. (NOT O(32) which is actually O(lgN))
+class Solution {
+public:
+    int findIntegers(int num) {
+        int calc[32] = {1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765
+        ,10946,17711,28657,46368,75025,121393,196418,317811,514229,832040,1346269,2178309};
+        int sum = 0;
+        bool is_last_one = false;
+        for (int i = 31; i >= 0; i --)
+            if ((1 << i & num) > 0)
+            {
+                sum += calc[i];
+                if ((1 << i+1 & num) > 0)
+                    return sum;
+            }
+        return sum + 1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+cpp soulution
+class Solution {
+public:
+	int findIntegers(int num) {
+		vector<int> counts;
+		vector<int> sum;
+		if (num == 0)return 1;
+		counts.push_back(1);
+		if (num == 1)return 2;
+		counts.push_back(1);
+		if (num == 2)return 3;
+		counts.push_back(1);
+		if (num == 3)return 3;
+		int p = 2, now = 2, min = 4;
+		while (min * 2 <= num) {
+			counts.push_back(now);
+			now = now + counts[p++];
+			min *= 2;
+		}
+		sum.push_back(1);
+		for (int i = 1; i < counts.size(); i++) {
+			sum.push_back(sum[i - 1] + counts[i]);
+		}
+		int left = num - min, nextfind;
+		if (left >= min / 2) {
+			nextfind = min / 2 - 1;
+		}
+		else {
+			nextfind = left;
+		}
+		return sum[sum.size() - 1] + findIt(nextfind, sum);
+	}
+	int findIt(int num,vector<int>& sum) {
+		if (num == 0)return 1;
+		if (num == 1)return 2;
+		if (num == 2)return 3;
+		if (num == 3)return 3;
+		int p = 2, now = 2, min = 4;
+		while (min * 2 <= num) {
+			p++;
+			min *= 2;
+		}
+		int left = num - min, nextfind;
+		if (left >= min / 2) {
+			nextfind = min / 2 - 1;
+		}
+		else {
+			nextfind = left;
+		}
+		return sum[p] + findIt(nextfind, sum);
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python, Non-DP based on Fibonacci seq. O(log2(N)) .
+def findIntegers(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        N=max(j for j in range(32) if num&(1<<j))+1
+        fib=[1,2]
+        for j in range(2,N+1): fib.append(fib[j-1]+fib[j-2])
+        Nlst=[j for j in range(N) if num&(1<<j) and num&(1<<(j+1))]
+        op,N1=(1,0) if len(Nlst)==0 else (0,max(Nlst))
+        return op+sum(fib[i] for i in range(N1,N+1) if num&(1<<i) )
+
+
+----------------------------------------------------------------------------------------------------
+c# memoized dfs solution
+public class Solution {
+        Dictionary<int, int> cache = new Dictionary<int, int>();
+        public int FindIntegers(int num)
+        {
+            if (num < 3) return num + 1;
+
+            if (cache.ContainsKey(num)) return cache[num];
+            var binary = Convert(num);
+            var count = 0;
+            if (binary[1] == 1)
+            {
+                // for 11,xxx case, only count nums small than 11000, 
+                var next = (binary.Count > 2 ? (3 << binary.Count - 2) : num) - 1;
+                count += FindIntegers(next); // count 11,000-1;
+            }
+            else
+            {
+                var mask = (1 << (binary.Count - 1)) - 1;
+                var rest = num & mask;
+                count += FindIntegers(rest);// f(10xxx) equals f(xxx); 
+                count += FindIntegers((1 << (binary.Count - 1)) - 1); // count 10,000-1
+            }
+            cache[num] = count;
+            Console.WriteLine("{0},{1}", num, count);
+            return count;
+        }
+        
+        public List<int> Convert(int n)
+        {
+            var res = new List<int>();
+            do
+            {
+                res.Add(n % 2);
+                n /= 2;
+            } while (n != 0);
+
+                res.Reverse();
+            return res;
+        }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Fibonacci
+int findIntegers(int num) {
+    string str="";
+    while(num>0)str+=num%2+'0',num/=2;
+    int l=str.length();
+    vector<int> arr(l+1,1);
+    for(int i=2;i<=l;i++)arr[i]=arr[i-1]+arr[i-2];
+    int result=1,pre=0;
+    for(int i=l;i>=0;i--)
+    {
+        if(str[i-1]=='1')
+        {
+            result+=arr[i];
+            if(pre==1)break;
+        }
+        pre=str[i-1]=='1';
+    }
+    return result-pre;
+}
+
+----------------------------------------------------------------------------------------------------

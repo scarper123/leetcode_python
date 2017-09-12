@@ -1,0 +1,626 @@
+Step by step tackling of the problem
+**Step I -- Think naively**
+
+At first glance, the problem exhibits the feature of "optimal substructure": if we want to "rob" maximum amount of money from current binary tree (rooted at "root"), we surely hope that we can do the same to its left and right subtrees. 
+
+So going along this line, let's define the function `rob(root)` which will return the maximum amount of money that we can rob for the binary tree rooted at "root"; the key now is to construct the solution to the original problem from solutions to its subproblems, i.e., how to get `rob(root)` from `rob(root.left), rob(root.right), ...` etc.
+
+Apparently the analyses above suggest a recursive solution. And for recursion, it's always worthwhile to figure out the following two properties:
+
+ 1. Termination condition: when do we know the answer to `rob(root)` without any calculation? Of course when the tree is empty -- we've got nothing to rob so the amount of money is zero.
+
+ 2. Recurrence relation: i.e., how to get `rob(root)` from `rob(root.left), rob(root.right), ...` etc. From the point of view of the tree root, there are only two scenarios at the end: "root" is robbed or is not. If it is, due to the constraint that "we cannot rob any two directly-linked houses", the next level of subtrees that are available would be the four "grandchild-subtrees" (*root.left.left, root.left.right, root.right.left, root.right.right*).  However if root is not robbed, the next level of available subtrees would just be the two "child-subtrees" (*root.left, root.right*). We only need to choose the scenario which yields the larger amount of money.
+
+Here is the program for the ideas above:
+
+    public int rob(TreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        
+        int val = 0;
+        
+        if (root.left != null) {
+            val += rob(root.left.left) + rob(root.left.right);
+        }
+        
+        if (root.right != null) {
+            val += rob(root.right.left) + rob(root.right.right);
+        }
+        
+        return Math.max(val + root.val, rob(root.left) + rob(root.right));
+    }
+
+However the solution runs very slow (1186 ms) and barely got accepted.
+
+**Step II -- Think one step further**
+
+In step I, we only considered the aspect of "optimal substructure", but think little about the possibilities of overlapping of the subproblems. For example, to obtain `rob(root)`, we need `rob(root.left), rob(root.right), rob(root.left.left), rob(root.left.right), rob(root.right.left), rob(root.right.right)`; but to get `rob(root.left)`, we also need `rob(root.left.left), rob(root.left.right)`, similarly for `rob(root.right)`. The naive solution above computed these subproblems repeatedly, which resulted in bad time performance. Now if you recall the two conditions for dynamic programming: "**optimal substructure**" + "**overlapping of subproblems**", we actually have a DP problem. A naive way to implement DP here is to use a hash map to record the results for visited subtrees. 
+
+And here is the improved solution:
+
+    public int rob(TreeNode root) {
+        Map<TreeNode, Integer> map = new HashMap<>();
+        return robSub(root, map);
+    }
+    
+    private int robSub(TreeNode root, Map<TreeNode, Integer> map) {
+        if (root == null) return 0;
+        if (map.containsKey(root)) return map.get(root);
+        
+        int val = 0;
+        
+        if (root.left != null) {
+            val += robSub(root.left.left, map) + robSub(root.left.right, map);
+        }
+        
+        if (root.right != null) {
+            val += robSub(root.right.left, map) + robSub(root.right.right, map);
+        }
+        
+        val = Math.max(val + root.val, robSub(root.left, map) + robSub(root.right, map));
+        map.put(root, val);
+        
+        return val;
+    }
+
+The runtime is sharply reduced to 9ms, at the expense of O(n) space cost (n is the total number of nodes; stack cost for recursion is not counted).
+
+**Step III -- Think one step back**
+
+In step I, we defined our problem as `rob(root)`, which will yield the maximum amount of money that can be robbed of the binary tree rooted at "root". This leads to the DP problem summarized in step II. 
+
+Now let's take one step back and ask why do we have overlapping subproblems? If you trace all the way back to the beginning, you'll find the answer lies in the way how we have defined `rob(root)`. As I mentioned, for each tree root, there are two scenarios: it is robbed or is not. `rob(root)` does not distinguish between these two cases, so "information is lost as the recursion goes deeper and deeper", which resulted in repeated subproblems.
+
+If we were able to maintain the information about the two scenarios for each tree root, let's see how it plays out. Redefine `rob(root)` as a new function which will return an array of two elements, the first element of which denotes the maximum amount of money that can be robbed if "root" is **not robbed**, while the second element signifies the maximum amount of money robbed if root is **robbed**. 
+
+Let's relate `rob(root)` to `rob(root.left)` and `rob(root.right)`, etc. For the 1st element of `rob(root)`, we only need to sum up the larger elements of `rob(root.left)` and `rob(root.right)`, respectively, since root is not robbed and we are free to rob the left and right subtrees. For the 2nd element of `rob(root)`, however, we only need to add up the 1st elements of `rob(root.left)` and `rob(root.right)`, respectively, plus the value robbed from "root" itself, since in this case it's guaranteed that we cannot rob the nodes of root.left and root.right. 
+
+As you can see, by keeping track of the information of both scenarios, we decoupled the subproblems and the solution essentially boiled down to a greedy one. Here is the program:
+
+    public int rob(TreeNode root) {
+    	int[] res = robSub(root);
+        return Math.max(res[0], res[1]);
+    }
+    
+    private int[] robSub(TreeNode root) {
+        if (root == null) {
+        	return new int[2];
+        }
+        
+        int[] left = robSub(root.left);
+        int[] right = robSub(root.right);
+        
+        int[] res = new int[2];
+        res[0] = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
+        res[1] = root.val + left[0] + right[0];
+        
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy understanding solution with dfs
+dfs all the nodes of the tree, each node return two number, int[] num, num[0] is the max value while rob this node, num[1] is max value while not rob this value. Current node return value only depend on its children's value. Transform function should be very easy to understand.
+
+    public class Solution {
+        public int rob(TreeNode root) {
+            int[] num = dfs(root);
+            return Math.max(num[0], num[1]);
+        }
+        private int[] dfs(TreeNode x) {
+            if (x == null) return new int[2];
+            int[] left = dfs(x.left);
+            int[] right = dfs(x.right);
+            int[] res = new int[2];
+            res[0] = left[1] + right[1] + x.val;
+            res[1] = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        int tryRob(TreeNode* root, int& l, int& r) {
+            if (!root)
+                return 0;
+                
+            int ll = 0, lr = 0, rl = 0, rr = 0;
+            l = tryRob(root->left, ll, lr);
+            r = tryRob(root->right, rl, rr);
+            
+            return max(root->val + ll + lr + rl + rr, l + r);
+        }
+    
+        int rob(TreeNode* root) {
+            int l, r;
+            return tryRob(root, l, r);
+        }
+    };
+
+Basically you want to compare which one is bigger between 1) you + sum of your grandchildren and 2) sum of your children. Personally I like my solution better than the most voted solution because I don't need complex data structures like map.
+
+----------------------------------------------------------------------------------------------------
+C++, JAVA, PYTHON &amp;  explanation
+Let 
+
+`f1(node)` be the value of maximum money we can rob from the subtree with `node` as root ( we can rob `node` if necessary).
+
+`f2(node)` be the value of maximum money we can rob from the subtree with `node` as root but without robbing `node`. 
+
+Then we have 
+
+`f2(node) = f1(node.left) + f1(node.right)` and 
+
+`f1(node) = max(  f2(node.left)+f2(node.right)+node.value,  f2(node) )`.
+
+# C++
+
+    class Solution {
+    public:
+        int rob(TreeNode* root) {
+            return robDFS(root).second;
+        }
+        pair<int, int> robDFS(TreeNode* node){
+            if( !node) return make_pair(0,0);
+            auto l = robDFS(node->left);
+            auto r = robDFS(node->right);
+            int f2 = l.second + r.second;
+            int f1 = max(f2, l.first + r.first + node->val);
+            return make_pair(f2, f1);
+        }
+    };
+
+
+# JAVA
+
+    public class Solution {
+        public int rob(TreeNode root) {
+            return robDFS(root)[1];
+        }
+        int[] robDFS(TreeNode node){
+            int [] res = new int[2];
+            if(node==null) return res;
+            int [] l = robDFS(node.left);
+            int [] r = robDFS(node.right);
+            res[0] = l[1] + r[1];
+            res[1] = Math.max(res[0], l[0] + r[0] + node.val);
+            return res;
+        }
+    }
+
+# PYTHON
+
+    class Solution(object):
+        def rob(self, root):
+            return self.robDFS(root)[1];
+        def robDFS(self,node):
+            if node is None:
+                return (0,0)
+            l = self.robDFS(node.left)
+            r = self.robDFS(node.right)
+            return (l[1] + r[1], max(l[1] + r[1], l[0] + r[0] + node.val))
+
+----------------------------------------------------------------------------------------------------
+Easy to understand(java)
+public class Solution {
+    
+    public int rob(TreeNode root) {
+        if (root == null) return 0;
+        return Math.max(robInclude(root), robExclude(root));
+    }
+    
+    public int robInclude(TreeNode node) {
+        if(node == null) return 0;
+        return robExclude(node.left) + robExclude(node.right) + node.val;
+    }
+    
+    public int robExclude(TreeNode node) {
+        if(node == null) return 0;
+        return rob(node.left) + rob(node.right);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+1ms Java Solution
+    public int rob(TreeNode root) {
+        int[] maxVal = dpRob(root);
+        return Math.max(maxVal[0], maxVal[1]);
+    }
+    
+    public int[] dpRob(TreeNode root) {
+        if (root == null) {
+            return new int[]{0, 0};
+        } else {
+            int[] maxVal = new int[2];//maxVal[0] store the max value without robing current node, maxVal[1] store the max value with robing current node,
+            int[] leftMax = dpRob(root.left);
+            int[] rightMax = dpRob(root.right);
+            maxVal[0] = Math.max(leftMax[0], leftMax[1]) + Math.max(rightMax[0], rightMax[1]);
+            maxVal[1] = leftMax[0] + rightMax[0] + root.val;
+            return maxVal;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Not a solution, but can be helpful for people wants to find a desired job.
+Sorry that this blog is only in Chinese, I will try my best to get an English version soon. I don't know if it is okay to post here, so admin, if there is some problem, please let me know, thanks.
+
+http://blog.csdn.net/liaozhen/article/details/51654605
+
+
+----------------------------------------------------------------------------------------------------
+My simple Java recursive solution
+    public class Solution {
+        public int rob(TreeNode root) {
+            if(root==null) return 0;
+            if(root.left==null&&root.right==null) return root.val;
+            
+            int left=0, right=0;
+            int subleft=0, subright=0;
+        
+        if(root.left!=null){
+            left=rob(root.left);
+            subleft=rob(root.left.left)+rob(root.left.right);
+        }
+        
+        if(root.right!=null){
+            right=rob(root.right);
+            subright=rob(root.right.left)+rob(root.right.right);
+        }
+        
+        int sum1=left+right;
+        int sum2=subleft+subright+root.val;
+        
+        return (sum1>sum2)?sum1:sum2;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python O(n) code: Optimized for Readability
+class Solution(object):
+    def rob(self, root):
+        """
+        :type root: TreeNode
+        :rtype: int
+        """
+        def superrob(node):
+            # returns tuple of size two (now, later)
+            # now: max money earned if input node is robbed
+            # later: max money earned if input node is not robbed
+            
+            # base case
+            if not node: return (0, 0)
+            
+            # get values
+            left, right = superrob(node.left), superrob(node.right)
+            
+            # rob now
+            now = node.val + left[1] + right[1]
+            
+            # rob later
+            later = max(left) + max(right)
+            
+            return (now, later)
+            
+        return max(superrob(root))
+
+
+----------------------------------------------------------------------------------------------------
+12 ms C++ solution
+    class Solution {
+    public:
+    	int rob(TreeNode* root) 
+    	{
+    		int mt, ms;
+    		rob(root, mt, ms);
+    		return max(mt, ms);
+    	}
+    
+    	void rob(TreeNode* node, int& mt, int& ms)
+    	{
+    		mt = ms = 0;
+    		if (!node) return;
+    
+    		int mtl, mtr, msl, msr;
+    		rob(node->left, mtl, msl);
+    		rob(node->right, mtr, msr);
+    
+    		mt = msl + msr + node->val;
+    		ms = max(mtl, msl) + max(mtr, msr);
+    		return;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+2ms Java AC O(n) solution
+The idea is for each node, we have a associated Point. Point's x represents the MAX value for taking this node. Point's y is the MAX value for not taking this node. The program will go from bottom to top and keep updating until root. 
+
+
+    public class Solution {
+        public int rob(TreeNode root) {
+            return robHelp(root).x;
+        }
+        public Point robHelp(TreeNode root) {
+            if (root == null) {
+                return new Point(0, 0);
+            }
+            Point leftPoint = robHelp(root.left);
+            Point rightPoint = robHelp(root.right);
+            
+            return new Point(Math.max(root.val + leftPoint.y + rightPoint.y, leftPoint.x + rightPoint.x), leftPoint.x + rightPoint.x);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+12ms C++ dfs solution
+    //max_include_root = root->val + max_donot_include_root_left + max_donnot_include_root_right
+    //max_donot_include_root = max(max_include_root_left, max_donnot_include_root_left) + max(max_include_root_right, max_donnot_include_root_right)
+    
+    class Solution {
+    public:
+        int rob(TreeNode* root) {
+            int max_include_root = 0;
+            int max_donnot_include_root = 0;
+            return dfs(root, max_include_root, max_donnot_include_root);
+        }
+        
+        int dfs(TreeNode* root, int& max_include_root, int& max_donnot_include_root) {
+            if (root == NULL) {
+                max_include_root = 0;
+                max_donnot_include_root = 0;
+                return 0;
+            }
+            int max_donnot_include_root_left = 0;
+            int max_donnot_include_root_right = 0;
+
+            int max_include_root_left = 0;
+            int max_include_root_right = 0;
+
+            int max_left = dfs(root->left, max_include_root_left, max_donnot_include_root_left);
+            int max_right = dfs(root->right, max_include_root_right, max_donnot_include_root_right);
+
+            max_include_root = root->val + max_donnot_include_root_left + max_donnot_include_root_right;
+            max_donnot_include_root = max_left + max_right;
+
+            return max(max_include_root, max_donnot_include_root);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My 12ms C++ solution
+ 
+
+     int rob(TreeNode* node, int& lm, int& rm) {
+        if (!node)  return 0;
+        int lm1 = 0, lm2 = 0, rm1 = 0, rm2 = 0;
+        
+        lm = rob(node->left, lm1, rm1);
+        rm = rob(node->right, lm2, rm2);
+        
+        return max(node->val + lm1 + rm1 + lm2 + rm2, lm + rm);
+      }
+
+     int rob(TreeNode* root) {
+        int res = 0;
+        int lm = 0, rm = 0;
+        res = rob(root, lm, rm);
+        return res;
+     }
+
+ - **lm** is the max rob value of node->left
+ - **rm** is the max rob value of node->right
+ - **lm1** is the max rob value of node->left->left (Same as **lm2**)
+ - **rm1** is the max rob value of node->left->right (Same as **rm2**)
+ - So the max rob value of node is the max value between **(lm + rm)** and **(node->val + lm1 + lm2 + rm1 + rm2)**
+
+        
+
+----------------------------------------------------------------------------------------------------
+Java bottom-up and top-down solutions using DP
+The naive solution is straightforward, just traverse the tree and in each node, we either take it or not.  If we take it, we cannot take its children, if not take, we can take either or both of the children.  This will cause TLE due to extra calculation.  Since this is a house robber problem, DP is the first come to mind for optimization.  There are two ways to work with this problem.  The top-down is the most intuitive one for me, as follows.  Used two map, hasRoot and noRoot, since we need to keep track of the result for either rob the house or not. 
+
+The second approach is bottom-up.  It is not very intuitive for a tree.  But one can think about post-order traversal.  We traverse the left and the right child and return some necessary result, and then process the root.  First, what do we need the child to return?  So from the first solution, we can see that we either rob a house or not, so the child needs to return two values, *rob* or *no rob* for the root.  Here we can just use an int array to keep the two values.   `// traverse the tree   int[] left = helper(curr.left); int[] right = helper(curr.right);`  Here left[0] represents robbing root node, left[1] not robbing.  
+
+Then we do stuff for the root node.   We need an int array again to save its result.  We either rob root, and take the `left[1]` and `right[1]` and add root value to it, or we don't rob root, and take the largest one for left and right.  In the end, we just return res.  
+
+Here are two solutions, hope it helps!
+
+
+Top-down approach:
+
+        Map<TreeNode, Integer> hasRoot = new HashMap<>();
+        Map<TreeNode, Integer> noRoot = new HashMap<>();
+        public int rob(TreeNode root) {
+            if (root == null) {
+                return 0;
+            }
+            int max = Math.max(helper(root, true), helper(root, false));
+            return max;
+        }
+    
+        private int helper(TreeNode root, boolean canrob) {
+            if (root == null) {
+                return 0;
+            }
+            int res = 0;
+            if (canrob) {
+                // check the hasRoot map for previous calculated
+                if(hasRoot.containsKey(root)) {
+                    return hasRoot.get(root);
+                }
+                res = Math.max(helper(root.left, false) + helper(root.right, false) + root.val, helper(root.left, true) + helper(root.right, true));
+                hasRoot.put(root, res);
+            } else {
+                // check the noRoot map
+                if(noRoot.containsKey(root)) {
+                    return noRoot.get(root);
+                }
+                res = helper(root.left, true) + helper(root.right, true);
+                noRoot.put(root, res);
+            }
+            return res;
+        }
+
+
+Bottom-up:
+
+        // bottom-up solution
+        public int rob(TreeNode root) {
+            int[] num = helper(root);
+            // nums[0] includes root, nums[1] excludes root
+            return Math.max(num[0], num[1]);
+        }
+        private int[] helper(TreeNode curr) {
+            if (curr == null) {
+                return new int[2];
+            }
+            // traverse the tree
+            int[] left = helper(curr.left);
+            int[] right = helper(curr.right);
+            
+            // do stuff
+            
+            int[] res = new int[2];
+            // case 1:  add root value, so exclude both left and right
+            res[0] = left[1] + right[1] + curr.val;  
+            // case 2: exclued root value, get max from both left child and right child
+            res[1] = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);  
+            
+            // done stuff
+            
+            return res;
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ implementation refer to &#64;fun4LeetCode
+First naive Solution 
+
+    class Solution {
+    public:
+        int rob(TreeNode* root) {
+            if(root == NULL)  return 0;
+            int val = 0;
+            if(root->left) {
+                val += rob(root->left->left) + rob(root->left->right);
+            }
+            if(root->right) {
+                val += rob(root->right->left) + rob(root->right->right);
+            }
+            return max(val + root->val, rob(root->left) + rob(root->right));
+        }
+    };
+
+Second, use the dict to record the sub-problem information method
+
+    class Solution {
+    public:
+        int rob(TreeNode* root) {
+            unordered_map<TreeNode*, int> dict;
+            return help(root, dict);
+        }
+        
+        int help(TreeNode* root, unordered_map<TreeNode*, int>& dict) {
+            if(root == NULL)  return 0;
+            if(dict.find(root)!=dict.end())  return dict[root];
+            int val = 0;
+            if(root->left != NULL) {
+                val += help(root->left->left, dict) + help(root->left->right, dict);
+            }
+            if(root->right != NULL) {
+                val += help(root->right->left, dict) + help(root->right->right, dict);
+            }
+            val = max(val + root->val, help(root->left, dict) + help(root->right, dict));
+            dict[root] = val;
+            return val;
+        }
+    };
+
+Third Solution  is optimized a bit :
+
+    class Solution {
+    public:
+        int rob(TreeNode* root) {
+            vector<int> result = help(root);
+            return max(result[0], result[1]);
+        }
+        /**
+         * result[0] : record the max sum exclude the root value
+         * result[1] : record the max sum include the root value
+         **/
+        vector<int> help(TreeNode* root) {
+            vector<int> result(2, 0);
+            if(!root) {
+                return result;
+            }
+            vector<int> left = help(root->left);
+            vector<int> right = help(root->right);
+            /** root excluded : so we can include the child or not **/
+            result[0] = max(left[0], left[1]) + max(right[0], right[1]);
+            /** root included : so must exclude the child **/
+            result[1] = root->val + left[0] + right[0];
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+14ms java solution
+     public int rob(TreeNode root) {
+        Map<TreeNode, Integer> include = new HashMap<>();
+        Map<TreeNode, Integer> exclude = new HashMap<>();
+        return helper(root, false, exclude, include);
+    }
+    
+    private int helper(TreeNode cur, boolean parentRobbed, Map<TreeNode, Integer> exclude, Map<TreeNode, Integer> include)
+    {
+        if (cur == null)
+        {
+            return 0;
+        }
+        
+        int ret = Integer.MIN_VALUE;
+        
+        int leftMax  = 0;
+        int rightMax = 0;
+       
+        // do not rob the current house
+        // ------------------------------------ 
+        if (!exclude.containsKey(cur))
+        {
+            leftMax  = helper(cur.left, false, exclude, include);
+            rightMax = helper(cur.right, false, exclude, include);
+            exclude.put(cur, leftMax + rightMax);
+        }
+        ret = Math.max(ret, exclude.get(cur));
+        
+        // if parent house is not robbed, rob the current house
+        // ------------------------------------------------------------------
+        if (!parentRobbed)
+        {
+            // rob the current house
+            // ----------------------------
+            if (!include.containsKey(cur))
+            {
+                leftMax  = helper(cur.left, true, exclude, include);
+                rightMax = helper(cur.right, true, exclude, include);
+                include.put(cur, cur.val + leftMax + rightMax);
+            }
+            ret = Math.max(ret, include.get(cur));
+        }
+        
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple 1ms Java solution with easy comments

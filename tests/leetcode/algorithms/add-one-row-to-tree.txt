@@ -1,0 +1,366 @@
+Small simple C++&#x2F;Java&#x2F;Python
+def fractionAddition(self, expression):
+    ints = map(int, re.findall('[+-]?\d+', expression))
+    A, B = 0, 1
+    for a in ints:
+        b = next(ints)
+        A = A * b + a * B
+        B *= b
+        g = math.gcd(A, B)
+        A //= g
+        B //= g
+    return '%d/%d' % (A, B)
+
+----------------------------------------------------------------------------------------------------
+Concise Java Solution
+public String fractionAddition(String expression) {
+    String[] fracs = expression.split("(?=[-+])"); // splits input string into individual fractions
+    String res = "0/1";
+    for (String frac : fracs) res = add(res, frac); // add all fractions together
+    return res;
+}
+
+public String add(String frac1, String frac2) {
+    int[] f1 = Stream.of(frac1.split("/")).mapToInt(Integer::parseInt).toArray(), 
+          f2 = Stream.of(frac2.split("/")).mapToInt(Integer::parseInt).toArray();
+    int numer = f1[0]*f2[1] + f1[1]*f2[0], denom = f1[1]*f2[1];
+    String sign = "";
+    if (numer < 0) {sign = "-"; numer *= -1;}
+    return sign + numer/gcd(numer, denom) + "/" + denom/gcd(numer, denom); // construct reduced fraction
+}
+
+// Computes gcd using Euclidean algorithm
+public int gcd(int x, int y) { return x == 0 || y == 0 ? x + y : gcd(y, x % y); }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Fraction Addition and GCD
+public class Solution {
+    public String fractionAddition(String expression) {
+        List<String> nums = new ArrayList<>();
+        int i = 0, j = 0;
+        while (j <= expression.length()) {
+            if (j == expression.length() || j != i && (expression.charAt(j) == '+' || expression.charAt(j) == '-')) {
+                if (expression.charAt(i) == '+') {
+                    nums.add(expression.substring(i + 1, j));
+                }
+                else {
+                    nums.add(expression.substring(i, j));
+                }
+                    
+                i = j;
+            }
+            j++;
+        }
+        
+        String result = "0/1";
+        
+        for (String num : nums) {
+            result = add(result, num);
+        }
+        
+        return result;
+    }
+    
+    private String add(String s1, String s2) {
+        String[] sa1 = s1.split("/");
+        String[] sa2 = s2.split("/");
+        int n1 = Integer.parseInt(sa1[0]);
+        int d1 = Integer.parseInt(sa1[1]);
+        int n2 = Integer.parseInt(sa2[0]);
+        int d2 = Integer.parseInt(sa2[1]);
+        
+        int n = n1 * d2 + n2 * d1;
+        int d = d1 * d2;
+        
+        if (n == 0) return "0/1";
+        
+        boolean isNegative = n * d < 0;
+        n = Math.abs(n);
+        d = Math.abs(d);
+        int gcd = getGCD(n, d);
+        
+        return (isNegative ? "-" : "") + (n / gcd) + "/" + (d / gcd);
+    }
+    
+    private int getGCD(int a, int b) {
+        if (a == 0 || b == 0) return a + b; // base case
+        return getGCD(b, a % b);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python easy understand 2-line solution
+from fractions import Fraction
+class Solution(object):
+    def fractionAddition(self, exp):
+        res = sum(map(Fraction, exp.replace('+', ' +').replace('-', ' -').split()))
+        return str(res.numerator) + '/' + str(res.denominator)
+
+----------------------------------------------------------------------------------------------------
+C++ 12 lines (GCD)
+int GCD(int a, int b ){ return (b == 0) ? a : GCD(b, a % b); }
+string fractionAddition(string s) {
+    int n = 0, d = 1, p = 0, p1 = 0, p2 = 0;
+    if (s[0] != '-') s = "+" + s;
+    while (p < s.size()) {
+        for (p1 = p + 1; s[p1] != '/'; ++p1);
+        for (p2 = p1 + 1; p2 < s.size() && s[p2] != '+' && s[p2] != '-'; ++p2);
+        auto nn = stoi(s.substr(p + 1, p1 - p - 1)), dd = stoi(s.substr(p1 + 1, p2 - p1 - 1));
+        auto gcd = GCD(d, dd);
+        n = n * dd / gcd + (s[p] == '-' ? -1 : 1) * nn * d / gcd;
+        d *= dd / gcd;
+        p = p2;
+    }    
+    auto gcd = GCD(abs(n), d);
+    return to_string(n / gcd) + "/" + to_string(d / gcd);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def fractionAddition(self, S):
+    from fractions import Fraction
+    ans = Fraction(0, 1)
+    left = count = 0
+    for right, symbol in enumerate(S):
+        if (right == len(S) - 1 or 
+                symbol.isdigit() and not S[right + 1].isdigit()):
+            count ^= 1
+            if not count:
+                ans += Fraction(*map(int, S[left: right+1].split('/')))
+                left = right + 1
+    
+    return "{}/{}".format(ans.numerator, ans.denominator)
+
+
+----------------------------------------------------------------------------------------------------
+Use Python fractions and Regex module
+
+
+class Solution(object):
+    def fractionAddition(self, expression):
+        """
+        :type expression: str
+        :rtype: str
+        """
+        import re
+        from fractions import Fraction
+        ans = 0
+        p = r"[-+]?\d+/\d+"
+        m = re.match(p, expression)
+        for m in re.finditer(p, expression):
+            ans += Fraction(m.group(0))
+        if ans.denominator == 1:
+            return str(ans) + "/1"
+        else:
+            return str(ans)
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python via GCD
+class Solution(object):
+    def fractionAddition(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        def gcd(a, b):                                  # compute greatest common divisor
+            return a if not b else gcd(b, a%b)
+        
+        def lcm(a, b):                                  # compute least common multiple
+            return a * b / gcd(a, b)
+        
+        i, n, turn, sign = 0, len(s), 1, 1
+        numers, denoms = [], []                         # two separate lists store numerators and denominators
+        while i < n:
+            if s[i].isdigit():
+                j = i
+                while i < n and s[i].isdigit():
+                    i += 1
+                if turn:
+                    numers.append(sign*int(s[j:i]))
+                else:
+                    denoms.append(int(s[j:i]))
+                turn = 1 - turn
+                continue
+            elif s[i] in "+-":
+                sign = (-1, 1)[s[i] == "+"]
+            i += 1
+
+        LCM = reduce(lcm, denoms)                       # compute least common multiple for denominators
+        numers = [numers[i] * LCM / denoms[i] for i in range(len(numers))]      # adjust numers based on LCM
+        numer, denom = sum(numers), LCM
+        GCD = gcd(numer, denom)
+        return str(numer/GCD) + "/" + str(denom/GCD)
+
+
+----------------------------------------------------------------------------------------------------
+One-liner
+def fraction_addition(expression)
+  eval(expression.gsub(/\d+/, 'Rational(\0)')).to_s
+end
+
+
+----------------------------------------------------------------------------------------------------
+C# short solution (Regex, Linq and GCD)
+string.Join
+
+----------------------------------------------------------------------------------------------------
+not fastest but play around with design patterns
+	void addNumerator(int num);
+
+	void addDenominator(int deno);
+
+	void addOperator(int op);
+
+	State getNumeratorState();
+
+	State getDenominatorState();
+}
+
+   // state interface
+private static interface State {
+	public State process(char c, Context context);
+
+	public void reset();
+
+	public void end(Context context);
+}
+
+private static class Numerator implements State {
+	private int numerator = 0;
+	private boolean negtive = false;
+
+	public State process(char c, Context context) {
+		if (c == '-') {
+			negtive = true;
+			return this;
+		} else if (c == '/') {
+			context.addNumerator(negtive ? -numerator : numerator);
+			reset();
+			return context.getDenominatorState();
+		} else {
+			numerator = numerator * 10 + c - '0';
+			return this;
+		}
+	}
+
+	public void reset() {
+		numerator = 0;
+		negtive = false;
+	}
+
+	public void end(Context context) {
+		throw new IllegalArgumentException("can not end with numerator");
+	}
+}
+
+private static class Denominator implements State {
+	private int denominator = 0;
+
+	public State process(char c, Context context) {
+		if (c >= '0' && c <= '9') {
+			denominator = denominator * 10 + c - '0';
+			return this;
+		} else {
+			context.addDenominator(denominator);
+			context.addOperator(c);
+			reset();
+			return context.getNumeratorState();
+		}
+	}
+
+	public void reset() {
+		denominator = 0;
+	}
+
+	public void end(Context context) {
+		context.addDenominator(denominator);
+	}
+}
+
+private static class CalContext implements Context {
+	private final State NUMERATOR = new Numerator();
+	private final State DENOMINATOR = new Denominator();
+	private List<Integer> numerators = new ArrayList<>();
+	private List<Integer> denominators = new ArrayList<>();
+	private List<Boolean> operators = new ArrayList<>();
+	private int numerator = 0;
+	private int denominator = 1;
+            // "template method"
+	public String process(String expression) {
+		parse(expression);
+		calculate();
+		normalize();
+		return numerator == 0 ? "0/1" : numerator + "/" + denominator;
+	}
+
+	private void parse(String expression) {
+		State s = NUMERATOR;
+		for (char c : expression.toCharArray()) {
+			s = s.process(c, this);
+		}
+		s.end(this);
+	}
+
+	private void calculate() {
+		for (int d : denominators) {
+			denominator *= d;
+		}
+
+		numerator = numerators.get(0) * denominator / denominators.get(0);
+
+		for (int i = 0; i < operators.size(); i++) {
+			numerator += (operators.get(i) ? 1 : -1) * numerators.get(i + 1) * denominator
+					/ denominators.get(i + 1);
+		}
+	}
+
+	private void normalize() {
+		if(numerator == 0) return;
+		int a = denominator;
+		int b = numerator > 0 ? numerator : -numerator;
+		int mod = a % b;
+		while(mod != 0) {
+			a = b;
+			b = mod;
+			mod = a % b;
+		}
+		
+		numerator /= b;
+		denominator /= b;
+	}
+
+	public void addNumerator(int num) {
+		numerators.add(num);
+	}
+
+	public void addDenominator(int deno) {
+		denominators.add(deno);
+	}
+
+	public void addOperator(int op) {
+		if (op == '+')
+			operators.add(true);
+		else
+			operators.add(false);
+	}
+
+	public State getNumeratorState() {
+		return NUMERATOR;
+	}
+
+	public State getDenominatorState() {
+		return DENOMINATOR;
+	}
+}
+
+public String fractionAddition(String expression) {
+	return new CalContext().process(expression);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very Concise Java Solution

@@ -1,0 +1,542 @@
+My DFS and BFS java solution
+DFS solution:
+
+    public class Solution {
+        public List<List<Integer>> levelOrderBottom(TreeNode root) {
+            Queue<TreeNode> queue = new LinkedList<TreeNode>();
+            List<List<Integer>> wrapList = new LinkedList<List<Integer>>();
+            
+            if(root == null) return wrapList;
+            
+            queue.offer(root);
+            while(!queue.isEmpty()){
+                int levelNum = queue.size();
+                List<Integer> subList = new LinkedList<Integer>();
+                for(int i=0; i<levelNum; i++) {
+                    if(queue.peek().left != null) queue.offer(queue.peek().left);
+                    if(queue.peek().right != null) queue.offer(queue.peek().right);
+                    subList.add(queue.poll().val);
+                }
+                wrapList.add(0, subList);
+            }
+            return wrapList;
+        }
+    }
+
+BFS solution:
+
+    public class Solution {
+            public List<List<Integer>> levelOrderBottom(TreeNode root) {
+                List<List<Integer>> wrapList = new LinkedList<List<Integer>>();
+                levelMaker(wrapList, root, 0);
+                return wrapList;
+            }
+            
+            public void levelMaker(List<List<Integer>> list, TreeNode root, int level) {
+                if(root == null) return;
+                if(level >= list.size()) {
+                    list.add(0, new LinkedList<Integer>());
+                }
+                levelMaker(list, root.left, level+1);
+                levelMaker(list, root.right, level+1);
+                list.get(list.size()-level-1).add(root.val);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Is there any better idea than doing regular level order traversal and reverse the result?
+The way I see this problem is that it is EXACTLY the same as "Level-Order Traversal I" except that we need to reverse the final container for output, which is trivial. Is there a better idea that fits this problem specifically?
+
+The attached is my current recursive solution. In each function call, we pass in the current node and its level. If this level does not yet exist in the output container, then we should add a new empty level. Then, we add the current node to the end of the current level, and recursively call the function passing the two children of the current node at the next level. This algorithm is really a DFS, but it saves the level information for each node and produces the same result as BFS would.
+
+    vector<vector<int> > res;
+
+    void DFS(TreeNode* root, int level)
+    {
+        if (root == NULL) return;
+        if (level == res.size()) // The level does not exist in output
+        {
+            res.push_back(vector<int>()); // Create a new level
+        }
+        
+        res[level].push_back(root->val); // Add the current value to its level
+        DFS(root->left, level+1); // Go to the next level
+        DFS(root->right,level+1);
+    }
+    
+    vector<vector<int> > levelOrderBottom(TreeNode *root) {
+        DFS(root, 0);
+        return vector<vector<int> > (res.rbegin(), res.rend());
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (dfs recursively, dfs+stack, bfs+queue).
+        
+    # dfs recursively
+    def levelOrderBottom1(self, root):
+        res = []
+        self.dfs(root, 0, res)
+        return res
+    
+    def dfs(self, root, level, res):
+        if root:
+            if len(res) < level + 1:
+                res.insert(0, [])
+            res[-(level+1)].append(root.val)
+            self.dfs(root.left, level+1, res)
+            self.dfs(root.right, level+1, res)
+            
+    # dfs + stack
+    def levelOrderBottom2(self, root):
+        stack = [(root, 0)]
+        res = []
+        while stack:
+            node, level = stack.pop()
+            if node:
+                if len(res) < level+1:
+                    res.insert(0, [])
+                res[-(level+1)].append(node.val)
+                stack.append((node.right, level+1))
+                stack.append((node.left, level+1))
+        return res
+     
+    # bfs + queue   
+    def levelOrderBottom(self, root):
+        queue, res = collections.deque([(root, 0)]), []
+        while queue:
+            node, level = queue.popleft()
+            if node:
+                if len(res) < level+1:
+                    res.insert(0, [])
+                res[-(level+1)].append(node.val)
+                queue.append((node.left, level+1))
+                queue.append((node.right, level+1))
+        return res
+
+----------------------------------------------------------------------------------------------------
+Java Solution. Using Queue
+    public List<List<Integer>> levelOrderBottom(TreeNode root) {
+ 
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+        if(root==null) return result;
+        Queue<TreeNode> q = new LinkedList<>();
+        q.add(root);
+        while(q.size()>0){
+            List<Integer> list = new ArrayList<>();
+            int size = q.size();
+            for(int i=0; i<size; i++){
+                TreeNode node = q.poll();
+                list.add(node.val);
+                if(node.left!=null) q.add(node.left);
+                if(node.right!=null) q.add(node.right);
+            }
+            result.add(0,list);
+        }
+        return result;
+
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution with LinkedList.
+The addFirst() method of LinkedLinked save us from reverse final result.
+
+    public List<List<Integer>> levelOrderBottom(TreeNode root) {
+		LinkedList<List<Integer>> list = new LinkedList<List<Integer>>();
+		addLevel(list, 0, root);
+		return list;
+    }
+	
+	private void addLevel(LinkedList<List<Integer>> list, int level, TreeNode node) {
+		if (node == null) return;
+		if (list.size()-1 < level) list.addFirst(new LinkedList<Integer>());
+		list.get(list.size()-1-level).add(node.val);
+		addLevel(list, level+1, node.left);
+		addLevel(list, level+1, node.right);
+	}
+
+----------------------------------------------------------------------------------------------------
+My Neat Solution in C++
+    vector<vector<int> > levelOrder(TreeNode *root) {
+    	vector<vector<int> > retVal;
+
+    	levelOrder(root, retVal, 0);
+
+    	reverse(retVal.begin(), retVal.end());
+
+    	return retVal;
+    }
+
+    void levelOrder(TreeNode* root, vector<vector<int> > &v, int currLevel) {
+    	if (root == NULL) {
+    		return;
+    	}
+
+    	if (v.empty() || currLevel > (v.size() - 1)) {
+    		v.push_back(vector<int>());
+    	}
+
+    	v[currLevel].push_back(root->val);
+
+    	levelOrder(root->left, v, currLevel + 1);
+    	levelOrder(root->right, v, currLevel + 1);
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 4ms solution!
+First version costs 8ms:
+
+    void levelOrder(vector<vector<int>> &ans, TreeNode *node, int level) {
+        if (!node) return;
+        if (level >= ans.size())
+            ans.push_back({});
+        ans[level].push_back(node->val);
+        levelOrder(ans,node->left,level+1);
+        levelOrder(ans,node->right,level+1);
+    }
+
+    vector<vector<int>> levelOrderBottom(TreeNode* root) {
+        vector<vector<int>> ans;
+        levelOrder(ans,root,0);
+        reverse(ans.begin(),ans.end());
+        return ans;
+    }
+
+
+
+Second version costs 4ms:
+
+    int depth(TreeNode *root) {
+        if (!root) return 0;
+        return max(depth(root->left),depth(root->right))+1;
+    }
+
+    void levelOrder(vector<vector<int>> &ans, TreeNode *node, int level) {
+        if (!node) return;
+        ans[level].push_back(node->val);
+        levelOrder(ans,node->left,level-1);
+        levelOrder(ans,node->right,level-1);
+    }
+
+    vector<vector<int>> levelOrderBottom(TreeNode* root) {
+        int d = depth(root);
+        vector<vector<int>> ans(d,vector<int> {});
+        levelOrder(ans,root,d-1);
+        return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution that beats 80%
+    public class Solution {
+    public List<List<Integer>> levelOrderBottom(TreeNode root) {
+        
+        List<List<Integer>> counts = new ArrayList<List<Integer>>();
+        
+        visit(root, counts, 0);
+        Collections.reverse(counts);
+
+        return counts;
+    }
+    
+    public void visit(TreeNode node, List<List<Integer>> counts, int level){
+        if(node == null)
+            return;
+        if(counts.size() < level+1)
+            counts.add(new ArrayList<Integer>());
+        counts.get(level).add(node.val);
+        
+        visit(node.left, counts, level+1);
+        visit(node.right, counts, level+1);
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA SOLUTION WITH LINKEDLIST
+This solution is nearly identical to the traditional 'Level Order traversal' only difference is the DataStructure used to hold the data. Instead of Using an `ArrayList` and appending each level after the other I used a `LinkedList` and added each new level to the `head` of the `LinkedList`.
+
+    public class Solution {
+        public List<List<Integer>> levelOrderBottom(TreeNode root) {
+            if(root == null) return new LinkedList<List<Integer>>();
+            List<List<Integer>> levels = new LinkedList<List<Integer>>();
+            Queue<TreeNode> q = new LinkedList<TreeNode>(); 
+            q.add(root);
+            
+            while(!q.isEmpty()){
+                List<Integer> list = new ArrayList<Integer>(); 
+                int size = q.size();
+                for(int i = 0; i < size; i++){
+                    TreeNode node = q.remove();
+                    list.add(node.val);
+                    if(node.left != null) q.add(node.left);
+                    if(node.right != null) q.add(node.right);
+                }
+                ((LinkedList)levels).addFirst(list);
+            }
+            return levels;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+19 line C++ 8ms Solution, very easy
+    class Solution {
+    protected:
+        vector<vector<int>> ans;
+        void dfs(TreeNode *root, int height){
+            if (root == NULL) 
+                return;
+            while (ans.size() <= height)
+                ans.push_back(vector<int>());
+            ans[height].push_back(root->val);
+            dfs(root->left, height + 1);
+            dfs(root->right, height + 1);
+        }
+
+    public:
+        vector<vector<int>> levelOrderBottom(TreeNode* root) {
+           dfs(root, 0);
+           reverse(ans.begin(), ans.end());
+            return ans;    
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms C language Solution
+    struct LinkedIntNode
+    {
+        int val;
+        struct LinkedIntNode *next;
+    };
+    
+    struct LinkedInts
+    {
+        int count;
+        struct LinkedIntNode *head;
+    };
+    
+    struct TreeTraversalResult
+    {
+        int levelLimit;
+        struct LinkedInts *levels;
+    };
+    
+    void initTreeResult(struct TreeTraversalResult *r, int level)
+    {
+        r->levelLimit = level;
+        r->levels = malloc(sizeof(struct LinkedInts) * level);
+        memset(r->levels, 0 , sizeof(struct LinkedInts) * level);
+    }
+    
+    void addTreeNode(struct TreeTraversalResult *r, int val, int level)
+    {
+        if(r->levelLimit < level + 1)
+        {
+            struct LinkedInts *newLevels = malloc(sizeof(struct LinkedInts) * (level + 10));
+            memset(newLevels, 0, sizeof(struct LinkedInts) * (level + 10));
+            memmove(newLevels, r->levels, sizeof(struct LinkedInts) * r->levelLimit);
+            r->levelLimit = level + 10;
+            r->levels = newLevels;
+        }
+        struct LinkedIntNode *node = malloc(sizeof(struct LinkedIntNode));
+        node->val = val;
+        node->next = r->levels[level].head;
+        r->levels[level].head = node;
+        r->levels[level].count++;
+    }
+    
+    void traversal(struct TreeNode* node, int curLevel, struct TreeTraversalResult *r)
+    {
+    	addTreeNode(r, node->val, curLevel);
+    	if (node->left)
+    	{
+    		traversal(node->left, curLevel + 1, r);
+    	}
+    	if (node->right)
+    	{
+    		traversal(node->right, curLevel + 1, r);
+    	}
+    }
+    int** levelOrderBottom(struct TreeNode* root, int** columnSizes, int* returnSize) {
+        if(root == NULL) return NULL;
+        struct TreeTraversalResult result;
+        initTreeResult(&result, 200);
+        traversal(root, 0, &result);
+        int i;
+        for(i = 0; i < result.levelLimit; ++i)
+        {
+            if(result.levels[i].count == 0) break;
+        }
+        int **resultArray = malloc(sizeof(int *) * i);
+        *columnSizes = malloc(sizeof(int) * i);
+        *returnSize = i;
+        int tmp;
+        for(int j = i - 1, n = 0; j >= 0; --j, ++n)
+        {
+            (*columnSizes)[n] = tmp = result.levels[j].count;
+            resultArray[n] = malloc(sizeof(int) * tmp);
+            struct LinkedIntNode *node = result.levels[j].head;
+            for(int k = tmp - 1; k >= 0; k--)
+            {
+                *(resultArray[n]+k) = node->val;
+                node = node->next;
+            }
+        }
+        return resultArray;
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;Java solution&#93; Change only ONE line from Binary Tree level order Traversal I
+The following is my AC solution Binary Tree Level Order Traversal II (II). It is only one difference from Binary Tree Level Order Traversal I (I). Note that for II, we do result.add(0, level), so every time the level is added at the beginning (index 0). For I, we only change this line to result.add(level). Simple!
+
+    public class Solution {
+        public List<List<Integer>> levelOrderBottom(TreeNode root) {
+            List result = new ArrayList();
+            if (root == null) {
+                return result;
+            }
+            Queue<TreeNode> queue = new LinkedList<TreeNode>();
+            queue.offer(root);
+            
+            while (!queue.isEmpty()) {
+                ArrayList<Integer> level = new ArrayList();
+                int size = queue.size();
+                for (int i = 0; i < size; i++) {
+                    TreeNode head = queue.poll();
+                    level.add(head.val);
+                    if (head.left != null) {
+                      queue.offer(head.left);
+                    }
+                    if (head.right != null) {
+                        queue.offer(head.right);
+                    }
+                }
+                result.add(0, level);
+            }
+            
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My 8ms BFS C++ solution.
+    class Solution {
+    public:
+        vector<vector<int>> levelOrderBottom(TreeNode* root) {
+            vector<vector<int>> ret;
+            if (root == NULL) return ret;
+            queue<TreeNode *> q;
+            q.push(root);
+            while (!q.empty()) {
+                int l = q.size();
+                vector<int> curlayer;
+                for (int i = 0; i < l; i++) {
+                    TreeNode *cur = q.front();
+                    q.pop();
+                    curlayer.push_back(cur->val);
+                    if (cur->left != NULL) q.push(cur->left);
+                    if (cur->right != NULL) q.push(cur->right);
+                }
+                ret.push_back(curlayer);
+            }
+            reverse(ret.begin(), ret.end());
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short python solution
+    # Definition for a binary tree node.
+    # class TreeNode(object):
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+    
+    class Solution(object):
+        def levelOrderBottom(self, root):
+            """
+            :type root: TreeNode
+            :rtype: List[List[int]]
+            """
+            answ, L = [], [root]
+            while L and root:
+                answ.insert(0,[n.val for n in L])
+                L = [ C for N in L for C in (N.left,N.right) if C ]
+            return answ
+                
+                        
+
+----------------------------------------------------------------------------------------------------
+Java 2ms BFS solution
+    public class Solution {
+    public List<List<Integer>> levelOrderBottom(TreeNode root) {
+        List<TreeNode> toUse = new ArrayList<>();
+        List<List<Integer>> retValue = new ArrayList<>();
+        if( root != null)
+        {
+        	toUse.add(root);
+        }
+        
+        while (toUse.size() != 0)
+        {
+            List<Integer> result  = new ArrayList<>();
+            List<TreeNode> next = new ArrayList<>();
+            for (TreeNode node : toUse)
+            {
+                result.add(node.val);
+                
+                if (node.left != null)
+                {
+                    next.add(node.left);
+                }
+                
+                if (node.right != null)
+                {
+                    next.add(node.right);
+                }
+            }
+            retValue.add(result);
+            toUse = next;            
+        }
+        Collections.reverse(retValue);
+        return retValue;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java 1ms beats 98% using preorder
+     public List<List<Integer>> levelOrderBottom(TreeNode root) {
+        List<List<Integer>> list=new ArrayList();
+        get(list,root,0);
+        Collections.reverse(list);
+        return list;
+    }
+    public void get(List<List<Integer>> list,TreeNode root,int lvl){
+        if(root==null) return;
+        List<Integer> lvlList;
+        if(lvl==list.size()){
+            lvlList=new ArrayList<Integer>();
+            list.add(lvlList);
+        }
+        lvlList=list.get(lvl);
+        lvlList.add(root.val);
+        get(list,root.left,lvl+1);
+        get(list,root.right,lvl+1);
+    }
+
+----------------------------------------------------------------------------------------------------
+My java implementation using ArrayList
+    public List<List<Integer>> levelOrderBottom(TreeNode root) {
+        List<List<Integer>> list = new ArrayList<>();
+        traverse(list, 0 , root);
+        return list;
+    }
+    
+    private void traverse(List<List<Integer>> list, int level, TreeNode node){
+        if(node == null) return;
+        if(list.size() - 1 < level) list.add(0, new ArrayList<Integer>());
+        list.get(list.size() - level - 1).add(node.val);
+        traverse(list, level + 1, node.left);
+        traverse(list, level + 1, node.right);
+    }
+
+----------------------------------------------------------------------------------------------------
+Python code, easy  to understand

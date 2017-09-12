@@ -1,0 +1,1241 @@
+Java merge sort solution
+    public class Solution {
+      
+      public ListNode sortList(ListNode head) {
+        if (head == null || head.next == null)
+          return head;
+            
+        // step 1. cut the list to two halves
+        ListNode prev = null, slow = head, fast = head;
+        
+        while (fast != null && fast.next != null) {
+          prev = slow;
+          slow = slow.next;
+          fast = fast.next.next;
+        }
+        
+        prev.next = null;
+        
+        // step 2. sort each half
+        ListNode l1 = sortList(head);
+        ListNode l2 = sortList(slow);
+        
+        // step 3. merge l1 and l2
+        return merge(l1, l2);
+      }
+      
+      ListNode merge(ListNode l1, ListNode l2) {
+        ListNode l = new ListNode(0), p = l;
+        
+        while (l1 != null && l2 != null) {
+          if (l1.val < l2.val) {
+            p.next = l1;
+            l1 = l1.next;
+          } else {
+            p.next = l2;
+            l2 = l2.next;
+          }
+          p = p.next;
+        }
+        
+        if (l1 != null)
+          p.next = l1;
+        
+        if (l2 != null)
+          p.next = l2;
+        
+        return l.next;
+      }
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+I have a pretty good MergeSort method. Can anyone speed up the run time or reduce the memory usage?
+    /**
+     * Definition for singly-linked list.
+     * class ListNode {
+     *     int val;
+     *     ListNode next;
+     *     ListNode(int x) {
+     *         val = x;
+     *         next = null;
+     *     }
+     * }
+     */
+    public class Solution {
+        public ListNode sortList(ListNode head) {
+            if (head == null || head.next == null)
+                return head;
+            ListNode f = head.next.next;
+            ListNode p = head;
+            while (f != null && f.next != null) {
+                p = p.next;
+                f =  f.next.next;
+            }
+            ListNode h2 = sortList(p.next);
+            p.next = null;
+            return merge(sortList(head), h2);
+        }
+        public ListNode merge(ListNode h1, ListNode h2) {
+            ListNode hn = new ListNode(Integer.MIN_VALUE);
+            ListNode c = hn;
+            while (h1 != null && h2 != null) {
+                if (h1.val < h2.val) {
+                    c.next = h1;
+                    h1 = h1.next;
+                }
+                else {
+                    c.next = h2;
+                    h2 = h2.next;
+                }
+                c = c.next;
+            }
+            if (h1 != null)
+                c.next = h1;
+            if (h2 != null)
+                c.next = h2;
+            return hn.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Bottom-to-up(not recurring)  with o(1) space complextity and o(nlgn) time complextity
+this problem can be easily solved using recurrence and divide-and-conquer. But it consumes program stack to store the recurring function stack frame, actually it consumes o(lgn) space complexity. Recursion use up-to-bottom strategy , why not try the opposite way--bottom-to-up, luckily it works, it only consumes 0(1) space complexity and o(nlgn) time complextity.
+
+    /**
+     * Merge sort use bottom-up policy, 
+     * so Space Complexity is O(1)
+     * Time Complexity is O(NlgN)
+     * stable sort
+    */
+    class Solution {
+    public:
+    	ListNode *sortList(ListNode *head) {
+    		if(!head || !(head->next)) return head;
+    		
+    		//get the linked list's length
+    		ListNode* cur = head;
+    		int length = 0;
+    		while(cur){
+    			length++;
+    			cur = cur->next;
+    		}
+    		
+    		ListNode dummy(0);
+    		dummy.next = head;
+    		ListNode *left, *right, *tail;
+    		for(int step = 1; step < length; step <<= 1){
+    			cur = dummy.next;
+    			tail = &dummy;
+    			while(cur){
+    				left = cur;
+    				right = split(left, step);
+    				cur = split(right,step);
+    				tail = merge(left, right, tail);
+    			}
+    		}
+    		return dummy.next;
+    	}
+    private:
+    	/**
+    	 * Divide the linked list into two lists,
+         * while the first list contains first n ndoes
+    	 * return the second list's head
+    	 */
+    	ListNode* split(ListNode *head, int n){
+    		//if(!head) return NULL;
+    		for(int i = 1; head && i < n; i++) head = head->next;
+    		
+    		if(!head) return NULL;
+    		ListNode *second = head->next;
+    		head->next = NULL;
+    		return second;
+    	}
+    	/**
+    	  * merge the two sorted linked list l1 and l2,
+    	  * then append the merged sorted linked list to the node head
+    	  * return the tail of the merged sorted linked list
+    	 */
+    	ListNode* merge(ListNode* l1, ListNode* l2, ListNode* head){
+    		ListNode *cur = head;
+    		while(l1 && l2){
+    			if(l1->val > l2->val){
+    				cur->next = l2;
+    				cur = l2;
+    				l2 = l2->next;
+    			}
+    			else{
+    				cur->next = l1;
+    				cur = l1;
+    				l1 = l1->next;
+    			}
+    		}
+    		cur->next = (l1 ? l1 : l2);
+    		while(cur->next) cur = cur->next;
+    		return cur;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+My O(n log n) time, O(1) space solution
+Nice problem. I use a non-recurisve way to write merge sort.
+For example, the size of ListNode is 8,
+
+Round #1  block_size = 1
+
+(a1, a2), (a3, a4), (a5, a6), (a7, a8)
+
+Compare a1 with a2,   a3 with a4 ...
+
+Round #2  block_size = 2
+
+(a1, a2, a3, a4), (a5, a6, a7, a8)
+
+merge two sorted arrays (a1, a2) and (a3, a4),  then merge tow sorted arrays(a5, a6) and (a7, a8)
+
+Round #3  block_size = 4
+
+(a1, a2, a3, a4, a5, a6, a7, a8)
+
+merge two sorted arrays (a1, a2, a3, a4), and (a5, a6, a7, a8)
+
+No need for round #4 cause block_size = 8 >= n = 8
+
+    class Solution {
+    public:
+        int count_size(ListNode *node){
+            int n = 0;
+            while (node != NULL){
+                node = node->next;
+                ++n;
+            }
+            return n;
+        }
+        ListNode *sortList(ListNode *head) {
+            int block_size = 1, n = count_size(head), iter = 0, i = 0, a = 0, b = 0;
+            ListNode virtual_head(0);
+            ListNode *last = NULL, *it = NULL, *A = NULL, *B = NULL, *tmp = NULL;
+            virtual_head.next = head;
+            while (block_size < n){
+                iter = 0;
+                last = &virtual_head;
+                it = virtual_head.next;
+                while (iter <  n){
+                    a = min(n - iter, block_size);
+                    b = min(n - iter - a, block_size);
+                    
+                    A = it;
+                    if (b != 0){
+                        for (i = 0; i < a - 1; ++i) it = it->next;
+                        B = it->next;
+                        it->next = NULL;
+                        it = B;
+                        
+                        for (i = 0; i < b - 1; ++i) it = it->next;
+                        tmp = it->next;
+                        it->next = NULL;
+                        it = tmp;
+                    }
+                    
+                    while (A || B){
+                        if (B == NULL || (A != NULL && A->val <= B->val)){
+                            last->next = A;
+                            last = last->next;
+                            A = A->next;
+                        } else {
+                            last->next = B;
+                            last = last->next;
+                            B = B->next;
+                        }
+                    }
+                    last->next = NULL;
+                    iter += a + b;
+                }
+                block_size <<= 1;
+            }
+            return virtual_head.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Basically, it seems like merge sort problem(Really easy understand)
+Each time divided the given list into two sub list. Merge sub list after bottom case return.
+Here is the code:
+
+    public class Solution {
+        
+        //merge two sorted list, return result head
+        public ListNode merge(ListNode h1, ListNode h2){
+            if(h1 == null){
+                return h2;
+            }
+            if(h2 == null){
+                return h1;
+            }
+            
+            if(h1.val < h2.val){
+                h1.next = merge(h1.next, h2);
+                return h1;
+            }
+            else{
+                h2.next = merge(h1, h2.next);
+                return h2;
+            }
+            
+        }
+        
+        public ListNode sortList(ListNode head) {
+            //bottom case
+            if(head == null){
+                return head;
+            }
+            if(head.next == null){
+                return head;
+            }
+            
+            //p1 move 1 step every time, p2 move 2 step every time, pre record node before p1
+            ListNode p1 = head;
+            ListNode p2 = head;
+            ListNode pre = head;
+            
+            while(p2 != null && p2.next != null){
+                pre = p1;
+                p1 = p1.next;
+                p2 = p2.next.next;
+            }
+            //change pre next to null, make two sub list(head to pre, p1 to p2)
+            pre.next = null;
+            
+            //handle those two sub list
+            ListNode h1 = sortList(head);
+            ListNode h2 = sortList(p1);
+            
+            return merge(h1, h2);
+            
+        }
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution with strict O(1) auxiliary space complexity
+First of all, allow me to explain the meaning of **strict O(1) auxiliary space complexity**. 
+
+It means the **maximum** number of memory used by the program, except the memory taken by the input data, doesn't change with the input size.
+This indicates that, strictly speaking, any solution that involves recursion can never have a strict O(1) auxiliary space complexity. Because the maximum recursion level depends on the the input size and each recursion call consumes memory on stack, thus the maximum number of memory used depends on the input size.
+
+
+----------
+Secondly, allow me to explain my solution based on merge sort.
+
+Assume the length of list is n, which is unknown at the beginning.
+
+      level log(n)         [ A0, A2, A3, ... , An-2, An-1 ]
+      ...
+      level 2        [ A0, A1, A2,  A3 ], [A4, A5, A6, A7] ,... , [ ..., An-2, An-1 ]
+      level 1        [ A0, A1], [A2,  A3 ], [A4, A5], [A6, A7] ,... , [An-2, An-1]
+      level 0        [ A0 ], [ A1] , [ A2 ],  [ A3 ],... , [ An-2 ], [ An-1 ]
+
+At each level, each group only contains at maximum 2^level elements. Merge-sort theses groups pair by pair. Then level ++. Stop until 2^level > n.
+Assume the original input is :
+
+      level 0        5, 3, 6, 1, 4, 2, 7
+After level 0, we got the length of the list and the list become:
+
+      level 1        3, 5,   1, 6,    2, 4,    7
+Now each group contains 2 elements. After level 1, the list become:
+
+      level 2        1, 3, 5, 6,    2, 4, 7
+
+Now each group contains 2^2 = 4 elements. After level 2, the list become:
+
+      level 3        1, 2, 3, 4, 5, 6, 7
+Now, 2^3 > 7, stop.
+
+Time complexity:
+In each level, each node is visited by at maximum twice. And there are log(n) level. Thus the time complexity is O(2n* log n ) => O( n* log n )
+
+
+Here is the code:
+
+    public class Solution {
+    private class MergeHelper {
+            public ListNode newHead;
+            public ListNode newTail;
+    }
+    public ListNode sortList(ListNode head) {
+        if ( head == null || head.next == null) {
+            return head;
+        }
+        
+        ListNode dummyHeadOne = new ListNode(0);
+        ListNode dummyHeadTwo = new ListNode(0);
+        ListNode dummySortedHead = new ListNode(0);
+        ListNode dummySortedLast = dummySortedHead;
+        ListNode unvisitedNode = head;
+        MergeHelper mergeRst = new MergeHelper();
+        
+        int listLength = 0;
+        int level = 0;
+        while ( unvisitedNode != null && unvisitedNode.next != null ) {
+            unvisitedNode = addNode ( dummyHeadOne, unvisitedNode, 1<<level);
+            unvisitedNode = addNode ( dummyHeadTwo, unvisitedNode, 1<<level);
+            merge ( dummyHeadOne.next, dummyHeadTwo.next, mergeRst);
+            dummySortedLast.next = mergeRst.newHead;
+            dummySortedLast = mergeRst.newTail;
+            listLength += 2;
+        }
+        if (unvisitedNode != null) {
+            dummySortedLast.next = unvisitedNode;
+            listLength ++;
+        }
+        level ++;
+        
+        while ( listLength > 1 << level) {
+            dummySortedLast = dummySortedHead;
+            unvisitedNode = dummySortedHead.next;
+            while (unvisitedNode != null) {
+                unvisitedNode = addNode ( dummyHeadOne, unvisitedNode, 1<<level);
+                unvisitedNode = addNode ( dummyHeadTwo, unvisitedNode, 1<<level);
+                merge ( dummyHeadOne.next, dummyHeadTwo.next, mergeRst);
+                dummySortedLast.next = mergeRst.newHead;
+                dummySortedLast = mergeRst.newTail;
+            }
+            level ++;
+        }
+        
+        return dummySortedHead.next;
+    }
+    
+    /* merge listOne and listTwo. 
+    Save the sorted list head into rst.newHead
+    Save the last node of the sorted list into rst.newTail
+    */
+    private void merge (ListNode listOne, ListNode listTwo, MergeHelper rst) {
+        ListNode dummyHead = new ListNode (0);
+        ListNode lastNode = dummyHead;
+        while (listOne != null && listTwo != null) {
+            if ( listOne.val < listTwo.val ) {
+                lastNode.next = listOne;
+                listOne = listOne.next;
+            } else {
+                lastNode.next = listTwo;
+                listTwo = listTwo.next;
+            }
+            lastNode = lastNode.next;
+        }
+        
+        while (listOne != null) {
+            lastNode.next = listOne;
+            listOne = listOne.next;
+            lastNode = lastNode.next;
+        }
+        while ( listTwo != null ) {
+            lastNode.next = listTwo;
+            listTwo = listTwo.next;
+            lastNode = lastNode.next;
+        }
+        rst.newHead = dummyHead.next;
+        rst.newTail = lastNode;
+    }
+    
+    /*
+     add at max #"count" nodes into "head" from "source"
+     return the new position of source after adding.
+    */
+    private ListNode addNode ( ListNode head, ListNode source, int count ) {
+        while (count > 0 && source != null) {
+            head.next = source;
+            head = head.next;
+            source = source.next;
+            count --;
+        }
+        head.next = null;
+        return source;
+    }}
+
+Space complexity:
+There are no recursion calls in this solution. Thus the maximum number of function calls is constant.
+The number of dummy nodes is constant.
+Thus the auxiliary space complexity is O(1).
+
+
+
+----------------------------------------------------------------------------------------------------
+Clean python code
+    class Solution(object):
+        def merge(self, h1, h2):
+            dummy = tail = ListNode(None)
+            while h1 and h2:
+                if h1.val < h2.val:
+                    tail.next, tail, h1 = h1, h1, h1.next
+                else:
+                    tail.next, tail, h2 = h2, h2, h2.next
+        
+            tail.next = h1 or h2
+            return dummy.next
+        
+        def sortList(self, head):
+            if not head or not head.next:
+                return head
+        
+            pre, slow, fast = None, head, head
+            while fast and fast.next:
+                pre, slow, fast = slow, slow.next, fast.next.next
+            pre.next = None
+
+            return self.merge(*map(self.sortList, (head, slow)))
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Clean and short  Merge sort Solution in c++
+    class Solution {
+    public:
+        ListNode* merge( ListNode* head1 , ListNode * head2){
+            ListNode* d = new ListNode (0);            // dummy node
+            ListNode* e = d;
+            while(head1||head2){
+                if(head1 && (!head2 || head1->val <= head2 -> val) ){
+                    e=e->next= head1 ; 
+                    head1 = head1 -> next;
+                }
+                if(head2 && (!head1 || head2->val < head1 -> val) ){
+                    e=e->next= head2 ; 
+                    head2 = head2 -> next;
+                }
+            }
+            e->next = NULL;
+            return d->next;
+        }
+       ListNode* sortList(ListNode* head) {
+            if(!head || !head->next) return head;
+            ListNode* slow = head;
+            ListNode* fast =head->next;
+             while(fast && fast->next){         // to find middle node     
+                fast= fast->next->next;
+                slow = slow->next;
+            }
+            ListNode* headb = slow->next;     // headb is start of 2nd half of list
+            slow->next = NULL;                 
+            return merge(sortList(head) , sortList(headb));
+            }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my C++ concise solutions,easy to understand
+    class Solution {
+    public:
+        ListNode* sortList(ListNode* head) {
+            if (head == NULL || head->next == NULL)
+                return head;
+            
+            ListNode* slow = head;
+            ListNode* fast = head->next;
+            
+            while (fast != NULL && fast->next != NULL)
+            {
+                slow = slow->next;
+                fast = fast->next->next;
+            }
+            //divide the list into two parts 
+            fast = slow->next;
+            slow->next = NULL;
+            
+            return merge(sortList(head), sortList(fast));
+        }
+        
+        ListNode* merge(ListNode* l1, ListNode* l2)
+        {
+            ListNode dump(0);
+            ListNode* cur = &dump;
+            
+            while (l1 != NULL && l2 != NULL)
+            {
+                if (l1->val < l2->val)
+                {
+                    cur->next = l1;
+                    l1 = l1->next;
+                }
+                else
+                {
+                    cur->next = l2;
+                    l2 = l2->next;
+                }
+                    
+                cur = cur->next;
+            }
+            
+            if (l1 != NULL)
+                cur->next = l1;
+            else
+                cur->next = l2;
+                
+            return dump.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+56ms C++ Solutions using Quicksort with Explanations
+There are many merge-sort solutions at the forum, but very few quicksort solutions. So I post my accepted quicksort solution here.
+
+Well, after reading the problem statement, I intuitively select quicksort since it is able to give an in-place solution and thus costs only constant space. Also, it is `O(nlogn)` in the expected case though it may become `O(n^2)` in the worst case.
+
+Then I implement my quicksort solution and test it. I then submit it to the online judge. However, the annoying TLE error occurred. I check for the forums and some people suggested to use random pivoting or duplicate skipping. However, implementing random pivoting is a little costly, I lazily tried to skip the duplicates. And it works! So now comes the following solution . Note that each time I choose the first node as the pivot. Moreover, I create a `new_head` that points to `head` for convenience.
+
+Of course, this solution passes the online judge luckily. If the linked list is like: `100000 -> 99999 -> 99998 -> ... -> 1`, it will fail since the subproblems only decrease by 1 at each recursion. However, it seems that the LeetCode OJ does not have this kind of test cases.
+
+        void sortListHelper(ListNode* head, ListNode* tail) {
+        	if (head -> next == tail) return;
+        	/* Partition the list. */
+        	ListNode* pre = head;
+        	ListNode* cur = head -> next; 
+        	ListNode* pivot = cur;
+        	while (cur -> next && cur -> next != tail) {		
+        		if (pivot -> val > cur -> next -> val) {
+        			ListNode* temp = pre -> next;
+        			pre -> next = cur -> next;
+        			cur -> next = cur -> next -> next;
+        			pre -> next -> next = temp;
+        		}
+        		else cur = cur -> next;
+        	}
+        	sortListHelper(head, pivot);
+        	/* Here is the trick. */
+        	while (pivot -> next != tail && pivot -> next -> val == pivot -> val)
+        	    pivot = pivot -> next;
+        	if (pivot -> next != tail) sortListHelper(pivot, tail);
+        } 
+        
+        ListNode* sortList(ListNode* head) {
+        	ListNode* new_head = new ListNode(0);
+        	new_head -> next = head;
+        	sortListHelper(new_head, NULL);
+        	return new_head -> next;
+        }
+
+----------------------------------------------------------------------------------------------------
+How to solve the problem without recursion
+I solved the problem in Java with recursion, merge sort. But I realized that it don't have a **constant space complexity**.
+
+Every time the function is used, constant space is allocated. The function will be used nearly log(n) times, so the space complexity is log(n).
+
+Maybe it can only be solved without recursion while it has a constant space complexity.
+
+Anyone agrees with me? Who solve it **without recursion**?
+
+Even though it's not necessary, here is my **accepted** code: (2 ints and 3 pointers of ListNode are allocated when the funtion is used every time.)
+
+    public class Solution {
+        public ListNode sortList(ListNode head) {
+            int len = 0;
+            for( ListNode now=head; now!=null; now=now.next )
+            	++len;
+            if(len<2)
+            	return head;
+            ListNode firstHead, secondHead, tail;
+            firstHead = tail = secondHead = head;
+            for( int pos=0; pos+1<len/2; ++pos )
+            	tail = tail.next;       //"tail" is the firstHead's tail
+            secondHead = tail.next;
+            tail.next = null;
+            firstHead = sortList(firstHead);
+            secondHead = sortList(secondHead);
+            tail=null;                  //"tail" is the tail of new sorted list now
+            while( firstHead!=null&&secondHead!=null )
+            {
+            	if(tail==null)
+            	{
+            		if(firstHead.val<=secondHead.val)
+            		{
+            			tail = head = firstHead;    //"head" becomes the head of new sorted list
+            			firstHead = firstHead.next;
+            		}
+            		else
+            		{
+            			tail = head = secondHead;
+            			secondHead = secondHead.next;
+            		}
+            	}
+            	else
+            	{
+            		if(firstHead.val<=secondHead.val)
+            		{
+            			tail.next = firstHead;
+            			firstHead = firstHead.next;
+            		}
+            		else
+            		{
+            			tail.next = secondHead;
+            			secondHead = secondHead.next;
+            		}
+            		tail = tail.next;
+            	}
+            	
+            }
+            if( firstHead==null )
+            	tail.next = secondHead;
+            else if( secondHead==null )
+            	tail.next = firstHead;
+            return head;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very easy merge sort C++
+    class Solution {
+    private:
+        ListNode* mergeList(ListNode* l1, ListNode* l2) {
+            ListNode head(0);
+            ListNode* headPtr = &head; 
+            while(l1 && l2) {
+                if(l1->val < l2->val) {
+                    headPtr->next = l1;
+                    l1 = l1->next;
+                } else {
+                    headPtr->next = l2;
+                    l2 = l2->next;
+                }
+                headPtr = headPtr->next;
+            }
+            headPtr->next = (!l1 )? l2 : l1;
+            return head.next;
+        }
+        
+        ListNode* getMid(ListNode* front, ListNode* back) {
+            if(front == back) return front;
+            ListNode* slow = front;
+            ListNode* fast = front;
+            while(slow && fast && fast->next && fast->next->next ) {
+                slow = slow->next;
+                fast = fast->next->next;
+            }
+            return slow;
+        }
+        
+        ListNode* mergeSortList(ListNode* head, ListNode* tail) {
+            if(head == tail) return head;
+            ListNode* mid = getMid(head, tail);
+            ListNode* sortedPost = mergeSortList(mid->next, tail);
+            mid->next = NULL;
+            ListNode* sortedPre = mergeSortList(head, mid);
+            
+            return mergeList(sortedPre, sortedPost);
+        }
+        
+        
+    public:
+        ListNode* sortList(ListNode* head) {
+            if(!head) return head;
+            ListNode* tail = head;
+            while(tail->next) {
+                tail = tail->next;
+            }
+            return mergeSortList(head, tail);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java quick sort. fast. beats 98%  ; also includes merge sort code.
+    ListNode quickSort(final ListNode h){
+        if(h == null || h.next == null)
+            return h;
+        
+        /*split into three list*/
+        ListNode fakesmall = new ListNode(0), small = fakesmall;
+        ListNode fakelarge = new ListNode(0), large = fakelarge;
+        ListNode fakeequal = new ListNode(0), equal = fakeequal;
+        
+        ListNode cur = h; // pivot is h.
+        while(cur != null){
+            if(cur.val < h.val){
+                small.next = cur;
+                small = small.next;
+            }
+            else if(cur.val == h.val){
+                equal.next = cur;
+                equal = equal.next;
+            }
+            else{
+                large.next = cur;
+                large = large.next;
+            }
+            
+            cur = cur.next;
+        }
+        
+        // put an end.
+        small.next = equal.next = large.next = null;
+        // merge them and return . merge reusing below one. merge for quicksort should be simplified. 
+        return merge(merge(quickSort(fakesmall.next), quickSort(fakelarge.next)),fakeequal.next) ;
+    }
+    
+    
+    /*mrege sort*/
+    ListNode mergeSort(ListNode h){
+        if(h == null || h.next == null)
+            return h;
+        
+        /*find cutting point*/    
+        ListNode slow = h, cut = null, fast = h;
+        while(fast != null && fast.next != null){
+            cut = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        
+        /*cut*/
+        cut.next = null;
+        
+        return merge(mergeSort(h),mergeSort(slow));
+    }
+    
+    ListNode merge(ListNode h, ListNode m){
+        ListNode fake = new ListNode(0), cur = fake;
+        
+        while(h != null && m != null){
+    
+            if(h.val < m.val){
+                cur.next = h;
+                h = h.next;
+            }
+            else{
+                cur.next = m;
+                m = m.next;
+            }
+            cur = cur.next;
+        }
+        
+        cur.next = (h == null ? m : h);
+        
+        return fake.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+Feeling confused about the requirement &#x27;constant memory&#x27;
+I know most people use quick sort to solve this problem. But in fact the space complexity of the quick sort should be *O(nlogn)* because of the stack allocation(such as the return address pushed in the stack, local variables you used in recursion function). 
+Actually, any divide-and-conquer approaches (like merge sort *even for the in-place merge implementation*, quick sort) for this problem requires more than constant memory. Without divide-and-conquer approach, the only way I know for sorting in O(nlogn) time is heap sort. Unfortunately, this solution is even worse than divide-and-conquer approach.
+
+There is some algorithm uses constant memory space like bubble sort, insertion sort ,etc. But the time complexity of none of them are O(nlogn). 
+
+So I feel so confused about this, Is there any sorting algorithm we can use here to get a real constant memory complexity? But it seems impossible to me, so does anyone have ideas about this?
+
+
+----------------------------------------------------------------------------------------------------
+Python merge-sort with comments.
+        
+    # merge sort, recursively 
+    def sortList(self, head):
+        if not head or not head.next:
+            return head
+        # divide list into two parts
+        fast, slow = head.next, head
+        while fast and fast.next:
+            fast = fast.next.next
+            slow = slow.next
+        second = slow.next
+        # cut down the first part
+        slow.next = None
+        l = self.sortList(head)
+        r = self.sortList(second)
+        return self.merge(l, r)
+        
+    # merge in-place without dummy node        
+    def merge(self, l, r):
+        if not l or not r:
+            return l or r
+        if l.val > r.val:
+            l, r = r, l
+        # get the return node "head"
+        head = pre = l
+        l = l.next
+        while l and r:
+            if l.val < r.val:
+                l = l.next
+            else:
+                nxt = pre.next
+                pre.next = r
+                tmp = r.next
+                r.next = nxt
+                r = tmp
+            pre = pre.next
+        # l and r at least one is None
+        pre.next = l or r
+        return head
+
+----------------------------------------------------------------------------------------------------
+Simple java merge sort, commented.
+     public ListNode sortList(ListNode head) {
+    	if (head == null || head.next == null) return head;
+    	
+    	//Use two runners to break list into two halfs.
+        ListNode fast = head, slow = head, prev = null;
+        while (fast != null && fast.next != null) {
+        	prev = slow;
+        	slow = slow.next;
+        	fast = fast.next.next;
+        }
+        ListNode second = prev.next;
+        prev.next = null;
+        //sort each half
+        ListNode first = sortList(head);
+        second = sortList(second);
+        //merge them.
+        head = mergeList(first, second);
+        return head;
+    }
+
+	private ListNode mergeList(ListNode first, ListNode second) {
+		ListNode dummy = new ListNode(0), merged = dummy;
+		while (first != null && second != null) {
+			if (first.val <= second.val) {
+				merged.next = first;
+				merged = merged.next;
+				first = first.next;
+			} else {
+				merged.next = second;
+				merged = merged.next;
+				second = second.next;
+			}
+		}
+		if (first != null || second != null)
+			merged.next = (first != null)? first :second;
+		
+		return dummy.next;
+	}
+
+----------------------------------------------------------------------------------------------------
+Java solution using merge sort
+
+    public ListNode sortList(ListNode head) {
+        if (head == null || head.next == null) return head;
+        ListNode slow = head, fast = head, pre = head;
+        while(fast != null && fast.next != null) {
+            pre = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        pre.next = null;
+        return merge(sortList(head), sortList(slow));
+    }
+    
+    public ListNode merge(ListNode l1, ListNode l2) {
+        if(l1 == null) return l2;
+        if(l2 == null) return l1;
+        if(l1.val <= l2.val) {
+            l1.next = merge(l1.next, l2);
+            return l1;
+        } else {
+            l2.next = merge(l1, l2.next);
+            return l2;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Ask for suggestion
+Here is my solution. Merge sort. Pass OJ. I would like to ask for suggestion to further improve it. E.g. shorter code or simpler design. Thanks in advance.
+
+    ListNode *merge(ListNode* l1, ListNode* l2, ListNode* h){
+        ListNode* l=h;
+        while(l1||l2){
+            if(!l1){
+                l->next=l2;
+                l2=l2->next;
+            }
+            else if(!l2){
+                l->next=l1;
+                l1=l1->next;
+            }
+            else if(l1->val<l2->val){
+                l->next=l1;
+                l1=l1->next;
+            }
+            else {
+                l->next=l2;
+                l2=l2->next;
+            }
+            l=l->next;
+        }
+        return l;
+    }
+    
+    ListNode* split(ListNode* h, int len){
+        for(int i=1;i<len&&h!=NULL;i++){
+            h=h->next;
+        }
+        if(!h) return NULL;
+        ListNode* t=h->next;
+        h->next=NULL;
+        return t;
+    }
+    
+    ListNode *sortList(ListNode *head) {
+        ListNode n(0);
+        n.next=head;
+        int listlen=0;
+        while(head){listlen++;head=head->next;}
+        for(int len=1;len<listlen;len*=2){
+            ListNode* t=n.next,*l1,*l2;
+            ListNode* h=&n;
+            while(t!=NULL){
+                l1=t;
+                l2=split(t,len);
+                t=split(l2,len);
+                ListNode* tail=merge(l1,l2,h);
+                tail->next=t;
+                h=tail;
+            }
+        }
+        return n.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+Merge sort solution in Java
+Here is my solution. It's a bottom-up implementation of merge sort. It uses O(1) space since it does not use recursion and the merge process takes constant space. The merge method is very similar to the solution of the problem "Merge Two Sorted List", except that it returns both the head and the tail of the merged sub-list so that it can be linked back to the entire list.
+
+    /**
+     * Definition for singly-linked list.
+     * class ListNode {
+     *     int val;
+     *     ListNode next;
+     *     ListNode(int x) {
+     *         val = x;
+     *         next = null;
+     *     }
+     * }
+     */
+    public class Solution {
+        
+      class Pair {
+          public ListNode head;
+          public ListNode tail;
+          public Pair(ListNode head, ListNode tail) {
+              this.head = head;
+              this.tail = tail;
+          }
+      }    
+        
+      private Pair merge(ListNode l1, ListNode t1, ListNode l2, ListNode t2) {
+            ListNode head, tail;
+            ListNode p1 = l1, p2 = l2;
+            if (l1 == null) return new Pair(l2, t2);
+            if (l2 == null) return new Pair(l1, t1);
+            if (l1.val < l2.val) {
+                head = l1;
+                p1 = p1.next;
+            } else {
+                head = l2;
+                p2 = p2.next;
+            }
+            tail = head;
+            while (p1 != null && p2 != null) {
+                ListNode tmp;
+                if (p1.val < p2.val) {
+                    tmp = p1.next;
+                    tail.next = p1;
+                    p1 = tmp;
+                } else {
+                    tmp = p2.next;
+                    tail.next = p2;
+                    p2 = tmp;
+                }
+                tail = tail.next;
+            }
+            if (p1 != null) {
+                tail.next = p1;
+            } else {
+                tail.next = p2;
+            }
+            while (tail.next != null) 
+                tail = tail.next;
+            
+            return new Pair(head, tail);
+        }
+        
+        private ListNode jump(ListNode start, int len) {
+            ListNode ans = start;
+            for (int i=0; i<len; i++) {
+                if (ans != null) {
+                    ans = ans.next;
+                } else {
+                    break;
+                }
+            }
+            return ans;
+        }
+        
+        public ListNode sortList(ListNode head) {
+            int len = 1;
+            ListNode fstHead, fstTail, sndHead, sndTail, lBound, rBound, dummyHead;
+            boolean changed = true;
+            dummyHead = new ListNode(0);
+            dummyHead.next = head;
+            while (changed) {
+                changed = false;
+                lBound = dummyHead;
+                fstHead = jump(lBound, 1);
+                fstTail = jump(fstHead, len-1);
+                sndHead = jump(fstTail, 1);
+                sndTail = jump(sndHead, len-1);
+                rBound = jump(sndTail, 1);
+                
+                while (sndHead != null) {
+                    changed = true;
+                    if (fstTail != null) fstTail.next = null;
+                    if (sndTail != null) sndTail.next = null;
+                    Pair p = merge(fstHead, fstTail, sndHead, sndTail);
+                    if (lBound != null) lBound.next = p.head;
+                    if (p.tail != null) p.tail.next = rBound;
+                    lBound = p.tail;
+                    fstHead = jump(lBound, 1);
+                    fstTail = jump(fstHead, len-1);
+                    sndHead = jump(fstTail, 1);
+                    sndTail = jump(sndHead, len-1);
+                    rBound = jump(sndTail, 1);
+                }
+                
+                len *= 2;
+            }
+            
+            return dummyHead.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My iterative merge sort
+Consider how iterative merge sort works. first time merge 2 elements, then 4 elements, then 8 elements, until all elements.
+
+Use two lists to represent all odd merge parts and all even merge parts.
+
+At first, convert the list to two lists:
+
+top       : 1st    3rd   5th  7th ...
+
+bottom : 2nd   4th   6th  8th ...
+
+then merge sort, first time:
+
+top       : SortResult(1st, 2nd) | SortResult(5th, 6th) ...
+
+bottom : SortResult(3rd, 4th) |  SortResult(7th, 8th) ...
+
+second time:
+
+top       : SortResult(1st, 2nd, 3rd, 4th) ...
+
+bottom : SortResult(5th, 6th, 7th, 8th) ...
+
+Actually, if we have previous sort result:
+
+top       : s(1) s(3) ...
+
+bottom : s(2) s(4) ...
+
+we can sort it to get:
+
+top       : sort(s(1), s(2)) ...
+
+bottom : sort(s(3), s(4)) ...
+
+The code is below:
+
+    public class Solution
+    {
+        private ListNode merge(ListNode dest, ListNode src, int step)
+        {
+            int destCount = 0;
+            int srcCount = 0;
+            final int max = step >>> 1;
+            for (int j = 0; j < step; ++j)
+            {
+                if (dest.next == null || destCount >= max)
+                {
+                    if (src.next == null)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        final ListNode temp = dest.next;
+                        dest.next = src.next;
+                        src.next = src.next.next;
+                        dest = dest.next;
+                        dest.next = temp;
+                    }
+                }
+                else if (src.next == null || srcCount >= max)
+                {
+                    if (dest.next != null)
+                    {
+                        dest = dest.next;
+                    }
+                }
+                else
+                {
+                    if (dest.next.val <= src.next.val)
+                    {
+                        dest = dest.next;
+                        ++destCount;
+                    }
+                    else
+                    {
+                        final ListNode temp = dest.next;
+                        dest.next = src.next;
+                        src.next = src.next.next;
+                        dest = dest.next;
+                        dest.next = temp;
+                        ++srcCount;
+                    }
+                }
+            }
+            
+            return dest;
+        }
+        
+        public ListNode sortList(ListNode head)
+        {
+            if (head == null || head.next == null)
+            {
+                return head;
+            }
+            
+            final ListNode topHead = new ListNode(0);
+            final ListNode bottomHead = new ListNode(0);
+            
+            ListNode top = topHead;
+            ListNode bottom = bottomHead;
+            
+            ListNode node = head;
+            for (; node != null && node.next != null; node = node.next)
+            {
+                top.next = node;
+                top = top.next;
+                
+                node = node.next;
+                
+                bottom.next = node;
+                bottom = bottom.next;
+            }
+            
+            top.next = node;
+            bottom.next = null;
+            
+            for (int i = 1; bottomHead.next != null; i <<= 1)
+            {
+                top = topHead;
+                bottom = bottomHead;
+                
+                while (top.next != null && bottom.next != null)
+                {
+                    top = merge(top, bottom, i << 1);
+                    bottom = merge(bottom, top, i << 1);
+                }
+            }
+            
+            return topHead.next;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,1186 @@
+An O(N) solution with detailed explanation
+        // travel all the words combinations to maintain a window
+        // there are wl(word len) times travel
+        // each time, n/wl words, mostly 2 times travel for each word
+        // one left side of the window, the other right side of the window
+        // so, time complexity O(wl * 2 * N/wl) = O(2N)
+        vector<int> findSubstring(string S, vector<string> &L) {
+            vector<int> ans;
+            int n = S.size(), cnt = L.size();
+            if (n <= 0 || cnt <= 0) return ans;
+            
+            // init word occurence
+            unordered_map<string, int> dict;
+            for (int i = 0; i < cnt; ++i) dict[L[i]]++;
+            
+            // travel all sub string combinations
+            int wl = L[0].size();
+            for (int i = 0; i < wl; ++i) {
+                int left = i, count = 0;
+                unordered_map<string, int> tdict;
+                for (int j = i; j <= n - wl; j += wl) {
+                    string str = S.substr(j, wl);
+                    // a valid word, accumulate results
+                    if (dict.count(str)) {
+                        tdict[str]++;
+                        if (tdict[str] <= dict[str]) 
+                            count++;
+                        else {
+                            // a more word, advance the window left side possiablly
+                            while (tdict[str] > dict[str]) {
+                                string str1 = S.substr(left, wl);
+                                tdict[str1]--;
+                                if (tdict[str1] < dict[str1]) count--;
+                                left += wl;
+                            }
+                        }
+                        // come to a result
+                        if (count == cnt) {
+                            ans.push_back(left);
+                            // advance one word
+                            tdict[S.substr(left, wl)]--;
+                            count--;
+                            left += wl;
+                        }
+                    }
+                    // not a valid word, reset all vars
+                    else {
+                        tdict.clear();
+                        count = 0;
+                        left = j + wl;
+                    }
+                }
+            }
+            
+            return ans;
+        }
+
+----------------------------------------------------------------------------------------------------
+Naive C++ Solution using two unordered_map (about 20 lines)
+I think the following code is self-explanatory enough. We use an `unordered_map<string, int> counts` to record the expected times of each word and another `unordered_map<string, int> seen` to record the times we have seen. Then we check for every possible position of `i`. Once we meet an unexpected word or the times of some word is larger than its expected times, we stop the check. If we finish the check successfully, push `i` to the result `indexes`.
+
+    class Solution {
+    public:
+        vector<int> findSubstring(string s, vector<string>& words) {
+            unordered_map<string, int> counts;
+            for (string word : words)
+                counts[word]++;
+            int n = s.length(), num = words.size(), len = words[0].length();
+            vector<int> indexes;
+            for (int i = 0; i < n - num * len + 1; i++) {
+                unordered_map<string, int> seen;
+                int j = 0;
+                for (; j < num; j++) {
+                    string word = s.substr(i + j * len, len);
+                    if (counts.find(word) != counts.end()) {
+                        seen[word]++;
+                        if (seen[word] > counts[word])
+                            break;
+                    } 
+                    else break;
+                }
+                if (j == num) indexes.push_back(i);
+            }
+            return indexes;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution 12ms with explanation
+It's not too hard to find some resemblance between this problem and [minimum-window-substring][1]. Actually the main difference is the fact that we are interested at some interval length: we want intervals with fixed length K * M, where K is the number of strings in the "words" array and M the length of each target string. In order to apply the same idea we used for that problem, all we need to do is to map each string from the "words" array to something we are able to index (I prefer to use hashing for this). Also, in order to speed up the algorithm, we can find all occurrences of those strings in S (which is equivalent to do it on demand, but we will potentially do the same matching twice). Notice that, we can simply apply these occurrences as they appear because we are assured that no word is contained by some other. Finally, we use all this information to process each possibility. Notice here that, the fact that all strings has the same length, implies that we have just M (being M the length of each target string) possible starting points, hence we end up performing M linear scans over array with length O(N/M) (being N the length of S) and that makes the scanning stage of the algorithm to be linear on the length of S.
+
+	public List<Integer> findSubstring(String s, String[] words) {
+		int N = s.length();
+		List<Integer> indexes = new ArrayList<Integer>(s.length());
+		if (words.length == 0) {
+			return indexes;
+		}
+		int M = words[0].length();
+		if (N < M * words.length) {
+			return indexes;
+		}
+		int last = N - M + 1;
+		
+		//map each string in words array to some index and compute target counters
+		Map<String, Integer> mapping = new HashMap<String, Integer>(words.length);
+		int [][] table = new int[2][words.length];
+		int failures = 0, index = 0;
+		for (int i = 0; i < words.length; ++i) {
+			Integer mapped = mapping.get(words[i]);
+			if (mapped == null) {
+				++failures;
+				mapping.put(words[i], index);
+				mapped = index++;
+			}
+			++table[0][mapped];
+		}
+		
+		//find all occurrences at string S and map them to their current integer, -1 means no such string is in words array
+		int [] smapping = new int[last];
+		for (int i = 0; i < last; ++i) {
+			String section = s.substring(i, i + M);
+			Integer mapped = mapping.get(section);
+			if (mapped == null) {
+				smapping[i] = -1;
+			} else {
+				smapping[i] = mapped;
+			}
+		}
+		
+		//fix the number of linear scans
+		for (int i = 0; i < M; ++i) {
+			//reset scan variables
+			int currentFailures = failures; //number of current mismatches
+			int left = i, right = i;
+			Arrays.fill(table[1], 0);
+			//here, simple solve the minimum-window-substring problem
+			while (right < last) {
+				while (currentFailures > 0 && right < last) {
+					int target = smapping[right];
+					if (target != -1 && ++table[1][target] == table[0][target]) {
+						--currentFailures;
+					}
+					right += M;
+				}
+				while (currentFailures == 0 && left < right) {
+					int target = smapping[left];
+					if (target != -1 && --table[1][target] == table[0][target] - 1) {
+						int length = right - left;
+						//instead of checking every window, we know exactly the length we want
+						if ((length / M) ==  words.length) {
+							indexes.add(left);
+						}
+						++currentFailures;
+					}
+					left += M;
+				}
+			}
+			
+		}
+		return indexes;
+	}
+
+
+  [1]: https://leetcode.com/problems/minimum-window-substring/
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution with Two Pointers and Map
+My idea is pretty simple. Just build a map for the words and their relative count in L. Then we traverse through S to check whether there is a match.
+
+    public static List<Integer> findSubstring(String S, String[] L) {
+        List<Integer> res = new ArrayList<Integer>();
+        if (S == null || L == null || L.length == 0) return res;
+        int len = L[0].length(); // length of each word
+        
+        Map<String, Integer> map = new HashMap<String, Integer>(); // map for L
+        for (String w : L) map.put(w, map.containsKey(w) ? map.get(w) + 1 : 1);
+        
+        for (int i = 0; i <= S.length() - len * L.length; i++) {
+            Map<String, Integer> copy = new HashMap<String, Integer>(map);
+            for (int j = 0; j < L.length; j++) { // checkc if match
+                String str = S.substring(i + j*len, i + j*len + len); // next word
+                if (copy.containsKey(str)) { // is in remaining words
+                    int count = copy.get(str);
+                    if (count == 1) copy.remove(str);
+                    else copy.put(str, count - 1);
+                    if (copy.isEmpty()) { // matches
+                        res.add(i);
+                        break;
+                    }
+                } else break; // not in L
+            }
+        }
+        return res;
+    }
+
+At first I was gonna to use a set for words. Owing to the fact that duplicate is allowed in L, we need to use map instead. 
+
+----------------------------------------------------------------------------------------------------
+My AC c++ code, O(n) complexity, 26ms
+    class Solution {
+    // The general idea:
+    // Construct a hash function f for L, f: vector<string> -> int, 
+    // Then use the return value of f to check whether a substring is a concatenation 
+    // of all words in L.
+    // f has two levels, the first level is a hash function f1 for every single word in L.
+    // f1 : string -> double
+    // So with f1, L is converted into a vector of float numbers
+    // Then another hash function f2 is defined to convert a vector of doubles into a single int.
+    // Finally f(L) := f2(f1(L))
+    // To obtain lower complexity, we require f1 and f2 can be computed through moving window.
+    // The following corner case also needs to be considered:
+    // f2(f1(["ab", "cd"])) != f2(f1(["ac", "bd"]))
+    // There are many possible options for f2 and f1. 
+    // The following code only shows one possibility (probably not the best), 
+    // f2 is the function "hash" in the class,
+    // f1([a1, a2, ... , an]) := int( decimal_part(log(a1) + log(a2) + ... + log(an)) * 1000000000 )
+    public:
+        // The complexity of this function is O(nW).
+        double hash(double f, double code[], string &word) {
+            double result = 0.;
+            for (auto &c : word) result = result * f + code[c];
+            return result;
+        }
+        vector<int> findSubstring(string S, vector<string> &L) {
+            uniform_real_distribution<double> unif(0., 1.);
+            default_random_engine seed;
+            double code[128];
+            for (auto &d : code) d = unif(seed);
+            double f = unif(seed) / 5. + 0.8;
+            double value = 0;
+
+            // The complexity of the following for loop is O(L.size( ) * nW).
+            for (auto &str : L) value += log(hash(f, code, str));
+
+            int unit = 1e9;
+            int key = (value-floor(value))*unit;
+            int nS = S.size(), nL = L.size(), nW = L[0].size();
+            double fn = pow(f, nW-1.);
+            vector<int> result;
+            if (nS < nW) return result;
+            vector<double> values(nS-nW+1);
+            string word(S.begin(), S.begin()+nW);
+            values[0] = hash(f, code, word);
+
+            // Use a moving window to hash every word with length nW in S to a float number, 
+            // which is stored in vector values[]
+            // The complexity of this step is O(nS).
+            for (int i=1; i<=nS-nW; ++i) values[i] = (values[i-1] - code[S[i-1]]*fn)*f + code[S[i+nW-1]];
+
+            // This for loop will run nW times, each iteration has a complexity O(nS/nW)
+            // So the overall complexity is O(nW * (nS / nW)) = O(nS)
+            for (int i=0; i<nW; ++i) {
+                int j0=i, j1=i, k=0;
+                double sum = 0.;
+
+                // Use a moving window to hash every L.size() continuous words with length nW in S.
+                // This while loop will terminate within nS/nW iterations since the increasement of j1 is nW,
+                // So the complexity of this while loop is O(nS / nW).
+                while(j1<=nS-nW) {
+                    sum += log(values[j1]);
+                    ++k;
+                    j1 += nW;
+                    if (k==nL) {
+                        int key1 = (sum-floor(sum)) * unit;
+                        if (key1==key) result.push_back(j0);
+                        sum -= log(values[j0]);
+                        --k;
+                        j0 += nW;
+                    }
+                }
+            }
+            return result;
+        }
+    };
+
+Though theoretically it has a very small chance to fail.
+
+----------------------------------------------------------------------------------------------------
+Hash Idea and exception case
+The following python code is accepted by OJ. It is based on the following idea (assumption)
+
+ -  We know that two multisets consist of same elements and size of the multisets are equal. if sum of hashes of all elements are the same for these multisets ->  those multisets are identical
+
+ 
+This is not true for same very very rare cases. Please describe such a case.
+
+    def findSubstring(self, S, L):
+        n = len(L) #num words
+        w = len(L[0])  #length of each word
+        t = n*w    # total length
+    
+        hashsum = sum([hash(x) for x in L])
+        h = [hash(S[i:i+w])*(S[i:i+w] in L) for i in xrange(len(S)-w+1)]
+        return [i for i in xrange(len(S)-t+1) if sum(h[i:i+t:w])==hashsum]
+
+----------------------------------------------------------------------------------------------------
+Java 12ms beats 100%
+The two pointers method with hashmap is known by many other solutions. The idea is to slide the scan window as far as possible, and keep throwing the impossible cases based on the length test.
+
+    public List<Integer> findSubstring(String s, String[] words) {
+			/**
+			 * Let n=s.length, k=words[0].length traverse s with indices i, i+k,
+			 * i+2k, ... for 0<=i<k, so that the time complexity is O(n).
+			 */
+			List<Integer> res = new ArrayList<Integer>();
+			int n = s.length(), m = words.length, k;
+			if (n == 0 || m == 0 || (k = words[0].length()) == 0)
+				return res;
+
+			HashMap<String, Integer> wDict = new HashMap<String, Integer>();
+
+			for (String word : words) {
+				if (wDict.containsKey(word))
+					wDict.put(word, wDict.get(word) + 1);
+				else
+					wDict.put(word, 1);
+			}
+
+			int i, j, start, x, wordsLen = m * k;
+			HashMap<String, Integer> curDict = new HashMap<String, Integer>();
+			String test, temp;
+			for (i = 0; i < k; i++) {
+				curDict.clear();
+				start = i;
+				if (start + wordsLen > n)
+					return res;
+				for (j = i; j + k <= n; j += k) {
+					test = s.substring(j, j + k);
+
+					if (wDict.containsKey(test)) {
+						if (!curDict.containsKey(test)) {
+							curDict.put(test, 1);
+
+							start = checkFound(res, start, wordsLen, j, k, curDict, s);
+							continue;
+						}
+
+						// curDict.containsKey(test)
+						x = curDict.get(test);
+						if (x < wDict.get(test)) {
+							curDict.put(test, x + 1);
+
+							start = checkFound(res, start, wordsLen, j, k, curDict, s);
+							continue;
+						}
+
+						// curDict.get(test)==wDict.get(test), slide start to
+						// the next word of the first same word as test
+						while (!(temp = s.substring(start, start + k)).equals(test)) {
+							decreaseCount(curDict, temp);
+							start += k;
+						}
+						start += k;
+						if (start + wordsLen > n)
+							break;
+						continue;
+					}
+
+					// totally failed up to index j+k, slide start and reset all
+					start = j + k;
+					if (start + wordsLen > n)
+						break;
+					curDict.clear();
+				}
+			}
+			return res;
+		}
+
+		public int checkFound(List<Integer> res, int start, int wordsLen, int j, int k,
+				HashMap<String, Integer> curDict, String s) {
+			if (start + wordsLen == j + k) {
+				res.add(start);
+				// slide start to the next word
+				decreaseCount(curDict, s.substring(start, start + k));
+				return start + k;
+			}
+			return start;
+		}
+
+		public void decreaseCount(HashMap<String, Integer> curDict, String key) {
+			// remove key if curDict.get(key)==1, otherwise decrease it by 1
+			int x = curDict.get(key);
+			if (x == 1)
+				curDict.remove(key);
+			else
+				curDict.put(key, x - 1);
+		}
+
+----------------------------------------------------------------------------------------------------
+AC Python 80ms solution, dictionary and two pointers
+    def _findSubstring(self, l, r, n, k, t, s, req, ans):
+        curr = {}
+        while r + k <= n:
+            w = s[r:r + k]
+            r += k
+            if w not in req:
+                l = r
+                curr.clear()
+            else:
+                curr[w] = curr[w] + 1 if w in curr else 1
+                while curr[w] > req[w]:
+                    curr[s[l:l + k]] -= 1
+                    l += k
+                if r - l == t:
+                    ans.append(l)
+
+    def findSubstring(self, s, words):
+        if not s or not words or not words[0]:
+            return []
+        n = len(s)
+        k = len(words[0])
+        t = len(words) * k
+        req = {}
+        for w in words:
+            req[w] = req[w] + 1 if w in req else 1
+        ans = []
+        for i in xrange(min(k, n - t + 1)):
+            self._findSubstring(i, i, n, k, t, s, req, ans)
+        return ans
+
+
+    # 169 / 169 test cases passed.
+    # Status: Accepted
+    # Runtime: 80 ms
+    # 98.60%
+
+
+First of all consider s as several series of  words with length k starting at [0, k-1]. For example "barfoothe" with k = 3, can be view as ["bar", "foo", "the"] for i=0 and ["arf", "oot"] for i = 1 and ["rfo", "oth"] for i = 2.
+Thus we need to check each  of these series and find out the valid index by definition.
+
+For each series, we just need to check if there exist a range [l, r) where the occurrence or "spectrum" of the words in the range is the same as our given word list's "spectrum". We use dictionary to store the spectrum and maintain it as we loop through s.
+
+collections.Counter class may save a bit of code on updating the counts of the dictionary. However plain dict wins on the speed.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+92% JAVA O(N) with explaination
+public class Solution {
+	
+	/*
+		A time & space O(n) solution
+		Run a moving window for wordLen times.
+		Each time we keep a window of size windowLen (= wordLen * numWord), each step length is wordLen.
+		So each scan takes O(sLen / wordLen), totally takes O(sLen / wordLen * wordLen) = O(sLen) time.
+		
+		One trick here is use count to record the number of exceeded occurrences of word in current window
+	*/
+    public static List<Integer> findSubstring(String s, String[] words) {
+        List<Integer> res = new ArrayList<>();
+        if(words == null || words.length == 0 || s.length() == 0) return res;
+        int wordLen = words[0].length();
+        int numWord = words.length;
+        int windowLen = wordLen * numWord;
+        int sLen = s.length();
+        HashMap<String, Integer> map = new HashMap<>();
+        for(String word : words) map.put(word, map.getOrDefault(word, 0) + 1);
+
+        for(int i = 0; i < wordLen; i++) {  // Run wordLen scans
+            HashMap<String, Integer> curMap = new HashMap<>();
+            for(int j = i, count = 0, start = i; j + wordLen <= sLen; j += wordLen) {  // Move window in step of wordLen
+                // count: number of exceeded occurences in current window
+                // start: start index of current window of size windowLen
+                if(start + windowLen > sLen) break;
+                String word = s.substring(j, j + wordLen);
+                if(!map.containsKey(word)) {
+                    curMap.clear();
+                    count = 0;
+                    start = j + wordLen;
+                }
+                else {
+                    if(j == start + windowLen) { // Remove previous word of current window
+                        String preWord = s.substring(start, start + wordLen);
+                        start += wordLen;
+                        int val = curMap.get(preWord);
+                        if(val == 1) curMap.remove(preWord);
+                        else curMap.put(preWord, val - 1);
+                        if(val - 1 >= map.get(preWord)) count--;  // Reduce count of exceeded word
+                    }
+                    // Add new word
+                    curMap.put(word, curMap.getOrDefault(word, 0) + 1);
+                    if(curMap.get(word) > map.get(word)) count++;  // More than expected, increase count
+                    // Check if current window valid
+                    if(count == 0 && start + windowLen == j + wordLen) {
+                        res.add(start);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Accepted short Java solution
+Hey, guys!
+
+Actually, there's nothing special in my solution except the comparably short Java code. It's just a simple sliding window approach which is greatly described in other posts.
+
+In short, we got the source histogram from the dictionary L and build the new histogram for each possible window comparing it with the help of Java's *equals* method to the source one. Additionally, for the sake of tiny optimization, we check the starting word for being in the dictionary. 
+
+
+    public List<Integer> findSubstring(String S, String[] L) {
+        List<Integer> result = new ArrayList<>();
+        int size = L[0].length();
+        if (L.length == 0 || L[0].isEmpty() || L[0].length() > S.length()) 
+            return result;
+        Map<String, Integer> hist = new HashMap<>();
+        for (String w : L) {
+            hist.put(w, !hist.containsKey(w) ? 1 : hist.get(w)+1);
+        }
+        for (int i = 0; i+size*L.length <= S.length(); i++) {
+            if (hist.containsKey(S.substring(i, i+size))) {
+                Map<String, Integer> currHist = new HashMap<>();
+                for (int j = 0; j < L.length; j++) {
+                    String word = S.substring(i+j*size, i+(j+1)*size);
+                    currHist.put(word, !currHist.containsKey(word) ? 
+                            1 : currHist.get(word)+1);
+                }
+                if (currHist.equals(hist)) result.add(i);
+            }
+        }
+        return result;
+    }
+
+Hope it helps!
+
+----------------------------------------------------------------------------------------------------
+99ms Python O(kmn) Solution
+The idea comes from [https://leetcode.com/discuss/20151/an-o-n-solution-with-detailed-explanation]
+
+Using a counter and a sliding window, we push the window from left to right, counting the number of valid words in the window. When the number of a word in the window is more than the times it appears in **words** or we meet a invalid word, push the window.
+
+    class Solution:
+	# @param {string} s
+	# @param {string[]} words
+	# @return {integer[]}
+	def findSubstring(self, s, words):
+		if len(words) == 0:
+			return []
+		# initialize d, l, ans
+		l = len(words[0])
+		d = {}
+		for w in words:
+			if w in d:
+				d[w] += 1
+			else:
+				d[w] = 1
+		i = 0
+		ans = []
+
+		# sliding window(s)
+		for k in range(l):
+			left = k
+			subd = {}
+			count = 0
+			for j in xrange(k, len(s)-l+1, l):
+				tword = s[j:j+l]
+				# valid word
+				if tword in d:
+					if tword in subd:
+						subd[tword] += 1
+					else:
+						subd[tword] = 1
+					count += 1
+					while subd[tword] > d[tword]:
+						subd[s[left:left+l]] -= 1
+						left += l
+						count -= 1
+					if count == len(words):
+						ans.append(left)
+				# not valid
+				else:
+					left = j + l
+					subd = {}
+					count = 0
+
+		return ans
+
+Assuming we have k words in **words**, and there are m substrings in the string, the complexity is O(kmn) because we need to adjust the window when more valid words are found.
+
+This solution runs 99ms on OJ.
+
+
+----------------------------------------------------------------------------------------------------
+Accepted recursive solution using Trie Tree
+The idea is quite simple. Just use a trie tree to accelerate testing whether a substring is valid. The value of each TrieNode is used to deal with duplication and to mark whether the word is used before.
+
+          static class TrieNode {
+               int value = 0;
+               Map<Character, TrieNode> children = new HashMap<Character, TrieNode>();
+           }
+    
+           TrieNode trie;
+    
+	    // build a trie tree
+	    public List<Integer> findSubstring(String S, String[] L) {
+	        trie = buildTrie(L);
+	        int length = getTotalLength(L);
+	        List<Integer> result = new LinkedList<Integer>();
+	        for (int i = 0; i < S.length() - length + 1; i++) {
+	            if (isSubString(S, i, i + length))
+	                result.add(i);
+	        }
+	        return result;
+	    }
+	    
+	    private int getTotalLength(String[] L) {
+	        int sum = 0;
+	        for (String l : L)
+	            sum += l.length();
+	        return sum;
+	    }
+	    
+	    private TrieNode buildTrie(String[] L) {
+	        TrieNode root = new TrieNode();
+	        for (String l : L)
+	            addWord(root, l);
+	        return root;
+	    }
+	    
+	    private void addWord(TrieNode root, String s) {
+	        TrieNode node = root;
+	        for (int i = 0; i < s.length(); i++) {
+	            char c = s.charAt(i);
+	            TrieNode next = node.children.get(c);
+	            if (next == null) {
+	                next = new TrieNode();
+	                node.children.put(c, next);
+	            }
+	            node = next;
+	        }
+	        node.value++;
+	    }
+	    
+	    private boolean isSubString(String S, int start, int end) {
+	    	if (start == end)
+	    		return true;
+	        // search in the trie tree
+	        TrieNode node = trie;
+	        for (int i = start; i < end; i++) {
+	            char c = S.charAt(i);
+	            if (node.children.get(c) == null)
+	                return false;
+	            node = node.children.get(c);
+	            if (node.value > 0) {  // leaf & can be used
+	                node.value--; // mark as used
+	                if (isSubString(S, i + 1, end)) {
+	                    node.value++; // mark as unused
+	                    return true;
+	                }
+	                node.value++; // mark as unused
+	            }
+	        }
+	        return false;
+	    }
+
+----------------------------------------------------------------------------------------------------
+My 24ms C++ solution (O(N) time, using an unordered_map)
+We can leverage the fact that the strings in words have the same length to speed up our algorithm. We can divide all the possible starting points (i.e. 0..sLen-1) into wordL sequences and the i-th sequence is 
+(i, i+wordL, i+2*wordL, ...) (I=0..wordL-1). Each time we scan one sequence (for j loop). First, we need to build a dictionary based on words and unordered_map is used to simplify look-up operation (key is string, value is count). Then for each sequence starting at i, we check if s[i..i+wordL-1] is a word in dict, if no (which means it is not a word in words), then we reset count (the number of words we found in the current window starting at start), and move start to i+wordL to skip the current word and also we need to recover dict. If s[i..i+wordL-1] is a word in dict, then we check if we already found all such words before in the current window (i.e. --dict[s.substr(i, wordL)] < 0). If so, the current one is a redundant one, then we have to move forward start to remove one occurence of the current word (i.e. to make dict[s.substr(i, wordL)] == 0) so that the current word can be included in the window. We also need to update count accordingly. If we find all the words in the current window ( i.e. (++count == wSize)), then we save start to res and move start to remove one occurence of the current word to continue the search. 
+We repeat the above process for each word sequence (i.e. each i). remember after each i iteration, we need to recover dict(map).
+
+    class Solution {
+    public:
+        vector<int> findSubstring(string s, vector<string>& words) {
+            unordered_map<string, int> map;
+            int i, wSize = words.size(), wL=words[0].size(), start, cur, sL=s.size(), wCnt;
+            vector<int> res;
+            if(sL<wL*wSize) return res;
+            
+            //build the map
+            for(i=0; i<wSize; ++i)
+                map[words[i]] = map.count(words[i])>0? ++map[words[i]]:1;
+                
+            for(i=0; i<wL; ++i)
+            {// go through each possible starting point sequences
+                start = cur = i; // start is the starting point of the current search window, cur is the end of the current search window
+                wCnt = wSize; // reset the words to be searched
+                while(start<=sL-wL*wSize)
+                { // if it is a valid start
+                    if(map.count(s.substr(cur,wL))==0){// if the current word is not one in the map, then move the starting window to the next word positon, reset wCnt and recover map counts.
+                            for(wCnt = wSize; start!=cur; start+=wL) ++map[s.substr(start,wL)];
+                            start +=wL; //skip the current invalid word;
+                    }
+                    else if(map[s.substr(cur,wL)]==0){
+                     // if the current word is a valid word in the map, but it is already found in the current search window, then we have to move start to skip the previously found one, and update wCnt and map counts accordingly.
+                        for(;s.substr(cur,wL)!=s.substr(start,wL); start+=wL)
+                        {
+                            ++map[s.substr(start,wL)];
+                            ++wCnt;
+                        }
+                        start += wL;//skip the previously found one
+                    }
+                    else{
+                    // if the current word is a valid one and it is not found before in the current search window
+                        --map[s.substr(cur,wL)]; // then reduce its counter
+                        if(--wCnt == 0) { // update wCnt, if we find all the words
+                            res.push_back(start); // save start
+                            ++map[s.substr(start,wL)]; //moving start to skip the first word in the current search window
+                            start +=wL;
+                            ++wCnt;
+                        }
+                    }
+                    cur+=wL; // update cur
+                }
+                for(;start<cur;start+=wL)  ++map[s.substr(start,wL)];//reset the map count
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(s_length*word_length) C++ solution 36 ms
+1. Assign id to each word and count repeating words. Store counts of words into baseline_counts array.
+2. Split the string into chunks of word length and thus convert the string into a vector of word id's. After that move a sliding window of size N, maintain count for each word id in this window and recalculate the distance between the current count vector and the baseline count vector. The distance is calculated as Sum{i=1..N}(abs(count[i] - baseline_count[i])) and is updated in constant time on each step.
+3. The procedure 2 is repeated (word_length-1) times by moving staring position in the string.
+
+<pre><code>
+class Solution {
+public:
+    vector<int> findSubstring(string S, vector<string> &L) {
+        vector<int> res;
+
+        if (L.empty() || L.size()*L[0].size()>S.length())
+            return res;
+
+        int l = S.length();             // string length
+        long long int n = L.size();     // number of words
+        int wl = L[0].size();           // word length
+        
+        // give 1..n id's to words
+        unordered_map<string, int> dict;
+        dict.reserve(n);
+        vector<int> dc(n+1,0);          // baseline counts (needed for repeating words)
+        for (int i = 0; i < n; ++i) {
+            if (dict[L[i]] == 0)
+                dict[L[i]] = i+1;
+            dc[dict[L[i]]]++;
+        }
+        
+        vector<int> cc;
+        cc.reserve(l/wl);
+            
+        // shift start position from 0 to wl-1
+        for (int sh = 0; sh < wl; ++sh) {
+            cc.clear();
+            // convert words to their id's
+            for (int p = sh; p + wl <= l; p += wl) {
+                auto di = dict.find(S.substr(p, wl));
+                if (di != dict.end())
+                    cc.push_back(di->second);   // replace known word with id
+                else
+                    cc.push_back(-1);           // replace unknown word with -1
+            }
+            
+            // Fill the sliding window with first n-1 elements
+            // we keep the count of each word and calculate error as the distance
+            // between the current counts vector and the baseline count vector
+            vector<int> cnt(n+1,0);
+            long long int err = n;
+            for (int k = 0; k < n-1; ++k) {
+                int id = cc[k];
+                if (id > 0) {
+                    int cp = cnt[id];
+                    err -= abs(cp - dc[id]);
+                    err += abs(cp + 1 -dc[id]);
+                    cnt[id]++;
+                }
+            }
+            
+            // move the window of size n maintaining the counts
+            for (int j = 0; j + n <= cc.size(); ++j) {
+                // add next element
+                int id = cc[j+n-1];
+                if (id > 0) {
+                    int cp = cnt[id];
+                    err -= abs(cp - dc[id]);
+                    err += abs(cp+1 -dc[id]);
+                    cnt[id]++;
+                }
+                
+                // if counts match
+                if (err == 0)
+                    res.push_back(sh + j*wl);
+                
+                // remove first element
+                id = cc[j];
+                if (id > 0) {
+                    int cp = cnt[id];
+                    err -= abs(cp - dc[id]);
+                    err += abs(cp-1 - dc[id]);
+                    cnt[id]--;
+                }
+            }
+        }
+        return res;
+    }
+};
+</code></pre>
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution when consider substring() as O(1)
+Maybe this is the so called window technique. The window was moved right by the while(){} loop. Since substring() is actually expensive in Java, each time I store the substring in a variable to avoid repeatedly calling the substring() function.
+
+More specifically, there are three cases that the window changes: 
+
+1.The substring at the right of the window is not in words dictionary, then we **move the whole window to the right** side of this substring and set the window back to an **empty window**.
+
+2.The substring at the right of window is a candidate word and not used out by the current window, then we add this substring into window. **The window's right boundary extends**. Now **if** the window is a valid solution, add the start index of window to result and cut off the head word of the window for further checking, **the window's left boundary shrinks**.
+
+3.The substring at the right of window is a candidate word and is used out by the current window. Then we cut off the head word of the window, **the window's left boundary shrinks** (This would be done **repeatedly** by the while loop until the substring is not used out by the current window and could be added into the window).
+
+
+
+    public class Solution {
+        public List<Integer> findSubstring(String s, String[] words) {
+            List<Integer> res = new ArrayList<Integer>();
+            if(words.length==0||words[0].length()==0) return res;
+            Map<String,Integer> wordDict = new HashMap<String,Integer>();
+            for(String word : words) {
+                if(!wordDict.containsKey(word)) wordDict.put(word,1);
+                else wordDict.put(word,wordDict.get(word) + 1);
+            }
+            Map<String,Integer> currWords = new HashMap<String,Integer>();
+            int len = words[0].length();
+            for(int i = 0; i < len; i++) {
+                int k = i, j = i; //k is at the head of the window and j is the last.
+                int addedCount = 0; //to indicate whether we add index to res.
+                while(k<= s.length()-len*words.length&&j + len <= s.length()) { //make sure the remaining length is enough.
+                    String subWord = s.substring(j,j+len);
+                    if(!wordDict.containsKey(subWord)) { //the substring is not in words, head jumps to the right of this substring.
+                        addedCount = 0;
+                        currWords.clear();
+                        j += len;
+                        k = j;
+                        continue;
+                    }
+                    if(!currWords.containsKey(subWord)||currWords.get(subWord)!=wordDict.get(subWord)) {
+                        if(!currWords.containsKey(subWord)) currWords.put(subWord,1);
+                        else currWords.put(subWord,currWords.get(subWord) + 1); //update the current words we used.
+                        addedCount++;
+                        if(addedCount == words.length) { //if get a index, add it to res. And we need to continue checking
+                            res.add(k);
+                            addedCount--; //remove the head and check new substring, so count-- and move head to new position.
+                            String preHead = s.substring(k,k+len);
+                            if(currWords.get(preHead)==1) currWords.remove(preHead); //update the currWords map.
+                            else currWords.put(preHead,currWords.get(preHead)-1);
+                            k += len;
+                        }
+                        j += len;
+                    }
+                    else { //the current substring was used out before. Move head len steps right.
+                        String preHead = s.substring(k,k+len);
+                        addedCount--;
+                        if(currWords.get(preHead)==1) currWords.remove(preHead); //update the currWords map.
+                        else currWords.put(preHead,currWords.get(preHead)-1);
+                        k += len; //don't move j this case.
+                    }
+                }
+                currWords.clear();
+            }
+            return res;
+        }
+    }'
+
+----------------------------------------------------------------------------------------------------
+My C++ code with HashTable with Queue for O(n) runtime, 71ms runtime
+I would like share my linear solution with HashTable and Queue with runtime only 71ms. The Queue is used to store the last appearance position of the first word of that type. You need to update the Queue each time.
+
+   
+
+    vector<int> findSubstring(string S, vector<string> &L) {
+            vector<int> res;
+            if (L.size() == 0) return res;
+            if (S.size() == 0) return res;
+            int wordLen = L[0].size();
+            if (S.size() < wordLen) return res;
+            
+            unordered_map<string, queue<int> > wordhash; // word and appearing positions.
+            unordered_map<string, queue<int> >::iterator it;
+            queue<int> Q;
+            Q.push(-1);
+            for (int i = 0; i<L.size(); ++i) {
+                it = wordhash.find(L[i]);
+                if (it == wordhash.end()) {
+                    wordhash[L[i]] = Q;
+                } else {
+                    it->second.push(-1);
+                }
+            }
+            unordered_map<string, queue<int> > temp = wordhash;
+            for (int i = 0; i<wordLen; ++i) {
+                int currWordCnt = 0;
+                wordhash = temp;
+                for (int index = i; index<=S.size()-wordLen; index += wordLen) {
+                    it = wordhash.find(S.substr(index, wordLen));
+                    if (it == wordhash.end()) {
+                        currWordCnt = 0;
+                    } else {
+                        int lastPos = it->second.front();
+                        if (lastPos == -1) {
+                            currWordCnt++;
+                        } else if (currWordCnt*wordLen < index-lastPos) {
+                            currWordCnt++;
+                        } else {
+                            currWordCnt = (index-lastPos)/wordLen;
+                        }
+                        it->second.pop();
+                        it->second.push(index);
+                        if (currWordCnt == L.size()) {
+                            res.push_back(index-wordLen*(L.size()-1));
+                        }
+                    }
+                }
+            }
+            return res;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution with recursion
+    public class Solution {
+        public List<Integer> findSubstring(String s, String[] words) {
+            List<Integer> result = new ArrayList<Integer>();
+            if (s==null || words.length == 0){
+                return result;
+            }
+           
+            HashMap<String, Integer> allWords = new HashMap<String, Integer>();
+            for (int i=0;i<words.length;i++){
+            	String w = words[i];
+            	if (!allWords.containsKey(w)){
+            		allWords.put(w, 1);
+            	}
+            	else{
+            		Integer count = allWords.get(w);
+            		count++;
+            		allWords.put(w, count);
+            	}
+            }
+            int wordLength = words[0].length();
+            int length = words.length*wordLength;
+            for (int i=0;i<=s.length()-length;i++){
+            	boolean b = findWords(s, i, (Map)allWords.clone(), wordLength);
+            	if (b){
+            		result.add(i);
+            	}
+            }
+            return result;
+    	}
+    	
+    	private boolean findWords(String s, int startIndex, Map<String, Integer> allWords, int wordLength){
+    		if (allWords.isEmpty()){
+    			return true;
+    		}
+    		String s1 = s.substring(startIndex, startIndex+wordLength);
+    		if (allWords.containsKey(s1)){
+    			int result = allWords.get(s1);
+    			result--;
+    			if (result == 0){
+    				allWords.remove(s1);
+    			}
+    			else{
+    				allWords.put(s1, result);
+    			}
+    			return findWords(s, startIndex+wordLength, allWords, wordLength);
+    		}
+    		return false;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted Java O(n) solution using histogram
+    public List<Integer> findSubstring(String S, String[] L) {
+        List<Integer> res = new ArrayList<>();
+        if (L.length == 0) {
+            return res;
+        }
+        int len = L[0].length();
+        int num = L.length;
+        if (len * num > S.length()) {
+            return res;
+        }
+
+        //histogram of words in L
+        HashMap<String, Integer> dic = new HashMap<>();
+        for (String s : L) {
+            if (dic.containsKey(s)) {
+                dic.put(s, dic.get(s) + 1);
+            } else {
+                dic.put(s, 1);
+            }
+        }
+
+        //the word that starts from i in S
+        String[] sDic = new String[S.length() - len + 1];
+        for (int i = 0; i < sDic.length; i++) {
+            String sub = S.substring(i, i + len);
+            if (dic.containsKey(sub)) {
+                sDic[i] = sub;
+            } else {
+                sDic[i] = "";
+            }
+        }
+
+        //traverse in order of 0,0+len,...,1,1+len,...len-1,len-1+len...therefore it is O(n) despite of two loops
+        for (int i = 0; i < len; i++) {
+
+            //start of concatenation
+            int start = i;
+            //number of words found
+            int found = 0;
+            //dynamic word histogram of words in substring(start,j);
+            HashMap<String, Integer> tempDic = new HashMap<>();
+            for (int j = i; j <= S.length() - len; j = j + len) {
+                String word = sDic[j];
+                if (word.equals("")) {
+                    tempDic = new HashMap<>();
+                    start = j + len;
+                    found = 0;
+                    continue;
+                } else {
+                    if (!tempDic.containsKey(word)) {
+                        tempDic.put(word, 1);
+                    } else {
+                        tempDic.put(word, tempDic.get(word) + 1);
+                    }
+                    found++;
+                }
+                //if we over-count a word, delete the first word in front. Also delete the words before that.
+                if (tempDic.get(word) > dic.get(word)) {
+                    while (!sDic[start].equals(word)) {
+                        tempDic.put(sDic[start], tempDic.get(sDic[start]) - 1);
+                        start += len;
+                        found--;
+                    }
+                    tempDic.put(word, tempDic.get(word) - 1);
+                    start += len;
+                    found--;
+                }
+                if (found == num) {
+                    res.add(start);
+                }
+
+            }
+
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Short AC java solution with O(n)
+        public List<Integer> findSubstring(String s, String[] words) {
+            if(words.length==0||words[0].length()==0)   return new ArrayList<>();
+            HashMap<String, Integer> map = new HashMap<>();
+            for(String word:words)  map.put(word,map.getOrDefault(word,0)+1);
+            List<Integer> list = new ArrayList<>();
+            int gap = words[0].length();
+            int nlen = words.length*gap;
+            for(int k=0;k<gap;k++){
+                HashMap<String,Integer> wordmap = new HashMap<>(map);
+                for(int i=k,j=0;i<s.length()-nlen+1&&i+j<=s.length()-gap;){
+                    String temp = s.substring(i+j,i+j+gap);
+                    if(wordmap.containsKey(temp)){
+                        wordmap.put(temp,wordmap.get(temp)-1);
+                        if(wordmap.get(temp)==0)    wordmap.remove(temp);
+                        if(wordmap.isEmpty())   list.add(i);
+                        j+=gap;
+                    }
+                    else{
+                        if(j==0)    i+=gap;
+                        else{
+                            wordmap.put(s.substring(i,i+gap),wordmap.getOrDefault(s.substring(i,i+gap),0)+1);
+                            i+=gap;
+                            j-=gap;
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+I made k as first word-length indexes starting from 0.  The number of all indexes that the two pointers i and j move in total is 2*N/gap (N = s.length()) because i+j does not move backwards.  Together with k, total runtime is O(N).
+
+----------------------------------------------------------------------------------------------------
+C++, 16ms, beating 99.86%, Simple idea, easy to understand
+**Basic idea**, in each position, check whether satisfies conditions.
+
+**Problem**, the check operation is tooooo slow. So, how to reduce the operation frequency? Using **Hash**.
+
+**Hash 1**, hash(str=c1c2..cn) = c1 + c2 + .. cn. Too simple? Yes, yet efficient. You could try!
+
+**Hash 2**, improved version, grouping by different position. For example, dict = ["abc", "def"], then our hash array is ['a' + 'd', 'b' + 'e', 'c' + 'f']. Given a str "123456", its hash is ['1' + '4', '2' + '5', '3' + '6']. Then compare this hash array with standard dict hash!
+
+In my code, all member variables have a suffix '_'; the hash array is called FingerPrint.
+
+   
+
+    // Author: Tian Xia
+    class Solution {
+     public:
+      typedef vector<int> FingerPrint;
+    
+      vector<int> findSubstring(const string str, const vector<string>& dict) {
+        vector<int> ret;
+        word_len_ = SIZE(dict[0]);
+        char_size_ = dict.size() * word_len_; 
+    
+        if (SIZE(str) < char_size_) {
+          return ret;
+        }
+    
+        dict_.clear();
+        for (auto &w: dict) {
+          dict_[w] += 1;
+        }
+    
+        fp_ = gen_fingerprint();
+        decltype(fp_) lfp(word_len_, 0);
+        for (int p = 0; p < char_size_; ++p) {
+          lfp[p % word_len_] += str[p];
+        }
+        if (equal(lfp, 0) && check(str, 0)) {
+          ret.push_back(0);
+        }
+    
+        for (int p = char_size_; p < SIZE(str); ++p) {
+          lfp[(p) % word_len_] += -str[p - char_size_] + str[p];
+          if (equal(lfp, p + 1) && check(str, p + 1 - char_size_)) {
+            ret.push_back(p + 1 - char_size_);
+          }
+        }
+    
+        return ret;
+      }
+    
+     protected:
+      bool equal(const FingerPrint &fp, int start) {
+        for (int p = 0; p < word_len_; ++p) {
+          if (fp[(start + p) % word_len_] != fp_[p]) {
+            return false;
+          }
+        }
+        return true;
+      }
+    
+      bool check(const string &str, int p) {
+        map<string, int> freqs; 
+        for (int d = p; d < p + char_size_; d += word_len_) {
+          string substr = str.substr(d, word_len_);
+          freqs[substr] += 1;
+        }
+    
+        auto ite1 = freqs.begin(), ite2 = dict_.begin();
+        while (ite1 != freqs.end() && ite2 != freqs.end()) {
+          if (ite1->first == ite2->first && ite1->second == ite2->second) {
+            ++ite1;
+            ++ite2;
+            continue;
+          }
+          return false;
+        }
+    
+        return true;
+      }
+    
+      FingerPrint gen_fingerprint() {
+        FingerPrint ret(word_len_, 0);
+        for (auto &pair: dict_) {
+          for (int p = 0; p < word_len_; ++p) {
+            ret[p] += pair.first[p] * pair.second;
+          }
+        }
+    
+        return ret;
+      }
+    
+      map<string, int> dict_;
+      int char_size_, word_len_;
+      FingerPrint fp_;
+    };
+
+----------------------------------------------------------------------------------------------------

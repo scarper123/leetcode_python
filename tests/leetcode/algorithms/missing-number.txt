@@ -1,0 +1,858 @@
+A solution with constant space complexity O(1) and linear time complexity O(N)
+An intuitive solution is to keep a hash table for each node in the list, via which we just need to iterate the list in 2 rounds respectively to create nodes and assign the values for their random pointers. As a result, the space complexity of this solution is `O(N)`, although with a linear time complexity. 
+
+As an optimised solution, we could reduce the space complexity into constant. ***The idea is to associate the original node with its copy node in a single linked list. In this way, we don't need extra space to keep track of the new nodes.***
+
+The algorithm is composed of the follow three steps which are also 3 iteration rounds. 
+
+ 1. Iterate the original list and duplicate each node. The duplicate
+    of each node follows its original immediately.
+ 2. Iterate the new list and assign the random pointer for each
+    duplicated node.
+ 3. Restore the original list and extract the duplicated nodes.
+
+The algorithm is implemented as follows:
+
+
+	public RandomListNode copyRandomList(RandomListNode head) {
+		RandomListNode iter = head, next;
+
+		// First round: make copy of each node,
+		// and link them together side-by-side in a single list.
+		while (iter != null) {
+			next = iter.next;
+
+			RandomListNode copy = new RandomListNode(iter.label);
+			iter.next = copy;
+			copy.next = next;
+
+			iter = next;
+		}
+
+		// Second round: assign random pointers for the copy nodes.
+		iter = head;
+		while (iter != null) {
+			if (iter.random != null) {
+				iter.next.random = iter.random.next;
+			}
+			iter = iter.next.next;
+		}
+
+		// Third round: restore the original list, and extract the copy list.
+		iter = head;
+		RandomListNode pseudoHead = new RandomListNode(0);
+		RandomListNode copy, copyIter = pseudoHead;
+
+		while (iter != null) {
+			next = iter.next.next;
+
+			// extract the copy
+			copy = iter.next;
+			copyIter.next = copy;
+			copyIter = copy;
+
+			// restore the original list
+			iter.next = next;
+
+			iter = next;
+		}
+
+		return pseudoHead.next;
+	}
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution
+    public RandomListNode copyRandomList(RandomListNode head) {
+      if (head == null) return null;
+      
+      Map<RandomListNode, RandomListNode> map = new HashMap<RandomListNode, RandomListNode>();
+      
+      // loop 1. copy all the nodes
+      RandomListNode node = head;
+      while (node != null) {
+        map.put(node, new RandomListNode(node.label));
+        node = node.next;
+      }
+      
+      // loop 2. assign next and random pointers
+      node = head;
+      while (node != null) {
+        map.get(node).next = map.get(node.next);
+        map.get(node).random = map.get(node.random);
+        node = node.next;
+      }
+      
+      return map.get(head);
+    }
+
+----------------------------------------------------------------------------------------------------
+2 clean C++ algorithms without using extra array&#x2F;hash table.  Algorithms are explained step by step.
+    //
+    // Here's how the 1st algorithm goes.
+    // Consider l1 as a node on the 1st list and l2 as the corresponding node on 2nd list.
+    // Step 1:
+    // Build the 2nd list by creating a new node for each node in 1st list. 
+    // While doing so, insert each new node after it's corresponding node in the 1st list.
+    // Step 2:
+    // The new head is the 2nd node as that was the first inserted node.
+    // Step 3:
+    // Fix the random pointers in the 2nd list: (Remember that l1->next is actually l2)
+    // l2->random will be the node in 2nd list that corresponds l1->random, 
+    // which is next node of l1->random.
+    // Step 4:
+    // Separate the combined list into 2: Splice out nodes that are part of second list. 
+    // Return the new head that we saved in step 2.
+    //
+    
+    RandomListNode *copyRandomList(RandomListNode *head) {
+        RandomListNode *newHead, *l1, *l2;
+        if (head == NULL) return NULL;
+        for (l1 = head; l1 != NULL; l1 = l1->next->next) {
+            l2 = new RandomListNode(l1->label);
+            l2->next = l1->next;
+            l1->next = l2;
+        }
+            
+        newHead = head->next;
+        for (l1 = head; l1 != NULL; l1 = l1->next->next) {
+            if (l1->random != NULL) l1->next->random = l1->random->next;
+        }
+            
+        for (l1 = head; l1 != NULL; l1 = l1->next) {
+            l2 = l1->next;
+            l1->next = l2->next;
+            if (l2->next != NULL) l2->next = l2->next->next;
+        }
+    
+        return newHead;
+    }
+
+
+    //
+    // Here's how the 2nd algorithm goes.
+    // Consider l1 as a node on the 1st list and l2 as the corresponding node on 2nd list.
+    // Step 1:
+    // Build the 2nd list by creating a new node for each node in 1st list. 
+    // While doing so, set the next pointer of the new node to the random pointer 
+    // of the corresponding node in the 1st list.  And set the random pointer of the 
+    // 1st list's node to the newly created node.
+    // Step 2:
+    // The new head is the node pointed to by the random pointer of the 1st list.
+    // Step 3:
+    // Fix the random pointers in the 2nd list: (Remember that l1->random is l2)
+    // l2->random will be the node in 2nd list that corresponds to the node in the 
+    // 1st list that is pointed to by l2->next, 
+    // Step 4:
+    // Restore the random pointers of the 1st list and fix the next pointers of the 
+    // 2nd list. random pointer of the node in 1st list is the next pointer of the 
+    // corresponding node in the 2nd list.  This is what we had done in the 
+    // 1st step and now we are reverting back. next pointer of the node in 
+    // 2nd list is the random pointer of the node in 1st list that is pointed to 
+    // by the next pointer of the corresponding node in the 1st list.
+    // Return the new head that we saved in step 2.
+    //
+
+    RandomListNode *copyRandomList(RandomListNode *head) {
+        RandomListNode *newHead, *l1, *l2;
+        if (head == NULL) return NULL;
+
+        for (l1 = head; l1 != NULL; l1 = l1->next) {
+            l2 = new RandomListNode(l1->label);
+            l2->next = l1->random;
+            l1->random = l2;
+        }
+        
+        newHead = head->random;
+        for (l1 = head; l1 != NULL; l1 = l1->next) {
+            l2 = l1->random;
+            l2->random = l2->next ? l2->next->random : NULL;
+        }
+        
+        for (l1 = head; l1 != NULL; l1 = l1->next) {
+            l2 = l1->random;
+            l1->random = l2->next;
+            l2->next = l1->next ? l1->next->random : NULL;
+        }
+
+        return newHead;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My accepted Java code. O(n) but need to iterate the list 3 times
+The idea is:
+Step 1: create a new node for each existing node and join them together
+eg: A->B->C will be A->A'->B->B'->C->C'
+
+Step2: copy the random links: for each new node n', n'.random = n.random.next
+
+Step3: detach the list: basically n.next = n.next.next; n'.next = n'.next.next
+
+Here is the code:
+
+    /**
+     * Definition for singly-linked list with a random pointer.
+     * class RandomListNode {
+     *     int label;
+     *     RandomListNode next, random;
+     *     RandomListNode(int x) { this.label = x; }
+     * };
+     */
+    public class Solution {
+        public RandomListNode copyRandomList(RandomListNode head) {
+            if(head==null){
+                return null;
+            }
+            RandomListNode n = head;
+            while (n!=null){
+                RandomListNode n2 = new RandomListNode(n.label);
+                RandomListNode tmp = n.next;
+                n.next = n2;
+                n2.next = tmp;
+                n = tmp;
+            }
+            
+            n=head;
+            while(n != null){
+                RandomListNode n2 = n.next;
+                if(n.random != null)
+                    n2.random = n.random.next;
+                else
+                    n2.random = null;
+                n = n.next.next;
+            }
+            
+            //detach list
+            RandomListNode n2 = head.next;
+            n = head;
+            RandomListNode head2 = head.next;
+            while(n2 != null && n != null){
+                n.next = n.next.next;
+                if (n2.next == null){
+                    break;
+                }
+                n2.next = n2.next.next;
+                
+                n2 = n2.next;
+                n = n.next;
+            }
+            return head2;
+            
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Very short JAVA solution with Map
+I realized with Map, we don't really need to care about the internal structure of the list. What we need is just deep copy exactly what the original data. So here I just create all nodes and put <old, new> pairs into a map. Then update next and random pointers for each new node.
+
+    public class Solution {
+        public RandomListNode copyRandomList(RandomListNode head) {
+            if (head == null) {
+                return null;
+            }
+            
+            final Map<RandomListNode, RandomListNode> map = new HashMap<RandomListNode, RandomListNode>();
+    
+            RandomListNode cur = head;
+            while(cur != null) {
+                map.put(cur, new RandomListNode(cur.label));
+                cur = cur.next;
+            }
+            
+            for (Map.Entry<RandomListNode, RandomListNode> entry : map.entrySet()) {
+                final RandomListNode newNode = entry.getValue();
+                newNode.next = map.get(entry.getKey().next);
+                newNode.random = map.get(entry.getKey().random);
+            }
+            
+            return map.get(head);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(1) Space C++
+    class Solution {
+    public:
+        RandomListNode *copyRandomList(RandomListNode * head) {
+            RandomListNode * head_cp = nullptr, * cur = head, * cur_cp = nullptr;
+            if (head == nullptr)
+                return nullptr;
+            while (cur != nullptr)
+            {
+                cur_cp = new RandomListNode (cur->label);
+                cur_cp->next = cur->next;
+                cur->next = cur_cp;
+                cur = cur_cp->next;
+            }
+            cur = head;
+            while (cur != nullptr)
+            {
+                cur_cp = cur->next;
+                if (cur->random)
+                    cur_cp->random = cur->random->next;
+                cur = cur_cp ->next;
+            }
+            cur = head;
+            head_cp = head->next;
+            while (cur != nullptr)
+            {
+                cur_cp = cur->next;
+                cur->next = cur_cp->next;
+                cur = cur->next;
+                if (cur)
+                    cur_cp->next = cur->next;
+            }
+            return head_cp;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ simple recursive solution
+    class Solution {
+	unordered_map<RandomListNode*, RandomListNode*> hmap;
+
+    public:
+	RandomListNode *copyRandomList(RandomListNode *head) {
+		if (!head) return NULL;
+		if (hmap.find(head) != hmap.end())
+			return hmap.find(head)->second;
+
+		RandomListNode* node = new RandomListNode(head->label);
+		hmap[head] = node;
+		node->next = copyRandomList(head->next);
+		node->random = copyRandomList(head->random);
+		return node;
+	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear and short python O(2n) and O(n) solution
+    class Solution:
+    # @param head, a RandomListNode
+    # @return a RandomListNode
+    def copyRandomList(self, head):
+        dic = dict()
+        m = n = head
+        while m:
+            dic[m] = RandomListNode(m.label)
+            m = m.next
+        while n:
+            dic[n].next = dic.get(n.next)
+            dic[n].random = dic.get(n.random)
+            n = n.next
+        return dic.get(head)
+
+O(n)
+
+    class Solution:
+    # @param head, a RandomListNode
+    # @return a RandomListNode
+    def copyRandomList(self, head):
+        dic = collections.defaultdict(lambda: RandomListNode(0))
+        dic[None] = None
+        n = head
+        while n:
+            dic[n].label = n.label
+            dic[n].next = dic[n.next]
+            dic[n].random = dic[n.random]
+            n = n.next
+        return dic[head]
+
+----------------------------------------------------------------------------------------------------
+Anyone know what  Input:	{1,2,2,2} Output:	{1,2,#,#} Expected:	{1,2,2,2}
+Does anyone know what 
+
+
+Input:	{1,2,2,2}
+Output:	{1,2,#,#}
+Expected:	{1,2,2,2}
+
+means?
+
+----------------------------------------------------------------------------------------------------
+C++ 6 lines recursive solution using memoization
+class Solution {
+public:
+    unordered_map<RandomListNode*, RandomListNode*>mp;
+    RandomListNode *copyRandomList(RandomListNode *head) 
+    {
+        if(!head) return NULL;
+        if(mp[head]!=NULL) return mp[head];
+        mp[head] = new RandomListNode(head->label);
+        mp[head] -> next = copyRandomList(head->next);
+        mp[head] -> random = copyRandomList(head->random);
+        return mp[head];
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+IS there any faster method?
+I solve this problem by costing 392ms.
+I use map to save the relation between the original list and the copy one.
+
+----------------------------------------------------------------------------------------------------
+Accepted C solution Rt O(n) Sp O(1)
+    struct RandomListNode *copyRandomList(struct RandomListNode *head) {
+    	if(NULL==head) return head;
+    
+    	struct RandomListNode *p=head;
+    	struct RandomListNode *pt;
+
+    	//copy
+    	while(NULL!=p){
+    		pt=p->next;
+    		p->next=malloc(sizeof(struct RandomListNode));
+    		p->next->label=p->label;
+    		p->next->next=pt;
+    		p->next->random=NULL; 
+    		p=pt;
+    	};
+
+    	//fix random pointer
+    	p=head;
+    	while(NULL!=p){
+    		if(NULL!=p->random){
+    			p->next->random=p->random->next;
+    		}
+    		p=p->next->next;
+    	};
+
+    	//separate
+    	struct RandomListNode *copyed_head=NULL;
+    	p=head;
+    	while(NULL!=p){
+    		if(NULL!=copyed_head){
+    			pt->next=p->next;
+    			pt=pt->next;
+    		}else{
+    			copyed_head=p->next;
+    			pt=copyed_head;
+    		}
+    		p->next=p->next->next;
+    		p=p->next;
+    	};
+    
+    	return copyed_head;
+    }
+
+Well, someone already share this idea.
+
+ - step 1:copy each node and append it to the original one;
+ - step 2:iterate the new list and fix the random pointers
+ - step 3:separate the list.
+
+----------------------------------------------------------------------------------------------------
+Java very simple and clean solution with O(n) time O(1) space (with algorithm)
+ 
+/* Algorithm  
+
+1) Create the copy of node 1 and insert it between node 1 & node 2 in original Linked List, create the copy of 2 and insert    it between 2 & 3.. Continue in this fashion, add the copy of N after the Nth node
+    
+ 2)  Now copy the random link in this fashion
+           
+       original->next->random = original->random->next;
+        
+This works because original->next is nothing but copy of original and Original->random->next is nothing but copy of random.
+     
+3) Now restore the original and copy linked lists in this fashion in a single loop.
+         
+       original->next = original->next->next;  
+       copy->next = copy->next->next;
+     
+4) Make sure that last element of original->next is NULL.
+ */
+
+
+
+public class Solution {
+
+
+    public RandomListNode copyRandomList(RandomListNode head) {
+        if(head == null) return head;
+        
+        RandomListNode original=head;
+        RandomListNode curOriginal=head;
+        
+        // step 1
+        while(original.next != null ){
+            RandomListNode copy=new RandomListNode(original.label);
+            RandomListNode temp=original.next;
+            original.next=copy;
+            copy.next=temp;
+            original=original.next.next;
+        }
+        original.next=new RandomListNode(original.label);
+        
+        //step 2
+        while(curOriginal!= null && curOriginal.next != null){
+            if(curOriginal.random != null){
+                curOriginal.next.random=curOriginal.random.next;
+            }
+            curOriginal=curOriginal.next.next;
+        }
+        
+        //step 3 and 4
+        RandomListNode orig=head;
+        RandomListNode copyCur=head.next;
+        RandomListNode copyHead=head.next;
+        
+        while(orig.next != null && copyCur.next != null){
+            orig.next=orig.next.next;
+            copyCur.next=copyCur.next.next;
+            orig=orig.next;
+            copyCur=copyCur.next;
+        }
+        orig.next=null;
+        
+        return copyHead;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(n) Time (3 Passes) O(1) Memory usage solution!
+    /**
+     * Definition for singly-linked list with a random pointer.
+     * class RandomListNode {
+     *     int label;
+     *     RandomListNode next, random;
+     *     RandomListNode(int x) { this.label = x; }
+     * };
+     */
+    public class Solution {
+        public RandomListNode copyRandomList(RandomListNode head) {
+            if (head == null)
+                return null;
+            RandomListNode c = head;
+            while (c != null) {
+                RandomListNode n = new RandomListNode(c.label);
+                n.random = c.random;
+                n.next = c.next;
+                c.next = n;
+                c = n.next;
+            }
+            c = head;
+            while (c != null) {
+                c = c.next;
+                if (c.random != null)
+                    c.random = c.random.next;
+                c = c.next;
+            }
+            RandomListNode newHead = new RandomListNode(0);
+            newHead.next = head;
+            c = head;
+            RandomListNode cNew = newHead;
+            while (c != null) {
+               cNew.next = c.next;
+               c.next = c.next.next;
+               cNew = cNew.next;
+               c = c.next;
+            }
+            return newHead.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My short python solution with o(n) complex using collections.defaultdict
+    def factory():
+    	return RandomListNode(0)
+    
+    class Solution:
+    	# @param head, a RandomListNode
+    	# @return a RandomListNode
+    	def copyRandomList(self, head):
+    		if not head:
+    			return None
+    		temp = head
+    		node_map =collections.defaultdict(factory)
+    		node_map[None] = None # avoid None as key to generate a RandomListNode
+    		while temp:
+    			node_map[temp].label = temp.label
+    			node_map[temp].next = node_map[temp.next]
+    			node_map[temp].random = node_map[temp.random]
+    			temp = temp.next
+    		del node_map[None]
+    		return node_map[head]
+
+----------------------------------------------------------------------------------------------------
+Python solution without using dictionary.
+Here is the full explanation (http://www.cnblogs.com/zuoyuan/p/3745126.html):
+
+    def copyRandomList(self, head):
+        if not head:
+            return None
+        p = head
+        while p:
+            node = RandomListNode(p.label)
+            node.next = p.next
+            p.next = node
+            p = p.next.next
+            # p = node.next
+        p = head    
+        while p:
+            if p.random:
+                p.next.random = p.random.next
+            p = p.next.next
+        newhead = head.next
+        pold = head
+        pnew = newhead
+        while pnew.next:
+            pold.next = pnew.next
+            pold = pold.next
+            pnew.next = pold.next
+            pnew = pnew.next
+        pold.next = None
+        pnew.next = None
+        return newhead
+
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ O(1) space solution, the idea is the same as others but it&#x27;s clean and pure!
+    RandomListNode *copyRandomList(RandomListNode *head) {
+        RandomListNode *node = head, *nextNode;
+        while (node) {
+            nextNode = node->next;
+            node->next = new RandomListNode(node->label);
+            node->next->next = nextNode;
+            node = nextNode;
+        }
+        node = head;
+        while (node) {
+            node->next->random = node->random ? node->random->next : nullptr;
+            node = node->next->next;
+        }
+        RandomListNode *psuedoHead = new RandomListNode(0), *copyNode = psuedoHead;
+        node = head;
+        while (node) {
+            copyNode->next = node->next;
+            copyNode = node->next;
+            node->next = node->next->next;
+            node = node->next;
+        }
+        return psuedoHead->next;
+    }
+
+----------------------------------------------------------------------------------------------------
+With error &quot;Random pointer of node with label -1 points to a node from the original list.&quot;, can anyone help me?
+    /**
+     * Definition for singly-linked list with a random pointer.
+     * struct RandomListNode {
+     *     int label;
+     *     RandomListNode *next, *random;
+     *     RandomListNode(int x) : label(x), next(NULL), random(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+    	RandomListNode *copyRandomList(RandomListNode *head) {
+    		vector<RandomListNode *> vecOld;
+    		unordered_map<RandomListNode *, size_t> addressIndexMap;
+    		vector<RandomListNode *> vecAddress;
+    		if (!head)
+    		{
+    			return NULL;
+    		}
+    		else if (!head->next)
+    		{
+    			return new RandomListNode(*head);
+    		}
+    		RandomListNode * curr = head;
+    		RandomListNode * guard = new RandomListNode(0);
+    		RandomListNode * newCurr = guard;
+    		while (curr)
+    		{
+    		    //store the old random pointer 
+    			vecOld.push_back(curr->random);
+    			//store the old address -> index pair for later reconstruction of random pointer
+    			addressIndexMap[curr] = vecOld.size() - 1;
+    			newCurr->next = new RandomListNode(*curr);
+    			newCurr = newCurr->next;
+    			newCurr->random = NULL;
+    			//store the address of new nodes for later reconstruction of random pointer
+    			vecAddress.push_back(newCurr);
+    			curr = curr->next;
+    		}
+    		newCurr = guard->next;
+    		int index = 0;
+    		while (newCurr)
+    		{
+    		    //If the old random pointer is not NULL
+    			if (NULL != vecOld[index])
+    			{
+    			    //Get the corresponding index
+    				size_t randomIndex = addressIndexMap[vecOld[index]];
+    				//get the new address of the node with the index and reconstruct the random pointer
+    				newCurr->random = vecAddress[randomIndex];
+    			}
+    			++index;
+    			newCurr = newCurr->next;
+    		}
+    		newCurr = guard->next;
+    		delete guard;
+    		return newCurr;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution with explanation. No additional data structures.
+The idea is to use only next and random link of a node to create a copy of list. Please, check sketch and Java code below.
+
+
+![enter image description here][1]
+
+
+    public RandomListNode copyRandomList(RandomListNode head) {
+		if (head == null) return null;
+		
+		// Step 1
+		RandomListNode origin = head;
+		while (origin != null) {
+			RandomListNode originNext = origin.next;
+			RandomListNode copy = new RandomListNode(origin.label);
+			origin.next = copy;
+			copy.next = originNext;
+			origin = originNext;
+		}
+		
+		// Step 2
+		origin = head;
+		while (origin != null) {
+			RandomListNode originNext = origin.next.next;
+			RandomListNode copy = origin.next;
+			if (origin.random != null) {
+				copy.random = origin.random.next;
+			} else {
+				copy.random = null;
+			}
+			origin = originNext;
+		}
+		
+		// Step 3
+		origin = head;
+		RandomListNode copyHead = head.next;
+		while (origin != null) {
+			RandomListNode copy = origin.next;
+			RandomListNode originNext = origin.next.next;
+			RandomListNode copyNext;
+			if (copy.next != null) {
+				copyNext = copy.next.next;
+			} else {
+				copyNext = null;
+			}
+			origin.next = originNext;
+			copy.next = copyNext;
+			origin = originNext;
+			copy = copyNext;
+		}
+		
+		return copyHead;
+    }
+
+
+  [1]: http://s27.postimg.org/ywzricioz/IMG_20150101_173454.jpg
+  [2]: http://postimg.org/image/rh0hwjuzj/
+
+----------------------------------------------------------------------------------------------------
+One loop can be a bad choice in three solutions C++
+140ms using loop to hack this problem but due to frequent invoking of **node_map.count**, there is a dramatic performance decrease.
+
+    
+    class Solution {
+    public:
+        RandomListNode *copyRandomList(RandomListNode *head) {
+            if(!head) return NULL;
+            unordered_map<RandomListNode*, RandomListNode*> node_map;
+            RandomListNode *p = head, *pre = NULL;
+            while(p)
+            {
+                if(!node_map.count(p)) node_map[p] = new RandomListNode(p->label);
+                if(p->random)
+                {
+                    if(!node_map.count(p->random)) node_map[p->random] = new RandomListNode(p->random->label); 
+                    node_map[p]->random = node_map[p->random];
+                }
+                if(pre) pre->next = node_map[p];
+                pre = node_map[p];
+                p = p->next;
+            }
+            return node_map[head];
+        }
+    };
+
+
+----------
+
+Using 110ms to solve this, though traverse twice but it's more clean and easy-understanding.
+
+    class Solution {
+    public:
+        RandomListNode *copyRandomList(RandomListNode *head) {
+            if(!head) return NULL;
+            unordered_map<RandomListNode*, RandomListNode*> node_map;
+            RandomListNode *p = head, *pre = NULL, t(0);
+            pre = &t;
+            while(p)
+            {
+                pre->next = node_map[p] = new RandomListNode(p->label);
+                p = p->next;
+                pre = pre->next;
+            }
+            p = head;
+            pre = t.next;
+            while(p)
+            {
+                pre->random = node_map[p->random];
+                pre = pre->next;
+                p = p->next;
+            }
+            return t.next;
+        }
+    };
+
+
+----------
+
+Using 110ms without map, copy all the nodes just after its original position then the random pointer of the cloned node can be easily retrieved by the original nodes (since the original is just before its corresponding cloned nodes so the random) Check the code directly, quite simple.
+
+    class Solution {
+    public:
+        RandomListNode *copyRandomList(RandomListNode *head) {
+            if(!head) return NULL;
+            RandomListNode *p = head, *next, *cloned, *pre;
+            while(p)
+            {
+                cloned = new RandomListNode(p->label);
+                next = p->next;
+                p->next = cloned;
+                cloned->next = next;
+                p = next;
+            }
+            p = head;
+            cloned = head->next;
+            while(p)
+            {
+                if(p->random) cloned->random = p->random->next;
+                if(cloned->next) cloned = cloned->next->next;
+                else break;
+                p = p->next->next;
+            }
+            RandomListNode t(0);
+            p = head;
+            pre = &t;
+            while(p)
+            {
+                pre->next = p->next;
+                p->next = p->next->next;
+                p = p->next;
+                pre = pre->next;
+            }
+            return t.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

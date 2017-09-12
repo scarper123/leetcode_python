@@ -1,0 +1,944 @@
+Java DP Solution
+public class Solution {
+    public static List<String> findAllConcatenatedWordsInADict(String[] words) {
+        List<String> result = new ArrayList<>();
+        Set<String> preWords = new HashSet<>();
+        Arrays.sort(words, new Comparator<String>() {
+            public int compare (String s1, String s2) {
+                return s1.length() - s2.length();
+            }
+        });
+        
+        for (int i = 0; i < words.length; i++) {
+            if (canForm(words[i], preWords)) {
+                result.add(words[i]);
+            }
+            preWords.add(words[i]);
+        }
+        
+        return result;
+    }
+	
+    private static boolean canForm(String word, Set<String> dict) {
+        if (dict.isEmpty()) return false;
+	boolean[] dp = new boolean[word.length() + 1];
+	dp[0] = true;
+	for (int i = 1; i <= word.length(); i++) {
+	    for (int j = 0; j < i; j++) {
+		if (!dp[j]) continue;
+		if (dict.contains(word.substring(j, i))) {
+		    dp[i] = true;
+		    break;
+		}
+	    }
+	}
+	return dp[word.length()];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+102ms java Trie + DFS solution. With explanation, easy to understand.
+public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        List<String> res = new ArrayList<String>();
+        if (words == null || words.length == 0) {
+            return res;
+        }
+        TrieNode root = new TrieNode();
+        for (String word : words) { // construct Trie tree
+            if (word.length() == 0) {
+                continue;
+            }
+            addWord(word, root);
+        }
+        for (String word : words) { // test word is a concatenated word or not
+            if (word.length() == 0) {
+                continue;
+            }
+            if (testWord(word.toCharArray(), 0, root, 0)) {
+                res.add(word);
+            }
+        }
+        return res;
+    }
+    public boolean testWord(char[] chars, int index, TrieNode root, int count) { // count means how many words during the search path
+        TrieNode cur = root;
+        int n = chars.length;
+        for (int i = index; i < n; i++) {
+            if (cur.sons[chars[i] - 'a'] == null) {
+                return false;
+            }
+            if (cur.sons[chars[i] - 'a'].isEnd) {
+                if (i == n - 1) { // no next word, so test count to get result.
+                    return count >= 1;
+                }
+                if (testWord(chars, i + 1, root, count + 1)) {
+                    return true;
+                }
+            }
+            cur = cur.sons[chars[i] - 'a'];
+        }
+        return false;
+    }
+    public void addWord(String str, TrieNode root) {
+        char[] chars = str.toCharArray();
+        TrieNode cur = root;
+        for (char c : chars) {
+            if (cur.sons[c - 'a'] == null) {
+                cur.sons[c - 'a'] = new TrieNode();
+            }
+            cur = cur.sons[c - 'a'];
+        }
+        cur.isEnd = true;
+    }
+}
+class TrieNode {
+    TrieNode[] sons;
+    boolean isEnd;
+    public TrieNode() {
+        sons = new TrieNode[26];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Trie + DFS solution 144ms
+public class Solution {
+    class TrieNode {
+        TrieNode[] children;
+        String word;
+        boolean isEnd;
+        boolean combo; //if this word is a combination of simple words
+        boolean added; //if this word is already added in result
+        public TrieNode() {
+            this.children = new TrieNode[26];
+            this.word = new String();
+            this.isEnd = false;
+            this.combo = false;
+            this.added = false;
+        }
+    }
+    private void addWord(String str) {
+        TrieNode node = root;
+        for (char ch : str.toCharArray()) {
+            if (node.children[ch - 'a'] == null) {
+                node.children[ch - 'a'] = new TrieNode();
+            }
+            node = node.children[ch - 'a'];
+        }
+        node.isEnd = true;
+        node.word = str;
+    }
+    private TrieNode root;
+    private List<String> result;
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        root = new TrieNode();
+        for (String str : words) {
+            if (str.length() == 0) {
+                continue;
+            }
+            addWord(str);
+        }
+        result = new ArrayList<>();
+        dfs(root, 0);
+        return result;
+    }
+    private void dfs(TrieNode node, int multi) {
+    	//multi counts how many single words combined in this word
+        if(node.isEnd && !node.added && multi > 1) {
+            node.combo = true;
+            node.added = true;
+            result.add(node.word);
+        }
+        searchWord(node, root, multi);
+    }
+    private void searchWord(TrieNode node1, TrieNode node2, int multi) {
+        if (node2.combo) {
+            return;
+        }
+        if (node2.isEnd) {
+            //take the pointer of node2 back to root
+            dfs(node1, multi + 1);
+        }
+        for (int  i = 0; i < 26; i++) {
+            if (node1.children[i] != null && node2.children[i] != null) {
+                searchWord(node1.children[i], node2.children[i], multi);
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 772 ms dp solution
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        unordered_set<string> s(words.begin(), words.end());
+        vector<string> res;
+        for (auto w : words) {
+            int n = w.size();
+            vector<int> dp(n+1);
+            dp[0] = 1;
+            for (int i = 0; i < n; i++) {
+                if (dp[i] == 0) continue;
+                for (int j = i+1; j <= n; j++) {
+                    if (j - i < n && s.count(w.substr(i, j-i))) dp[j] = 1;
+                }
+                if (dp[n]) { res.push_back(w); break; }
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python Explanation
+S = set(A)
+ans = []
+for word in A:
+  if not word: continue
+  stack = [0]
+  seen = {0}
+  M = len(word)
+  while stack:
+    node = stack.pop()
+    if node == M:
+      ans.append(word)
+      break
+    for j in xrange(M - node + 1):
+      if (word[node:node+j] in S and 
+          node + j not in seen and
+          (node > 0 or node + j != M)):
+        stack.append(node + j)
+        seen.add(node + j)
+
+return ans
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solutions, Backtrack, DP, or Trie.
+class Solution {
+public:
+    struct TrieNode {
+        bool isWord;
+        unordered_map<char, TrieNode*> children;
+        TrieNode(): isWord(false) {};
+    };
+
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        vector<string> result;
+        if(words.empty()) return result; 
+        auto mycomp = [&](const string& str1, const string& str2){return str1.size() < str2.size();};
+        sort(words.begin(), words.end(), mycomp);
+        
+        root = new TrieNode();
+        for(auto& word: words) {
+            if(dfs(word, 0, root, 0)) result.push_back(word);
+            else insert(word);
+        }
+        return result;
+    }
+    
+private:
+    TrieNode* root;
+    
+    void insert(string& word) {
+        auto run = root;
+        for(char c: word) {
+            if(run->children.find(c) == run->children.end()) {
+                TrieNode* newnode = new TrieNode();
+                run->children[c] = newnode;
+            }
+            run = run->children[c];
+        }
+        run->isWord = true;
+    }
+    
+    bool dfs(string& word, int pos, TrieNode* node, int nb) {
+        if(pos == word.size()) {
+            if(node->isWord && nb > 0) return true;
+            else return false;
+        }
+        
+        if(node->children.find(word[pos]) == node->children.end()) return false;
+        auto next = node->children[word[pos]];
+        if(next->isWord) {
+            if(dfs(word, pos+1, root, nb+1)) return true;
+        }
+        if(dfs(word, pos+1, next, nb)) return true;
+        else return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python DFS Solution
+class Solution(object):
+    def findAllConcatenatedWordsInADict(self, words):
+        """
+        :type words: List[str]
+        :rtype: List[str]
+        """
+        word_set = set(words)
+        ans = []
+        def helper(w, cur, cnt):
+            if cur == len(w):
+                if cnt > 1:
+                    return True
+                else:
+                    return False
+            for i in xrange(cur + 1, len(w) + 1):
+                if w[cur : i] in word_set and helper(w, i, cnt + 1):
+                    return True
+            return False
+        for w in words:
+            if helper(w, 0, 0):
+                ans.append(w)
+        return ans
+
+
+
+----------------------------------------------------------------------------------------------------
+Challenge doesn&#x27;t work
+<p>I try to challenge some solutions of this problem. But it is always &#34;fetching...&#34; after I submit my challenge.<br/>
+And I think the dataset is too weak. I&#39;m not sure if there is a solution which could work under the data size, but at least many passed solutions are not correct. For example, it&#39;s obvious that the solution of awice(the first place) cannot pass this one, &#91;&#34;a*599998b&#34;, &#34;a&#34;&#93;. And I found most of passed solutions cannot pass this one, too.</p>
+
+
+----------------------------------------------------------------------------------------------------
+JAVA Solution using DP and Trie with explaination
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        TrieNode root = new TrieNode();
+
+        // adding words to the trie
+        for (String word : words) {
+            if(word.isEmpty()){
+                continue;
+            }
+            
+            addWord(root, word);
+        }
+
+        List<String> result = new ArrayList<String>();
+        searchWord(result, root, root, root, 0);
+
+        return result;
+    }
+
+    private void searchWord(List<String> result, TrieNode node1, TrieNode node2, TrieNode root, int wordCount){
+        // if node2 has participated in word combination then we need to terminate that look up.
+        if(node2.combo){
+            return;
+        }
+        
+        if(node2.end){
+            // if the current word is a combination atleast two words and not been added then add it to the result 
+            if (node1.end && !node1.added && wordCount + 1 > 1) {
+                result.add(node1.word);
+                node1.combo = true;
+                node1.added = true;
+            }
+
+            // we need to keep searching with rest of node1 as it may be combination of more than two words
+            searchWord(result, node1, root, root, wordCount + 1);
+        }
+        
+        // this will do dfs for each node. 
+        for(int i=0; i<26; i++){
+            if(node1.nodes[i] != null && node2.nodes[i] != null){
+                searchWord(result, node1.nodes[i], node2.nodes[i], root, wordCount);
+            }
+        }
+    }
+    
+    public void addWord(TrieNode root, String word) {
+        TrieNode node = root;
+
+        for (char ch : word.toCharArray()) {
+            if(node.nodes[ch - 'a'] == null){
+                node.nodes[ch - 'a'] = new TrieNode();
+            }
+            
+            node = node.nodes[ch - 'a'];
+        }
+
+        node.end = true;
+        node.word = word;
+    }
+
+    private static class TrieNode {
+        TrieNode[] nodes = new TrieNode[26];
+        String word;
+        boolean combo = false, end = false, added = false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ 199ms hash map solution (no tries and no dp)
+class Solution {
+public:
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        unordered_map<string,bool> dic;
+        for (int i=0;i<words.size();i++) {
+            dic[words[i]]=true;
+        }
+        
+        vector<string> res;
+        for (int i=0;i<words.size();i++) {
+            if (isConcatenated(words[i],dic,false)) res.push_back(words[i]);
+        }
+        return res;
+    }
+    
+    bool isConcatenated(string word, unordered_map<string,bool>& dic, bool compareWholeWord) {
+        if (word.size()==0) return compareWholeWord;
+        if (compareWholeWord&&dic.count(word)>0) return dic[word];
+        for (int len=1;len<word.size();len++) {
+            if (dic.count(word.substr(0,len))>0&&dic[word.substr(0,len)]) {
+                if (isConcatenated(word.substr(len),dic,true)) {
+                    dic[word]=true;
+                    return true;
+                }
+            } 
+        }
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+having been troubled by this for a long time....   here is my pretty short java code beats 78%   quite easy  no comlicated data structure
+public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        List<String> list = new ArrayList<>();
+        Set<String> dictionary = new HashSet<>();
+        for(String string : words) dictionary.add(string);
+        for(String word:words) {
+            dictionary.remove(word);
+            if(check(word,dictionary)) list.add(word);
+            dictionary.add(word);
+        }
+        return list;
+    }
+    
+    private boolean check(String word,Set<String> dictionary) {
+        if(dictionary.contains(word)) return true;
+        int i = word.length() - 1;
+        while(i >= 1) {
+            if(dictionary.contains(word.substring(0,i)) && check(word.substring(i),dictionary)) return true;
+            i--;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Any Advice For Python MLE Trie Solution?
+class Solution(object):
+    def findAllConcatenatedWordsInADict(self, words):
+        """
+        :type words: List[str]
+        :rtype: List[str]
+        """
+        self.trie = Trie()
+        ans = []
+        for word in words:
+            self.trie.insert(word)
+        for word in words:
+            if self.search(word):
+                ans.append(word)
+        return ans
+
+    def search(self, word):
+        node = self.trie.root
+        for idx, letter in enumerate(word):
+            node = node.children.get(letter)
+            if node is None:
+                return False
+            suffix = word[idx+1:]
+            if node.isWord and (self.trie.search(suffix) or self.search(suffix)):
+                return True
+        return False
+
+class TrieNode:
+    def __init__(self):
+        self.children = dict()
+        self.isWord = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        node = self.root
+        for letter in word:
+            child = node.children.get(letter)
+            if child is None:
+                child = TrieNode()
+                node.children[letter] = child
+            node = child
+        node.isWord = True
+
+    def search(self, word):
+        node = self.root
+        for letter in word:
+            node = node.children.get(letter)
+            if node is None:
+                return False
+        return node.isWord
+
+
+----------------------------------------------------------------------------------------------------
+Java simple 150ms Trie+DFS Solution with some comments
+class TrieNode{
+    public String word = null;
+    public TrieNode[] next = null;
+    public TrieNode(){
+        next = new TrieNode[26];
+    }
+}
+private TrieNode root;
+public List<String> findAllConcatenatedWordsInADict(String[] words) {
+    List<String> ret = new ArrayList<>();
+    if(words.length == 0) return ret;
+    buildTrie(words);
+    for(String word:words){
+        if(findWord(word,0,root,0)){
+            ret.add(word);
+        }
+    }
+    return ret;
+}
+
+private void buildTrie(String[] words){
+    root = new TrieNode();
+    for(String s_word:words){
+        char[] word = s_word.toCharArray();
+        TrieNode curr = root;
+        for(int i = 0;i<word.length;i++){
+            if(curr.next[word[i]-'a']==null){
+                TrieNode newChild = new TrieNode();
+                curr.next[word[i]-'a'] = newChild;
+            }
+            curr = curr.next[word[i]-'a'];
+        }
+        curr.word = s_word;
+    }
+}
+private boolean findWord(String word,int pos,TrieNode curr,int wordcount){//dfs
+    if(pos==word.length()) {
+        if(wordcount>1) return true;
+        else return false;
+    }
+    if(curr.next[word.charAt(pos)-'a']!=null){
+        if(curr.next[word.charAt(pos)-'a'].word!=null){
+    //choose to continue looking deeper in the Trie or go back and check from root again.
+            return findWord(word,pos+1,curr.next[word.charAt(pos)-'a'],wordcount)||findWord(word,pos+1,root,wordcount+1);
+        }
+        else{
+            //***if current character is the last character of the word, but there is no corresponding node with word in trie, return false.*** 
+            //ps: It cost me 30 min to figure out that I forgot this line...
+            if(pos==word.length()-1) return false;
+            return findWord(word,pos+1,curr.next[word.charAt(pos)-'a'],wordcount);
+        }
+    }
+    return false;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Pass Using Trie
+struct Node;
+using pNode = Node *;
+//allocate node on stack instead of heap
+pNode pool[27000][26]; // pool size is just tuned by hand to avoid MLE for this question only
+struct Node{
+    int idx;
+    bool end = false;
+    Node(int identity):idx(identity){
+        memset(pool[idx], 0, sizeof(pool[idx]));  // remember to reset to NULL because the pool might be polluted by the last run
+    }    
+};
+class Solution {
+public:
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        identity = 0; // must reset to 0 because LeetCode judge might use this method as "class static", which is called multi times
+        root = new Node(identity++);
+        for(auto& w : words)
+            if(w.size() < 100) // use a trick here, just skip longer words (specially for this question)
+                insert(root, w, 0);
+        vector<string> rtn;
+        for(auto& w : words){
+            f.assign(w.size()+1, 0);  // dp part, f[i] stands for the max number of words in dict that can be combined into w[i:]
+            visit.assign(w.size()+1, false); 
+            for(int j = (int)w.size()-1; j>=0; j--)
+                count(w, j); // calculate reversely to avoid too deep recursion
+            if(count(w, 0) > 1)
+                rtn.push_back(w);
+        }
+        collect(root); //must remember to collect history-node, other wise still MLE
+        return rtn;
+    }
+private:
+    Node * root;
+    int identity = 0;
+    vector<int> f;
+    vector<bool> visit;
+    void collect(Node* ref){
+        if(ref){
+            for(int i = 0; i < 26; i++)
+                collect(pool[ref->idx][i]);
+            delete ref;
+        }
+    }
+    void insert(Node* ref, string& s, int i){
+        if(i == s.size()){
+            ref->end = true;
+            return;
+        }
+        if(pool[ref->idx][s[i]-'a'] == NULL)
+            pool[ref->idx][s[i]-'a'] = new Node(identity++);
+        ref = pool[ref->idx][s[i]-'a'];   
+        insert(ref, s, i+1);    
+    }
+    int count(string&s, int i){
+        if(i == s.size())
+            return 0;
+        if(visit[i])
+            return f[i];
+        Node* p = root;
+        for(int j = i; j < s.size(); j++){
+            if(p && pool[p->idx][s[j]-'a'])
+                p = pool[p->idx][s[j]-'a'];
+            else
+                break;
+            if(p->end){
+                int l = count(s, j+1);
+                f[i] = max(f[i], (l == 0 && j+1 < s.size())? 0 : l+1);
+            }
+            if((i==0 && f[i] > 1) || (i && f[i])) // early stop to avoid TLE
+                break;
+        }
+        visit[i] = true;
+        return f[i];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java 156 ms solution, recursion with cache
+public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        Set<String> dict = new HashSet<>();
+        for (String s: words) dict.add(s);
+        Map<String, Boolean> canform = new HashMap<>();
+        List<String> res = new ArrayList<>();
+        for (String s: words) {
+            if (check(s, canform, dict)) res.add(s);
+        }
+        return res;
+    }
+    private boolean check(String s, Map<String, Boolean> canform, Set<String> dict) {
+        if (canform.containsKey(s)) {
+            return canform.get(s);
+        } else {
+            for (int i = 1; i <= s.length(); i++) {
+                String pre = s.substring(0, i);
+                if (dict.contains(pre)) {
+                    String post = s.substring(i);
+                    if (dict.contains(post) || check(post, canform, dict)) {
+                        canform.put(s, true);
+                        return true;
+                    }
+                }
+            }
+            canform.put(s, false);
+            return false;
+
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution DFS + Trie 97% what is the solutions in the head !! little one..
+/**
+     * Trie + DFS
+     * */
+    class TrieNode {
+        boolean isLeaf = false;
+        TrieNode[] next;
+        TrieNode(){
+            next = new TrieNode[26];
+        }
+    }
+
+    class Trie {
+        TrieNode root;
+
+        Trie() {
+            root = new TrieNode();
+        }
+        /**
+         * @param word :the word to be inserted
+         * @param i :the index of the pos of analyse combination
+         * @param n1 :the point to analyse the construction of the word
+         * @param count :the most number of the word it can consists of
+         * */
+        public boolean search(String word, int i, TrieNode n1, int count) {
+            if (i == word.length() && count >= 2) {
+                return true;
+            }
+            for (; i < word.length(); i ++) {
+                int k = word.charAt(i) - 'a';
+                if (n1.next[k] != null) {
+                    if (n1.next[k].isLeaf) {
+                        if (search(word, i + 1, root, count + 1)) {
+                            return true;
+                        }
+                    }
+                    n1 = n1.next[k];
+                }else {
+                    if (count == 0) break;
+                    return false;
+                }
+            }
+            return false;
+
+        }
+
+        public void insert (String word) {
+            TrieNode p = root;
+            for (int i = 0 ; i < word.length(); i ++) {
+                int k = word.charAt(i) - 'a';
+                if (p.next[k] == null) {
+                    p.next[k] = new TrieNode();
+                }
+                p = p.next[k];
+            }
+            p.isLeaf = true;
+        }
+    }
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+       Arrays.sort(words, new Comparator<String>() {
+           @Override
+           public int compare(String o1, String o2) {
+               return o1.length() - o2.length();
+           }
+       });
+
+        Trie trie = new Trie();
+        List<String> res = new ArrayList<>();
+        for (String str : words) {
+            if (trie.search(str, 0,trie.root, 0 )){
+                res.add(str);
+            }
+            trie.insert(str);
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+AC C++ DP Solution (532 ms), unordered_map + unordered_set.
+class Solution {
+public:
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        sort(words.begin(), words.end(), [](const string& s1, const string& s2){
+            return s1.length() < s2.length();
+        });
+        vector<string> res;
+        for (auto s : words) {
+            wordDict.insert(s);
+            dict[s[0]].emplace_back(s);
+        }
+        for (auto s : words) {
+            if (dfs(s)) res.emplace_back(s);    
+        }
+        return res;
+    }
+    
+    bool dfs(const string& s) {
+        if (s.empty()) return false;
+        if (found.find(s) != found.end()) return found[s];
+        bool res = false;
+        for (auto const &ss : dict[s[0]]) {
+            int len = ss.length();
+            if (len < s.length()) {
+                if (ss != s.substr(0, len)) continue;
+                string rem = s.substr(len);
+                if (wordDict.find(rem) != wordDict.end()) res = true;
+                else res |= dfs(rem);
+            }
+            else break;
+            if (res) break;
+        }
+        found[s] = res;
+        return res;
+    }
+    
+    unordered_set<string> wordDict;
+    unordered_map<char, vector<string>> dict;
+    unordered_map<string, bool> found;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Trie solution
+public class Solution {
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        List<String> concatenated = new ArrayList<>();
+        if (words == null || words.length <= 1) {
+            return concatenated;
+        }
+        Trie root = new Trie();
+        for (String word : words) {
+            root.insert(word, 0);
+        }
+        for (String word : words) {
+            if (segments(root, root, word, 0) > 1) {
+                concatenated.add(word);
+            }
+        }
+        return concatenated;
+    }
+
+    private int segments(Trie root, Trie current, String word, int index) {
+        if (word == null || index >= word.length()) {
+            return 0;
+        }
+        char ch = word.charAt(index);
+        if (!current.children.containsKey(ch)) {
+            return 0;
+        }
+        
+        int candidate1 = 0;
+        if (current.children.get(ch).isWordEnd) {
+            int recursive = segments(root, root, word, index + 1);
+            candidate1 = recursive > 0 ? 1 + recursive : (index == word.length() - 1 ? 1 : 0);
+        }
+        if (candidate1 > 1) {
+            return candidate1;
+        }
+        
+        int candidate2 = segments(root, current.children.get(ch), word, index + 1);
+        
+        return Math.max(candidate1, candidate2);
+    }
+
+    static class Trie {
+        Map<Character, Trie> children = new HashMap<>();
+        boolean isWordEnd;
+
+        public void insert(String str, int index) {
+            if (str == null || index >= str.length()) {
+                return;
+            }
+            char ch = str.charAt(index);
+            if (!children.containsKey(ch)) {
+                children.put(ch, new Trie());
+            }
+            if (index == str.length() - 1) {
+                children.get(ch).isWordEnd = true;
+            }
+            children.get(ch).insert(str, index + 1);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Backtracking with Optimization
+public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        HashMap<String, Integer> map = new HashMap<>();
+        HashMap<String, Integer> cache = new HashMap<>();
+        List<String> result = new LinkedList<>();
+        for(String word: words)
+            map.put(word, 1);
+        for(String word: words){
+            if(checkConcatenated(word, map, cache, 0))
+                result.add(word);
+        }
+        return result;
+    }
+    public boolean checkConcatenated(String word, Map map, Map cache, int count) {
+        if(word.equals("") && count >= 2) {
+            return true;
+        }
+        for(int i = 1; i <= word.length(); i++) {
+            if((int)map.getOrDefault(word.substring(0, i), 0) == 1) {
+                if((int)cache.getOrDefault(word.substring(i), 0) == 1 || checkConcatenated(word.substring(i), map, cache, count + 1)) {
+                    if(!word.substring(i).equals(""))
+                        cache.put(word.substring(i), 1);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Yet another Java Trie Solution (113 ms)
+public class Solution {
+    class TrieNode {
+        TrieNode[] children;
+        boolean isWord;
+        TrieNode() {
+            children = new TrieNode[26];
+            isWord = false;
+        }
+
+        private void insert(char[] chars, int index, TrieNode parent) {
+            char c = chars[index];
+            TrieNode node = parent.children[c - 'a'];
+            if (node == null) {
+                node = new TrieNode();
+                parent.children[c - 'a'] = node;
+            }
+            if (index == chars.length - 1) {
+                node.isWord = true;
+                return;
+            }
+            insert(chars, index + 1, node);
+        }
+
+        public void insert(String word) {
+            if (word.isEmpty()) return;
+            char[] chars = word.toCharArray();
+            insert(chars, 0, this);
+        }
+
+        private boolean buildable(char[] chars, int ind, TrieNode parent, TrieNode root) {
+            char c = chars[ind];
+            TrieNode next = parent.children[c - 'a'];
+            if (next == null) {
+                return false;
+            }
+            if (ind == chars.length - 1) {
+                return next.isWord;
+            }
+            if (next.isWord) {
+                return buildable(chars, ind + 1, root, root) || buildable(chars, ind + 1, next, root);
+            }
+            return buildable(chars, ind + 1, next, root);
+        }
+
+        public boolean buildable(String word) {
+            if (word.isEmpty()) return false;
+            char[] chars = word.toCharArray();
+            return buildable(chars, 0, this, this);
+        }
+    }
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        List<String> res = new ArrayList<>();
+        if (words == null || words.length < 2) return res;
+        Arrays.sort(words, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o1.length() - o2.length();
+            }
+        });
+        TrieNode root = new TrieNode();
+        for (int i = 0; i < words.length; i++) {
+            if (root.buildable(words[i])) res.add(words[i]);
+            root.insert(words[i]);
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

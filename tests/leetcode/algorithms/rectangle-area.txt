@@ -1,0 +1,743 @@
+Iterative solution in Java - simple and readable
+    
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> list = new ArrayList<Integer>();
+
+        Stack<TreeNode> stack = new Stack<TreeNode>();
+        TreeNode cur = root;
+
+        while(cur!=null || !stack.empty()){
+            while(cur!=null){
+                stack.add(cur);
+                cur = cur.left;
+            }
+            cur = stack.pop();
+            list.add(cur.val);
+            cur = cur.right;
+        }
+
+        return list;
+    }
+
+----------------------------------------------------------------------------------------------------
+Three Methods to Solve (C++)
+Method 1: Using one stack and the binary tree node will be changed. Easy ,not Practical
+
+    class Solution {
+    public:
+        vector<int> inorderTraversal(TreeNode *root) {
+            vector<int> vector;
+            if(!root)
+            return vector;
+            stack<TreeNode *> stack;
+            stack.push(root);
+            while(!stack.empty())
+            {
+                TreeNode *pNode = stack.top();
+                if(pNode->left)
+                {
+                    stack.push(pNode->left);
+                    pNode->left = NULL;
+                }
+                else
+                {
+                    vector.push_back(pNode->val);
+                    stack.pop();
+                    if(pNode->right)
+                    stack.push(pNode->right);
+                }
+            }
+            return vector;
+        }
+    };
+
+Method 2: Using one stack and one unordered_map, this will not changed the node. Better
+
+    class Solution {
+    public:
+        vector<int> inorderTraversal(TreeNode *root) {
+            vector<int> vector;
+            if(!root)
+            return vector;
+            unordered_map<TreeNode *, bool> map;//left child has been visited:true.
+            stack<TreeNode *> stack;
+            stack.push(root);
+            while(!stack.empty())
+            {
+                TreeNode *pNode = stack.top();
+                if(pNode->left && !map[pNode])
+                {
+                    stack.push(pNode->left);
+                    map[pNode] = true;
+                }
+                else
+                {
+                    vector.push_back(pNode->val);
+                    stack.pop();
+                    if(pNode->right)
+                    stack.push(pNode->right);
+                }
+            }
+            return vector;
+        }
+    };
+
+Method 3: Using one stack  and will not changed the node. Best(at least in this three solutions)
+
+    class Solution {
+    public:
+        vector<int> inorderTraversal(TreeNode *root) {
+            vector<int> vector;
+            stack<TreeNode *> stack;
+            TreeNode *pCurrent = root;
+            
+            while(!stack.empty() || pCurrent)
+            {
+                if(pCurrent)
+                {
+                    stack.push(pCurrent);
+                    pCurrent = pCurrent->left;
+                }
+                else
+                {
+                    TreeNode *pNode = stack.top();
+                    vector.push_back(pNode->val);
+                    stack.pop();
+                    pCurrent = pNode->right;
+                }
+            }
+            return vector;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear C++ solutions --- iterative, recursive and Morris traversal (3 different solutions!)
+Hi, this is a fundamental and yet classic problem. I share my three solutions here:
+
+ 1. Iterative solution using stack --- `O(n)` time and `O(n)` space;
+ 2. Recursive solution --- `O(n)` time and `O(n)` space (considering the spaces of function call stack);
+ 3. **Morris traversal --- `O(n)` time and `O(1)` space!!!**
+
+Iterative solution using stack:
+
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> nodes;
+        stack<TreeNode*> toVisit;
+        TreeNode* curNode = root;
+        while (curNode || !toVisit.empty()) {
+            if (curNode) {
+                toVisit.push(curNode);
+                curNode = curNode -> left;
+            }
+            else {
+                curNode = toVisit.top();
+                toVisit.pop();
+                nodes.push_back(curNode -> val);
+                curNode = curNode -> right;
+            }
+        }
+        return nodes;
+    }
+
+Recursive solution:
+
+    void inorder(TreeNode* root, vector<int>& nodes) {
+        if (!root) return;
+        inorder(root -> left, nodes);
+        nodes.push_back(root -> val);
+        inorder(root -> right, nodes);
+    }
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> nodes;
+        inorder(root, nodes);
+        return nodes;
+    } 
+
+Morris traversal:
+
+    vector<int> inorderTraversal(TreeNode* root) {
+        TreeNode* curNode = root;
+        vector<int> nodes;
+        while (curNode) {
+            if (curNode -> left) {
+                TreeNode* predecessor = curNode -> left;
+                while (predecessor -> right && predecessor -> right != curNode)
+                    predecessor = predecessor -> right;
+                if (!(predecessor -> right)) {
+                    predecessor -> right = curNode;
+                    curNode = curNode -> left;
+                }
+                else {
+                    predecessor -> right = NULL;
+                    nodes.push_back(curNode -> val);
+                    curNode = curNode -> right;
+                }
+            }
+            else {
+                nodes.push_back(curNode -> val);
+                curNode = curNode -> right;
+            }
+        }
+        return nodes;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python recursive and iterative solutions.
+        
+    # recursively
+    def inorderTraversal1(self, root):
+        res = []
+        self.helper(root, res)
+        return res
+        
+    def helper(self, root, res):
+        if root:
+            self.helper(root.left, res)
+            res.append(root.val)
+            self.helper(root.right, res)
+     
+    # iteratively       
+    def inorderTraversal(self, root):
+        res, stack = [], []
+        while True:
+            while root:
+                stack.append(root)
+                root = root.left
+            if not stack:
+                return res
+            node = stack.pop()
+            res.append(node.val)
+            root = node.right
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution based on Stack
+**Explanation**
+
+The basic idea is referred from [here][1]: using stack to simulate the recursion procedure: for each node, travel to its left child until it's left leaf, then pop to left leaf's higher level node A, and switch to A's right branch. Keep the above steps until cur is null and stack is empty. As the following:
+
+**Runtime = O(n)**: As each node is visited once
+
+**Space = O(n)**
+
+
+    public List<Integer> inorderTraversal(TreeNode root) {
+    	List<Integer> res = new LinkedList<Integer>();
+    	if (root == null) return res;
+    	
+    	Stack<TreeNode> stack = new Stack<TreeNode>();
+    	TreeNode cur = root;
+    	while (cur != null || !stack.isEmpty()) { 
+    		while (cur != null) {// Travel to the left leaf
+    			stack.push(cur);
+    			cur = cur.left;				
+    		}		 
+    		cur = stack.pop(); // Backtracking to higher level node A
+    		res.add(cur.val);  // Add the node to the result list
+    		cur = cur.right;   // Switch to A'right branch
+    	}
+    	return res;
+    }
+
+
+  [1]: https://leetcode.com/discuss/19765/iterative-solution-in-java-simple-and-readable
+
+----------------------------------------------------------------------------------------------------
+Morris Traversal------- NO RECURSION NO STACK
+	public class TreeNode {
+	    int val;
+	    TreeNode left;
+	    TreeNode right;
+	    TreeNode(int x) { val = x; }
+	}
+	
+	public class Solution {
+	    public List<Integer> inorderTraversal(TreeNode root) {
+	        if(root == null) return new ArrayList<Integer>();
+	        List<Integer> res = new ArrayList<Integer>();
+	        TreeNode pre = null;
+	        while(root != null){
+	        	if(root.left == null){
+	        		res.add(root.val);
+	        		root = root.right;
+	        	}else{
+	        		pre = root.left;
+	        		while(pre.right != null && pre.right != root){
+	        			pre = pre.right;
+	        		}
+	        		if(pre.right == null){
+	        			pre.right = root;
+	        			root = root.left;
+	        		}else{
+	        			pre.right = null;
+	        			res.add(root.val);
+	        			root = root.right;
+	        		}
+	        	}
+	        }
+	        return res;
+	    }
+	}
+
+----------------------------------------------------------------------------------------------------
+Simple Python iterative solution by using a visited flag - O(n) 56ms
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+    
+    class Solution:
+        # @param {TreeNode} root
+        # @return {integer[]}
+        def inorderTraversal(self, root):
+            result, stack = [], [(root, False)]
+    
+            while stack:
+                cur, visited = stack.pop()
+                if cur:
+                    if visited:
+                        result.append(cur.val)
+                    else:
+                        stack.append((cur.right, False))
+                        stack.append((cur, True))
+                        stack.append((cur.left, False))
+    
+            return result
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, both recursion and iteration
+
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        // method 1: recursion
+
+        helper(root, res);
+        return res;
+
+        //helper function for method 1
+        private void helper(TreeNode root, List<Integer> res) {
+            if (root != null) {
+                if (root.left != null) {
+                    helper(root.left, res);
+                }
+                res.add(root.val);
+                if (root.right != null) {
+                    helper(root.right, res);
+               }
+           }
+       }
+
+
+----------
+
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        // method 2: iteration
+        Stack<TreeNode> stack = new Stack<>();
+        TreeNode cur = root;
+        while (cur != null || !stack.isEmpty()) {
+            while (cur != null) {
+                stack.push(cur);
+                cur = cur.left;
+            }
+            cur = stack.pop();
+            res.add(cur.val);
+            cur = cur.right;
+        }
+        return res;        
+    }
+
+----------------------------------------------------------------------------------------------------
+My 3 solutions in c++
+
+    // recursive, it's trivial...
+    vector<int> v;
+    vector<int> inorderTraversal(TreeNode* root) {
+        if(!root) return v;
+        inorderTraversal(root->left);
+        v.push_back(root->val);
+        inorderTraversal(root->right);
+        return v;
+    }
+    
+    
+    // iterate, use stack
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> v;
+        if(!root) return v;
+        TreeNode* temp = root;
+        stack<TreeNode*> s;
+        while(true){
+            while(temp){
+                s.push(temp);
+                temp = temp->left;
+            }
+            if(s.empty()) break;
+            temp = s.top();
+            s.pop();
+            v.push_back(temp->val);
+            temp = temp->right;
+        }
+        return v;
+    }
+    
+    
+    // iterate, morris traversal, without stack
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> v;
+        if(!root) return v;
+        TreeNode* temp = root, *prev;
+        while(temp){
+            if(!temp->left){
+                v.push_back(temp->val);
+                temp = temp->right;
+            }else{
+                prev = temp->left;
+                while(prev->right&&(prev->right != temp))
+                    prev = prev->right;
+                if(!prev->right){
+                    prev->right = temp;
+                    temp = temp->left;
+                }else{
+                    v.push_back(temp->val);
+                    prev->right = NULL;
+                    temp = temp->right;
+                }
+            }
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+4ms iterative c++ solution
+    class Solution {
+    public:
+        vector<int> inorderTraversal(TreeNode *root) {
+            stack<TreeNode*> s;
+            pushAllLeft(s, root);
+            vector<int> result;
+            while(!s.empty()) {
+                TreeNode* p = s.top();
+                s.pop();
+                result.push_back(p->val);
+                pushAllLeft(s,p->right);
+            }
+            return result;
+        }
+        
+        void pushAllLeft(stack<TreeNode*>& s, TreeNode* root) {
+            while(root) {
+                s.push(root);
+                root = root->left;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Iterative 0ms C++ solution with O(1) space.
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> ans;
+    	TreeNode *buf;
+    	while (root) {
+    		if (root->left) {
+    			buf = root->left;
+    			while (buf->right){
+    				buf = buf->right;
+    			}
+    			buf->right = root;
+    			buf = root->left;
+    			root->left = NULL;
+    			root = buf;
+    		}
+    		else {
+    			ans.push_back(root->val);
+    			root = root->right;
+    		}
+    	}
+    	return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Two solutions: Recursive ( 1 ms) and Non-recursive ( 2 ms)
+Recursive:`
+
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> list =new ArrayList();
+        addNode(list,root);
+        return list;
+    }
+    public void addNode(List<Integer> list,TreeNode root){
+        if(root==null) return;
+        addNode(list,root.left);
+        list.add(root.val);
+        addNode(list,root.right); 
+    }
+
+Non-recursive :`
+
+        List<Integer> list =new ArrayList();
+        Stack<TreeNode> stack=new Stack();
+        if(root==null) return list;
+        while(root!=null){
+            stack.push(root);
+            root=root.left;
+            while(root==null){
+                if(stack.empty()) return list;
+                root=stack.pop();
+                list.add(root.val);
+                root=root.right;
+            }
+        }
+        return list;
+ `
+
+----------------------------------------------------------------------------------------------------
+Non-recursive Python solution
+Simple, understandable solution. In the loop: If we get a node with flag false, we add children in correct order and set them to false. because they have to be processed (for their children). And we set flag of current node to true. 
+
+If we get node with flag set to true we simply print its value (add to acc).
+Can be modified to do post and pre order too.
+
+    class Solution:
+        def inorderTraversal(self, root):
+            stack = [ (False, root) ]
+            acc = []
+            
+            while stack:
+                flag, val = stack.pop()
+                if val:
+                    if not flag:
+                        stack.append( (False, val.right) )
+                        stack.append( (True, val) )
+                        stack.append( (False, val.left) )
+                    else:
+                        acc.append( val.val )
+            return acc
+
+----------------------------------------------------------------------------------------------------
+Java 1ms, both iterative and recursive
+The recursive solution is trivial, yet the iterative solution with an explicit stack helps us better understand what is going on with the stack in the recursive solution.
+
+    public class Solution {
+        public List<Integer> inorderTraversal(TreeNode root) {
+            List<Integer> result = new ArrayList<Integer>();
+            inorderTraversalRecursive(root, result);
+            //inorderTraversalIterative(root, result);
+            return result;
+        }
+        
+        private void inorderTraversalIterative(TreeNode root, List<Integer> result) {
+            LinkedList<TreeNode> stack = new LinkedList<TreeNode>();
+            TreeNode curr = root;
+            while (curr != null || !stack.isEmpty()) {
+                if (curr != null) {
+                    stack.offerLast(curr);
+                    curr = curr.left;
+                } else {
+                    result.add(stack.getLast().val);
+                    curr = stack.getLast().right;
+                    stack.pollLast();
+                }
+            }
+        }
+        
+        private void inorderTraversalRecursive(TreeNode root, List<Integer> result) {
+            if (root == null) {
+                return;
+            }
+            inorderTraversalRecursive(root.left, result);
+            result.add(root.val);
+            inorderTraversalRecursive(root.right, result);        
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+This problem have hashtable tag. How to use hash table to solve this?
+Can anyone explain why this problem have a hash table tag? 
+
+----------------------------------------------------------------------------------------------------
+My accepted solution in python
+    class Solution:
+        def inorderTraversal(self, root):
+            stack = []
+            output = []
+            while True:
+                while root:
+                    stack.append(root)
+                    root = root.left
+                if stack == []:
+                    break
+                node = stack.pop()
+                output.append(node.val)
+                root = node.right
+            return output
+
+----------------------------------------------------------------------------------------------------
+Simple JAVA solution, cutting branch makes it more straightforward.
+    public List<Integer> inorderTraversal(TreeNode root) {
+            
+            List<Integer> result = new LinkedList<>();
+            if (root == null) return result;
+            
+            Stack<TreeNode> stack = new Stack<TreeNode>();
+            stack.push(root);
+            while (!stack.isEmpty()) {
+                
+                TreeNode cur = stack.pop();
+                if (cur.right != null) stack.push(cur.right);
+                // only add to the result when left sub tree is null
+                if (cur.left == null) result.add(cur.val);
+                else {
+                    // if left sub tree is no null, we need to
+                    // add it back to the stack, but after its left sub tree.
+                    // then set the left subtree to null.(next time we can
+                    // add it)
+                    stack.push(cur);
+                    stack.push(cur.left);
+                    cur.left = null;
+                    cur.right = null;// we also need to cut the right subtree.
+                }
+                
+            }
+            
+            return result;
+        }
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Java - simple and clean.
+No1:
+
+     List<Integer> ans = new ArrayList<>();
+    
+    public List<Integer> inorderTraversal(TreeNode root) {
+       if (root == null) return ans;
+       inorderTraversal(root.left);
+       ans.add(root.val);
+       return inorderTraversal(root.right);
+    }
+
+
+No2:
+
+       public List<Integer> inorderTraversal(TreeNode root) {
+    	Stack<TreeNode> stack = new Stack<>();
+    	TreeNode cur = root;
+    	while (!stack.isEmpty() || cur != null) {
+    		while (cur != null) {
+        		stack.push(cur);
+        		cur = cur.left;
+        	}
+    		cur = stack.pop();
+    		ans.add(cur.val);
+    		cur = cur.right;
+     	}
+    	return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my solution in C
+///// iterative solution
+
+    int* inorderTraversal(struct TreeNode* root, int* returnSize) {
+    int *result = NULL;
+    *returnSize = 0;
+    
+    struct TreeNode **stack = (struct TreeNode **)malloc(sizeof(struct TreeNode *));
+    struct TreeNode *pop;
+    int length = 0, state = 1;
+    //stack[length++] = root;
+    
+    while (length>0 || root != NULL) {
+        if (root) {
+            stack = (struct TreeNode **)realloc(stack, sizeof(struct TreeNode *)*length+1);
+            stack[length++] = root;
+            root = root->left;
+        }
+        else {
+            root = stack[--length];
+            result = (int *)realloc(result, sizeof(int)*(*returnSize+1));
+            result[*returnSize] = root->val;
+            *returnSize += 1;
+            root = root->right;
+        }
+    }
+    
+    return result;
+}
+
+//// recursive solution
+
+    int* inorderTraversal(struct TreeNode* root, int* returnSize) {
+    int *result = NULL;
+    if (!root)
+        return result;
+    
+    int *leftarr=NULL, *rightarr=NULL, leftsize=0, rightsize=0;
+    if (root->left)
+        leftarr = inorderTraversal(root->left, &leftsize);
+    if (root->right)
+        rightarr = inorderTraversal(root->right, &rightsize);
+    
+    *returnSize = 1 + leftsize + rightsize;
+    result = (int *)malloc(sizeof(int)*(*returnSize));
+    
+    int i, j;
+    for (i=0; i<leftsize; i++)
+        result[i] = leftarr[i];
+    result[i++] = root->val;
+    for (j=0; j<rightsize; j++)
+        result[i+j] = rightarr[j];
+    free(leftarr); free(rightarr);
+    
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+O(n) Solution with O(1) space using Morris Traversal
+    public class Solution {
+        public List<Integer> inorderTraversal(TreeNode root) {
+           TreeNode node = root;
+           List<Integer> list = new ArrayList<Integer>();
+           while (node != null) {
+               // POINT 1
+               if (node.left == null) {
+                   list.add(node.val);
+                   node = node.right;
+               } else {
+                   TreeNode temp = node.left;
+                   while (temp.right != null && temp.right != node) temp = temp.right;
+                   // POINT 2
+                   if (temp.right == node) {
+                       temp.right = null;
+                       list.add(node.val);
+                       node = node.right;
+                   // POINT 3
+                   } else {
+                       temp.right = node;
+                       node = node.left;
+                   }
+                   
+               }
+           }
+           return list;
+        }
+    }
+
+
+
+First read this article and look at the code. http://stackoverflow.com/questions/5502916/explain-morris-inorder-tree-traversal-without-using-stacks-or-recursion
+
+The ideas is as follows:
+There are 3 important points in the program:
+
+1. For any Node if the left subtree is absent, this goes to if loop and adds the value to the result and move pointer to right node.
+2. If you look closer at 2 and 3, they are similar. This is where the magic takes place. A link is established to the right most child back to the root node. This is removed at this point and moves to the right node of the root.
+3. This is responsible for creating a right pointer for the right most child and moves the pointer to the left of child.
+
+----------------------------------------------------------------------------------------------------

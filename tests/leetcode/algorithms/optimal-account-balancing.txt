@@ -1,0 +1,328 @@
+Java neat and easy understand solution, O(n) time, O(1) space
+    public int thirdMax(int[] nums) {
+        Integer max1 = null;
+        Integer max2 = null;
+        Integer max3 = null;
+        for (Integer n : nums) {
+            if (n.equals(max1) || n.equals(max2) || n.equals(max3)) continue;
+            if (max1 == null || n > max1) {
+                max3 = max2;
+                max2 = max1;
+                max1 = n;
+            } else if (max2 == null || n > max2) {
+                max3 = max2;
+                max2 = n;
+            } else if (max3 == null || n > max3) {
+                max3 = n;
+            }
+        }
+        return max3 == null ? max1 : max3;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short easy C++ using set
+int thirdMax(vector<int>& nums) {
+    set<int> top3;
+    for (int num : nums)
+        if (top3.insert(num).second && top3.size() > 3)
+            top3.erase(top3.begin());
+    return top3.size() == 3 ? *top3.begin() : *top3.rbegin();
+}
+
+----------------------------------------------------------------------------------------------------
+Intuitive and Short Python solution
+class Solution(object):
+    def thirdMax(self, nums):
+        v = [float('-inf'), float('-inf'), float('-inf')]
+        for num in nums:
+            if num not in v:
+                if num > v[0]:   v = [num, v[0], v[1]]
+                elif num > v[1]: v = [v[0], num, v[1]]
+                elif num > v[2]: v = [v[0], v[1], num]
+        return max(nums) if float('-inf') in v else v[2]
+
+
+----------------------------------------------------------------------------------------------------
+Java PriorityQueue O(n) + O(1)
+public class Solution {
+    public int thirdMax(int[] nums) {
+        PriorityQueue<Integer> pq = new PriorityQueue<>();
+        Set<Integer> set = new HashSet<>();
+        for (int i : nums) {
+            if (!set.contains(i)) {
+                pq.offer(i);
+                set.add(i);
+                if (pq.size() > 3) {
+                    set.remove(pq.poll());
+                }
+            }
+        }
+        if (pq.size() < 3) {
+            while (pq.size() > 1) {
+                pq.poll();
+            }
+        }
+        return pq.peek();
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+A python amusing solution, which actually beats 98%...
+def thirdMax(self, nums):
+        nums = set(nums)
+        if len(nums) < 3:
+            return max(nums)
+        nums.remove(max(nums))
+        nums.remove(max(nums))
+        return max(nums)
+
+
+----------------------------------------------------------------------------------------------------
+Short Clear C++ solution, no set or pq.
+int thirdMax(vector<int>& nums) {
+    long long a, b, c;
+    a = b = c = LLONG_MIN;
+    for (auto num : nums) {
+        if (num <= c || num == b || num == a) continue;
+        c = num;
+        if (c > b) swap(b, c);
+        if (b > a) swap(a, b);
+    }
+    return c == LLONG_MIN ? a : c;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution in 0ms run time O(n) and space O(1).
+public int thirdMax(int[] nums) {
+        int max, mid, small, count;
+        max = mid = small = Integer.MIN_VALUE;
+        count = 0;  //Count how many top elements have been found.
+
+        for( int x: nums) {
+            //Skip loop if max or mid elements are duplicate. The purpose is for avoiding right shift.
+            if( x == max || x == mid ) {
+                continue;
+            }
+
+            if (x > max) {
+                //right shift
+                small = mid;
+                mid = max;
+
+                max = x;
+                count++;
+            } else if( x > mid) {
+                //right shift
+                small = mid;
+
+                mid = x;
+                count++;
+            } else if ( x >= small) { //if small duplicated, that's find, there's no shift and need to increase count.
+                small = x;
+                count++;
+            }
+        }
+
+        //"count" is used for checking whether found top 3 maximum elements.
+        if( count >= 3) { 
+            return small;
+        } else {
+            return max;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+There is a missing test case &#91;-2147483648, 1, 2&#93;
+<p>For the testing case &#91;-2147483648, 1, 2&#93;, the third maximum number is -2147483648, but the &#34;Run&#34; command of this question returns 2</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) time, O(1) space.
+import sys
+class Solution(object):
+    def thirdMax(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        one = two = three = -sys.maxint
+        for i in nums:
+            if i > one:
+                one, two, three = i, one, two
+            elif i > two and i < one:
+                two, three = i, two
+            elif i > three and i < two:
+                three = i
+        return three if three != -sys.maxint else one
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(1) space Java short solution
+
+public class Solution {
+    public int thirdMax(int[] nums) {
+        long first=Long.MIN_VALUE;
+        long second=Long.MIN_VALUE;
+        long third=Long.MIN_VALUE;
+        for(int i:nums){
+            if(i>first){
+                third=second;
+                second=first;
+                first=i;
+            }else if(i==first)
+                continue;
+            else if(i>second){
+                third=second;
+                second=i;
+            }else if(i==second)
+                continue;
+            else if(i>third){
+                third=i;
+            }
+        }
+        return third==Long.MIN_VALUE?(int)first:(int)third;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution Using TreeSet
+public class Solution {
+    public final int N = 3;
+    public int thirdMax(int[] nums) {
+        if (nums.length == 0) return 0;
+
+        TreeSet<Integer> set = new TreeSet<Integer>();
+        for (int i = 0; i < nums.length; i++) {
+            if (set.contains(nums[i])) continue;
+            if (set.size() < N || nums[i] > set.first()) {
+                if (set.size() == N) set.remove(set.first());
+                set.add(nums[i]);
+            }
+        }
+        return set.size() == N ? set.first() : set.last();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Shouldn&#x27;t &#91;1,2,2,5,3,5&#93; return 3 instead of 2?
+<p>Isn&#39;t 3 the third maximum number of &#91;1,2,2,5,3,5&#93;? Why OJ gave 2?</p>
+
+
+----------------------------------------------------------------------------------------------------
+concise c solution
+int thirdMax(int* nums, int numsSize) {
+    long max1, max2, max3;
+    int i;
+    for (max1 = max2 = max3 = LONG_MIN, i = 0; i < numsSize; i++) {
+        if (max3 >= nums[i] || max1 == nums[i] || max2 == nums[i])
+            continue;
+        max3 = nums[i];
+        if (max2 < max3)
+            swap(&max2, &max3);
+        if (max1 < max2)
+            swap(&max1, &max2);
+    }
+    return max3 == LONG_MIN ? max1 : max3;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Using Java TreeSet
+public int thirdMax(int[] nums) {
+        TreeSet<Integer> set = new TreeSet();
+        for (int num : nums){
+            if (! set.contains(num) ){
+                set.add(num);
+                while (set.size() > 3) set.pollFirst();
+            }
+        }
+        return set.size() > 2 ? set.pollFirst(): set.pollLast();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python: 2-5 lines, O(n) time, O(1) space
+def thirdMax(self, nums):
+    l = [float('-inf')] * 3
+    [heapq.heappushpop(l, n) for n in nums if n > l[0] and n not in l]
+    return l[0] if l[0] != float('-inf') else max(l)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with minimum value, time complexity O(n), space complexity O(1)
+    for(int i=0;i<nums.length;i++){
+        int val = nums[i];
+        if(val > first){
+            third = second;
+            second = first;    
+            first = val;
+        }else if(val < first){
+            if(val > second){
+                third = second;
+                second = val;
+            }else if(val < second){
+                if(val > third){
+                    third = val;
+                }
+            }
+        }
+    }
+    if(third==Long.MIN_VALUE){
+        return ((int)first);
+    }
+    return ((int)third);
+}
+
+----------------------------------------------------------------------------------------------------
+Nice solutions in Python and Java. (7 lines) O(1) space and O(n) time (One pass)
+#Python
+def thirdMax(self, nums):
+        max = max2 = max3 = -sys.maxint -1
+        for n in nums :
+            if n > max : max, max2, max3 = n, max, max2
+            elif n > max2 and n != max : max2, max3 = n, max2
+            elif n > max3 and n != max and n != max2 : max3 = n
+        return max3 if max3 != -sys.maxint -1 else max
+
+//Java
+public int thirdMax(int[] nums) {
+        long max = Long.MIN_VALUE, max2 = max, max3 = max;
+        for (int n : nums) {
+            if (n > max) { max3 = max2; max2 = max; max = n; }
+            else if (n > max2 && n != max) { max3 = max2; max2 = n; }
+            else if (n > max3 && n != max && n != max2) { max3 = n; }
+        }
+        return (int) (max3 != Long.MIN_VALUE ? max3 : max);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Make clear about how to handle the duplicated number
+Submission Result: Wrong Answer More Details 
+
+Input:
+[1,2,2,5,3,5]
+Output:
+3
+Expected:
+2
+
+
+----------------------------------------------------------------------------------------------------
+OJ returns wrong ans for some valid test cases???
+<p>&#91;-2147483648, 1, 2&#93;</p>
+<p>should return -2147483648, but OJ gives 2</p>
+<p>&#91;1, 2, -2147483648&#93;</p>
+<p>should return -2147483648, OJ gvies correct answers</p>
+
+
+----------------------------------------------------------------------------------------------------
+Test cases of &#91;1,1,2&#93; and &#91;1, 2, 2&#93; are needed
+<p>Test cases of &#91;1,1,2&#93; and &#91;1, 2, 2&#93; are needed. In addition, test cases such as &#91;-2147483648, 1,1&#93; and &#91;-2147483648, 1,2&#93; are needed too.</p>
+
+
+----------------------------------------------------------------------------------------------------

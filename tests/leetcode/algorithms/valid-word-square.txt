@@ -1,0 +1,621 @@
+Share my thoughts and Clean Java Code
+public class Solution {
+    public int kthSmallest(int[][] matrix, int k) {
+        int lo = matrix[0][0], hi = matrix[matrix.length - 1][matrix[0].length - 1] + 1;//[lo, hi)
+        while(lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            int count = 0,  j = matrix[0].length - 1;
+            for(int i = 0; i < matrix.length; i++) {
+                while(j >= 0 && matrix[i][j] > mid) j--;
+                count += (j + 1);
+            }
+            if(count < k) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My solution using Binary Search in C++
+class Solution
+{
+public:
+	int kthSmallest(vector<vector<int>>& matrix, int k)
+	{
+		int n = matrix.size();
+		int le = matrix[0][0], ri = matrix[n - 1][n - 1];
+		int mid = 0;
+		while (le < ri)
+		{
+			mid = le + (ri-le)/2;
+			int num = 0;
+			for (int i = 0; i < n; i++)
+			{
+				int pos = upper_bound(matrix[i].begin(), matrix[i].end(), mid) - matrix[i].begin();
+				num += pos;
+			}
+			if (num < k)
+			{
+				le = mid + 1;
+			}
+			else
+			{
+				ri = mid;
+			}
+		}
+		return le;
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java 1ms nlog(max -min) solution
+public class Solution {
+    public int kthSmallest(int[][] matrix, int k) {
+        int n = matrix.length;
+        int lo = matrix[0][0], hi = matrix[n - 1][n - 1];
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            int count = getLessEqual(matrix, mid);
+            if (count < k) lo = mid + 1;
+            else hi = mid - 1;
+        }
+        return lo;
+    }
+    
+    private int getLessEqual(int[][] matrix, int val) {
+        int res = 0;
+        int n = matrix.length, i = n - 1, j = 0;
+        while (i >= 0 && j < n) {
+            if (matrix[i][j] > val) i--;
+            else {
+                res += i + 1;
+                j++;
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) from paper. Yes, O(#rows).
+class Solution(object):
+    def kthSmallest(self, matrix, k):
+
+        # The median-of-medians selection function.
+        def pick(a, k):
+            if k == 1:
+                return min(a)
+            groups = (a[i:i+5] for i in range(0, len(a), 5))
+            medians = [sorted(group)[len(group) / 2] for group in groups]
+            pivot = pick(medians, len(medians) / 2 + 1)
+            smaller = [x for x in a if x < pivot]
+            if k <= len(smaller):
+                return pick(smaller, k)
+            k -= len(smaller) + a.count(pivot)
+            return pivot if k < 1 else pick([x for x in a if x > pivot], k)
+
+        # Find the k1-th and k2th smallest entries in the submatrix.
+        def biselect(index, k1, k2):
+
+            # Provide the submatrix.
+            n = len(index)
+            def A(i, j):
+                return matrix[index[i]][index[j]]
+            
+            # Base case.
+            if n <= 2:
+                nums = sorted(A(i, j) for i in range(n) for j in range(n))
+                return nums[k1-1], nums[k2-1]
+
+            # Solve the subproblem.
+            index_ = index[::2] + index[n-1+n%2:]
+            k1_ = (k1 + 2*n) / 4 + 1 if n % 2 else n + 1 + (k1 + 3) / 4
+            k2_ = (k2 + 3) / 4
+            a, b = biselect(index_, k1_, k2_)
+
+            # Prepare ra_less, rb_more and L with saddleback search variants.
+            ra_less = rb_more = 0
+            L = []
+            jb = n   # jb is the first where A(i, jb) is larger than b.
+            ja = n   # ja is the first where A(i, ja) is larger than or equal to a.
+            for i in range(n):
+                while jb and A(i, jb - 1) > b:
+                    jb -= 1
+                while ja and A(i, ja - 1) >= a:
+                    ja -= 1
+                ra_less += ja
+                rb_more += n - jb
+                L.extend(A(i, j) for j in range(jb, ja))
+                
+            # Compute and return x and y.
+            x = a if ra_less <= k1 - 1 else \
+                b if k1 + rb_more - n*n <= 0 else \
+                pick(L, k1 + rb_more - n*n)
+            y = a if ra_less <= k2 - 1 else \
+                b if k2 + rb_more - n*n <= 0 else \
+                pick(L, k2 + rb_more - n*n)
+            return x, y
+
+        # Set up and run the search.
+        n = len(matrix)
+        start = max(k - n*n + n-1, 0)
+        k -= n*n - (n - start)**2
+        return biselect(range(start, min(n, start+k)), k, k)[0]
+
+
+----------------------------------------------------------------------------------------------------
+C++ priority queue solution O(klogn)
+class Solution {
+public:
+struct compare
+{
+    bool operator()(const pair<int,pair<int, int> >& a, const pair<int,pair<int, int> >& b)
+    {
+        return a.first>b.first;
+    }
+};
+    int kthSmallest(vector<vector<int>>& arr, int k) {
+        
+        int n=arr.size(),m=arr[0].size();
+        
+        priority_queue< pair<int,pair<int, int> >, vector<pair<int, pair<int, int> > >, compare > p;
+        
+        for(int i=0;i<n;i++)
+        p.push(make_pair(arr[i][0],make_pair(i,0)));
+        
+        int x=k,ans;
+        while(x--)
+        {
+            int e=p.top().first;
+            int i=p.top().second.first;
+            int j=p.top().second.second;
+            ans=e;
+            p.pop();
+            if(j!=m-1)
+            p.push(make_pair(arr[i][j+1],make_pair(i,j+1)));
+        }
+        return ans;
+        
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n)-time O(n)-space solution with detail intuitive explanation
+class Solution {
+public:
+	int kthSmallest(const std::vector<std::vector<int>> & matrix, int k)
+	{
+		if (k == 1) // guard for 1x1 matrix
+		{
+			return matrix.front().front();
+		}
+
+		size_t n = matrix.size();
+		std::vector<size_t> indices(n);
+		std::iota(indices.begin(), indices.end(), 0);
+		std::array<size_t, 2> ks = { k - 1, k - 1 }; // use zero-based indices
+		std::array<int, 2> results = biSelect(matrix, indices, ks);
+		return results[0];
+	}
+
+private:
+	// select two elements from four elements, recursively
+	std::array<int, 2> biSelect(
+		const std::vector<std::vector<int>> & matrix,
+		const std::vector<size_t> & indices,
+		const std::array<size_t, 2> & ks)
+	// Select both ks[0]-th element and ks[1]-th element in the matrix,
+	// where k0 = ks[0] and k1 = ks[1] and n = indices.size() satisfie
+	// 0 <= k0 <= k1 < n*n  and  k1 - k0 <= 4n-4 = O(n)   and  n>=2
+	{
+		size_t n = indices.size();		
+		if (n == 2u) // base case of resursion
+		{			
+			return biSelectNative(matrix, indices, ks);
+		}
+		
+		// update indices
+		std::vector<size_t> indices_;
+		for (size_t idx = 0; idx < n; idx += 2)
+		{
+			indices_.push_back(indices[idx]);
+		}
+		if (n % 2 == 0) // ensure the last indice is included
+		{
+			indices_.push_back(indices.back());
+		}
+
+		// update ks
+		// the new interval [xs_[0], xs_[1]] should contain [xs[0], xs[1]]
+		// but the length of the new interval should be as small as possible
+		// therefore, ks_[0] is the largest possible index to ensure xs_[0] <= xs[0]
+		// ks_[1] is the smallest possible index to ensure xs_[1] >= xs[1]
+		std::array<size_t, 2> ks_ = { ks[0] / 4, 0 };
+		if (n % 2 == 0) // even
+		{
+			ks_[1] = ks[1] / 4 + n + 1;
+		}
+		else // odd
+		{
+			ks_[1] = (ks[1] + 2 * n + 1) / 4;
+		}
+
+		// call recursively
+		std::array<int, 2> xs_ = biSelect(matrix, indices_, ks_);
+
+		// Now we partipate all elements into three parts:
+		// Part 1: {e : e < xs_[0]}.  For this part, we only record its cardinality
+		// Part 2: {e : xs_[0] <= e < xs_[1]}. We store the set elementsBetween
+		// Part 3: {e : x >= xs_[1]}. No use. Discard.
+		std::array<int, 2> numbersOfElementsLessThanX = { 0, 0 };
+		std::vector<int> elementsBetween; // [xs_[0], xs_[1])
+
+		std::array<size_t, 2> cols = { n, n }; // column index such that elem >= x
+		 // the first column where matrix(r, c) > b
+		 // the first column where matrix(r, c) >= a
+		for (size_t row = 0; row < n; ++row)
+		{
+			size_t row_indice = indices[row];
+			for (size_t idx : {0, 1})
+			{
+				while ((cols[idx] > 0)
+					&& (matrix[row_indice][indices[cols[idx] - 1]] >= xs_[idx]))
+				{
+					--cols[idx];
+				}
+				numbersOfElementsLessThanX[idx] += cols[idx];
+			}
+			for (size_t col = cols[0]; col < cols[1]; ++col)
+			{
+				elementsBetween.push_back(matrix[row_indice][indices[col]]);
+			}
+		}
+
+		std::array<int, 2> xs; // the return value
+		for (size_t idx : {0, 1})
+		{
+			size_t k = ks[idx];
+			if (k < numbersOfElementsLessThanX[0]) // in the Part 1
+			{
+				xs[idx] = xs_[0];
+			}
+			else if (k < numbersOfElementsLessThanX[1]) // in the Part 2
+			{
+				size_t offset = k - numbersOfElementsLessThanX[0];
+				std::vector<int>::iterator nth = std::next(elementsBetween.begin(), offset);
+				std::nth_element(elementsBetween.begin(), nth, elementsBetween.end());
+				xs[idx] = (*nth);
+			}
+			else // in the Part 3
+			{
+				xs[idx] = xs_[1];
+			}
+		}
+		return xs;
+	}
+
+	// select two elements from four elements, using native way
+	std::array<int, 2> biSelectNative(
+		const std::vector<std::vector<int>> & matrix,
+		const std::vector<size_t> & indices,
+		const std::array<size_t, 2> & ks)
+	{
+		std::vector<int> allElements;
+		for (size_t r : indices)
+		{
+			for (size_t c : indices)
+			{
+				allElements.push_back(matrix[r][c]);
+			}
+		}
+		std::sort(allElements.begin(), allElements.end());
+		std::array<int, 2> results;
+		for (size_t idx : {0, 1})
+		{
+			results[idx] = allElements[ks[idx]];
+		}
+		return results;
+	}
+};
+
+----------------------------------------------------------------------------------------------------
+python one-line solution ...
+import heapq
+class Solution(object):
+    def kthSmallest(self, matrix, k):
+        return list(heapq.merge(*matrix))[k-1]
+
+
+
+----------------------------------------------------------------------------------------------------
+Binary Search, Heap and Sorting comparison, with concise code and 1-liners, Python 72 ms
+    return sorted(itertools.chain(*matrix))[k-1]
+    return sorted(a for row in matrix for a in row)[k-1]
+    return sorted(itertools.chain.from_iterable(matrix))[k-1]
+
+
+----------------------------------------------------------------------------------------------------
+Share My Python Solution using Heap
+from heapq import heappush, heappop, heapreplace, heapify
+class Solution(object):
+    def kthSmallest(self, matrix, k):
+        """
+        :type matrix: List[List[int]]
+        :type k: int
+        :rtype: int
+        """
+        h = [(row[0], row, 1) for row in matrix]
+        heapify(h)
+
+        # Since we want to find kth, we pop the first k elements 
+        for _ in xrange(k - 1):
+            v, r, i = h[0]
+            if i < len(r):
+                heapreplace(h, (r[i], r, i + 1))
+            else:
+                heappop(h)
+
+        return h[0][0]
+
+
+----------------------------------------------------------------------------------------------------
+Java heap klog(k)
+public class Solution {
+    public int kthSmallest(final int[][] matrix, int k) {
+        int c = 0;
+        PriorityQueue<int[]> queue = new PriorityQueue<>(
+            k, (o1, o2) -> matrix[o1[0]][o1[1]] - matrix[o2[0]][o2[1]]);
+        queue.offer(new int[] {0, 0});
+        while (true) {
+            int[] pair = queue.poll();
+            if (++c == k) {
+                return matrix[pair[0]][pair[1]];
+            }
+            if (pair[0] == 0 && pair[1] + 1 < matrix[0].length) {
+                queue.offer(new int[] {0, pair[1] + 1});
+            }
+            if (pair[0] + 1 < matrix.length) {
+                queue.offer(new int[] {pair[0] + 1, pair[1]});
+            }
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution same as Find K pairs with smaller sums
+int kthSmallest(vector<vector<int>>& matrix, int k) {
+    auto comp = [&matrix](pair<int, int> p1, pair<int, int> p2){
+        return matrix[p1.first][p1.second] > matrix[p2.first][p2.second];
+    };
+    priority_queue<pair<int, int>, vector<pair<int,int>>, decltype(comp)> que(comp);
+    que.push(make_pair(0, 0));
+    int count = 1;
+    while(count < k){
+         auto temp = que.top();
+         que.pop();
+         if(temp.first+1 < matrix.size()){
+             que.push(make_pair(temp.first+1, temp.second));
+         }
+         if(temp.first == 0 && temp.second+1 < matrix[0].size()){
+             que.push(make_pair(temp.first, temp.second+1));
+         }
+         count++;
+    }
+    auto t = que.top();
+    return matrix[t.first][t.second];
+}
+
+
+----------------------------------------------------------------------------------------------------
+My clean &amp; clear Java Solution
+    PriorityQueue<Integer> pq= new PriorityQueue(k, Collections.reverseOrder());
+    
+    for(int i=0;i<matrix.length;i++){
+        for(int j=0;j<matrix[0].length;j++){
+            if(pq.size()<k)
+                pq.add(matrix[i][j]);
+            else{
+                int temp=pq.peek();
+                if(temp>matrix[i][j]){
+                    pq.poll();
+                    pq.offer(matrix[i][j]);
+                }
+            }
+        }
+    }
+    return pq.poll();
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ priority_queue AC implementation
+class Solution {
+public:
+    int kthSmallest(vector<vector<int>>& matrix, int k) {
+        int m = matrix.size(), n = matrix[0].size();
+        priority_queue<int, vector<int>> pq;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                pq.emplace(matrix[i][j]);
+                if (pq.size() > k) {
+                    pq.pop();
+                }
+            }
+        }
+        int result = pq.top();
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java heap solution, time complexity klog(k)
+public int kthSmallest(int[][] matrix, int k) {
+        PriorityQueue<int[]> heap = new PriorityQueue<int[]>(10000,new Comparator<int[]>(){
+            @Override
+            public int compare(int[] a,int[] b){
+                return a[0]-b[0];
+            }
+        });
+        if(matrix.length==0||k==0){
+            return -1;
+        }
+        heap.offer(new int[]{matrix[0][0],0,0});
+        int[] peak = new int[3];
+        while(k-->0){
+            peak = heap.poll();
+            if(peak[1]+1<matrix.length){
+                heap.offer(new int[]{matrix[peak[1]+1][peak[2]],peak[1]+1,peak[2]});
+            }
+            if(peak[1]==0&&peak[2]+1<matrix[0].length){
+                heap.offer(new int[]{matrix[peak[1]][peak[2]+1],peak[1],peak[2]+1});
+            }
+        }
+        return peak[0];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Shortest possible solution in Python (seriously!)
+class Solution(object):
+    def kthSmallest(self, matrix, k):
+        heap, res, n = [(matrix[0][0], 0, 0)], 0, len(matrix)
+        for k in range(1, k + 1):
+            res, row, col = heapq.heappop(heap)
+            if not row and col < n - 1:
+                heapq.heappush(heap, (matrix[row][col + 1], row, col + 1))
+            if row < n - 1:
+                heapq.heappush(heap, (matrix[row + 1][col], row + 1, col))
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Python solution O(klogk) similar to problem 373
+class Solution(object):
+    def kthSmallest(self, matrix, k):
+        """
+        :type matrix: List[List[int]]
+        :type k: int
+        :rtype: int
+        """
+        result, heap = None, []
+        heapq.heappush(heap, (matrix[0][0], 0, 0))
+        while k > 0:
+            result, i, j = heapq.heappop(heap)
+            if i == 0 and j + 1 < len(matrix):
+                heapq.heappush(heap, (matrix[i][j + 1], i, j + 1))
+            if i + 1 < len(matrix):
+                heapq.heappush(heap, (matrix[i + 1][j], i + 1, j))
+            k -= 1
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+20ms C short solution, O(n*log(n))
+int kthSmallest(int** matrix, int n, int useless, int k) {
+//It seems strange that I need ColSize for a n*n matrix...
+    int small=matrix[0][0], big=matrix[n-1][n-1], mid, cnt, i, j;
+    while(small<big) {
+        mid=small+big>>1;
+        cnt=0;
+        j=n-1;
+        for(i=0;i<n;i++) {
+            while(j>=0&&matrix[i][j]>mid) --j;
+            cnt+=j+1;
+        }
+        if(cnt<k) small=mid+1;
+        else big=mid;
+    }
+    return big;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java PriorityQueue Solution
+public class Solution {
+    public class Point {
+        int val;
+        int x;
+        int y;
+        public Point(int val, int x, int y) {
+            this.val = val;
+            this.x = x;
+            this.y = y;
+        }
+    }
+    public int kthSmallest(int[][] matrix, int k) {
+        if(matrix.length == 0) return 0;
+        PriorityQueue<Point> pq = new PriorityQueue<Point>(new Comparator<Point>(){
+           @Override
+           public int compare(Point a, Point b) {
+               return a.val - b.val;
+           }
+        });
+        pq.offer(new Point(matrix[0][0], 0, 0));
+        for(int i = 1; i < k; i++) {
+            Point p = pq.poll();
+            if((p.x+1) < matrix.length) {
+                pq.offer(new Point(matrix[p.x+1][p.y], p.x+1, p.y));
+            }
+            if(p.x == 0 && (p.y+1) < matrix.length) {
+                pq.offer(new Point(matrix[p.x][p.y+1], p.x, p.y+1));
+            }
+        }
+        return pq.poll().val;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean solution with detailed explanation in C++
+practical
+
+----------------------------------------------------------------------------------------------------
+Share my 83ms java solution using PriorityQueue
+public class Solution {
+    private int[][] nums = null;
+    private int col = 0;
+    private int row = 0;
+    
+    public int kthSmallest(int[][] matrix, int k) {
+        nums = matrix;
+        col = matrix[0].length;
+        row = matrix.length;
+        
+        HashSet<Integer> set = new HashSet<Integer>();
+ 
+        PriorityQueue<Integer> pq = new PriorityQueue<Integer>(new Comparator<Integer>(){
+            public int compare(Integer a, Integer b) {
+                return  nums[a/col][a%col] - nums[b/col][b%col]; 
+            };
+        });
+        
+        pq.offer(0);
+        set.add(0);
+        int n = 0;
+        int num = 0;
+        while (n < k && !pq.isEmpty()) {
+            int tmp = pq.poll();
+            num = nums[tmp/col][tmp%col];
+            
+            if (tmp+1 < row*col && !set.contains(tmp+1)) {
+                pq.offer(tmp+1);
+                set.add(tmp+1);
+            }
+            if (tmp+col < row*col && !set.contains(tmp+col)) {
+                pq.offer(tmp+col);
+                set.add(tmp+col);
+            }
+            n++;
+        }
+        
+        return num;
+    }
+}
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,292 @@
+AC solution using awk and statement just like C.
+Just feel free to use `for` and `if`.  
+You can append string easily, for example, `s = s a` to append `a` with `s`. 
+
+
+    awk '
+    {
+        for (i = 1; i <= NF; i++) {
+            if(NR == 1) {
+                s[i] = $i;
+            } else {
+                s[i] = s[i] " " $i;
+            }
+        }
+    }
+    END {
+        for (i = 1; s[i] != ""; i++) {
+            print s[i];
+        }
+    }' file.txt
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple BASH solution that OJ hates
+My solution in BASH. It works fine on my computer and I think it's conceptually straightforward. OJ complains exceeding memory.
+
+    ncol=`head -n1 file.txt | wc -w`
+    
+    for i in `seq 1 $ncol`
+    do
+        echo `cut -d' ' -f$i file.txt`
+    done
+
+----------------------------------------------------------------------------------------------------
+My 28ms awk solution
+    # Read from the file file.txt and print its transposed content to stdout.
+    
+    # using awk for this purpose
+    awk '
+        {
+            for(i=1; i<=NF; i++)
+            {   
+                if(line[i] == "")
+                {
+                    line[i] = $i
+                }
+                else
+                {
+                    line[i] = line[i]" "$i
+                }
+            }
+        }
+        END{
+             for(i=1; i<=NF; i++)
+             {
+                 print line[i]
+             }
+           }
+        ' file.txt
+
+----------------------------------------------------------------------------------------------------
+Building matrix with awk
+
+I had to use 
+
+ - NF!=0 to remove any blank lines and  save rows and 
+ - cols=NF to be used in END{} block.
+
+    awk 'NF!=0 {for(c=1;c<=NF;c++) mtx[NR,c]=$c; rows++; cols=NF;} END{for(c=1;c<=cols;c++) { line=mtx[1,c]; for(r=2;r<=rows;r++) { line=line" "mtx[r,c]}; print line; }}' file.txt
+
+
+
+----------------------------------------------------------------------------------------------------
+Memory Limit Exceeded
+    # Read from the file file.txt and print its transposed content to stdout.
+    A=$(head -1 file.txt | tr ' ' '\n' | wc -l)
+    COUNTER=1
+    while [  $COUNTER -le $A ]; do
+    	awk -v temp=$COUNTER '{ printf("%s ", $temp) }' file.txt
+    	echo ""
+    	let COUNTER=COUNTER+1 
+    done 
+
+----------------------------------------------------------------------------------------------------
+Simple solution with awk
+Simple solution with awk using associative array
+
+awk '{ for(i=1; i<=NF; ++i) {if (word[i] == "") {word[i] = $i} else{word[i] = word[i]" "$i}}} END{for(i=1; i<=NF; ++i) {print word[i]}}' file.txt
+
+----------------------------------------------------------------------------------------------------
+Anyone has solutions with LESS THAN O(n*n) space?
+Is O(n) or O(nlogn) space can solve this problem?  
+
+I have a idea:  
+**Record the "current position" of every line and loop.**  
+
+But I don't know how to implement it.  
+
+Is there an implement or other ideas?
+
+----------------------------------------------------------------------------------------------------
+Solution using associative array - Transpose File
+    # Read from the file file.txt and print its transposed content to stdout.
+    #!/bin/bash
+    
+    declare -A matrix
+    col=1
+    row=1
+    
+    while read line; do
+        col=1
+        for word in $line; do
+                matrix[$row,$col]=$word
+                ((col++))
+        done
+        ((row++))
+    done < file.txt
+    
+    for ((i=1;i<col;i++)) do
+        echo -n ${matrix[1,$i]} 
+        for((j=2;j<row;j++)) do
+                echo -n ' '${matrix[$j,$i]}
+        done
+        echo
+    done
+
+----------------------------------------------------------------------------------------------------
+My 24ms unreadable solution
+    #! /bin/bash
+    export LC_ALL=C
+    col_num=$(awk -F' ' 'NR==1{print NF}' file.txt)
+    awk -F' ' -v n_col=$col_num 'BEGIN{for(i=1;i<=n_col;++i) line[i]=""}{for(i=1;i<=NF;++i){line[i]=sprintf("%s %s", line[i], $i)}}END{for(i=1;i<=n_col;++i) print line[i]}'  file.txt | sed "s;^ ;;g"
+
+----------------------------------------------------------------------------------------------------
+bash, sort, no array&#x2F;matrix
+m=`wc -l file.txt | cut -d' ' -f1`
+i=0
+while read line
+do
+    let i++
+    j=0
+    for a in $line
+    do
+        let j++
+        echo $i $j $a
+    done
+done < file.txt | sort -n -k2 -k1 | while read i j a
+do
+    if [ "$i" == "$m" ]
+    then
+        echo $a
+    else
+        echo -n "$a "
+    fi
+done
+
+
+----------------------------------------------------------------------------------------------------
+AC solution with question
+This is the AC solution using a big array to store all elements from stack exchange
+
+    awk '
+    { 
+        for (i=1; i<=NF; i++)  {
+            a[NR,i] = $i
+        }
+    }
+    NF>p { p = NF }
+    END {    
+        for(j=1; j<=p; j++) {
+            str=a[1,j]
+            for(i=2; i<=NR; i++){
+                str=str" "a[i,j];
+            }
+            print str
+        }
+    }' file.txt
+
+
+Then I tried to improve it somehow by using "attaching" idea and got the following code which "should" be better I think:
+
+
+     col=`head -1 "file.txt"|awk '{print NF'}`
+     echo $col
+        
+        
+     for((i=1;i<=$col;i++))
+     do
+         awk '{printf "%s %s",$'"$i"'," "}END{print ""}' file.txt
+     done
+
+
+
+then I got Memory exceed result. Would someone please enlighten me on this?
+
+----------------------------------------------------------------------------------------------------
+Wrong answer with input &#x27;a&#x27; for transpose file in bash, OJ&#x27;s mistake?
+I have submitted the following code as an answer to "transpose file with bash", and LeetCode OJ decides it spits wrong answer for input 'a' while both the output and the expected values are 'a'. I am confused...
+
+    #!/bin/bash
+    fname='file.txt'
+    #fname=$1
+    nlines=$(wc -l < "$fname")
+    ncol=$(awk '{print NF; exit}' $fname)
+    #echo nlines $nlines ncol $ncol
+    row_id=0
+    {![enter image description here][1]
+      while read -a line; do
+        row_id=$((row_id+1))
+        #echo read row $row_id
+        for j in "${!line[@]}"; do
+          i=$((j+1))
+          #echo row $row_id column $i
+          #echo $(( (row_id-1) * (ncol) + i))
+          r[$(( (row_id-1) * ncol + i))]=${line[$j]}
+          #echo '####' element ${r[$(( (row_id-1) * (ncol) + i))]} '####'
+        done
+      done
+    } < $fname
+    
+    for(( j=1; j<=$ncol; j++)) do
+      for(( k=1; k<=$((nlines)); k++)) do
+      if [ -n "${r[$(( (k-1) * ncol + j))]}" ]; then
+          echo -n "${r[$(( (k-1) * ncol + j))]}"' '
+        fi
+      done
+      echo
+    done
+
+
+![Screenshot of the OJ's output][1]
+
+
+  [1]: https://dl.dropboxusercontent.com/u/83334653/LeetCodeOJ_transposeFile.png
+
+----------------------------------------------------------------------------------------------------
+My AC code just use bash array
+    empty=" "
+    i=0
+    while read line
+    do 
+    	if [ $i -eq 0 ]; then
+    		array=($line)
+    	else
+    		tmp=($line)
+    		len=${#tmp[@]}
+    		k=0
+    		while [ $k -lt $len ]
+    		do 
+    			array[$k]=${array[$k]}$empty${tmp[$k]}
+    			let k++
+    		done
+    	fi
+    	let i++
+    done < file.txt
+    
+    #print result
+    for ((i=0;i<${#array[@]};i++));
+    do
+    	echo ${array[$i]}
+    done
+
+----------------------------------------------------------------------------------------------------
+My solution written only in Bash
+    array=()
+    
+    while read -a columns; do
+        for (( i = 0; i < ${#columns[@]}; i++ )); do
+            array[i]="${array[i]} ${columns[i]}"
+        done
+    done < file.txt
+    
+    for (( i = 0; i < ${#array[@]}; i++ )); do
+        echo ${array[i]}
+    done
+
+Taught by @yongjhih
+
+----------------------------------------------------------------------------------------------------
+AC Solution: 8 lines only in pure Bash
+    while read -a line; do
+        for ((i=0; i < "${#line[@]}"; i++)); do
+            a[$i]="${a[$i]} ${line[$i]}"
+        done
+    done < file.txt
+    for ((i=0; i < ${#a[@]}; i++)); do
+        echo ${a[i]}
+    done
+
+----------------------------------------------------------------------------------------------------
+Why can&#x27;t I pass this problem by using awk

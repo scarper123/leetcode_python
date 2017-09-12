@@ -1,0 +1,802 @@
+Shortest&#x2F;Concise JAVA O(n) Sliding Window Solution
+public List<Integer> findAnagrams(String s, String p) {
+    List<Integer> list = new ArrayList<>();
+    if (s == null || s.length() == 0 || p == null || p.length() == 0) return list;
+    int[] hash = new int[256]; //character hash
+    //record each character in p to hash
+    for (char c : p.toCharArray()) {
+        hash[c]++;
+    }
+    //two points, initialize count to p's length
+    int left = 0, right = 0, count = p.length();
+    while (right < s.length()) {
+        //move right everytime, if the character exists in p's hash, decrease the count
+        //current hash value >= 1 means the character is existing in p
+        if (hash[s.charAt(right++)]-- >= 1) count--; 
+        
+        //when the count is down to 0, means we found the right anagram
+        //then add window's left to result list
+        if (count == 0) list.add(left);
+    
+        //if we find the window's size equals to p, then we have to move left (narrow the window) to find the new match window
+        //++ to reset the hash because we kicked out the left
+        //only increase the count if the character is in p
+        //the count >= 0 indicate it was original in the hash, cuz it won't go below 0
+        if (right - left == p.length() && hash[s.charAt(left++)]++ >= 0) count++;
+    }
+    return list;
+}
+
+----------------------------------------------------------------------------------------------------
+Sliding Window algorithm template to solve all the Leetcode substring search problem.
+public class Solution {
+    public List<Integer> findAnagrams(String s, String t) {
+        List<Integer> result = new LinkedList<>();
+        if(t.length()> s.length()) return result;
+        Map<Character, Integer> map = new HashMap<>();
+        for(char c : t.toCharArray()){
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        int counter = map.size();
+        
+        int begin = 0, end = 0;
+        int head = 0;
+        int len = Integer.MAX_VALUE;
+        
+        
+        while(end < s.length()){
+            char c = s.charAt(end);
+            if( map.containsKey(c) ){
+                map.put(c, map.get(c)-1);
+                if(map.get(c) == 0) counter--;
+            }
+            end++;
+            
+            while(counter == 0){
+                char tempc = s.charAt(begin);
+                if(map.containsKey(tempc)){
+                    map.put(tempc, map.get(tempc) + 1);
+                    if(map.get(tempc) > 0){
+                        counter++;
+                    }
+                }
+                if(end-begin == t.length()){
+                    result.add(begin);
+                }
+                begin++;
+            }
+            
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+17ms Java sliding window
+public List<Integer> findAnagrams(String s, String p) {
+    int[] chars = new int[26];
+    List<Integer> result = new ArrayList<>();
+
+    if (s == null || p == null || s.length() < p.length())
+        return result;
+    for (char c : p.toCharArray())
+        chars[c-'a']++;
+
+    int start = 0, end = 0, count = p.length();
+    // Go over the string
+    while (end < s.length()) {
+        // If the char at start appeared in p, we increase count
+        if (end - start == p.length() && chars[s.charAt(start++)-'a']++ >= 0)
+            count++;
+        // If the char at end appeared in p (since it's not -1 after decreasing), we decrease count
+        if (--chars[s.charAt(end++)-'a'] >= 0)
+            count--;
+        if (count == 0)
+            result.add(start);
+    }
+    
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) sliding window concise solution with explanation
+class Solution {
+public:
+    vector<int> findAnagrams(string s, string p) {
+        vector<int> pv(256,0), sv(256,0), res;
+        if(s.size() < p.size())
+           return res;
+        for(int i = 0; i < p.size(); ++i)
+        {
+            ++pv[p[i]];
+            ++sv[s[i]];
+        }
+        if(pv == sv)
+           res.push_back(0);
+        for(int i = p.size(); i < s.size(); ++i)
+        {
+            ++sv[s[i]];
+            --sv[s[i-p.size()]];
+            if(pv == sv)
+               res.push_back(i-p.size()+1);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java using isAnagram() helper function, easy to understand
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        if (p == null || s == null || s.length() < p.length()) return res;
+        int m = s.length(), n = p.length();
+        for (int i = 0; i < m-n+1; i++) {
+            String cur = s.substring(i, i+n);
+            if (helper(cur, p)) res.add(i);
+        }
+        return res;
+    }
+    public boolean helper(String a, String b) {
+        if (a == null || b == null || a.length() != b.length()) return false;
+        int[] dict = new int[26];
+        for (int i = 0; i < a.length(); i++) {
+            char ch = a.charAt(i);
+            dict[ch-'a']++;
+        }
+        for (int i = 0; i < b.length(); i++) {
+            char ch = b.charAt(i);
+            dict[ch-'a']--;
+            if (dict[ch-'a'] < 0) return false;
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Sliding Window Solution using Counter
+    from collections import Counter
+
+    def findAnagrams(self, s, p):
+        """
+        :type s: str
+        :type p: str
+        :rtype: List[int]
+        """
+        res = []
+        pCounter = Counter(p)
+        sCounter = Counter(s[:len(p)-1])
+        for i in range(len(p)-1,len(s)):
+            sCounter[s[i]] += 1   # include a new char in the window
+            if sCounter == pCounter:    # This step is O(1), since there are at most 26 English letters 
+                res.append(i-len(p)+1)   # append the starting index
+            sCounter[s[i-len(p)+1]] -= 1   # decrease the count of oldest char in the window
+            if sCounter[s[i-len(p)+1]] == 0:
+                del sCounter[s[i-len(p)+1]]   # remove the count if it is 0
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+java O(n) using HashMap easy understanding
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> result = new ArrayList<>();
+        if (s == null || s.length() == 0) {
+            return result;
+        }
+        if (p.length() > s.length()) {
+            return result;
+        }
+        Map<Character, Integer> map = new HashMap<>();
+        for (int i = 0; i < p.length(); i++) {
+            char c = p.charAt(i);
+            if (map.containsKey(c)) {
+                map.put(c, map.get(c) + 1);
+            } else {
+                map.put(c, 1);
+            }
+        }
+        int match = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (map.containsKey(c)) {
+                map.put(c, map.get(c) - 1);
+                if (map.get(c) == 0) {
+                    match++;
+                }
+            }
+            if (i >= p.length()) {
+                c = s.charAt(i - p.length());
+                if (map.containsKey(c)) {
+                    map.put(c, map.get(c) + 1);
+                    if (map.get(c) == 1) {
+                        match--;
+                    }
+                }
+            }
+            if (match == map.size()) {
+                result.add(i - p.length() + 1);
+            }
+        }
+        return result;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) Time, O(1) Space
+class Solution(object):
+    def findAnagrams(self, s, p):
+        """
+        :type s: str
+        :type p: str
+        :rtype: List[int]
+        """
+        res = []
+        n, m = len(s), len(p)
+        if n < m: return res
+        phash, shash = [0]*123, [0]*123
+        for x in p:
+            phash[ord(x)] += 1
+        for x in s[:m-1]:
+            shash[ord(x)] += 1
+        for i in range(m-1, n):
+            shash[ord(s[i])] += 1
+            if i-m >= 0:
+                shash[ord(s[i-m])] -= 1
+            if shash == phash:
+                res.append(i - m + 1)
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Simplest AC java sliding window solution with comments
+    private List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        int[] win = new int[256];
+        int[] pFixWin = new int[256];
+
+        if (s.length() == 0 || p.length() == 0 || p.length() > s.length()) {
+            return res;
+        }
+
+        /// pre - load the pWin
+        for (int i = 0; i < p.length(); i++) {
+            pFixWin[p.charAt(i)]++;
+        }
+
+        // pre-load the moving  window
+        for (int i = 0; i < p.length(); i++) {
+            win[s.charAt(i)]++;
+        }
+
+        for (int i = 0; i < s.length(); i++) {
+            // for each position check if the numbers of each letter
+            // coincide in the window and the fixed window
+            if (isPContainedInS(pFixWin, win)) {
+                res.add(i);
+            }
+
+            // evict from the window the char we just passed in S
+            // add from the S window the next character
+            if ((i + p.length()) < s.length()) {
+                win[s.charAt(i)]--;
+                win[s.charAt(i + p.length())]++;
+            } else {
+                break;
+            }
+
+        }
+        return res;
+
+    }
+
+    private boolean isPContainedInS(int[] pFixWin, int[] win) {
+        for (int i = 0; i < pFixWin.length; i++) {
+            if (pFixWin[i] != win[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(n) Sliding Window JAVA Solution, Extremely Detailed Explanation
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+       ///We will use sliding window template
+       
+       ArrayList<Integer> soln = new ArrayList<Integer>();
+       
+       //Check for bad input
+       if (s.length() == 0 || p.length() == 0 || s.length() < p.length()){
+           return new ArrayList<Integer>();
+       }
+       
+       //Set up character hash
+       //Keep track of how many times each character appears
+       int[] chars = new int[26];
+       for (Character c : p.toCharArray()){
+           //Increment to setup hash of all characters currently in the window
+           //Later on, these get DECREMENTED when a character is found
+           //A positive count later on means that the character is still "needed" in the anagram
+           //A negative count means that either the character was found more times than necessary
+           //Or that it isn't needed at all
+           chars[c-'a']++;
+       }
+       
+       //Start = start poniter, end = end pointer,
+       //len = length of anagram to find
+       //diff = length of currently found anagram. If it equals
+       //the length of anagram to find, it must have been found
+       int start = 0, end = 0, len = p.length(), diff = len;
+       
+       char temp;
+       //Before we begin this, the "window" has a length of 0, start and
+       //end pointers both at 0
+       for (end = 0; end < len; end++){
+           //Process current char
+           temp = s.charAt(end);
+           
+           //As discussed earlier, decrement it
+           chars[temp-'a']--;
+           
+           //If it's still >= 0, the anagram still "needed" it so we count it towards the anagram by
+           //decrementing diff
+           if (chars[temp-'a'] >= 0){
+               diff--;
+           }
+       }
+       
+       //This would mean that s began with an anagram of p
+       if (diff == 0){
+           soln.add(0);
+       }
+       
+       //At this point, start remains at 0, end has moved so that the window is the length of the anagram
+       //from this point on we are going to be moving start AND end on each iteration, to shift the window
+       //along the string
+       while (end < s.length()){
+           
+           //Temp represents the current first character of the window. The character that is
+           //going to be "left behind" as the window moves. 
+           temp = s.charAt(start);
+           
+           //If it's not negative, this means that the character WAS part of the anagram. That means we
+           //are one step "farther away" from completing an anagram. So we must increment diff.
+           if (chars[temp-'a'] >= 0){
+               diff++;
+           }
+           
+           //Increment the hash value for this character, because it is no longer contained in the window
+           chars[temp-'a']++;
+           
+           //Increment start to start shifting the window over by 1
+           start++;
+           
+           //Temp represents the last character of the window, the "new" character from the window shift.
+           //This character "replaces" the one we removed before so the window stays the same length (p.length())
+           temp = s.charAt(end);
+           
+           //Decrement hash value for this character, because it is now a part of the window
+           chars[temp-'a']--;
+           
+           //Again, if it's not negative it is part of the anagram. So decrement diff
+           if (chars[temp-'a'] >= 0){
+               diff--;
+           }
+           
+           //If diff has reached zero, that means for the last p.length() iterations, diff was decremented and
+           //NOT decremented, which means every one of those characters was in the anagram, so it must be an anagram
+           
+           //Note: If many windows in a row find anagrams, then each iteration will have diff incremented then decremented again
+           if (diff == 0){
+               soln.add(start);
+           }
+           
+           //Increment for next iteration
+           end++;
+           
+       }
+       
+       return soln;
+       
+       
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) sliding window with a lot of comments. Accepted solution
+class Solution(object):
+    def findAnagrams(self, s, p):
+        """
+        :type s: str
+        :type p: str
+        :rtype: List[int]
+        """
+        hash = {}   # hash stores the list of characters we need to cross-off. Initially has all of p in it
+        for c in p:
+            if c in hash:
+                hash[c] += 1
+            else:
+                hash[c] = 1
+        count = len(p)  # number of characters still to be crossed-off
+        
+        # initialize
+        result = []
+        left = 0    # the current candidate is s[left:right+1]
+        right = 0
+        while right < len(s):
+            # for every iteration, check if current character is a desired char. if so, cross it off. otherwise, move on to the next character
+            if s[right] in hash:
+                hash[s[right]] -= 1
+                if hash[s[right]] >= 0: # If we have a negative hash value(meaning more than enough of that particular character), it means we are not getting any closer to the solution, so, count should not change
+                    count -= 1
+            
+            
+            # print 'left=', left, 'right=', right, 'count=', count, 'hash=', hash, 'cur_window=', s[left:right+1] 
+            # if all items are crossed-off, add to result list
+            if count == 0:
+                result.append(left)
+            
+            
+            # Move window only if the minimum size is met. 
+            if right == left + len(p) - 1:   
+                if s[left] in hash:     # If the char we are getting rid of is already in the hash, increment the hash (add to the items that we need to cross-off)
+                    if hash[s[left]]>=0:    # If the hash (number of items we need to cross-off) is negative(i.e we have had double chars in out current window), do not increment the required count
+                        count += 1
+                    hash[s[left]] += 1
+                left += 1
+            right += 1
+            
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        if(s == null || p == null || s.length() == 0 || p.length() == 0) {
+            return res;
+        }
+        int len1 = s.length(), len2 = p.length();
+        if(len2 > len1) return res;
+        int[] anagram = new int[128];
+
+        for(int i = 0; i < len2; i++) {
+            anagram[s.charAt(i)]++;
+            anagram[p.charAt(i)]--;
+        }
+        int diff = 0;
+        for(int i : anagram) {
+            if(i != 0) diff++;
+        }
+        for(int i = len2; i < len1; i++) {
+            if(diff == 0) res.add(i - len2);
+            char c1 = s.charAt(i);
+            char c2 = s.charAt(i - len2);
+            if(c1 == c2) continue;
+            
+            anagram[c1]++;
+            anagram[c2]--;
+            if(anagram[c1] == 1) diff++;
+            else if(anagram[c1] == 0) diff--;
+            
+            if(anagram[c2] == -1) diff++;
+            else if(anagram[c2] == 0) diff--;
+        }
+        if(diff == 0) {
+            res.add(len1 - len2);
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Sliding Window
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        if(p.length() > s.length())
+            return res;
+        char[] sStr = s.toCharArray();
+        int[]map = new int[26];
+        for(char ch:p.toCharArray())
+            map[ch - 'a']++;
+        int n = s.length(), m = p.length();;
+        int j = 0;
+        for(j=0; j<m-1; j++)
+            map[sStr[j] - 'a']--;
+        for(int i=0; j<n; i++, j++){
+            map[sStr[j] - 'a']--;
+            if(check(map))
+                res.add(i);
+            map[sStr[i] - 'a']++;
+        }
+        return res;
+    }
+    public boolean check(int[]map){
+        for(int n:map)
+            if(n > 0)   return false;
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) Solution, Two Pointers
+class Solution {
+public:
+    vector<int> findAnagrams(string s, string p) {
+        vector<int> ans;
+        if(p.empty() || s.empty()) return ans;
+
+        int cnt[256] = {0};
+        for(char ch : p) cnt[ch] ++;
+        
+        int lf = 0, rt = 0;
+        while(rt < s.size()) {
+            cnt[s[rt]] --;
+            while(lf <= rt && cnt[s[rt]] < 0) {
+                cnt[s[lf ++]] ++;
+            }
+            if(rt - lf + 1 == p.size()) {
+                ans.push_back(lf);
+                cnt[s[lf ++]] ++;
+            }
+            rt ++;
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Commented Java Solution.
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> result = new ArrayList<Integer>();
+        if(s.length() == 0 || p.length() == 0 || p.length() > s.length()) return result;
+        boolean previous = false;
+        int[] source = new int[26];
+        int[] target = new int[26];
+        /*Initilize the source and target counter*/
+        for(char c : p.toCharArray()){
+            target[(int) c - 'a']++;
+        }
+        for(char c : s.substring(0, p.length()).toCharArray()){
+            source[(int) c - 'a']++;
+        }
+        /*check and add in the first substring if true*/
+        if(isAnagrams(target, source)){
+            result.add(0);
+            previous = true;
+        }
+        /*sliding the window along the source*/
+        for(int i = 1 ; i <= s.length() - p.length(); i++){
+            /*if the previous substring is a anagram, only need to check
+              if the char comming into the window and the char leaving the window are the same*/
+            if(previous && s.charAt(i-1) == s.charAt(i+p.length()- 1)){
+                result.add(i);
+            }else{
+                source[(int)s.charAt(i-1) - 'a']--;
+                source[(int)s.charAt(i+p.length()-1) - 'a']++;
+                if(isAnagrams(source, target)){
+                    result.add(i);
+                    previous = true;
+                }else{
+                    previous = false;
+                }
+            }
+        }
+        return result;
+    }
+    
+    /*helper function*/
+    private boolean isAnagrams(int[] target, int[] source){
+        for(int i = 0; i < target.length; i++){
+            if(target[i] != source[i]) return false;
+        }
+        return true;
+    }
+}````
+
+----------------------------------------------------------------------------------------------------
+Simple JavaScript Solution O(n) time
+var findAnagrams = function(s, p) {
+  let pMap = {};
+  for(let i = 0; i < p.length; ++i) {
+    if (pMap[p[i]]) {
+      pMap[p[i]]++;
+    } else {
+      pMap[p[i]] = 1;
+    }
+  }
+  let result = [];
+  let count = p.length;
+  for (let i = 0; i < p.length; ++i) {
+    if (pMap[s[i]] !== undefined && pMap[s[i]]-- > 0) {
+      --count;
+    }
+  }
+  for(let i = 0; i < s.length - p.length + 1; ++i) {
+    if (count === 0) {
+      result.push(i);
+    }
+    if (pMap[s[i]] !== undefined && pMap[s[i]]++ >= 0 ) {
+      ++count;
+    }
+    if (pMap[s[i+p.length]] !== undefined && pMap[s[i+p.length]]-- > 0) {
+      --count;
+    }
+  }
+  return result;
+}
+
+----------------------------------------------------------------------------------------------------
+Java Sliding Window. O(n). No need to loop 26 for each new window.
+public class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<Integer>();
+        if (s.length() < p.length()) {
+            return res;
+        }
+        // get map of String p
+        int[] pMap = new int[26];
+        for (char c : p.toCharArray()) {
+            pMap[c - 'a']++;
+        }
+        // get first map of String s.substring(0, p.length())
+        int i = 0;
+        int j = 0;
+        int[] sMap = new int[26];
+        for (; j < p.length(); j++) {
+            sMap[s.charAt(j) - 'a']++;
+        }
+        // check if all 26 char matches
+        Set<Character> matchSet = new HashSet<Character>();
+        for (int k = 0; k < 26; k++) {
+            if (pMap[k] == sMap[k]) {
+                matchSet.add((char) ('a' + k));
+            }
+        }
+        if (matchSet.size() == 26) {
+            res.add(0);
+        }
+        // now loop whole String s. each shift remove char[i] and add char[j]
+        for (; j < s.length(); j++) {
+            char c1 = s.charAt(i);
+            sMap[c1 - 'a']--;
+            char c2 = s.charAt(j);
+            sMap[c2 - 'a']++;
+            if (sMap[c1 - 'a'] == pMap[c1 - 'a']) {
+                matchSet.add(c1);
+            } else if (matchSet.contains(c1)) {
+                matchSet.remove(c1);
+            }
+            if (sMap[c2 - 'a'] == pMap[c2 - 'a']) {
+                matchSet.add(c2);
+            } else if (matchSet.contains(c2)) {
+                matchSet.remove(c2);
+            }
+            i++;
+            if (matchSet.size() == 26) {
+                res.add(i);
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Solution (HashMap + Sliding Window)
+public List<Integer> findAnagrams(String s, String p) {
+		
+	List<Integer> indexes = new ArrayList<>();
+	if(s.isEmpty() || p.length()>s.length()) return indexes;
+	Map<Character,Integer> pHash = new HashMap<>();
+	for(char c: p.toCharArray()) {
+		if(pHash.containsKey(c)) {
+			pHash.put(c, pHash.get(c)+1);
+		} else {
+			pHash.put(c, 1);
+		}
+	}
+	
+	int numberOfCharsToBeZero = pHash.keySet().size();
+	
+	for(int i=0;i<p.length();i++) {
+		char c = s.charAt(i);
+		if(pHash.containsKey(c)) {
+			int value = pHash.get(c)-1;
+			pHash.put(c, value);
+			if(value==0) numberOfCharsToBeZero--;
+		}
+	}
+	if(numberOfCharsToBeZero==0) indexes.add(0);
+	int start=0;
+	int end=p.length()-1;
+	while(end<s.length()-1) {
+		char startChar = s.charAt(start++);
+		char endChar = s.charAt(++end);
+		if(pHash.containsKey(startChar)) {
+			if(pHash.get(startChar)==0) numberOfCharsToBeZero++;
+			pHash.put(startChar, pHash.get(startChar)+1);
+		}
+		if(pHash.containsKey(endChar)) {
+			pHash.put(endChar, pHash.get(endChar)-1);
+			if(pHash.get(endChar)==0) numberOfCharsToBeZero--;
+		}
+		if(numberOfCharsToBeZero==0) indexes.add(start);
+	}
+	return indexes;
+}
+
+
+----------------------------------------------------------------------------------------------------
+21ms Java Accepted Solution
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> list = new ArrayList<Integer>();
+        if (s.length() < p.length()) return list;
+        
+        int[] count = new int[26];
+        for (int i = 0; i < p.length(); i++) {
+            count[p.charAt(i)-'a']++;
+        }
+        
+        int[] count2 = new int[26];
+        int n = 0;
+        for (int i = 0; i < p.length(); i++) {
+            int tmp = s.charAt(i)-'a';
+            count2[tmp]++;
+            if (count2[tmp] <= count[tmp]) n++;
+        }
+        if (n == p.length()) list.add(0);
+        for (int i = p.length(); i < s.length(); i++) {
+            int tmp = s.charAt(i)-'a';
+            count2[tmp]++;
+            if (count2[tmp] <= count[tmp]) n++;
+            tmp = s.charAt(i-p.length())-'a';
+            count2[tmp]--;
+            if (count2[tmp] < count[tmp]) n--;
+            if (n == p.length()) list.add(i-p.length()+1);
+        }
+        return list;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple sliding window based solution | C++ | O(n) time complexity | 43 ms |
+    /* Sliding window approach to cover all substrings in s of length p.size() *
+     * Time Complexity = O(s), where s = s.size()                              */
+    std::vector<int> findAnagrams(std::string s, std::string p) {
+        std::vector<int> smap(26, 0), pmap(26, 0); /* since only a-z allowed   */
+        std::vector<int> ans;                      /* output vector            */
+        /* Handle corner cases first */
+        if(s.size() == 0 || p.size() == 0 || s.size() < p.size()) return ans;
+        /* Add all chars in p and first p.size() chars of s into a table */
+        for(size_t i = 0; i < p.size(); ++i) {
+            pmap[p[i] - 'a']++;
+            smap[s[i] - 'a']++;
+        }
+        /* Sliding window to cover all substrings in s of size p           */
+        for(size_t b = 0, e = b + p.size() - 1; e < s.size(); ++b, ++e) {
+            if(b != 0) { /* If not first window, remove prev b and add e   */
+                smap[s[b-1] - 'a']--;
+                smap[s[e]   - 'a']++;
+            }
+            if(smap == pmap) ans.push_back(b); /* found anagram, add to ans */
+        }
+        return ans;
+    }
+
+
+----------------------------------------------------------------------------------------------------

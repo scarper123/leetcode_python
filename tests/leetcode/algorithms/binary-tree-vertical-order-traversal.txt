@@ -1,0 +1,1375 @@
+Maybe the code is not too much by using &quot;next&#91;26&#93;&quot;, C++
+    class TrieNode
+    {
+    public:
+        TrieNode *next[26];
+        bool is_word;
+        
+        // Initialize your data structure here.
+        TrieNode(bool b = false)
+        {
+            memset(next, 0, sizeof(next));
+            is_word = b;
+        }
+    };
+    
+    class Trie
+    {
+        TrieNode *root;
+    public:
+        Trie()
+        {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        void insert(string s)
+        {
+            TrieNode *p = root;
+            for(int i = 0; i < s.size(); ++ i)
+            {
+                if(p -> next[s[i] - 'a'] == NULL)
+                    p -> next[s[i] - 'a'] = new TrieNode();
+                p = p -> next[s[i] - 'a'];
+            }
+            p -> is_word = true;
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string key)
+        {
+            TrieNode *p = find(key);
+            return p != NULL && p -> is_word;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix)
+        {
+            return find(prefix) != NULL;
+        }
+    
+    private:
+        TrieNode* find(string key)
+        {
+            TrieNode *p = root;
+            for(int i = 0; i < key.size() && p != NULL; ++ i)
+                p = p -> next[key[i] - 'a'];
+            return p;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+AC JAVA solution simple using single array
+Detailed explanation after code!
+
+    class TrieNode {
+        public char val;
+        public boolean isWord; 
+        public TrieNode[] children = new TrieNode[26];
+        public TrieNode() {}
+        TrieNode(char c){
+            TrieNode node = new TrieNode();
+            node.val = c;
+        }
+    }
+    
+    public class Trie {
+        private TrieNode root;
+        public Trie() {
+            root = new TrieNode();
+            root.val = ' ';
+        }
+    
+        public void insert(String word) {
+            TrieNode ws = root;
+            for(int i = 0; i < word.length(); i++){
+                char c = word.charAt(i);
+                if(ws.children[c - 'a'] == null){
+                    ws.children[c - 'a'] = new TrieNode(c);
+                }
+                ws = ws.children[c - 'a'];
+            }
+            ws.isWord = true;
+        }
+    
+        public boolean search(String word) {
+            TrieNode ws = root; 
+            for(int i = 0; i < word.length(); i++){
+                char c = word.charAt(i);
+                if(ws.children[c - 'a'] == null) return false;
+                ws = ws.children[c - 'a'];
+            }
+            return ws.isWord;
+        }
+    
+        public boolean startsWith(String prefix) {
+            TrieNode ws = root; 
+            for(int i = 0; i < prefix.length(); i++){
+                char c = prefix.charAt(i);
+                if(ws.children[c - 'a'] == null) return false;
+                ws = ws.children[c - 'a'];
+            }
+            return true;
+        }
+    }
+
+With my  solution I took the simple approach of giving each TrieNode a 26 element array of each possible child node it may have. I only gave 26 children nodes because we are only working with lowercase 'a' - 'z'. If you are uncertain why I made the root of my Trie an empty character this is a standard/typical approach for building out a Trie it is somewhat arbitrary what the root node is. 
+
+For insert I used the following algorithm. Loop through each character in the word being inserted check if the character is a child node of the current TrieNode i.e. check if the array has a populated value in the index of this character. If the current character ISN'T a child node of my current node add this character representation to the corresponding index location then set current node equal to the child that was added. However if the current character IS a child of the current node only set current node equal to the child. After evaluating the entire String the Node we left off on is marked as a *word* this allows our Trie to know which words exist in our "dictionary"
+
+For search I simply navigate through the Trie if I discover the current character isn't in the Trie I return false.
+After checking each Char in the String I check to see if the Node I left off on was marked as a word returning the result.
+
+Starts with is identical to search except it doesn't matter if the Node I left off was marked as a word or not if entire string evaluated i always return true;
+
+----------------------------------------------------------------------------------------------------
+AC Python Solution
+    class TrieNode:
+    # Initialize your data structure here.
+    def __init__(self):
+        self.children = collections.defaultdict(TrieNode)
+        self.is_word = False
+
+    class Trie:
+
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        current = self.root
+        for letter in word:
+            current = current.children[letter]
+        current.is_word = True
+
+    def search(self, word):
+        current = self.root
+        for letter in word:
+            current = current.children.get(letter)
+            if current is None:
+                return False
+        return current.is_word
+
+    def startsWith(self, prefix):
+        current = self.root
+        for letter in prefix:
+            current = current.children.get(letter)
+            if current is None:
+                return False
+        return True
+
+----------------------------------------------------------------------------------------------------
+My python solution
+        
+    class TrieNode:
+            # Initialize your data structure here.
+            def __init__(self):
+                self.word=False
+                self.children={}
+        
+        class Trie:
+        
+            def __init__(self):
+                self.root = TrieNode()
+        
+            # @param {string} word
+            # @return {void}
+            # Inserts a word into the trie.
+            def insert(self, word):
+                node=self.root
+                for i in word:
+                    if i not in node.children:
+                        node.children[i]=TrieNode()
+                    node=node.children[i]
+                node.word=True
+        
+            # @param {string} word
+            # @return {boolean}
+            # Returns if the word is in the trie.
+            def search(self, word):
+                node=self.root
+                for i in word:
+                    if i not in node.children:
+                        return False
+                    node=node.children[i]
+                return node.word
+        
+            # @param {string} prefix
+            # @return {boolean}
+            # Returns if there is any word in the trie
+            # that starts with the given prefix.
+            def startsWith(self, prefix):
+                node=self.root
+                for i in prefix:
+                    if i not in node.children:
+                        return False
+                    node=node.children[i]
+                return True
+                
+        
+        # Your Trie object will be instantiated and called as such:
+        # trie = Trie()
+        # trie.insert("somestring")
+        # trie.search("key")
+
+----------------------------------------------------------------------------------------------------
+C++, My solution,  easy to understand:)
+        /**
+         ** author: cxq
+         ** weibo: http://weibo.com/chenxq1992
+         **/ 
+    
+        class TrieNode {
+        public:
+            char content;   // the character included
+            bool isend;     // if the node is the end of a word
+            int shared;     // the number of the node shared ,convenient to implement delete(string key), not necessary in this problem
+            vector<TrieNode*> children; // the children of the node
+            // Initialize your data structure here.
+            TrieNode():content(' '), isend(false), shared(0) {}
+            TrieNode(char ch):content(ch), isend(false), shared(0) {}
+            TrieNode* subNode(char ch) {
+                if (!children.empty()) {
+                    for (auto child : children) {
+                        if (child->content == ch)
+                            return child;
+                    }
+                }
+                return nullptr;
+            }
+            ~TrieNode() {
+                for (auto child : children)
+                    delete child;
+            }
+        };
+        
+        class Trie {
+        public:
+            Trie() {
+                root = new TrieNode();
+            }
+        
+            // Inserts a word into the trie.
+            void insert(string s) {
+                if (search(s)) return;
+                TrieNode* curr = root;
+                for (auto ch : s) {
+                    TrieNode* child = curr->subNode(ch);
+                    if (child != nullptr) {
+                        curr = child;
+                    } else {
+                        TrieNode *newNode = new TrieNode(ch);
+                        curr->children.push_back(newNode);
+                        curr = newNode;
+                    }
+                    ++curr->shared;
+                }
+                curr->isend = true;
+            }
+        
+            // Returns if the word is in the trie.
+            bool search(string key) {
+                TrieNode* curr = root;
+                for (auto ch : key) {
+                    curr = curr->subNode(ch);
+                    if (curr == nullptr)
+                        return false;
+                }
+                return curr->isend == true;
+            }
+        
+            // Returns if there is any word in the trie
+            // that starts with the given prefix.
+            bool startsWith(string prefix) {
+                TrieNode* curr = root;
+                for (auto ch : prefix) {
+                    curr = curr->subNode(ch);
+                    if (curr == nullptr)
+                        return false;
+                }
+                return true;
+            }
+            ~Trie() {
+                delete root;
+            }
+        private:
+            TrieNode* root;
+        };
+
+
+
+----------------------------------------------------------------------------------------------------
+AC solution in Java
+    class TrieNode {
+        private final int R = 26;
+        private final TrieNode[] children;
+        private String item;
+        
+        public TrieNode() {
+            children = new TrieNode[R];
+            item = "";
+        }
+        
+        public String getItem() {
+            return item;
+        }
+        
+        public void setItem(String item) {
+            this.item = item;
+        }
+        
+        public TrieNode[] getChildren() {
+            return children;
+        }
+        
+        public TrieNode getChild(int i) {
+            if (i >= 26 || i < 0) throw new IllegalArgumentException();
+            return children[i];
+        }
+        
+        public void setChild(int i, TrieNode node) {
+            children[i] = node;
+        }
+    }
+    
+    public class Trie {
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        public void insert(String word) {
+            TrieNode curr = root;
+            for (char c : word.toCharArray()) {
+                if (curr.getChild(c - 'a') == null) curr.setChild(c - 'a', new TrieNode());
+                curr = curr.getChild(c - 'a');
+            }
+            curr.setItem(word);
+        }
+    
+        // Returns if the word is in the trie.
+        public boolean search(String word) {
+            TrieNode curr = root;
+            for (char c : word.toCharArray()) {
+                if (curr.getChild(c - 'a') == null) return false;
+                curr = curr.getChild(c - 'a');
+            }
+            return curr.getItem().equals(word);
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public boolean startsWith(String prefix) {
+            TrieNode curr = root;
+            for (char c : prefix.toCharArray()) {
+                if (curr.getChild(c - 'a') == null) return false;
+                curr = curr.getChild(c - 'a');
+            }
+            return true;
+        }
+    }
+    
+    // Your Trie object will be instantiated and called as such:
+    // Trie trie = new Trie();
+    // trie.insert("somestring");
+    // trie.search("key");
+
+This is standard trie data structure implementation. It is a bit longer since I used getter and setter for TrieNode class.
+
+----------------------------------------------------------------------------------------------------
+Can we add a Delete Method for this Question?
+Admin, it would be really nice to also implement delete method and include delete test cases for this question!
+
+----------------------------------------------------------------------------------------------------
+AC Java DFS solution (beat 91.31% submissions)
+    class TrieNode {
+        
+        TrieNode[] children = new TrieNode[26];
+        boolean isLeaf;
+        // Constructor
+        public TrieNode() {
+        }
+    }
+
+    public class Trie {
+        
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        public void insert(String word) {
+            insert(word.toCharArray(), 0, root);
+        }
+        
+        public void insert(char[] word, int i, TrieNode node) {
+            
+            if (i == word.length) {
+                node.isLeaf = true;
+                return;
+            }
+            
+            char c = word[i];
+            if (node.children[c - 'a'] == null) {
+                node.children[c - 'a'] = new TrieNode();
+            }
+            
+            insert(word, i + 1, node.children[c - 'a']);
+        }
+    
+        // Returns if the word is in the trie.
+        public boolean search(String word) {
+            return search(word.toCharArray(), 0, root);
+        }
+        
+        public boolean search(char[] word, int i, TrieNode node) {
+            
+            if (i == word.length) {
+                return node.isLeaf;
+            }
+            
+            char c = word[i];
+            
+            return node.children[c - 'a'] != null && search(word, i + 1, node.children[c - 'a']);
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public boolean startsWith(String prefix) {
+            return startsWith(prefix.toCharArray(), 0, root);
+        }
+        
+        public boolean startsWith(char[] word, int i, TrieNode node) {
+            
+            if (i == word.length) {
+                return true;
+            }
+            
+            char c = word[i];
+            return node.children[c - 'a'] != null && startsWith(word, i + 1, node.children[c - 'a']);
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Compact Python solution
+    class TrieNode(object):
+        def __init__(self):
+            self.is_word = False
+            self.children = collections.defaultdict(TrieNode)
+    
+    class Trie(object):
+        def __init__(self):
+            self.root = TrieNode()
+    
+        def insert(self, word):
+            node = self.root
+            for c in word:
+                node = node.children[c]
+            node.is_word = True
+    
+        def search(self, word, is_word=True):
+            node = self.root
+            for c in word:
+                if c not in node.children:
+                    return False
+                node = node.children[c]
+            return node.is_word if is_word else True
+    
+        def startsWith(self, prefix):
+            return self.search(prefix, False)
+
+
+
+----------------------------------------------------------------------------------------------------
+Two C++ O(n) Solutions: Array or Hashtable
+Edited: Finally, I solved the MLE problem and now I got two ways to deal with this problem.
+Editeded: Destructor added.
+
+Array:
+
+    class TrieNode {
+    public:
+        // Initialize your data structure here.
+        TrieNode(bool end=false) {
+            memset(branches,0,sizeof(branches));
+            isEnd=end;
+        }
+        TrieNode* branches[26];
+        bool isEnd;
+    };
+    
+    class Trie {
+    public:
+        Trie() {
+            root = new TrieNode();
+        }
+    
+        ~Trie() {
+            destroy(root);
+        }
+        
+        void destroy(TrieNode* node) {
+            for(int i=0;i<26;i++)
+                if(node->branches[i]) 
+                    destroy(node->branches[i]);
+            delete node;
+        }
+
+        // Inserts a word into the trie.
+        void insert(string s) {
+            TrieNode* node=root;
+            int i;
+            for(i=0;i<s.size();i++) {
+                if(node->branches[s[i]-'a']==NULL)
+                    break;
+                else {
+                    node=node->branches[s[i]-'a'];
+                    node->isEnd=((i==s.size()-1)?true:node->isEnd);
+                }
+            }
+            for(;i<s.size();i++) {
+                node->branches[s[i]-'a']=new TrieNode(i==s.size()-1?true:false);
+                node=node->branches[s[i]-'a'];
+            }
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string key) {
+            TrieNode* node=root;
+            for(int i=0;i<key.size();i++)
+                if(node->branches[key[i]-'a']==NULL)
+                    return false;
+                else
+                    node=node->branches[key[i]-'a'];
+            if(node->isEnd)
+                return true;
+            else
+                return false;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix) {
+            TrieNode* node=root;
+            for(int i=0;i<prefix.size();i++)
+                if(node->branches[prefix[i]-'a']==NULL)
+                    return false;
+                else
+                    node=node->branches[prefix[i]-'a'];
+            return true;
+        }
+    private:
+        TrieNode* root;
+    };
+
+Hashtable:
+
+    class TrieNode {
+    public:
+        // Initialize your data structure here.
+        TrieNode(bool end=false) {
+            isEnd=end;
+        }
+        unordered_map<char,TrieNode*> branches;
+        bool isEnd;
+    };
+    
+    class Trie {
+    public:
+        Trie() {
+            root = new TrieNode();
+        }
+        
+        ~Trie() {
+            destroy(root);
+        }
+    
+        void destroy(TrieNode* node) {
+            for(auto entry : node->branches)
+                destroy(entry.second);
+            delete node;
+        }
+    
+        // Inserts a word into the trie.
+        void insert(string s) {
+            TrieNode* node=root;
+            int i;
+            for(i=0;i<s.size();i++) {
+                if(node->branches.find(s[i])==node->branches.end())
+                    break;
+                else {
+                    node=node->branches[s[i]];
+                    node->isEnd=((i==s.size()-1)?true:node->isEnd);
+                }
+            }
+            for(;i<s.size();i++) {
+                node->branches[s[i]]=new TrieNode(i==s.size()-1?true:false);
+                node=node->branches[s[i]];
+            }
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string key) {
+            TrieNode* node=root;
+            for(int i=0;i<key.size();i++)
+                if(node->branches.find(key[i])==node->branches.end())
+                    return false;
+                else
+                    node=node->branches[key[i]];
+            if(node->isEnd)
+                return true;
+            else
+                return false;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix) {
+            TrieNode* node=root;
+            for(int i=0;i<prefix.size();i++)
+                //if(node->branches[prefix[i]]==NULL)
+                if(node->branches.find(prefix[i])==node->branches.end())
+                    return false;
+                else
+                    node=node->branches[prefix[i]];
+            return true;
+        }
+    private:
+        TrieNode* root;
+    };
+
+----------------------------------------------------------------------------------------------------
+*Java* my solution with brief explanations (15ms, beats 95%)
+For the `TrieNode`, each node has **two** fields: 
+ 
+ - a `boolean` `isEnd` that stores whether the current character is the end of a word
+ - a `TrieNode[]` array of size 26 that stores its children
+
+`search` and `startsWith` are combined into a helper method `search(String str, int type)` to save coding.
+
+
+    class TrieNode {
+	boolean isEnd;
+	TrieNode[] children;
+	
+    public TrieNode() {
+        isEnd = true;
+        children = new TrieNode[26];
+    }
+    }
+
+    public class Trie {
+    private TrieNode root;
+
+    public Trie() {
+        root = new TrieNode();
+    }
+
+    public void insert(String word) {
+    	TrieNode current = root;
+    	for(int i=0, L=word.length(); i<L; i++) {
+        	int id = word.charAt(i) - 'a';
+        	if(current.children[id]==null) {
+        		current.children[id] = new TrieNode();
+        		current.children[id].isEnd = false;
+        	}
+        	current = current.children[id];
+        }
+        current.isEnd = true;
+    }
+    
+    public boolean search(String word) {
+        return search(word, 1);
+    }
+    public boolean startsWith(String prefix) {
+        return search(prefix, 2);
+    }
+    private boolean search(String str, int type) {
+        TrieNode current = root;
+        int i=-1, L=str.length();
+        while(++i<L) {
+	        int id = str.charAt(i) - 'a';
+	        if((current=current.children[id]) == null) return false;
+        }
+        return type==1 ? current.isEnd : true;
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Python solution using defaultdict
+    from collections import defaultdict
+    
+    
+    class TrieNode(object):
+        def __init__(self):
+            """
+            Initialize your data structure here.
+            """
+            self.nodes = defaultdict(TrieNode)  # Easy to insert new node.
+            self.isword = False  # True for the end of the trie.
+    
+    
+    class Trie(object):
+        def __init__(self):
+            self.root = TrieNode()
+    
+        def insert(self, word):
+            """
+            Inserts a word into the trie.
+            :type word: str
+            :rtype: void
+            """
+            curr = self.root
+            for char in word:
+                curr = curr.nodes[char]
+            curr.isword = True
+    
+        def search(self, word):
+            """
+            Returns if the word is in the trie.
+            :type word: str
+            :rtype: bool
+            """
+            curr = self.root
+            for char in word:
+                if char not in curr.nodes:
+                    return False
+                curr = curr.nodes[char]
+            return curr.isword
+    
+        def startsWith(self, prefix):
+            """
+            Returns if there is any word in the trie
+            that starts with the given prefix.
+            :type prefix: str
+            :rtype: bool
+            """
+            curr = self.root
+            for char in prefix:
+                if char not in curr.nodes:
+                    return False
+                curr = curr.nodes[char]
+            return True
+
+----------------------------------------------------------------------------------------------------
+Concise O(1) JAVA solution based on HashMap
+The basic idea is using prefix tree to implement this class, and store the children of each node.
+
+**Time complexity(Insert, Search)  = O(keyLength)**
+
+For each char in one word, we only need O(1) time to get it from children array. So the total time = O(1 * keyLength.
+        
+   **Extra Space = O( numOflevel[0] * numOflevel[1] .. numOflevel[longestWord] )**  
+
+numOflevel is the number of char on each level for the words in the dictionary.
+
+***If use Array to store children, it will cost O( 26 ^ (len(longestWord) - 1) ) extra space:***
+
+*For each char in one word, we have to store 26 children, so the total extra space should be O( 26 ^ (length of the longest word in the dictionary - 1) ) )* 
+
+**To sum up, HashMap only needs the accurate necessary extra space, it will cost far less space than Array, and it can also support any ASCII char, e.g. 'A' - 'Z'.**
+
+    public class Trie {
+        private TrieNode root;
+        public Trie() {
+            root = new TrieNode();
+        }    
+        public void insert(String word) {
+            TrieNode node  = root;
+            for (int i = 0; i < word.length(); i++) {
+                char ch = word.charAt(i);
+                if (node.children == null) 
+                    node.children = new HashMap<Character, TrieNode>();
+                if (!node.children.containsKey(ch)) 
+                    node.children.put(ch, new TrieNode(ch));            
+                node = node.children.get(ch);
+            }
+            node.isLeaf = true;
+        }    
+        public boolean search(String word) {
+            TrieNode node  = root;
+            for (int i = 0; i < word.length(); i++) {
+                char ch = word.charAt(i);
+                if (node.children == null || !node.children.containsKey(ch))
+                    return false;
+                node = node.children.get(ch);
+            }
+            return node.isLeaf;
+        }     
+        public boolean startsWith(String prefix) {
+            TrieNode node  = root;
+            for (int i = 0; i < prefix.length(); i++) {
+                char ch = prefix.charAt(i);
+                if (node.children == null || !node.children.containsKey(ch))
+                    return false;
+                node = node.children.get(ch);
+            }
+            return true;
+        }
+    }
+    class TrieNode {
+        public Map<Character, TrieNode>children = null;
+        public boolean isLeaf = false;
+        public char val;
+        public TrieNode() {}
+        public TrieNode(char val) {
+            this.val = val;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Java solution using Map for next
+This implementation uses Map for next. No stack or recursion is used.
+
+    class TrieNode {
+        // Initialize your data structure here.
+        public boolean isWord;
+        public Map<Character, TrieNode> next; // HashMap
+        public TrieNode() {
+            isWord = false;
+            next = new HashMap<>();
+        }
+    }
+    
+    public class Trie {
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        public void insert(String word) {
+            TrieNode node = root;
+            for (Character c : word.toCharArray()) {
+                if (!node.next.containsKey(c)) {
+                    node.next.put(c, new TrieNode());
+                }
+                node = node.next.get(c);
+            }
+            node.isWord = true;
+        }
+    
+        // Returns if the word is in the trie.
+        public boolean search(String word) {
+            TrieNode node = get(word);
+            return node != null && node.isWord;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public boolean startsWith(String prefix) {
+            TrieNode node = get(prefix);
+            return node != null;
+        }
+        
+        //
+        private TrieNode get(String key) {
+            TrieNode node = root;
+            for (Character c : key.toCharArray()) {
+                node = node.next.get(c);
+                if (node == null) return null;
+            }
+            return node;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Optimized clear solution by using an Array (JAVA)
+    public class Trie {
+        
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        public void insert(String word) {
+            if(word != null){
+                TrieNode temp = root;
+                //from top to down
+                for(int i = 0; i < word.length(); i ++){
+                    char c = word.charAt(i);
+                    if(temp.next[c - 97] == null){
+                        temp.next[c - 97] = new TrieNode();
+                    }
+                    temp = temp.next[c - 97];
+                }
+                //end char of the string(end point of the string)
+                temp.endPoint = true;
+            }
+        }
+    
+        // Returns if the word is in the trie.
+        public boolean search(String word) {
+            if(word == null){
+                return false;
+            }
+            TrieNode temp = root;
+            for(int i = 0; i < word.length(); i ++){
+                char c = word.charAt(i);
+                if(temp.next[c - 97] == null){
+                    return false;
+                }
+                else{
+                    temp = temp.next[c - 97];
+                }
+            }
+            //check if last node is an end point
+            if(temp.endPoint){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public boolean startsWith(String prefix) {
+            if(prefix == null){
+                return false;
+            }
+            TrieNode temp = root;
+            for(int i = 0; i < prefix.length(); i ++){
+                char c = prefix.charAt(i);
+                if(temp.next[c - 97] == null){
+                    return false;
+                }
+                else{
+                    temp = temp.next[c - 97];
+                }
+            }
+            return true;
+        }
+        
+        //inner class
+        protected class TrieNode {
+            // Initialize your data structure here.
+            public boolean endPoint;
+            public TrieNode[] next;
+        
+            public TrieNode() {
+                endPoint = false;
+                next = new TrieNode[26];
+            }
+        
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+56ms c++ solution
+    class TrieNode {
+    public:
+        // Initialize your data structure here.
+        TrieNode():isWord(false){
+            memset(Next,0,sizeof(TrieNode*)*26);
+    
+        }
+        TrieNode(char _c):c(_c),isWord(false) {
+            memset(Next,0,sizeof(TrieNode*)*26);
+        }
+        TrieNode* Next[26];
+        char c;
+        bool isWord;
+    };
+    
+    class Trie {
+    public:
+        Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        void insert(string word) {
+            TrieNode*p = root;
+            int index;
+            
+            for(char c:word)
+            {
+                index = c - 'a';
+                if(p->Next[index] == NULL)
+                    p->Next[index] = new TrieNode(c);
+                p = p->Next[index];
+            }
+            p->isWord = true;
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string word) {
+            TrieNode*p = root;
+            int index;
+            
+            for(char c:word)
+            {
+                index = c - 'a';
+                if(p->Next[index] == NULL)
+                    return false;
+                p = p->Next[index];
+            }
+            return p->isWord;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix) {
+            TrieNode*p = root;
+            int index;
+            
+            for(char c:prefix)
+            {
+                index = c - 'a';
+                if(p->Next[index] == NULL)
+                    return false;
+                p = p->Next[index];
+            }
+            return true;
+        }
+    
+    private:
+        TrieNode* root;
+    };
+    
+    // Your Trie object will be instantiated and called as such:
+    // Trie trie;
+    // trie.insert("somestring");
+    // trie.search("key");
+
+----------------------------------------------------------------------------------------------------
+C++&#x2F;C# simple solution
+C++ version
+
+    class TrieNode {
+    public:
+        bool HasValue;
+        TrieNode** Children;
+        // Initialize your data structure here.
+        TrieNode() {
+            Children = new TrieNode*[26]();
+            HasValue = false;
+        }
+        
+        ~TrieNode(){
+            for (int i = 0; i < 26; i++)
+            {
+                delete Children[i]; // delete NULL is safe, a no-op.
+            }
+            delete[] Children;
+        }    
+    };
+    
+    class Trie {
+    public:
+        Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        void insert(string word) {
+            getNode(word, true)->HasValue = true;         
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string word) {
+           TrieNode* pNode = getNode(word, false);
+            return (pNode != NULL && pNode->HasValue);  
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix) {
+            return (getNode(prefix, false) != NULL); 
+        }
+    
+    private:
+        TrieNode* root;
+        TrieNode* getNode(string word, bool create){
+            TrieNode* pNode = root;
+            int id;
+            int n = word.size();
+            for (int i = 0; i <n; ++i)
+            {
+              id = word[i] - 'a';
+              if (pNode->Children[id] == NULL){
+                  if(create)
+                    pNode->Children[id] = new TrieNode();
+                  else
+                    return NULL;
+              }
+              pNode = pNode->Children[id];
+            }
+    
+            return pNode;        
+        }   
+    };
+
+C# version
+
+    class TrieNode {
+        public bool HasValue;
+        public TrieNode[] Children;
+        // Initialize your data structure here.
+        public TrieNode() {
+            Children = new TrieNode[26];
+            HasValue = false;
+        }
+    }
+    
+    public class Trie {
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+        
+        private TrieNode GetNode(string word, bool create)
+        {
+            TrieNode node = root;
+            int id;
+            foreach (char cr in word)
+            {
+              id = cr - 'a';
+              if (node.Children[id] == null){
+                  if(create)
+                    node.Children[id] = new TrieNode();
+                  else
+                    return null; 
+              }
+                
+              node = node.Children[id];
+            }
+    
+            return node;
+        }    
+    
+        // Inserts a word into the trie.
+        public void Insert(String word) {
+            GetNode(word, true).HasValue = true;
+        }
+    
+        // Returns if the word is in the trie.
+        public bool Search(string word) {
+            var node = GetNode(word, false);
+            return (node != null && node.HasValue);        
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public bool StartsWith(string word) {
+            return GetNode(word, false) != null;        
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My AC Python solution
+    class TrieNode:
+        # Initialize your data structure here.
+        li = []
+        hasValue = False
+        def __init__(self):
+            self.li = [None]*26
+            self.hasValue = False
+    
+    class Trie:
+    
+        def __init__(self):
+            self.root = TrieNode()
+    
+        # @param {string} word
+        # @return {void}
+        # Inserts a word into the trie.
+        def insert(self, word):
+            def inserthelp(word,root,index):
+                c = ord(word[index])-97
+                if not root.li[c]:
+                    root.li[c] = TrieNode()
+                if index+1==len(word):
+                    root.li[c].hasValue = True
+                else:
+                    inserthelp(word,root.li[c],index+1)
+            if len(word):
+                inserthelp(word,self.root,0)
+    
+        # @param {string} word
+        # @return {boolean}
+        # Returns if the word is in the trie.
+        def search(self, word):
+            def searchhelp(word,root,index):
+                c = ord(word[index]) - 97
+                if not root.li[c]:
+                    return False
+                if index+1==len(word):
+                    return root.li[c].hasValue
+                else:
+                    return searchhelp(word,root.li[c],index+1)
+            if len(word):
+                return searchhelp(word,self.root,0)
+            else:
+                return True
+    
+        # @param {string} prefix
+        # @return {boolean}
+        # Returns if there is any word in the trie
+        # that starts with the given prefix.
+        def startsWith(self, prefix):
+            def startshelp(word,root,index):
+                c = ord(word[index])-97
+                if not root.li[c]:
+                    return False
+                if index+1==len(word):
+                    return True
+                else:
+                    return startshelp(word,root.li[c],index+1)
+            if len(prefix):
+                return startshelp(prefix,self.root,0)
+            else:
+                return True
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+    class TrieNode {
+    
+        boolean isWordEnd;
+        Map<Character, TrieNode> children;
+    
+        // Initialize your data structure here.
+        public TrieNode() {
+            children = new HashMap<Character, TrieNode>();
+        }
+    }
+    
+    public class Trie {
+    
+        private TrieNode root;
+    
+        public Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        public void insert(String word) {
+            char[] s = word.toCharArray();
+            TrieNode p = root;
+            int i = 0;
+            int n = s.length;
+    
+            // travers existing
+            while (i < n) {
+                TrieNode next = p.children.get(s[i]);
+                if (next != null) {
+                    p = next;
+                    i++;
+                } else {
+                    break;
+                }
+            }
+    
+            // append new nodes
+            while (i < n) {
+                TrieNode newTrie = new TrieNode();
+                p.children.put(s[i], newTrie);
+                p = newTrie;
+                i = i + 1;
+            }
+    
+            // set word end
+            p.isWordEnd = true;
+        }
+    
+        // Returns if the word is in the trie.
+        public boolean search(String word) {
+            TrieNode p = find(root, word);
+            return p != null && p.isWordEnd;
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        public boolean startsWith(String prefix) {
+            TrieNode p = find(root, prefix);
+            return p != null;
+        }
+    
+        TrieNode find(TrieNode root, String word) {
+            TrieNode p = root;
+            for (int i = 0; i < word.length(); i++) {
+                char c = word.charAt(i);
+                TrieNode child = p.children.get(c);
+                if (child == null) {
+                    return null;
+                } else {
+                    p = child;
+                }
+            }
+            return p;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution O(n) time complexity
+    class Trie {
+        struct TrieNode 
+        {
+            map<char, TrieNode*>child_table;
+            int end;
+            TrieNode(): end(0) {}
+        };
+            
+    public:
+        Trie() {
+            root = new TrieNode();
+        }
+    
+        // Inserts a word into the trie.
+        void insert(string s) {
+            TrieNode *curr = root;
+            for (int i = 0; i < s.size(); i++)
+            {
+                if (curr->child_table.count(s[i]) == 0)
+                    curr->child_table[s[i]] = new TrieNode();
+                    
+                curr = curr->child_table[s[i]];                
+            }
+            curr->end = 1;
+        }
+    
+        // Returns if the word is in the trie.
+        bool search(string key) {
+            return find(key, 1);
+        }
+    
+        // Returns if there is any word in the trie
+        // that starts with the given prefix.
+        bool startsWith(string prefix) {
+            return find(prefix, 0);
+        }
+    
+    private:
+        TrieNode* root;
+        bool find(string s, int exact_match)
+        {
+            TrieNode *curr = root;
+            for (int i = 0; i < s.size(); i++)
+            {
+                if (curr->child_table.count(s[i]) == 0)
+                    return false;
+                else
+                    curr = curr->child_table[s[i]];
+            }
+            
+            if (exact_match)
+                return (curr->end) ? true : false;
+            else
+                return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

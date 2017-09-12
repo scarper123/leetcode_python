@@ -1,0 +1,153 @@
+Simple query which handles the NULL situation
+SELECT max(Salary)
+FROM Employee
+WHERE Salary < (SELECT max(Salary) FROM Employee)
+
+Using max() will return a NULL if the value doesn't exist. So there is no need to UNION a NULL. Of course, if the second highest value is guaranteed to exist, using LIMIT 1,1 will be the best answer. 
+
+----------------------------------------------------------------------------------------------------
+A Simple Answer
+
+    select (
+      select distinct Salary from Employee order by Salary Desc limit 1 offset 1
+    )as second
+
+Change the number after 'offset' gives u n-th highest salary
+
+----------------------------------------------------------------------------------------------------
+Accepted solution
+Select MAX(Salary) from Employee
+where Salary < (Select MAX(Salary) from Employee)
+
+----------------------------------------------------------------------------------------------------
+My tidy soution
+    SELECT MAX( Salary)
+      FROM Employee
+     WHERE Salary < ( SELECT MAX( Salary) FROM Employee )
+
+----------------------------------------------------------------------------------------------------
+Based on Count and easy to extend to N
+     SELECT MAX(Salary)
+     FROM (SELECT E1.Salary
+     FROM Employee as E1 JOIN Employee as E2
+     ON E1.Salary < E2.Salary
+     GROUP BY E1.Id HAVING COUNT(E2.Id) = 1
+     )  AS SecondHighestSalary
+     ORDER BY Salary DESC LIMIT 1;
+
+For the Nth highest one, 
+
+     COUNT(E2.Id) = N-1
+
+----------------------------------------------------------------------------------------------------
+Simple Solution
+**select max(salary) from Employee where salary !=(select max(salary) from Employee)** 
+
+----------------------------------------------------------------------------------------------------
+Easy Solution for This
+select max(Salary) from Employee where  Salary < 
+(select max(Salary) from Employee) order by Salary desc;
+
+----------------------------------------------------------------------------------------------------
+General solution not using MAX
+    SELECT Salary FROM Employee GROUP BY Salary 
+    UNION ALL (SELECT null AS Salary)
+    ORDER BY Salary DESC LIMIT 1 OFFSET 1
+
+----------------------------------------------------------------------------------------------------
+Easy to understand solution with best run time
+SELECT distinct(Salary) FROM Employee 
+UNION 
+SELECT NULL 
+ORDER BY Salary DESC LIMIT 1,1
+
+----------------------------------------------------------------------------------------------------
+My solution using limit,as
+SELECT distinct(Salary) as SecondHighestSalary FROM Employee  UNION SELECT NULL ORDER BY SecondHighestSalary DESC LIMIT 1,1;
+
+----------------------------------------------------------------------------------------------------
+My answer about this question, using IFNULL and distinct
+SELECT IFNULL( (SELECT distinct Salary as SecondHighestSalary FROM Employee order by Salary desc limit 1,1) ,null);
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution of Second Highest Salary
+    SELECT a.Salary AS SecondHighestSalary
+    FROM Employee a
+    WHERE 1 = (SELECT COUNT(*)
+                FROM Employee b
+                WHERE b.Salary > a.Salary)
+    UNION  ALL
+    SELECT NULL
+    LIMIT 1
+
+----------------------------------------------------------------------------------------------------
+Not an Efficient Solution Using two sub queries
+    SELECT MAX(Salary)
+    FROM
+    (SELECT Salary 
+    FROM Employee
+    WHERE Salary <>
+    (SELECT MAX(Salary) 
+    FROM Employee)) E;
+
+----------------------------------------------------------------------------------------------------
+Solution with CASE expression
+    select case 
+    when count(Salary) > 1 then (select distinct Salary from Employee
+        order by Salary DESC limit 1, 1) 
+    else NULL end
+    from Employee;
+
+----------------------------------------------------------------------------------------------------
+My Solution with 820 ms.
+     SELECT IF(COUNT(*) = 0, NULL, MAX(Salary)) AS Salary
+     FROM Employee AS E
+     WHERE E.Salary != (SELECT MAX(E2.Salary) FROM Employee AS E2)
+
+----------------------------------------------------------------------------------------------------
+My answer using limit.
+    select max(Salary) as SecondHighestSalary from (select distinct Salary from Employee order by Salary desc limit 1,1) as c;
+
+----------------------------------------------------------------------------------------------------
+Limit function solution
+   
+
+    (select distinct (Salary)  as SecondHighestSalary from Employee order by Salary Desc limit 1,1)
+    union 
+    (select NULL)  
+    limit 1;
+
+----------------------------------------------------------------------------------------------------
+Why cannot use &#x27;having max()&#x27;?
+    select Max(Salary) SecondHighestSalary
+    from Employee
+    where Salary<(select Salary from Employee having Max(Salary));
+I tried to use 'Max(Salary)' in 'having', but it showed wrong.
+
+        select Max(Salary) SecondHighestSalary
+        from Employee
+        where Salary<(select Max(Salary) from Employee);
+And it can run correctly.
+
+Why cannot use 'having max()'?
+
+----------------------------------------------------------------------------------------------------
+Easy understanding solution
+SELECT Salary AS SecondHighestSalary FROM Employee LIMIT 2,1
+
+
+----------------------------------------------------------------------------------------------------
+Top 2 syntax not supported?
+I tried this statement but seems like "top 2" is not accepted.
+
+    select min(Salary) from (
+    select Top 2 Salary from Employee
+    group by Salary
+    order by Salary DESC
+    )
+
+Anyone can advice the reason?
+
+Thanks.
+
+----------------------------------------------------------------------------------------------------

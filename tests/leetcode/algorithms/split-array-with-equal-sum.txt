@@ -1,0 +1,442 @@
+Straight forward Java DP solution
+public class Solution {
+    public int longestPalindromeSubseq(String s) {
+        return helper(s, 0, s.length() - 1, new Integer[s.length()][s.length()]);
+    }
+    
+    private int helper(String s, int i, int j, Integer[][] memo) {
+        if (memo[i][j] != null) {
+            return memo[i][j];
+        }
+        if (i > j)      return 0;
+        if (i == j)     return 1;
+        
+        if (s.charAt(i) == s.charAt(j)) {
+            memo[i][j] = helper(s, i + 1, j - 1, memo) + 2;
+        } else {
+            memo[i][j] = Math.max(helper(s, i + 1, j, memo), helper(s, i, j - 1, memo));
+        }
+        return memo[i][j];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to dp
+    int longestPalindromeSubseq(string s) {
+        int n = s.size();
+        vector<int> v0(n), v1(n,1), v(n), *i_2=&v0, *i_1=&v1, *i_=&v;
+        for(int i=2;i<=n;i++) {//length
+            for(int j=0;j<n-i+1;j++)//start index
+                i_->at(j) = s[j]==s[i+j-1]?2+i_2->at(j+1):max(i_1->at(j),i_1->at(j+1));
+            swap(i_1,i_2);    
+            swap(i_1,i_); //rotate i_2, i_1, i_
+        }
+        return i_1->at(0); 
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python DP O(n) space O(n^2) time
+class Solution(object):
+    def longestPalindromeSubseq(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        n = len(s)
+        dp = [1] * n
+        for j in xrange(1, len(s)):
+            pre = dp[j]
+            for i in reversed(xrange(0, j)):
+                tmp = dp[i]
+                if s[i] == s[j]:
+                    dp[i] = 2 + pre if i + 1 <= j - 1 else 2
+                else:
+                    dp[i] = max(dp[i + 1], dp[i])
+                pre = tmp
+        return dp[0]
+
+
+----------------------------------------------------------------------------------------------------
+Fast and concise Python solution that actually gets AC
+class Solution(object):
+    def longestPalindromeSubseq(self, s):
+        d = {}
+        def f(s):
+            if s not in d:
+                maxL = 0    
+                for c in set(s):
+                    i, j = s.find(c), s.rfind(c)
+                    maxL = max(maxL, 1 if i==j else 2+f(s[i+1:j]))
+                d[s] = maxL
+            return d[s]
+        return f(s)
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my clean O(n^2) C++ DP solution, super easy and clear
+class Solution {
+public:
+    //lhs means left hand side, rhs means right hand side
+    int longestPalindromeSubseq(string s) {
+        if (s.empty()) return 0;
+        
+        vector<vector<int>> longest(s.size(), vector<int>(s.size()));
+        for (int len=1; len<=s.size(); len++) {
+            for (int lhs=0; lhs+len<=s.size(); lhs++) {
+                int rhs = lhs+len-1;
+                if (lhs == rhs) {
+                    longest[lhs][rhs] = 1;
+                } else if (lhs+1 == rhs) {
+                    longest[lhs][rhs] = (s[lhs] == s[rhs]) ? 2 : 1;
+                } else {
+                    int add = s[lhs] == s[rhs] ? 2 : 0;
+                    longest[lhs][rhs] = max(max(longest[lhs][rhs-1], longest[lhs+1][rhs]), longest[lhs+1][rhs-1] + add);
+                }
+            }
+        }
+        
+        return longest[0].back();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+short java solution,beats 99%,with explanation
+public class Solution {
+    public int longestPalindromeSubseq(String s) {
+        int n=s.length();
+        int[][] a=new int[n][n];
+        for(int i=0;i<n;i++) a[i][i]=1;
+        return helper(a,0,n-1,s);
+    }
+    private int helper(int[][] a,int i,int j,String s){
+        if(i>j || a[i][j]!=0) return a[i][j];
+        if(s.charAt(i)==s.charAt(j)) a[i][j]=helper(a,i+1,j-1,s)+2;
+        else a[i][j]=Math.max(helper(a,i,j-1,s),helper(a,i+1,j,s) );
+        return a[i][j];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+What is the meaning of example 1?
+<p>Hi,</p>
+<p>I am kind of confused of the first example, which says &#34;bbbab&#34;&#39;s  longest palindromic subsequence is &#34;bbbb&#34;. Is this a typo or I didn&#39;t get the point?</p>
+<p>Thanks in advance!</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python standard DP beats 100% (with &quot;pre-processing&quot;)
+    def longestPalindromeSubseq(self, s):
+        if s == s[::-1]:
+            return len(s)
+
+        n = len(s)
+        dp = [[0 for j in xrange(n)] for i in xrange(n)]
+
+        for i in xrange(n-1, -1, -1):
+            dp[i][i] = 1
+            for j in xrange(i+1, n):
+                if s[i] == s[j]:
+                    dp[i][j] = 2 + dp[i+1][j-1]
+                else:
+                    dp[i][j] = max(dp[i+1][j], dp[i][j-1])
+                    
+        return dp[0][n-1]
+
+
+
+----------------------------------------------------------------------------------------------------
+Java DP Solution
+public class Solution {
+    public int longestPalindromeSubseq(String s) {
+        int len = s.length();
+        int[][] dp = new int[len][len];
+        for(int i = 0;i < len;i++){
+            dp[i][i] = 1;
+        }
+        //for each interval length
+        for(int l = 2;l <= len;l++){
+            //for each interval with the same length
+            for(int st = 0;st <= len-l;st++){
+                int ed = st+l-1;
+                //if left end equals to right end or not
+                dp[st][ed] = s.charAt(st)==s.charAt(ed)? dp[st+1][ed-1]+2 : Math.max(dp[st+1][ed], dp[st][ed-1]);
+            }
+        }
+        return dp[0][len-1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple recursive solution
+public class Solution {
+    int[][] memo;
+    
+    private int helper(String s, int l, int r) {
+        if (l == r) return 1;
+        if (l > r) return 0;
+        
+        if (memo[l][r] > -1) return memo[l][r];
+        
+        int result = 0;
+        if (s.charAt(l) == s.charAt(r)) {
+            result = 2 + helper(s, l + 1, r - 1);
+        } else {
+            result = Math.max(helper(s, l + 1, r), helper(s, l, r - 1));
+        }
+        
+        memo[l][r] = result;
+        return result;
+    }
+    
+    public int longestPalindromeSubseq(String s) {
+        memo = new int[s.length()][s.length()];
+        for (int i = 0; i < memo.length; ++i) {
+            for (int j = 0; j < memo.length; ++j) {
+                memo[i][j] = -1;
+            }
+        }
+        
+        return helper(s, 0, s.length() - 1);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+5-liner &amp; 7-liner two versions O(N^2) clean DP (detailed explanation)
+    int longestPalindromeSubseq(string s) {
+      int n = s.size(); vector<unordered_map<char,int>> next(n); // next[i][c]: index of first c in s[i:]
+      for (int i = n-1; i >= 0; next[i][s[i]] = i--) if (i+1<n) next[i] = next[i+1]; // O(n^2) 
+        
+      vector<vector<int>> dp(n,vector<int>(n)); // dp[i][j]: result for substring s[i:j]   
+      for (int d = 0; d < n; ++d)               // d = j-i: O(n)
+        for (int i = 0, j = i+d, k; j < n; ++i,++j) // O(n)
+          dp[i][j] = max(dp[i][j-1], (k=next[i][s[j]]) < j? dp[k+1][j-1]+2 : 1);
+          
+      return dp[0][n-1];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ beats 100%, DP solution, O(n^2) time, O(n) Space
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        int n = s.size(), res = 0;
+        vector<int> dp(n, 1);
+        for (int i = 1; i < n; i++) {
+            int len = 0;
+            for (int j = i - 1; j >= 0; j--) {
+                int tmp = dp[j];
+                if (s[j] == s[i]) {
+                    dp[j] = len + 2;
+                }
+                len = max(len, tmp);
+            }
+        }
+        for (auto i : dp)
+            res = max(res, i);
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+from collections import defaultdict
+class Solution(object):
+    def helper(self, i, j, s, cache):
+        if i > j:
+            return 0
+        elif i == j:
+            return 1
+        elif i in cache and j in cache[i]:
+            return cache[i][j]
+        elif s[i] == s[j]:
+            cache[i][j] = self.helper(i+1, j-1, s, cache) + 2
+            return cache[i][j]
+        else:
+            cache[i][j] = max(self.helper(i, j-1, s, cache), self.helper(i+1, j, s, cache))
+            return cache[i][j]
+    
+    def longestPalindromeSubseq(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        cache = defaultdict(dict)
+        return self.helper(0, len(s)-1, s, cache)
+
+
+----------------------------------------------------------------------------------------------------
+Super simple solution using reversed string
+    public int longestPalindromeSubseq(String s) {
+        if (s == null || s.isEmpty()) return 0;
+        int len = s.length();
+        int[][] dp = new int[len + 1][len + 1];
+        String t = new StringBuilder(s).reverse().toString();
+        for (int i = len - 1; i >= 0; i--) {
+            for (int j = len - 1; j >= 0; j--) {
+                if (s.charAt(i) == t.charAt(j)) {
+                    dp[i][j] = 1 + dp[i+1][j+1];
+                } else {
+                    dp[i][j] = Math.max(dp[i+1][j], dp[i][j+1]);
+                }
+            }
+        }
+        return dp[0][0];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Longest common subsequence, beats 94%
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        string rs = s;
+        reverse(rs.begin(), rs.end());
+        
+        vector<int> row1(s.size()+1), row2(s.size()+1);
+        for (int i=1; i<=s.size(); i++) {
+            for (int j=1; j<=rs.size(); j++) {
+                if (rs[j-1] == s[i-1]) {
+                    row2[j] = row1[j-1] + 1;
+                }
+                else {
+                    row2[j] = max(row1[j], row2[j-1]);
+                }
+            }
+            row1 = row2;
+        }
+        return row1.back();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Dynamic Programming Solution (with reference)
+int longestPalindromeSubseq(string s) {
+        int N = s.size();
+        vector<vector<int> > dp(1+N, vector<int>(1+N, 0));
+        for(int i = 0; i <= N; i++) dp[i][i] = 1;
+        for(int len = 2; len <= N; len++) {
+            for(int i = 1; i+len-1 <= N; i++) {
+                int j = i + len-1;
+                dp[i][j] = max(dp[i][j-1], max(dp[i+1][j], dp[i+1][j-1] + (len >= 2 && s[i-1] == s[j-1] ? 2 : INT_MIN)));
+            }
+        }
+        return dp[1][N];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+DP&#x2F;C++ O(n^2)
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        int n = s.length();
+        if(n < 2) return n;
+        
+        //table[i][j]: longest palindrome subseq for s[i ... j] i <= j; i, j = 0 ... n-1
+        //return table[0][n-1]
+        //table[i][j]
+        
+        //if s[i] == s[j]  2+table[i+1][j-1]
+        //if s[i] != s[j]  max(table[i][j-1], table[i+1][j])
+        vector<vector<int>> table(n, vector<int>(n, 1));
+        
+        for(int j = 1; j < n; j++) {
+            for(int i = j-1; i >= 0; i--) {
+                if(s[i] == s[j]) {
+                    table[i][j] = 2 + ( (i+1 <= j-1) ? table[i+1][j-1] : 0);
+                } else {
+                    table[i][j] = max(table[i+1][j], table[i][j-1]);
+                }
+            }
+        }
+        
+        return table[0][n-1];
+        
+        
+        
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java 20-line DP solution with explanations
+int[][] dp;
+public int longestPalindromeSubseq(String s) {
+    dp = new int [s.length()][s.length()];
+    return helper(s,0,s.length()-1);
+}
+private int helper(String s, int start,int end){
+    if(start>end) return 0;
+    if(dp[start][end]!=0) return dp[start][end]; //already checked the substring, just return the result
+    if(start==end){
+        dp[start][end] = 1;
+    }
+    else if(s.charAt(start)==s.charAt(end)){
+        dp[start][end] = 2 + helper(s,start+1,end-1); 
+    }
+    else{
+        dp[start][end] = Math.max(helper(s,start+1,end),helper(s,start,end-1));
+    }
+    return dp[start][end];
+}
+
+----------------------------------------------------------------------------------------------------
+Java DP solution, similar to solving LCS problem
+public class Solution {
+    public int longestPalindromeSubseq(String s) {
+        int len = s.length();
+        if(len < 2) return len;
+        int[][] dp= new int[len+1][len+1];
+        String reverse = new StringBuilder(s).reverse().toString();
+        for(int i = 1; i <= len; i++) {
+            for(int j = 1; j <= len; j++) {
+                if(s.charAt(i-1) == reverse.charAt(j-1)) dp[i][j] = dp[i-1][j-1] + 1;
+                else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+            }
+        }
+        return dp[len][len];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# - DP build up length of substring testing each
+    public int LongestPalindromeSubseq(string s) 
+    {
+        int n = s.Length;
+        int[,] dp = new int[n,n];
+        
+        // len 1
+        for (int i = 0; i < n; i++) dp[i,i] = 1;
+        
+        // len 2
+        for (int i = 0, j = 1; j < n; i++, j++) dp[i,j] = s[i] == s[j] ? 2 : 1;
+        
+        // len 3 and up
+        for (int len = 3; len <= n; len++)
+        {
+            for (int i = 0, j = len - 1; j < n; i++, j++)
+            {
+                // better of without left or without right
+                int max = Math.Max(dp[i,j-1], dp[i+1,j]);
+                if (s[i] == s[j])
+                {
+                    // now check 2 plus without left and without right
+                    max = Math.Max(max, 2 + dp[i+1,j-1]);
+                }
+                dp[i,j] = max;
+            }
+        }
+        
+        return dp[0,n-1];
+    }
+
+
+----------------------------------------------------------------------------------------------------

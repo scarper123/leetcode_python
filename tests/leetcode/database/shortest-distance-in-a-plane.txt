@@ -1,0 +1,194 @@
+Simple Solution
+> DELETE p1  
+FROM Person p1, Person p2  
+WHERE p1.Email = p2.Email AND
+>               p1.Id > p2.Id
+
+EXPLANATION:
+
+ - Take the table in the example
+ 
+**Id | Email**
+
+**1 | john@example.com** 
+
+**2 | bob@example.com** 
+
+**3 | john@example.com**
+
+ - Join the table on itself by the Email and you'll get:
+
+> FROM Person p1, Person p2  WHERE p1.Email = p2.Email
+
+**p1.Id  | p1.Email | p2.Id | p2.Email**
+
+**1	| john@example.com	| 1	| john@example.com**
+
+**3	| john@example.com      | 1	| john@example.com**
+
+**2	| bob@example.com	| 2	| bob@example.com**
+
+**1	| john@example.com	| 3	| john@example.com**
+
+**3	| john@example.com	| 3	| john@example.com**
+
+ - From this results filter the records that have p1.Id>p2.ID, in this case you'll get just one record:
+
+> AND           p1.Id > p2.Id
+
+**p1.Id  | p1.Email | p2.Id | p2.Email**
+
+**3	| john@example.com	| 1	| john@example.com**
+
+ - This is the record we need to delete, and by saying
+
+> DELETE p1
+
+in this multiple-table syntax, only matching rows from the tables listed before the FROM clause are deleted, in this case just
+
+**p1.Id  | p1.Email**
+
+**3	| john@example.com**
+
+will be deleted
+
+----------------------------------------------------------------------------------------------------
+A skillful mysql solution  avoid &quot; select and update conflict&quot;
+**where we try this clause :**
+
+    delete from Person where id not in(select min(id) as id from Person group by email)
+
+you will be noted " **You can't specify target table 'Person' for update in FROM clause** ",
+The solution is using a middle table with select clause:
+
+    delete from Person where id not in( 
+        select t.id from (
+            select min(id) as id from Person group by email
+        ) t
+    )
+
+----------------------------------------------------------------------------------------------------
+Solution in a Single query without any conflicts
+    DELETE p from Person p, Person q where p.Id>q.Id AND q.Email=p.Email 
+
+will keep the minimum id field
+
+----------------------------------------------------------------------------------------------------
+I can&#x27;t believe I get it wrong! What&#x27;s wrong with my code?
+select email,min(id) from Person group by email
+
+This is very simple sql right? How's possible it return duplicate emails?
+
+----------------------------------------------------------------------------------------------------
+A simple AC solution.
+delete from Person where Id not in ( select A.Id from (select min(Id) as Id from Person GROUP BY Email) A )
+
+----------------------------------------------------------------------------------------------------
+My answer to Delete Duplicate Emails with double nested query.
+    delete from Person where Id not in 
+    (select min_id from 
+    (select min(Id) as min_id from Person group by Email) 
+    as Cid) ;
+
+Refer here: http://stackoverflow.com/questions/45494/mysql-error-1093-cant-specify-target-table-for-update-in-from-clause
+
+----------------------------------------------------------------------------------------------------
+~745 ms solution beats 97%+ submissions
+    delete from 
+    Person
+    where  
+    Id not in (select Id 
+               from 
+                (select min(Id) as Id 
+                 from Person 
+                 group by Email
+                ) p
+              );
+
+----------------------------------------------------------------------------------------------------
+Very easy to understand
+    # Write your MySQL query statement below
+DELETE p2 FROM Person p1, Person p2
+WHERE p1.Email = p2. Email AND p1.Id < p2.Id 
+
+----------------------------------------------------------------------------------------------------
+I run the solution in Mysql and get the result expected
+delete from Person where id not in (select id from (select min(id) as id from Person group by email) as a);
+
+
+----------------------------------------------------------------------------------------------------
+Why this does not work?
+Select min(Id) as Id, Email
+from Person
+group by Email
+
+----------------------------------------------------------------------------------------------------
+What is wrong with this simple syntax?
+	SELECT MIN(id), Email
+	FROM Person
+	GROUP BY Email;
+
+----------------------------------------------------------------------------------------------------
+Why this solution get &#x27;runtime error&#x27;
+
+    delete from Person where Id not in (select min(Id) from Person group by Email)
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+What is wrong with this query?
+    delete from person where id not in (select min(id), email from person group by email);
+
+----------------------------------------------------------------------------------------------------
+Duplicate email question plz help!
+It seems that the system would allow solution using SELECTION:
+So, here is I have got, but this could pass. Please help me.
+
+DELETE FROM Person AS E1, Person AS E2
+WHERE E1.Id <>  E2.Id AND E2.Email=E1.Email;
+
+
+----------------------------------------------------------------------------------------------------
+Select statement wrong answer
+Wrong answer solution needs an explanation.
+
+    select * from Person p1 where not exists (select * from Person p2 where p1.Id>p2.Id and  p1.Email=p2.Email)
+
+test sample and solution as follow:
+Submission Result:
+
+Wrong AnswerMore Details 
+
+Input:	{"headers": {"Person": ["Id", "Email"]}, "rows": {"Person": [[1, "abc@efg.com"], [2, "abc@efg.com"]]}}
+
+Output:	{"headers": ["Id", "Email"], "values": [[1, "abc@efg.com"], [2, "abc@efg.com"]]}
+
+Expected:	{"headers": ["Id", "Email"], "values": [[1, "abc@efg.com"]]}
+
+----------------------------------------------------------------------------------------------------
+An Intuitive Solution
+    delete from Person
+    where Id not in
+    (select mid from (select min(Id) as mid from Person
+    group by Email)T )
+
+
+It works perfectly.
+
+Due to some MySQL specific reason I have to nest one more level to select mid, otherwise it will prompt an error. I'd appreciate it if someone happens to know why.
+
+----------------------------------------------------------------------------------------------------
+Why this solution get &quot;wrong answer&quot;
+My solution is :
+SELECT MIN(Id) as Id,Email FROM Person GROUP BY Email;
+Why does't it work?
+
+----------------------------------------------------------------------------------------------------
+Help,why &quot;Commands out of sync; you can&#x27;t run this command now&quot;
+i can run my SQL in navicat for mysql ,but it gets runtime error in leetcode.I'm Confused.Anyone can help me?
+
+----------------------------------------------------------------------------------------------------

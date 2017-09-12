@@ -1,0 +1,528 @@
+Concise Java Solution
+public class Solution {
+    public int[] findDiagonalOrder(int[][] matrix) {
+        if (matrix == null || matrix.length == 0) return new int[0];
+        int m = matrix.length, n = matrix[0].length;
+        
+        int[] result = new int[m * n];
+        int row = 0, col = 0, d = 0;
+        int[][] dirs = {{-1, 1}, {1, -1}};
+        
+        for (int i = 0; i < m * n; i++) {
+            result[i] = matrix[row][col];
+            row += dirs[d][0];
+            col += dirs[d][1];
+            
+            if (row >= m) { row = m - 1; col += 2; d = 1 - d;}
+            if (col >= n) { col = n - 1; row += 2; d = 1 - d;}
+            if (row < 0)  { row = 0; d = 1 - d;}
+            if (col < 0)  { col = 0; d = 1 - d;}
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 15 lines without using boolean
+    public int[] findDiagonalOrder(int[][] matrix) {
+        if (matrix.length == 0) return new int[0];
+        int r = 0, c = 0, m = matrix.length, n = matrix[0].length, arr[] = new int[m * n];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = matrix[r][c];
+            if ((r + c) % 2 == 0) { // moving up
+                if      (c == n - 1) { r++; }
+                else if (r == 0)     { c++; }
+                else            { r--; c++; }
+            } else {                // moving down
+                if      (r == m - 1) { c++; }
+                else if (c == 0)     { r++; }
+                else            { r++; c--; }
+            }   
+        }   
+        return arr;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ without paying too much attention on direction switch
+class Solution {
+public:
+    vector<int> findDiagonalOrder(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        if (m == 0) return vector<int>();
+        int n = matrix[0].size();
+        vector<vector<int>> tmp (m+n-1);
+        for (int i = 0; i < m+n-1 ; i++) {
+            int row = max(0, i-n+1);
+            int col = min(i, n-1);
+            for (; col >= 0 && row < m; row++, col--) {
+                tmp[i].push_back(matrix[row][col]);
+            }
+        }
+        vector<int> res;
+        for (int i = 0; i< tmp.size(); i++) {
+            if (i % 2) res.insert(res.end(), tmp[i].begin(), tmp[i].end());
+            else res.insert(res.end(), tmp[i].rbegin(), tmp[i].rend());
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+sorting and normal Python
+i
+
+----------------------------------------------------------------------------------------------------
+My 8ms Short Solution, 9line
+public int[] findDiagonalOrder(int[][] matrix) {
+	if (matrix.length == 0) return new int[0];
+	int h = matrix.length, w = matrix[0].length, id = 0;
+	int[] res  = new int[h*w];
+	for (int i = 0; i < h+w; i++) {
+		// find lower bound and upper bound
+		int lb = (int)Math.max(0, i-w+1), ub = (int)Math.min(i,h-1);
+		if (i%2 == 0) for (int j = ub; j >= lb; j--) res[id++] = matrix[j][i-j];
+		else for (int j = lb;j <= ub; j++) res[id++] = matrix[j][i-j];
+	}
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+3-line Python solution
+def findDiagonalOrder(self, matrix):
+        l = [[i,j] for i in range(len(matrix)) for j in range(len(matrix[0]))]
+        l.sort(key=lambda x: float(x[0]+x[1])-float(x[(x[0]+x[1])%2])*0.00000001 )
+        return [matrix[x][y] for [x,y] in l]
+
+
+----------------------------------------------------------------------------------------------------
+Short BF solution
+class Solution {
+public:
+    vector<int> findDiagonalOrder(vector<vector<int>>& matrix) {
+        if(matrix.size() == 0) return {};
+        vector<int> ele;
+        int n = matrix.size();
+        int m = matrix[0].size();
+        int maxSum = n + m - 2;
+
+        for (int sum = 0; sum <= maxSum; ++sum) {
+            int delta = 1 - 2*(sum%2 == 0);
+            int iStart = (n-1) * (sum%2 == 0);
+            int jStart = (m-1) * (sum%2 == 0);
+            
+            for (int i = iStart; i >= 0 && i < n; i += delta) {
+                for (int j = jStart; j>= 0 && j < m; j += delta) {
+                    if (i + j - sum == 0) {
+                        ele.push_back(matrix[i][j]);
+                    }
+                }
+            }
+        }
+        return ele;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java solution, easy to understand, O(n), 7ms
+public class Solution {
+    public int[] findDiagonalOrder(int[][] matrix) {
+        if(matrix.length == 0)
+            return new int[0];
+        int c = matrix[0].length, r = matrix.length;
+        int[] res = new int[r*c];
+        boolean flip = true;
+        int count = 0;
+        for(int sum = 0; sum <= r + c - 2; sum++){
+            int rr,cc;
+            if(flip == true){                               // Direction: to up-right
+                rr = Math.min(sum, r-1);                    // if before diagonal, rr = sum; else rr = r-1
+                cc = sum - rr;
+                while(rr >= 00 && cc < c)                   // reach matrix upper or right bound
+                    res[count++] = matrix[rr--][cc++];
+            }
+            else{                                           // Direction: to bottom-left
+                cc = Math.min(sum, c-1);                    // if before diagonal, cc = sum; else cc = c-1
+                rr = sum - cc;
+                while(cc >= 00 && rr < r)                   // reach matrix bottom or left bound
+                    res[count++] = matrix[rr++][cc--];
+            }
+            flip = !flip;           
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation (deque)
+from collections import deque, defaultdict
+class Solution(object):
+    def findDiagonalOrder(self, matrix):
+        """
+        :type matrix: List[List[int]]
+        :rtype: List[int]
+        """
+        if matrix == []:
+            return []
+        M, N = len(matrix), len(matrix[0])
+        result = defaultdict(deque)
+        max_sum, top_down = M+N-2, True
+        for i in range(M):
+            for j in range(N):
+                s = i+j
+                if s&1:
+                    result[s].append(matrix[i][j])
+                else:
+                    result[s].appendleft(matrix[i][j])
+        output = []
+        for s in range(max_sum+1):
+            output.extend(result[s])
+        return output
+
+
+----------------------------------------------------------------------------------------------------
+5 lines of Java
+int[] findDiagonalOrder(int[][] m) {
+  int[] result = new int[(m.length == 0) ? 0 : m.length * m[0].length];
+  for (int d = 0, i = 0; i < result.length; d++)
+    for (int lo = d - min(d, m.length - 1), hi = min(d, m[0].length - 1); lo <= hi; )
+      result[i++] = ((d & 1) == 0) ? m[d - lo][lo++] : m[d - hi][hi--];
+  return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Easy to Understand
+ class Solution {
+ public:
+    vector<int> findDiagonalOrder(vector<vector<int>>& matrix) {
+        vector<int> res;
+        int backward = 0;         // move up
+        int n = matrix.size();    // number of rows
+        if(n == 0) return res;
+        int m = matrix[0].size(); // number of columns
+        int count = 0;
+        int i=0, j=0;
+        while(count<m*n)
+        {
+            if(backward==0)
+            {
+                res.push_back(matrix[i][j]);
+                j++;
+                i--;
+                if(i < 0 && j <= m-1) {i++; backward = 1;}
+                else if(j > m-1) {i = i+2; j = m-1; backward = 1;}
+            }
+            else
+            {
+                res.push_back(matrix[i][j]);
+                j--;
+                i++;
+                if(j < 0 && i <= n-1) {j++; backward = 0;}
+                else if(i > n-1) {j = j+2; i = n-1; backward = 0;}
+            }
+            count++;
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java: Easy to understand O(MN) solution with comments
+public class Solution {
+public int[] findDiagonalOrder(int[][] matrix) {
+    if(matrix == null) return new int[0];
+    int m = matrix.length;
+    if(m == 0) return new int[0];
+    int n = matrix[0].length;
+    if(n == 0) return new int[0];
+    
+    int[] result = new int[m * n];
+    int i = 0, j = 0, k = 0;
+    boolean incr = true;
+    
+    // Is it a row or column vector?
+    if(m == 1 || n == 1){
+        for(int r = 0; r < m; ++r)
+            for (int c = 0; c < n; ++c)
+                result[k++] = matrix[r][c];    
+        return result;
+    }
+    while(i < m && j < n){
+        result[k++] = matrix[i][j];   
+        // Is it corner (0, 0)?
+        if(i == 0 && j == 0){
+            j++;
+            incr = !incr;
+            continue;
+        }
+        // Is it corner (m-1, 0)?
+        if(i == m - 1 && j == 0){
+            if(!incr){
+                j++;
+                incr = !incr;
+                continue;
+            }
+        }
+        // Is it corner (0, n-1)?
+        if(i == 0 && j == n - 1){
+            if(incr){
+                i++;
+                incr = !incr;
+                continue;
+            }
+        }
+        // Is it edges left or bottom?
+        if(incr && (i == 0 || j == n - 1)){
+            if(i == 0 && j < n - 1){
+                j++;
+            }
+            else if(i > 0 && j == n - 1){
+                i++;
+            }
+            else if(i == 0 && j == n - 1){
+                i++;
+            }
+            incr = !incr;
+            continue;
+        }
+        // Is it edges right or top?
+        if(!incr && (j == 0 || i == m - 1)){
+            if(j == 0 && i < m - 1){
+                i++;
+            }
+            else if(j > 0 && i == m - 1){
+                j++;
+            }
+            else if(i == 0 && i == m - 1){
+                j++;
+            }
+            incr = !incr;
+            continue;
+        }
+        if(incr){
+                i--;
+                j++;
+        }
+        else {
+            i++;
+            j--;
+        }
+    }
+    return result;
+}
+}
+
+----------------------------------------------------------------------------------------------------
+Highly Intuitive Java Solution
+public int[] findDiagonalOrder(int[][] matrix) {
+    if(matrix.length == 0)
+        return new int[0];
+
+    int result[] = new int[matrix.length * matrix[0].length];
+    int curRow = 0;
+    int curCol = 0;
+    int index = 0;
+    boolean isUp = true;
+    for(int i = 0; i < matrix.length + matrix[0].length; i++) {
+        if(isUp) {
+            while(curRow >= 0 && curCol < matrix[0].length) {
+                result[index++] = matrix[curRow--][curCol++];
+            }
+            if(curCol == matrix[0].length)
+                curCol = matrix[0].length - 1;
+            curRow = i + 1 - curCol;
+            isUp = !isUp;
+        }
+        else {
+            while(curRow < matrix.length && curCol >= 0) {
+                result[index++] = matrix[curRow++][curCol--];
+            }
+            if(curRow == matrix.length)
+                curRow = matrix.length - 1;
+            curCol = i + 1 - curRow;
+            isUp = !isUp;
+        }
+    }        
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+90ms C++, with comments
+    for (int i = 0; i < n + m; i++) {
+        if (i & 1) {
+            int y = min(i, m - 1), x = i - y;
+            // down
+            while (x < n && y >= 0) {
+                result.push_back(matrix[x][y]);
+                x++, y--;
+            }
+        } else {
+            int x = min(i, n - 1), y = i - x;
+            // up 
+            while (x >= 0 && y < m) {
+                result.push_back(matrix[x][y]);
+                x--, y++;
+            }
+        }
+    }
+    
+    return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+6-liner C++ O(m*n) print values by diagonals (with explanation)
+    vector<int> findDiagonalOrder(vector<vector<int>>& a) {
+      int m, n, L, R; vector<int> res;
+      if ((m = a.size()) && (n = a[0].size()))
+        for (int i=0; L=max(i-m+1,0), R=min(n-1,i), i<m+n-1; ++i)
+          if (i%2) for (int j = R; j >= L; --j) res.push_back(a[i-j][j]);
+          else     for (int j = L; j <= R; ++j) res.push_back(a[i-j][j]);
+
+      return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simply Python Solution
+class Solution(object):
+    def findDiagonalOrder(self, matrix):
+        """
+        :type matrix: List[List[int]]
+        :rtype: List[int]
+        """
+        result = [ ]
+        dd = collections.defaultdict(list)
+        if not matrix: return result
+        # Step 1: Numbers are grouped by the diagonals.
+        # Numbers in same diagonal have same value of row+col
+        for i in range(0, len(matrix)):
+            for j in range(0, len(matrix[0])):
+                dd[i+j+1].append(matrix[i][j]) # starting indices from 1, hence i+j+1.
+        # Step 2: Place diagonals in the result list.
+        # But remember to reverse numbers in odd diagonals.
+        for k, v in dd.iteritems():
+            if k%2==1: dd[k].reverse()
+            result += dd[k]
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Java super easy solution with math thinking
+public class Solution {
+    public int[] findDiagonalOrder(int[][] matrix) {
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0) {
+            return new int[] {};
+        }
+        int m = matrix.length;
+        int n = matrix[0].length;
+        int index = 0;
+        int[] diagonal = new int[m * n];
+        for (int c = 0; c <= m + n - 2; c++) {
+            if (c % 2 == 0) {
+                for (int i = Math.min(m - 1, c); i >= Math.max(0, c - n + 1); i--) {
+                    diagonal[index++] = matrix[i][c - i];
+                }
+            } else {
+                for (int i = Math.max(0, c - n + 1); i <= Math.min(m - 1, c); i++) {
+                    diagonal[index++] = matrix[i][c - i];
+                }
+            }
+        }
+        return diagonal;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+All elements on the same diagonal have same (row + col) values. Easy-to-understand Python solution
+from collections import deque
+class Solution(object):
+
+    def findDiagonalOrder(self, matrix):
+    
+        if not matrix or not matrix[0]:
+            return []
+    
+        diagonalrow = len(matrix) + len(matrix[0]) + 1
+        flatten = [deque() for i in xrange(diagonalrow)]
+    
+        for i in xrange(len(matrix)):
+            for j in xrange(len(matrix[0])):
+                index = i + j
+                if index % 2 == 0:
+                    flatten[index].appendleft(matrix[i][j])
+                else:
+                    flatten[index].append(matrix[i][j])
+    
+        ans = []
+        for seq in flatten:
+            ans.extend(seq)
+        
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+EASY UNDERSTAND SOLUTION(JAVA)
+public class Solution {
+    public int[] findDiagonalOrder(int[][] matrix) {
+        if(matrix.length==0||matrix[0].length==0)return new int[0];
+        int raw=matrix.length;
+        int col=matrix[0].length;
+        int[] ret=new int[raw*col];
+        int index=0;
+        for(int rc=0;rc<raw+col-1;rc++){
+            if((rc&1)==0){//the sum is even
+                int r=rc>=raw?raw-1:rc;
+                for(;r>=0&&rc-r<col;r--){
+                    ret[index++]=matrix[r][rc-r];
+                }
+            }else{//the sum is odd
+                int c=rc>=col?col-1:rc;
+                for(;c>=0&&rc-c<raw;c--){
+                    ret[index++]=matrix[rc-c][c];
+                }
+            }
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 88ms &quot;non-walking&quot; solution + explanation
+        vector<int> ret;
+        int n = matrix.size();
+        if(n == 0)
+            return ret;
+        int m = matrix[0].size();
+        if(m==0)
+            return ret;
+        for(int layerCount=0;layerCount<m+n-1;layerCount++)
+        {
+            int maxX = min(layerCount,m-1);
+            int maxY = min(layerCount,n-1);
+            int minX = max(0,layerCount-maxY);
+            int minY = max(0,layerCount-maxX);
+    
+            for(int i=0;minX+i<=maxX && minY+i<=maxY;i++)
+            {
+                int xPos = minX+i;
+                int yPos = maxY-i;
+                if(layerCount%2)
+                {
+                    xPos = minX+maxX-xPos;
+                    yPos = minY+maxY-yPos;
+                }
+                ret.push_back(matrix[yPos][xPos]);
+            }
+        }
+        return ret;
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,295 @@
+Python Solution for Teemo
+class Solution(object):
+    def findPoisonedDuration(self, timeSeries, duration):
+        ans = duration * len(timeSeries)
+        for i in range(1,len(timeSeries)):
+            ans -= max(0, duration - (timeSeries[i] - timeSeries[i-1]))
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+O(n) Java Solution using same idea of merge intervals
+public class Solution {
+    public int findPosisonedDuration(int[] timeSeries, int duration) {
+        if (timeSeries == null || timeSeries.length == 0 || duration == 0) return 0;
+        
+        int result = 0, start = timeSeries[0], end = timeSeries[0] + duration;
+        for (int i = 1; i < timeSeries.length; i++) {
+            if (timeSeries[i] > end) {
+                result += end - start;
+                start = timeSeries[i];
+            }
+            end = timeSeries[i] + duration;
+        }
+        result += end - start;
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 7 lines O(n) solution
+    public int findPoisonedDuration(int[] timeSeries, int duration) {
+        if (timeSeries.length == 0) return 0;
+        int begin = timeSeries[0], total = 0;
+        for (int t : timeSeries) {
+            total = total + (t < begin + duration ? t - begin : duration);
+            begin = t;
+        }   
+        return total + duration;
+    } 
+
+
+----------------------------------------------------------------------------------------------------
+Simple question obscured by unnecessary story
+    def findPosisonedDuration(self, timeSeries, duration):
+        if not timeSeries:
+            return 0
+        poisoned = duration
+        for i in range(1, len(timeSeries)):
+            poisoned += duration - max(0, timeSeries[i-1]+duration - timeSeries[i])
+        return poisoned
+
+----------------------------------------------------------------------------------------------------
+Short O(n) C++ solution
+lass Solution {
+public:
+    int findPosisonedDuration(vector<int>& ts, int duration) {
+        int tp = 0, pe = 0;
+        for(int i=0; i<ts.size(); ++i){
+            tp += duration - (ts[i] < pe) *(pe - ts[i]);
+            pe = ts[i] + duration;
+        }
+        return tp;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java solution
+public class Solution {
+    public int findPosisonedDuration(int[] timeSeries, int duration) {
+        
+        if(timeSeries.length == 0)return 0;
+        if(timeSeries.length == 1)return duration;
+        
+        int total = 0;
+        for(int i=1; i<timeSeries.length;i++)
+        {
+            total += Math.min(duration,timeSeries[i]-timeSeries[i-1]);
+        }
+        
+        total += duration;
+     
+     return total;   
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) Java Solution
+public class Solution {
+    public int findPoisonedDuration(int[] timeSeries, int duration) {
+        int res=0;
+        if(timeSeries==null||timeSeries.length==0||duration<=0) return res;
+        for(int i=1;i<timeSeries.length;i++){
+            res+=Math.min(duration, timeSeries[i]-timeSeries[i-1]);
+        }
+        return res+duration;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+6 lines of Java O(n) using Math.min
+}
+
+
+----------------------------------------------------------------------------------------------------
+4 lines O(n) Python
+class Solution(object):
+    def findPosisonedDuration(self, timeSeries, duration):
+        """
+        :type timeSeries: List[int]
+        :type duration: int
+        :rtype: int
+        """
+        ans = 0
+        for i in range(len(timeSeries) - 1):
+            ans += min(duration, timeSeries[i+1] - timeSeries[i])
+        return ans + duration if timeSeries else 0
+
+
+----------------------------------------------------------------------------------------------------
+C++ Version, Using lower_bound O(lgN)???
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+Python, 1-line straightforward and concise solution
+def findPoisonedDuration(self, s, d):
+        return sum(min(d, b - a) for a, b in zip(s, s[1:] + [10e7]))
+
+----------------------------------------------------------------------------------------------------
+Simple Java O(n) solution, easy to understand
+    public int findPosisonedDuration(int[] timeSeries, int duration) {
+        int result = 0;
+//The end of previous poison status
+        int pre = Integer.MIN_VALUE;
+        for(int t: timeSeries) {
+            int end = t + duration;
+            result += end - Math.max(t, pre);
+            pre = end;
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very Short C++ O(N) Greedy Solutiuon
+    for(auto it : timeSeries)
+    {
+        poisonEnd = max(it, poisonEnd);
+        total += (it + duration - poisonEnd);
+        poisonEnd = it +  duration;
+    }
+    return total;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple 5 lines
+class Solution {
+public:
+    int findPoisonedDuration(vector<int>& timeSeries, int duration) {
+        int ans = 0, last = -1;
+        for(auto e : timeSeries)
+        {
+            if(last > e) ans -= last - e;
+            ans += duration;
+            last = e + duration;
+        }
+        return ans;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++_O(n) _Dynamic Programming
+class Solution {
+public:
+int findPoisonedDuration(vector<int>& timeSeries, int duration) {
+    if(timeSeries.empty()) return 0;
+    int n = timeSeries.size();
+    vector<int> dp(n, 0);
+    int res = 0;
+    int start = timeSeries[0];
+    dp[0] = timeSeries[0] + duration;
+    for(int i = 1; i < n; ++i){
+        if(dp[i-1] < timeSeries[i]){
+            res += dp[i-1] - start;
+            start = timeSeries[i];
+            dp[i] = timeSeries[i] + duration;
+        }else{
+            dp[i] = max(dp[i-1], timeSeries[i] + duration);
+        }
+    }
+    res += dp[n-1] - start;
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+Easy C++ Solution
+    int findPoisonedDuration(vector<int>& timeSeries, int duration) {
+
+        int total = 0;
+        int wakeup_time = 0;
+        for (int i=0; i<timeSeries.size(); i++)
+        {
+            if (timeSeries[i] < wakeup_time)
+                total = total + (timeSeries[i] + duration - wakeup_time);
+            else
+                total = total + duration;
+            
+            wakeup_time = timeSeries[i] + duration;
+        }
+        
+        return total;
+     }
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(N)
+class Solution {
+public:
+    int findPoisonedDuration(vector<int>& timeSeries, int duration) {
+        if (timeSeries.empty())
+            return 0;
+
+        int res = timeSeries.back() + duration - timeSeries[0];
+        for (int i = 1; i < (int)timeSeries.size(); i++)
+            res -= max(0, timeSeries[i] - (timeSeries[i - 1] + duration));
+
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+4 lines O(n) Java Solution
+public int findPoisonedDuration(int[] timeSeries, int duration) {
+        int res = 0;
+        for (int i = 0; i < timeSeries.length - 1; i++)
+            res += (timeSeries[i + 1] - timeSeries[i] >= duration) ? duration : timeSeries[i + 1] - timeSeries[i];
+        return (timeSeries.length == 0) ? 0 : res + duration;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise Java solution, 9 ms
+public int findPoisonedDuration(int[] timeSeries, int duration) {
+        if(timeSeries.length==0) return 0;
+        if(timeSeries.length==1) return duration;
+        int poison_time=0;
+        for(int i=1;i<timeSeries.length;i++){
+        poison_time+=Math.min(timeSeries[i]-timeSeries[i-1],duration);      
+        }
+        return poison_time+duration;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Self Explanatory Code in Java, Very simple and Meaningful variable names to understand
+public int findPoisonedDuration(int[] timeSeries, int duration) {
+        
+        if(timeSeries.length == 0){
+            return 0;
+        }
+        
+        int currentIndex = 0;
+        int totalPoisonTime = 0;
+        int maxReachable = 0;
+        
+        maxReachable = timeSeries[0] + duration-1;
+        totalPoisonTime = duration;
+        
+        for(int i=1;i < timeSeries.length;i++){
+            
+            int currentReachable = timeSeries[i] + duration -1 ;
+            
+            if(timeSeries[i] > maxReachable){
+                totalPoisonTime = totalPoisonTime + duration;
+            }else{
+                totalPoisonTime = totalPoisonTime + (currentReachable - maxReachable);
+            }
+            
+            if(currentReachable > maxReachable){
+                maxReachable = currentReachable;
+            }
+            
+        }
+        
+        return totalPoisonTime;
+    }
+
+
+----------------------------------------------------------------------------------------------------

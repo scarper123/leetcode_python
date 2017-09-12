@@ -1,0 +1,110 @@
+Simple Solution
+    SELECT wt1.Id 
+    FROM Weather wt1, Weather wt2
+    WHERE wt1.Temperature > wt2.Temperature AND 
+          TO_DAYS(wt1.DATE)-TO_DAYS(wt2.DATE)=1;
+
+
+EXPLANATION:
+
+**TO_DAYS(wt1.DATE)** return the number of days between from year 0 to date DATE
+**TO_DAYS(wt1.DATE)-TO_DAYS(wt2.DATE)=1** check if wt2.DATE is yesterday respect to wt1.DATE
+
+We select from the joined tables the rows that have 
+
+**wt1.Temperature > wt2.Temperature** 
+
+and difference between dates in days of 1 (yesterday):
+
+**TO_DAYS(wt1.DATE)-TO_DAYS(wt2.DATE)=1;**
+
+----------------------------------------------------------------------------------------------------
+My simple solution using inner join
+    SELECT t1.Id
+    FROM Weather t1
+    INNER JOIN Weather t2
+    ON TO_DAYS(t1.Date) = TO_DAYS(t2.Date) + 1
+    WHERE t1.Temperature > t2.Temperatur
+
+----------------------------------------------------------------------------------------------------
+Two Solutions..........
+1.
+
+    SELECT a.Id FROM Weather AS a, Weather AS b
+    WHERE DATEDIFF(a.Date, b.Date)=1 AND a.Temperature > b.Temperature
+
+2.
+
+    SELECT Id FROM (
+        SELECT CASE
+            WHEN Temperature > @prevtemp AND DATEDIFF(Date, @prevdate) = 1 THEN Id ELSE NULL END AS Id,
+            @prevtemp:=Temperature,
+            @prevdate:=Date
+        FROM Weather, (SELECT @prevtemp:=NULL) AS A, (SELECT @prevdate:=NULL) AS B ORDER BY Date ASC
+    ) AS D WHERE Id IS NOT NULL
+
+----------------------------------------------------------------------------------------------------
+My simple solution
+select w1.id 
+from Weather w1, Weather w2 
+where (DATEDIFF(w1.Date, w2.Date) = 1) AND w1.Temperature > w2.Temperature
+
+----------------------------------------------------------------------------------------------------
+Why is subtracting 1 directly from Date not working, but subdate(a.Date,1) works?
+Why is subtracting 1 directly from Date not working, but subdate(a.Date,1) works?
+
+My code is 
+
+    select W1.Id
+    from Weather as W1, Weather as W2
+    where W1.Date-1 = W2.Date and W1.Temperature> W2.Temperature
+
+it only passed 13/14 cases.
+
+However, when I changed `W1.Date-1` to `sub(W1.Date,1)` in the where clause, it worked. What is fundamental difference?
+
+
+----------------------------------------------------------------------------------------------------
+A simple straightforward solution and it&#x27;s very fast
+    select w1.Id Id from Weather w1, Weather w2 where datediff(w1.Date,w2.Date)=1 and w1.Temperature>w2.Temperature
+
+----------------------------------------------------------------------------------------------------
+My first SQL query
+select a.Id as Id
+        from 
+        Weather as a
+        join
+        Weather as b
+        ON
+        b.Date = subdate(a.Date,1)
+        where 
+        a.Temperature > b.Temperature;
+        
+
+----------------------------------------------------------------------------------------------------
+Solution with mysql built-in function
+    SELECT 
+        t1.Id
+    From 
+        Weather t1, Weather t2
+    WHERE 
+        t1.Temperature > t2.Temperature
+    AND
+        subdate(t1.Date, 1) = t2.Date
+
+MySQL SUBDATE() subtracts a time value (as interval) from a given date.
+
+----------------------------------------------------------------------------------------------------
+A solusion with time 1025 ms
+    select a.Id from (select w2.Id from Weather w1 join Weather w2 on datediff(w2.Date,w1.Date)=1 where w1.Temperature < w2.Temperature) a
+
+----------------------------------------------------------------------------------------------------
+Why using a condition on Id not working?
+
+    SELECT a.Id FROM Weather a INNER JOIN Weather b ON a.Id=b.Id+1
+     WHERE a.Temperature>b.Temperature
+
+I know the logic here is all about one day earlier, but the code I write should have given the same answer. However, it was not working here. Why?
+
+----------------------------------------------------------------------------------------------------
+Datediff and inner join

@@ -1,0 +1,542 @@
+C++, DFS recursion
+class Solution {
+public:
+    int findSecondMinimumValue(TreeNode* root) {
+        if (!root) return -1;
+        int ans = minval(root, root->val);
+        return ans;
+    }
+private:
+    int minval(TreeNode* p, int first) {
+        if (p == nullptr) return -1;
+        if (p->val != first) return p->val;
+        int left = minval(p->left, first), right = minval(p->right, first);
+        // if all nodes of a subtree = root->val, 
+        // there is no second minimum value, return -1
+        if (left == -1) return right;
+        if (right == -1) return left;
+        return min(left, right);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Very simple Java solution
+public int findSecondMinimumValue(TreeNode root) {
+            if (root == null) {
+                return -1;
+            }
+            Set<Integer> set = new TreeSet<>();
+            dfs(root, set);
+            Iterator<Integer> iterator = set.iterator();
+            int count = 0;
+            while (iterator.hasNext()) {
+                count++;
+                int result = iterator.next();
+                if (count == 2) {
+                    return result;
+                }
+            }
+            return -1;
+        }
+
+        private void dfs(TreeNode root, Set<Integer> set) {
+            if (root == null) {
+                return;
+            }
+            set.add(root.val);
+            dfs(root.left, set);
+            dfs(root.right, set);
+            return;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+BFS Acc Solution (Java and C# code)
+    public int FindSecondMinimumValue(TreeNode root)
+    {
+        int rootVal = root.val;
+        int secondSmall = int.MaxValue;
+        bool diffFound = false;
+        Queue<TreeNode> Q = new Queue<TreeNode>();
+        Q.Enqueue(root);
+
+        while (Q.Any()) //while Q is not empty
+        {
+            TreeNode curr = Q.Dequeue();
+            if (curr.val != rootVal && curr.val <= secondSmall)
+            {
+                secondSmall = curr.val;
+                diffFound = true;
+            }
+            if (curr.left != null)
+            {
+                Q.Enqueue(curr.left);
+                Q.Enqueue(curr.right);
+            }
+        }
+        return (secondSmall == int.MaxValue && !diffFound) ? -1 : secondSmall;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java divide and conquer solution
+public int findSecondMinimumValue(TreeNode root) {
+    if (root == null) {
+        return -1;
+    }
+    if (root.left == null && root.right == null) {
+        return -1;
+    }
+    
+    int left = root.left.val;
+    int right = root.right.val;
+    
+    // if value same as root value, need to find the next candidate
+    if (root.left.val == root.val) {
+        left = findSecondMinimumValue(root.left);
+    }
+    if (root.right.val == root.val) {
+        right = findSecondMinimumValue(root.right);
+    }
+    
+    if (left != -1 && right != -1) {
+        return Math.min(left, right);
+    } else if (left != -1) {
+        return left;
+    } else {
+        return right;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Extremely Easy To Understand (Beats 91%)
+class Solution(object):
+    def findSecondMinimumValue(self, root):
+        """
+        :type root: TreeNode
+        :rtype: int
+        """
+        # Time: O(n)
+        # Space: O(lgn)
+        res = [float('inf')]
+        def traverse(node):
+            if not node:
+                return
+            if root.val < node.val < res[0]:
+                res[0] = node.val
+            traverse(node.left)
+            traverse(node.right)
+        traverse(root)
+        return -1 if res[0] == float('inf') else res[0]
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS, no Set
+class Solution {
+    private Integer m1=null;
+    private Integer m2=null;
+    
+    private void helper(TreeNode root){
+        if(root==null)
+            return;
+        if( (m2==null && root.val>m1.intValue()) || (m2!=null && root.val>m1.intValue() && root.val<m2) )
+            m2 = root.val;
+        
+        helper(root.left);
+        helper(root.right);
+    }
+    
+    public int findSecondMinimumValue(TreeNode root) {
+        if(root==null)
+            return -1;
+        
+        m1 = root.val;
+        helper(root);
+        if(m2==null)
+            return -1;
+        return m2.intValue();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def findSecondMinimumValue(self, root):
+    self.ans = float('inf')
+    min1 = root.val
+
+    def dfs(node):
+        if node:
+            if min1 < node.val < self.ans:
+                self.ans = node.val
+            elif node.val == min1:
+                dfs(node.left)
+                dfs(node.right)
+
+    dfs(root)
+    return self.ans if self.ans < float('inf') else -1
+
+
+----------------------------------------------------------------------------------------------------
+C++ 2 lines
+unsigned int minValue(TreeNode* r, int v) {
+    return r->val != v ? r->val : r->left == nullptr ? -1 : min(minValue(r->left, v), minValue(r->right, v));
+}
+int findSecondMinimumValue(TreeNode* root) {
+    return minValue(root, root->val);
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# DFS solution
+    public int FindSecondMinimumValue(TreeNode root) {
+        int[] liaValue = new int[] { root.val, -1};
+        helper( root, liaValue );
+        return liaValue[1];
+    }
+    
+    private void helper( TreeNode root, int[] piaValue ) {
+        if ( root != null && ( piaValue[1] == -1 || root.val < piaValue[1]))  {
+           if ( root.val != piaValue[0] ) 
+               piaValue[1] = root.val;
+            
+            helper( root.left, piaValue );
+            helper( root.right, piaValue );
+    
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Solution
+class Solution {
+public:
+    int findSecondMinimumValue(TreeNode* root) {
+        if (!root) return -1;
+        int res = INT_MAX;
+        find(root, res);
+        return res == INT_MAX ? -1 : res;
+    }
+
+private:
+    void find(TreeNode* n, int& res) {
+        if (!n || !n->left) return;
+        if (n->left->val == n->right->val) {
+            find(n->left, res);
+            find(n->right, res);
+        }
+        else if (n->left->val < n->right->val) {
+            res = min(res, n->right->val);
+            find(n->left, res);
+        }
+        else {
+            res = min(res, n->left->val);
+            find(n->right, res);
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java dfs with explanation
+class Solution {
+    int minVal;
+    long second;
+    
+    public int findSecondMinimumValue(TreeNode root) {
+        if(root == null) return -1;
+        minVal = root.val;
+        second = Long.MAX_VALUE;
+        dfs(root);
+        return second == Long.MAX_VALUE ? -1 : (int) second;
+    }
+    
+    private void dfs(TreeNode root){
+        if (root.val != minVal){
+            second = Math.min(second, root.val);
+            return;
+        }
+        if (root.left != null)
+            dfs(root.left);
+        if (root.right != null)
+            dfs(root.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python BFS
+def findSecondMinimumValue(self, root):
+    res = []
+    queue = [root]
+    seen = set()
+    for node in queue:
+        if node.val not in seen:
+            heapq.heappush(res, node.val)
+            seen.add(node.val)
+        if node.left:
+            queue.append(node.left)
+            queue.append(node.right)
+    heapq.heappop(res)
+    return heapq.heappop(res) if res else -1
+
+----------------------------------------------------------------------------------------------------
+share my java solution.
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public int findSecondMinimumValue(TreeNode root) {
+        if(root==null || (root.left==null && root.right==null)){
+            return -1;
+        }
+        
+        return findNextLarger(root);
+    }
+    
+    public int findNextLarger(TreeNode root){
+        if(root.left==null&&root.right==null){
+            return -1;
+        }
+        
+        int ans=-1;
+        int left = findNextLarger(root.left);
+        int right = findNextLarger(root.right);
+        
+        if(root.left.val==root.val&&root.right.val==root.val){
+            if(left==-1&&right==-1){
+                return -1;
+            }else if(left!=-1&&right!=-1){
+                ans = Math.min(left,right);
+            }else{
+                ans = left==-1?right:left;
+            }
+            
+            return ans;
+            
+        }else{
+            ans = Math.max(root.left.val,root.right.val);
+        }
+        
+        if(left!=-1){
+            ans = Math.min(left,ans);
+        }
+        if(right!=-1){
+            ans=Math.min(ans,right);
+        }
+        
+        return ans;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ using std::set() and std::min_element()
+class Solution {
+public:
+    int findSecondMinimumValue(TreeNode* root) {
+        if (!root) { return -1; }
+        queue<TreeNode*> q{}; q.push(root);
+        set<int> nums{};
+        while (!q.empty()){
+            TreeNode* node=q.front();
+            q.pop();
+            nums.insert(node->val);
+            if (node->left) { q.push(node->left); }
+            if (node->right) { q.push(node->right); }
+        }
+        nums.erase(min_element(nums.begin(),nums.end()));
+        set<int>::iterator itr = min_element(nums.begin(),nums.end());
+        if (itr == nums.end()) { return -1; }
+        return *itr;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS
+    return findSec(root, root.val);
+}
+private int findSec(TreeNode node, int val){
+    if (node == null){
+        return -1;
+    }
+    if (node.val != val){
+        return node.val;
+    }
+    int le = findSec(node.left, val);
+    int ri = findSec(node.right,val);
+    if (le != -1 && ri != -1){
+        return Math.min(le , ri);
+    }
+    if (le == -1){
+        return ri;
+    }
+    return le;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution
+class Solution {
+public:
+    int findSecondMinimumValue(TreeNode* root) {
+                collect(root);
+		if(nums.size() == 1){
+			return -1;
+		}
+		vector<int> arr(nums.begin(), nums.end());
+		sort(arr.begin(), arr.end());
+		return arr[1];
+    }
+private:
+	void collect(TreeNode *root){
+		nums.insert(root->val);
+		if(root->left)collect(root->left);
+		if(root->right)collect(root->right);
+	}
+	set<int> nums;
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution&#91;DFS&#93;, Easy
+public int findSecondMinimumValue(TreeNode root) {
+    if(root == null)
+        return -1;
+    
+    int  res = findSecondMin(root, root.val);
+    return root.val == res? -1:res;
+}
+
+private int findSecondMin(TreeNode root, int prev){
+    if(root == null)
+        return prev;
+    
+    if(root.val != prev)
+        return root.val;
+    
+    int left = findSecondMin(root.left, root.val);
+    int right = findSecondMin(root.right, root.val);
+    
+    if(left == root.val && right == root.val)
+        return prev;
+    else if(left == root.val)
+        return right;
+    else if(right == root.val)
+        return left;
+    else
+        return Math.min(left, right);
+}
+
+----------------------------------------------------------------------------------------------------
+C++ DFS recursion with simple explanation
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    int findSecondMinimumValue(TreeNode* root) {
+        int result = -1;
+        if (!root || (!root->left && !root->right)) return result;
+        int a = root->val, b = -1, c = -1;
+        if (root->left) {
+            int left = findSecondMinimumValue(root->left);
+            b = root->left->val == a ? (left == -1 ? a : left) : root->left->val;
+        }
+        if (root->right) {
+            int right = findSecondMinimumValue(root->right);
+            c = root->right->val == a ? (right == -1 ? a : right) : root->right->val;
+        }
+        if (b < c) {
+            if (b > a) result = b;
+            else result = c;
+        } else if (b == c) {
+            if (b > a) result = b;
+            else result = -1;
+        } else {
+            if (c > a) result = c;
+            else result = b;
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+python o(n) bfs &amp; dfs
+class Solution(object):
+    def findSecondMinimumValue(self, root):
+        q, s = collections.deque([root]), set()
+        while q:
+            p = q.popleft()
+            s.add(p.val)
+            if p.left:
+                q.append(p.left)
+            if p.right:
+                q.append(p.right)
+        s.remove(min(s))
+        return min(s) if s else -1
+
+# Runtime: 42 ms
+
+
+----------------------------------------------------------------------------------------------------
+C# DFS solution
+public class Solution 
+{
+    public int FindSecondMinimumValue(TreeNode root) 
+    {
+        if (root == null) return -1;
+
+        var result = DFS(root);
+        
+        if (result == int.MaxValue) return -1;
+        
+        return result;
+    }
+
+    private int DFS(TreeNode root)
+    {
+        if (root == null) return int.MaxValue;
+
+        if (root.left != null)
+        {
+            if (root.left.val == root.right.val)
+            {
+                return Math.Min(DFS(root.left), DFS(root.right));
+            }
+            else
+            {
+                if (root.left.val == root.val)
+                {
+                    return Math.Min(root.right.val, DFS(root.left));
+                }
+                else
+                {
+                    return Math.Min(root.left.val, DFS(root.right));
+                }
+            }
+        }
+
+        return int.MaxValue;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,472 @@
+Java Recursive O(n) time
+public class Solution {
+
+    int sum = 0;
+    
+    public TreeNode convertBST(TreeNode root) {
+        convert(root);
+        return root;
+    }
+    
+    public void convert(TreeNode cur) {
+        if (cur == null) return;
+        convert(cur.right);
+        cur.val += sum;
+        sum = cur.val;
+        convert(cur.left);
+    }
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution beats 100%
+class Solution {
+private:
+    int cur_sum = 0;
+public:
+    void travel(TreeNode* root){
+        if (!root) return;
+        if (root->right) travel(root->right);
+        
+        root->val = (cur_sum += root->val);
+        if (root->left) travel(root->left);
+    }
+    TreeNode* convertBST(TreeNode* root) {
+        travel(root);
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, 7 liner, reversed traversal
+public class Solution {
+    int sum = 0;
+    
+    public TreeNode convertBST(TreeNode root) {
+        if (root == null) return null;
+        
+        convertBST(root.right);
+        
+        root.val += sum;
+        sum = root.val;
+        
+        convertBST(root.left);
+        
+        return root;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 6 lines
+public class Solution {
+    public TreeNode convertBST(TreeNode root) {
+        if(root == null) return null;
+        DFS(root, 0);
+        return root;
+    }
+    
+    public int DFS(TreeNode root, int preSum){
+        if(root.right != null) preSum = DFS(root.right, preSum);
+        root.val = root.val + preSum;
+        return (root.left != null) ? DFS(root.left, root.val) : root.val;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Three O(n) Methods: Recursive, Iterative, and Morris Traversal
+    public TreeNode convertBST(TreeNode root) {
+        TreeNode cur= root;
+        int sum = 0;
+        while (cur != null) {
+            if (cur.right == null) {
+                int tmp = cur.val;
+                cur.val += sum;
+                sum += tmp;
+                cur = cur.left;
+            } else {
+                TreeNode prev = cur.right;
+                while (prev.left != null && prev.left != cur)
+                    prev = prev.left;
+                if (prev.left == null) {
+                    prev.left = cur;
+                    cur = cur.right;
+                } else {
+                    prev.left = null;
+                    int tmp = cur.val;
+                    cur.val += sum;
+                    sum += tmp;
+                    cur = cur.left;
+                }
+            }
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Simple with Explanation
+def convertBST(self, root):
+    def visit1(root):
+        if root:
+            visit1(root.left)
+            vals.append(root.val)
+            visit1(root.right)
+    vals = []
+    visit1(root)
+    
+    self.s = 0
+    def visit2(root):
+        if root:
+            visit2(root.right)
+            self.s += vals.pop()
+            root.val = self.s
+            visit2(root.left)
+    visit2(root)
+
+    return root
+
+
+----------------------------------------------------------------------------------------------------
+Beat 100% C++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* convertBST(TreeNode* root) {
+        stack<TreeNode*> s;
+        TreeNode* cur = root;
+        int sum = 0;
+        while(!s.empty() || cur) {
+            if(cur){
+                s.push(cur);
+                cur = cur->right;
+            }
+            else {
+                cur = s.top()->left;
+                int tmp = sum;
+                sum += s.top()->val;
+                s.top()->val += tmp;
+                s.pop();
+            }
+        }
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Recursive O(n) time, 5 lines
+class Solution {
+    public TreeNode convertBST(TreeNode root) {
+        foo(root, 0);
+        return root;
+    }
+    
+    public int foo(TreeNode node, int arg) {
+        if(node == null) return arg;
+        node.val += foo(node.right, arg);
+        return foo(node.left, node.val);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Inorder Traversal Solution
+class Solution(object):
+    def convertBST(self, root):
+        """
+        :type root: TreeNode
+        :rtype: TreeNode
+        """
+        node=[]
+        ids=[0]
+        if not root : return None
+        
+        def inorder(root):
+            if not root : return
+            inorder(root.left)
+            node.append(root.val)
+            inorder(root.right)
+
+        def inorder2(root):
+            if not root : return
+            inorder2(root.left)
+            root.val=node[ids[0]]
+            ids[0]+=1
+            inorder2(root.right)
+        
+        inorder(root)
+        
+        n =len(node)
+        for i in range(n-2,-1,-1):
+            node[i]+=node[i+1]
+        print node    
+        inorder2(root )
+
+        return root
+
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python one-pass in-order traverse from the right
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def convertBST(self, root):
+        """
+        :type root: TreeNode
+        :rtype: TreeNode
+        """
+        self.sum = 0
+        if root: self.traverse(root)
+        return root
+        
+    def traverse(self, root):
+        if root.right:
+            self.traverse(root.right)
+        temp = root.val
+        root.val += self.sum
+        self.sum += temp
+        if root.left:
+            self.traverse(root.left)
+
+
+----------------------------------------------------------------------------------------------------
+Python recursive boring solution (linear time, and constant space) with simple explanation
+    # O(n) (linear) time, and O(1) (constant) (assuming the output does not count) space complexity
+    def convertBST(self, root):
+        def generate_greater_tree(node):
+            if not node: return None
+            right = generate_greater_tree(node.right)
+            self.sum += node.val
+            new_node = TreeNode(self.sum)
+            new_node.right = right
+            new_node.left = generate_greater_tree(node.left)
+            return new_node
+        self.sum = 0
+        return generate_greater_tree(root)
+
+
+----------------------------------------------------------------------------------------------------
+modified inorder traversal
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def convertBST(self, root):
+        """
+        :type root: TreeNode
+        :rtype: TreeNode
+        """
+        def _sum(root,xsum):
+            if root:
+                rt = _sum(root.right,xsum)
+                root.val = root.val + rt
+                lt = _sum(root.left, root.val)
+                return lt
+            return xsum
+        _sum(root,0)
+        return root
+
+----------------------------------------------------------------------------------------------------
+Description Clarification
+<p>The other problems that have similar addition/subtraction usually notes that the sum will never be less than INT_MIN or more than INT_MAX, it would be nice to have the same clarification on this problem for consistency.</p>
+<p>Best</p>
+
+
+----------------------------------------------------------------------------------------------------
+Almost same two Javascript solutions, but why one work, the other one not!?
+var sum = 0;
+
+var convertBST = function(root) {
+    helper(root);
+    return root;
+};
+
+var helper = function(node) {
+    if (node === null) return;
+    helper(node.right);
+    node.val = Number(sum) + Number(node.val);
+    sum = Number(node.val);
+    helper(node.left);
+};
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code
+public class Solution {
+    public TreeNode convertBST(TreeNode root) {
+        int[] sum = new int[1];
+        inorder(root, sum);
+        return root;        
+    }
+
+    private void inorder(TreeNode node, int[] sum) {
+        if (node != null) {
+            inorder(node.right, sum);
+            sum[0] += node.val;
+            node.val = sum[0];
+            inorder(node.left, sum);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution with two traversal
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    int totalSum = 0;
+    int incrementalSum = 0, temp;
+    
+    public TreeNode convertBST(TreeNode root) {
+        traverseTree(root);
+        traverseAgain(root);
+        return root;
+    }
+    
+    public void traverseTree(TreeNode root) {
+        if (root == null)
+            return;
+        totalSum += root.val;
+        traverseTree(root.left);
+        traverseTree(root.right);
+    }
+    
+    public void traverseAgain(TreeNode root) {
+        if (root == null)
+            return;
+        traverseAgain(root.left);
+        temp = root.val;
+        root.val = totalSum - incrementalSum;
+        incrementalSum += temp;
+        traverseAgain(root.right);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(n) solution without instance variable
+public class Solution {
+    public TreeNode convertBST(TreeNode root) {
+        inOrder(root, 0);
+        
+        return root;
+    }
+    
+    private int inOrder(TreeNode root, int sum) {
+        if (root == null) {
+            return sum;
+        }
+        
+        sum = inOrder(root.right, sum);
+        root.val += sum;
+        sum = root.val;
+        return inOrder(root.left, sum);
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+2-liner C++ with global sum and reverse In-order Traversal
+    int sum = 0;
+    
+    TreeNode* convertBST(TreeNode* r) {
+        if (r) convertBST(r->right), sum = r->val += sum, convertBST(r->left);
+        return r;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+my c++ solution beat 77%
+class Solution {
+
+ public:
+  TreeNode* convertBST(TreeNode* root) {
+    int sum = 0;
+    convert(root, sum);
+    return root;
+  }
+
+ void convert(TreeNode* root, int& sum) {
+   if (root == NULL) return;
+   if (root->right) convert(root->right, sum);
+   if (root) {
+     sum += root->val;
+     root->val = sum;
+ }
+ if (root->left) convert(root->left, sum);
+}
+
+};
+
+----------------------------------------------------------------------------------------------------
+Inconsistent solution while submitting
+class Solution(object):
+    node_list=[]
+    def convertBST(self, root):
+        """
+        :type root: TreeNode
+        :rtype: TreeNode
+        """
+        node_dict=defaultdict(int)
+        self.inorder(root)
+        #print 'List of nodes is: ',self.node_list
+        
+        first = self.node_list[0]
+        node_dict[first] = first
+        
+        temp = self.node_list[::-1]
+        previous=0
+        for ind,elem in enumerate(temp):
+            #print 'Element is: ',elem
+            node_dict[elem] = previous+elem
+            previous=node_dict[elem]
+            #print 'Its sum is:', node_dict[elem]
+            
+        root = self.replace(root,node_dict)
+        return root
+        
+    def inorder(self,root):
+        if root is None:
+            return
+        self.inorder(root.left)
+        self.node_list.append(root.val)
+        self.inorder(root.right)
+        
+    def replace(self,root,node_dict):
+        if root is None:
+            return
+        self.replace(root.left,node_dict)
+        key=root.val
+        root.val = node_dict[key]
+        self.replace(root.right,node_dict)
+        return root
+
+
+----------------------------------------------------------------------------------------------------

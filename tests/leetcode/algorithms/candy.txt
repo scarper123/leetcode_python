@@ -1,0 +1,590 @@
+Easy to understand Java backtracking solution
+     public List<String> generateParenthesis(int n) {
+            List<String> list = new ArrayList<String>();
+            backtrack(list, "", 0, 0, n);
+            return list;
+        }
+        
+        public void backtrack(List<String> list, String str, int open, int close, int max){
+            
+            if(str.length() == max*2){
+                list.add(str);
+                return;
+            }
+            
+            if(open < max)
+                backtrack(list, str+"(", open+1, close, max);
+            if(close < open)
+                backtrack(list, str+")", open, close+1, max);
+        }
+
+The idea here is to only add '(' and ')' that we know will guarantee us a solution (instead of adding 1 too many close). Once we add a '(' we will then discard it and try a ')' which can only close a valid '('. Each of these steps are recursively called. 
+
+----------------------------------------------------------------------------------------------------
+Concise recursive C++ solution
+The idea is intuitive. Use two integers to count the remaining left parenthesis (n) and the right parenthesis (m) to be added. At each function call add a left parenthesis if n >0 and add a right parenthesis if m>0. Append the result and terminate recursive calls when both m and n are zero.
+
+    class Solution {
+    public:
+        vector<string> generateParenthesis(int n) {
+            vector<string> res;
+            addingpar(res, "", n, 0);
+            return res;
+        }
+        void addingpar(vector<string> &v, string str, int n, int m){
+            if(n==0 && m==0) {
+                v.push_back(str);
+                return;
+            }
+            if(m > 0){ addingpar(v, str+")", n, m-1); }
+            if(n > 0){ addingpar(v, str+"(", n-1, m+1); }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+An iterative method.
+My method is DP. First consider how to get the result f(n) from previous result f(0)...f(n-1).
+Actually, the result f(n) will be put an extra () pair to f(n-1). Let the "(" always at the first position, to produce a valid result, we can only put ")" in a way that there will be i pairs () inside the extra () and n - 1 - i pairs () outside the extra pair.
+
+Let us consider an example to get clear view:
+
+f(0):  ""
+
+f(1):  "("f(0)")"
+
+f(2): "("f(0)")"f(1), "("f(1)")"
+
+f(3): "("f(0)")"f(2), "("f(1)")"f(1), "("f(2)")"
+
+So f(n) = "("f(0)")"f(n-1) , "("f(1)")"f(n-2) "("f(2)")"f(n-3) ... "("f(i)")"f(n-1-i) ... "(f(n-1)")"
+
+Below is my code:
+
+    public class Solution
+    {
+        public List<String> generateParenthesis(int n)
+        {
+            List<List<String>> lists = new ArrayList<>();
+            lists.add(Collections.singletonList(""));
+            
+            for (int i = 1; i <= n; ++i)
+            {
+                final List<String> list = new ArrayList<>();
+                
+                for (int j = 0; j < i; ++j)
+                {
+                    for (final String first : lists.get(j))
+                    {
+                        for (final String second : lists.get(i - 1 - j))
+                        {
+                            list.add("(" + first + ")" + second);
+                        }
+                    }
+                }
+                
+                lists.add(list);
+            }
+            
+            return lists.get(lists.size() - 1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+4-7 lines Python
+`p` is the parenthesis-string built so far, `left` and `right` tell the number of left and right parentheses still to add, and `parens` collects the parentheses.
+
+**Solution 1**
+
+I used a few "tricks"... how many can you find? :-)
+
+    def generateParenthesis(self, n):
+        def generate(p, left, right, parens=[]):
+            if left:         generate(p + '(', left-1, right)
+            if right > left: generate(p + ')', left, right-1)
+            if not right:    parens += p,
+            return parens
+        return generate('', n, n)
+
+**Solution 2**
+
+Here I wrote an actual Python generator. I allow myself to put the `yield q` at the end of the line because it's not that bad and because in "real life" I use Python 3 where I just say `yield from generate(...)`.
+
+    def generateParenthesis(self, n):
+        def generate(p, left, right):
+            if right >= left >= 0:
+                if not right:
+                    yield p
+                for q in generate(p + '(', left-1, right): yield q
+                for q in generate(p + ')', left, right-1): yield q
+        return list(generate('', n, n))
+
+**Solution 3**
+
+Improved version of [this](https://leetcode.com/discuss/25725/7-lines-in-python-44-ms). Parameter `open` tells the number of "already opened" parentheses, and I continue the recursion as long as I still have to open parentheses (`n > 0`) and I haven't made a mistake yet (`open >= 0`).
+
+    def generateParenthesis(self, n, open=0):
+        if n > 0 <= open:
+            return ['(' + p for p in self.generateParenthesis(n-1, open+1)] + \
+                   [')' + p for p in self.generateParenthesis(n, open-1)]
+        return [')' * open] * (not n)
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS way solution
+    public List<String> generateParenthesis(int n) {
+        List<String> list = new ArrayList<String>();
+        generateOneByOne("", list, n, n);
+        return list;
+    }
+    public void generateOneByOne(String sublist, List<String> list, int left, int right){
+        if(left > right){
+            return;
+        }
+        if(left > 0){
+            generateOneByOne( sublist + "(" , list, left-1, right);
+        }
+        if(right > 0){
+            generateOneByOne( sublist + ")" , list, left, right-1);
+        }
+        if(left == 0 && right == 0){
+            list.add(sublist);
+            return;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My accepted JAVA solution
+For 2, it should place one "()" and add another one insert it but none tail it,
+
+'(' f(1) ')' f(0)
+
+or add none insert it but tail it by another one,
+
+'(' f(0) ')' f(1)
+
+Thus for n,  we can insert f(i) and tail f(j) and i+j=n-1,
+
+'(' f(i) ')' f(j)              
+
+
+
+	public List<String> generateParenthesis(int n) {
+		List<String> result = new ArrayList<String>();
+		if (n == 0) {
+			result.add("");
+		} else {
+			for (int i = n - 1; i >= 0; i--) {
+				List<String> insertSub = generateParenthesis(i);
+				List<String> tailSub = generateParenthesis(n - 1 - i);
+				for (String insert : insertSub) {
+					for (String tail : tailSub) {
+						result.add("(" + insert + ")" + tail);
+					}
+				}
+
+			}
+		}
+		return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+Simple Python DFS solution with explanation
+If you have two stacks, one for n "(", the other for n ")", you generate a binary tree from these two stacks of left/right parentheses to form an output string. 
+
+
+This means that whenever you traverse deeper, you pop one parentheses from one of stacks. When two stacks are empty, you form an output string.
+
+How to form a legal string? Here is the simple observation:
+
+ - For the output string to be right, stack of ")" most be larger than stack of "(". If not, it creates string like "())"
+ - Since elements in each of stack are the same, we can simply express them with a number. For example, left = 3 is like a stacks ["(", "(", "("]
+
+So, here is my sample code in Python:
+
+    class Solution:
+    # @param {integer} n
+    # @return {string[]}
+    def generateParenthesis(self, n):
+        if not n:
+            return []
+        left, right, ans = n, n, []
+        self.dfs(left,right, ans, "")
+        return ans
+
+    def dfs(self, left, right, ans, string):
+        if right < left:
+            return
+        if not left and not right:
+            ans.append(string)
+            return
+        if left:
+            self.dfs(left-1, right, ans, string + "(")
+        if right:
+            self.dfs(left, right-1, ans, string + ")")
+
+
+----------------------------------------------------------------------------------------------------
+Simple 2ms c++ solution with explanation
+class Solution {
+public:
+
+    vector<string> result;
+    vector<string> generateParenthesis(int n) {
+        helper("", n, 0);
+        return result;
+    }
+
+    /*  this hepler function insert result strings to "vector<string> result"
+   		When number of '(' less than "n", can append '(';
+   		When number of '(' is more than number of ')', can append ')';
+
+    	string s : current string;
+    	int leftpare_need : number of '(' that have not put into "string s";
+    	int moreleft : number of '(' minus number of ')' in the "string s";
+    */
+
+    void helper(string s, int leftpare_need, int moreleft)
+    {
+    	if(leftpare_need == 0 && moreleft == 0)
+    	{
+    	    result.push_back(s);
+    	    return;
+    	}
+    	if(leftpare_need > 0)
+    		helper(s + "(", leftpare_need - 1, moreleft+1);
+    	if(moreleft > 0)
+    		helper(s + ")", leftpare_need, moreleft - 1);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+2ms AC JAVA Solution using recursive call
+    public class Solution {
+        public List<String> generateParenthesis(int n) {
+            ArrayList<String> m=new ArrayList<>();
+            generate(m, "", n, n);
+            return m;
+        }
+        public void generate(ArrayList m, String s, int l, int r){
+            if(l==0 && r==0){ 
+                m.add(s);
+                return;
+            }
+            if(l>0) generate(m, s+"(",  l-1,  r);
+            if(r>l) generate(m, s+")",  l,  r-1);
+        }
+        
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+6 lines c++ 3~4 ms, super easy to understand
+    vector<string> result;
+    
+    void helper(string str, int left, int right){
+        if(left == 0 && right == 0)  result.push_back(str);
+        if(left!=0)                  helper(str+'(', left-1, right);
+        if(right!=0 && right > left) helper(str+')', left, right-1);
+    }    
+    
+    vector<string> generateParenthesis(int n) {
+        helper("",n,n);
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy java solution
+    public class Solution {
+    private void helper(List<String> res, String present, int left, int right) {
+        if (right == 0) {
+            res.add(present);
+        }
+        if (left > 0) {
+            helper(res, present + "(", left - 1, right);
+        }
+        if (right > left) {
+            helper(res, present + ")", left, right - 1);
+        }
+    }
+    public List<String> generateParenthesis(int n) {
+        List<String> res = new ArrayList<String>();
+        if (n == 0) {
+            return res;
+        }
+        helper(res, "", n, n);
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Clean Python DP Solution
+To generate all n-pair parentheses, we can do the following:
+
+1. Generate one pair: ()
+2. Generate 0 pair inside, n - 1 afterward: () (...)...
+
+    Generate 1 pair inside, n - 2 afterward: (()) (...)...
+
+    ...
+
+    Generate n - 1 pair inside, 0 afterward: ((...)) 
+
+I bet you see the overlapping subproblems here. Here is the code:
+
+(you could see in the code that `x` represents one j-pair solution and `y` represents one (i - j - 1) pair solution, and we are taking into account all possible of combinations of them)
+
+    class Solution(object):
+        def generateParenthesis(self, n):
+            """
+            :type n: int
+            :rtype: List[str]
+            """
+            dp = [[] for i in range(n + 1)]
+            dp[0].append('')
+            for i in range(n + 1):
+                for j in range(i):
+                    dp[i] += ['(' + x + ')' + y for x in dp[j] for y in dp[i - j - 1]]
+            return dp[n]
+
+----------------------------------------------------------------------------------------------------
+Does anyone come up with a non-recursion solution?
+I used recursion as below:
+
+    class Solution:
+    
+        def generateParenthesis(self, n):
+            if (n == 0):
+                return []
+            string = "("
+            result = []
+            left_number = 1
+            right_number = 0
+            self.solve(left_number, right_number, string, n, result)
+            return result
+            
+        def solve(self, l_n, r_n, string, n, result):
+            if (l_n == r_n and r_n == n):
+                result.append(string)
+                return
+            
+            if (l_n < n):
+                self.solve(l_n+1, r_n, string+'(', n, result)
+                
+            if (r_n < l_n):
+                self.solve(l_n, r_n+1, string+')', n, result)
+
+I am trying to get an iteration solution but haven't got a clue yet.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+7 lines in Python, 44 ms
+n - how many parenthesis can still be opened
+open - how many parenthesis are opened
+
+    class Solution:
+        def generateParenthesis(self, n, open=0):
+            if n == 0: return [')'*open]
+            if open == 0:
+                return ['('+x for x in self.generateParenthesis(n-1, 1)]
+            else:
+                return [')'+x for x in self.generateParenthesis(n, open-1)] + ['('+x for x in self.generateParenthesis(n-1, open+1)]
+
+----------------------------------------------------------------------------------------------------
+Share my C++ solution,easy to understand
+    class Solution {
+    public:
+        vector<string> generateParenthesis(int n) {
+            vector<string> ret;
+            string s = "";
+            if (n <= 0)
+                return ret;
+                
+            recurParenthesis(n, n, ret, s);
+        }
+        
+        void recurParenthesis(int leftNum, int rightNum, vector<string> &ret, string temp)
+        {
+            //leftNum means the number of open parenthesis available,rightNum means the number of close parenthesis available
+            if (leftNum == 0 && rightNum == 0)
+            {
+                ret.push_back(temp);
+                return;
+            }
+                
+            if (leftNum > 0)
+                recurParenthesis(leftNum-1, rightNum, ret, temp+'(');
+            
+            if (rightNum > 0)
+            {
+                if (leftNum < rightNum)
+                    recurParenthesis(leftNum, rightNum-1, ret, temp+')');
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+0ms Easy C++ Solution
+Well, there are two ways to add a open or close parenthesis to the current string. 
+
+ 1. If number of `(` is less than `n`, you can add `(`;
+ 2. If number of `)` is less than number of `(`, you can add `)`.
+
+Maintain a `res` for all the possible parenthesis and a temporary string `sol` for the current answer. Now we have the following code.
+
+    class Solution {
+    public:
+        vector<string> generateParenthesis(int n) {
+            vector<string> res;
+            string sol;
+            genParen(sol, 0, 0, n, res);
+            return res;
+        }
+    private:
+        void genParen(string& sol, int open, int close, int total, vector<string>& res) {
+            if (open == total && close == total) {
+                res.push_back(sol);
+                return;
+            }
+            if (open < total) {
+                sol += '(';
+                genParen(sol, open + 1, close, total, res);
+                sol.resize(sol.length() - 1);
+            }
+            if (close < open) {
+                sol += ')';
+                genParen(sol, open, close + 1, total, res);
+                sol.resize(sol.length() - 1);
+            }
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+1 ms (beats 92% of submissions) easy Java space-optimized solution
+    public List<String> generateParenthesis(int n) {
+        List<String> res = new ArrayList<>();
+        char[] perm = new char[n*2];
+        perms(n, n, perm, 0, res);
+        return res;
+    }
+    
+    private void perms(int open, int close, char[] perm, int i, List<String> res) {
+        if (i == perm.length) {
+            res.add(new String(perm));
+            return;
+        }
+        if (open > 0 && close >= open) {
+            perm[i] = '(';
+            perms(open - 1, close, perm, i+1, res);
+        }
+        if (close > 0) {
+            perm[i] = ')';
+            perms(open, close - 1, perm, i+1, res);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+*Java* Easy to understand recursive DP method with explanations
+For each valid parenthesis, there must be a pair whose right parenthesis is at the rightmost location. Thus, a valid parenthesis has to be of the following form:
+
+    * ( * )
+
+where `*` denotes the remaining parentheses which are don't yet know (`*` can be empty, i.e., with 0 pair of parenthesis). However, we do know the following two important facts:
+
+ - both two `*` are valid parentheses;
+ - they don't overlap at all! (a pair has to be either on the left side or inside `()`, but cannot be the case where `(` is on the left side and `)` is inside `()`)
+
+If we put `i` parentheses inside `()`, there are `n-i-1` to be put on the left side. This gives us a recursive formula as below:
+
+    P(n) = P(n-i-1) x P(i)
+
+where `P(n)` are all valid parentheses with `n` parentheses.
+
+To this point, we are done with the algorithm, the only remaining task is coding, which is given below:
+
+    public List<String> generateParenthesis(int n) {
+    	List<String>[] lists = new LinkedList[n+1]; // store all P(k)'s for k=0,1,...,n
+    	return helper(n, lists);
+    }
+    
+    private List<String> helper(int n, List<String>[] lists) {
+    	if(lists[n]!=null) return lists[n]; // if computed, reuse
+    	List<String> res = new LinkedList<String>();
+    	if(n<=0) {
+    		lists[0] = new LinkedList<String>(Arrays.asList(""));
+    		return lists[0];
+    	}
+    	else if(n==1) {
+    		lists[1] = new LinkedList<String>(Arrays.asList("()"));
+    		return lists[1];
+    	}
+    	// the following simply implements the recursive formula derived above
+        for(int i=0; i<=n-1; i++) {
+        	List<String> left = helper(n-i-1, lists);
+        	List<String> inside = helper(i, lists);
+        	for(String str1 : left) {
+        		for(String str2 : inside) {
+        			res.add(str1 + "(" + str2 + ")");
+        		}
+        	}
+        }
+        lists[n] = res; // store computed results for reuse
+        return res;
+    }
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+The most concise solution I know ever.
+    class Solution {
+    public:
+        vector<string> generateParenthesis(int n) {
+            if(n==0) return vector<string>(1,"") ;
+            if(n==1) return vector<string>(1,"()") ;
+            vector<string> result;
+            for(int i=0;i!=n;i++)
+                for(auto inner: generateParenthesis(i))
+                    for(auto outter:  generateParenthesis(n-i-1))
+                        result.push_back("("+inner+")"+outter);
+            return result;
+        }
+    };
+
+I think this solution must be the most concise one. The idea is very clear. 
+
+PS: The author is not me. Just share it with you.
+
+----------------------------------------------------------------------------------------------------
+My java solution using recursive
+    public class Solution {
+    public List<String> generateParenthesis(int n) {
+        List<String> res = new ArrayList<String>();
+        if(0 == n)
+            return res;
+        int l = n;
+        int r = n;
+        String item = new String();
+        putIn(l,r,item,res);
+        return res;
+    }
+    public void putIn(int l, int r, String item, List<String> res)
+    {
+        if(l==0 && r==0)
+        {
+            res.add(item);
+            return;
+        }
+        if(l>0)
+            putIn(l-1,r,item+"(",res);
+        if(r>l)
+            putIn(l,r-1,item+")",res);
+    }
+}
+
+This is based on recursive thought, we can regard the Parenthesis in a set, when the set is empty, we add the string into result list, otherwise, we get a "(" from set and add it to the string, and get ")" from set, add it to the string. Is this thinking better for us to understand?
+
+----------------------------------------------------------------------------------------------------

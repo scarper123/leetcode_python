@@ -1,0 +1,1504 @@
+Java 15ms Easiest Solution (100.00%)
+<hr>
+<h3>Backtracking + Trie</h3>
+<hr>
+
+Intuitively, start from every cell and try to build a word in the dictionary. `Backtracking (dfs)` is the powerful way to exhaust every possible ways. Apparently, we need to do `pruning` when current character is not in any word. 
+
+1. How do we instantly know the current character is invalid? `HashMap`? 
+2. How do we instantly know what's the next valid character? `LinkedList`?
+3. But the next character can be chosen from a list of characters. `"Mutil-LinkedList"`?
+
+Combing them, `Trie` is the natural choice. Notice that:
+
+1. `TrieNode` is all we need. `search` and `startsWith` are useless.
+2. No need to store character at TrieNode. `c.next[i] != null` is enough.
+3. Never use `c1 + c2 + c3`. Use `StringBuilder`.
+4. No need to use `O(n^2)` extra space `visited[m][n].` 
+5. No need to use `StringBuilder`. Storing `word` itself at leaf node is enough.
+6. No need to use `HashSet` to de-duplicate. Use "one time search" trie.
+
+For more explanations, check out [dietpepsi's blog][1].
+
+<hr>
+<h3>Code Optimization</h3>
+<hr>
+
+UPDATE: Thanks to @dietpepsi we further improved from `17ms` to `15ms`.
+
+1. `59ms`: Use `search` and `startsWith` in Trie class like [this popular solution.][2]
+2. `33ms`: Remove Trie class which unnecessarily starts from `root` in every `dfs` call. 
+3. `30ms`: Use `w.toCharArray()` instead of `w.charAt(i)`.
+4. `22ms`: Use `StringBuilder` instead of `c1 + c2 + c3`.
+5. `20ms`: Remove `StringBuilder` completely by storing `word` instead of `boolean` in TrieNode.
+6. `20ms`: Remove `visited[m][n]` completely by modifying `board[i][j] = '#'` directly.
+7. `18ms`: check validity, e.g., `if(i > 0) dfs(...)`, before going to the next `dfs`.
+8. `17ms`: De-duplicate `c - a` with one variable `i`.
+9. `15ms`: Remove `HashSet` completely. dietpepsi's idea is awesome. 
+
+The final run time is `15ms`. Hope it helps!
+
+<hr>
+
+    public List<String> findWords(char[][] board, String[] words) {
+        List<String> res = new ArrayList<>();
+        TrieNode root = buildTrie(words);
+        for(int i = 0; i < board.length; i++) {
+            for(int j = 0; j < board[0].length; j++) {
+                dfs(board, i, j, root, res);
+            }
+        }
+        return res;
+    }
+    
+    public void dfs(char[][] board, int i, int j, TrieNode p, List<String> res) {
+        char c = board[i][j];
+        if(c == '#' || p.next[c - 'a'] == null) return;
+        p = p.next[c - 'a'];
+        if(p.word != null) {   // found one
+            res.add(p.word);
+            p.word = null;     // de-duplicate
+        }
+
+        board[i][j] = '#';
+        if(i > 0) dfs(board, i - 1, j ,p, res); 
+        if(j > 0) dfs(board, i, j - 1, p, res);
+        if(i < board.length - 1) dfs(board, i + 1, j, p, res); 
+        if(j < board[0].length - 1) dfs(board, i, j + 1, p, res); 
+        board[i][j] = c;
+    }
+    
+    public TrieNode buildTrie(String[] words) {
+        TrieNode root = new TrieNode();
+        for(String w : words) {
+            TrieNode p = root;
+            for(char c : w.toCharArray()) {
+                int i = c - 'a';
+                if(p.next[i] == null) p.next[i] = new TrieNode();
+                p = p.next[i];
+           }
+           p.word = w;
+        }
+        return root;
+    }
+    
+    class TrieNode {
+        TrieNode[] next = new TrieNode[26];
+        String word;
+    }
+
+
+  [1]: http://algobox.org/word-search-ii/
+  [2]: https://leetcode.com/discuss/36337/my-simple-and-clean-java-code-using-dfs-and-trie
+
+----------------------------------------------------------------------------------------------------
+My simple and clean Java code using DFS and Trie
+Compared with [Word Search][1], I make my DFS with a tire but a word. The Trie is formed by all the words in given *words*. Then during the DFS, for each current formed word, I check if it is in the Trie.
+
+    public class Solution {
+        Set<String> res = new HashSet<String>();
+        
+        public List<String> findWords(char[][] board, String[] words) {
+            Trie trie = new Trie();
+            for (String word : words) {
+                trie.insert(word);
+            }
+            
+            int m = board.length;
+            int n = board[0].length;
+            boolean[][] visited = new boolean[m][n];
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    dfs(board, visited, "", i, j, trie);
+                }
+            }
+            
+            return new ArrayList<String>(res);
+        }
+        
+        public void dfs(char[][] board, boolean[][] visited, String str, int x, int y, Trie trie) {
+            if (x < 0 || x >= board.length || y < 0 || y >= board[0].length) return;
+            if (visited[x][y]) return;
+            
+            str += board[x][y];
+            if (!trie.startsWith(str)) return;
+            
+            if (trie.search(str)) {
+                res.add(str);
+            }
+            
+            visited[x][y] = true;
+            dfs(board, visited, str, x - 1, y, trie);
+            dfs(board, visited, str, x + 1, y, trie);
+            dfs(board, visited, str, x, y - 1, trie);
+            dfs(board, visited, str, x, y + 1, trie);
+            visited[x][y] = false;
+        }
+    }
+ 
+
+  [1]: https://leetcode.com/problems/word-search/
+
+----------------------------------------------------------------------------------------------------
+My C++ Trie + Backtrace based solution (48 ms)
+The idea is to use a Trie to build a prefix tree for words to simplify the search and do DFS to search all the possible strings. 
+For Trie, 26 pointers to point the sub-strings and a bool leaf to indicate whether the current node is a leaf (i.e. a string in words) and also idx is used to save the index of words for the current node.
+For DFS, just check if the current position is visited before (board[i][j]=='X'), if so, return, check if there is a string with such prefix (nullptr == root->children[words[idx][pos]-'a']), if not, return; otherwise, check if the current searched string is a leaf of the trie (a string in words), if so, save it to res and set leaf of the trie node to false to indicate such string is already found. At last, move to its neighbors to continue the search. Remember to recover the char [i][j] at the end.    
+
+        class Solution {
+            class Trie{
+            public:
+                Trie *children[26]; // pointers to its substrings starting with 'a' to 'z'
+                bool leaf; // if the node is a leaf, or if there is a word stopping at here
+                int idx; // if it is a leaf, the string index of the array words
+                Trie()
+                {
+                    this->leaf = false;
+                    this->idx = 0;
+                    fill_n(this->children, 26, nullptr);            
+                }
+            };
+            
+        public:
+            void insertWords(Trie *root, vector<string>& words, int idx)
+            {
+                int pos = 0, len = words[idx].size();
+                while(pos<len)
+                {
+                    if(nullptr == root->children[words[idx][pos]-'a']) root->children[words[idx][pos]-'a'] = new Trie();
+                    root = root->children[words[idx][pos++]-'a'];
+                }
+                root->leaf = true;
+                root->idx = idx;
+            }
+            
+            Trie *buildTrie(vector<string>& words)
+            {
+                Trie *root = new Trie(); 
+                int i;
+                for(i=0; i<words.size();i++) insertWords(root, words, i);
+                return root;
+            }
+            
+            void checkWords(vector<vector<char>>& board, int i, int j, int row, int col, Trie *root, vector<string> &res, vector<string>& words)
+            {
+                char temp;
+                if(board[i][j]=='X') return; // visited before;
+                if(nullptr == root->children[board[i][j]-'a']) return ; // no string with such prefix
+                else
+                {
+                    temp = board[i][j];
+                    if(root->children[temp-'a']->leaf)  // if it is a leaf
+                    {
+                        res.push_back(words[root->children[temp-'a']->idx]);
+                        root->children[temp-'a']->leaf = false; // set to false to indicate that we found it already
+                    }
+                    board[i][j]='X'; //mark the current position as visited
+    // check all the possible neighbors
+                    if(i>0) checkWords(board, i-1, j, row, col, root->children[temp-'a'], res, words);
+                    if((i+1)<row) checkWords(board, i+1, j, row, col,  root->children[temp-'a'], res, words);
+                    if(j>0) checkWords(board, i, j-1,  row, col, root->children[temp-'a'], res, words);
+                    if((j+1)<col)  checkWords(board, i, j+1,  row, col, root->children[temp-'a'], res, words);
+                    board[i][j] = temp; // recover the current position
+                }
+            }
+        
+            vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+               vector<string> res;
+               int row = board.size();
+               if(0==row) return res;
+               int col = board[0].size();
+               if(0==col) return res;
+               int wordCount = words.size();
+               if(0==wordCount) return res;
+               
+               Trie *root = buildTrie(words);
+               
+               int i,j;
+               for(i =0 ; i<row; i++)
+               {
+                   for(j=0; j<col && wordCount > res.size(); j++)
+                   {
+                       checkWords(board, i, j, row, col, root, res, words);
+                   }
+               }
+               return res;
+            }
+     };
+
+Based on the comments received. I created another version with Trie node counter (thanks,   zhiqing_xiao and gxyeecspku). However, for the current test set, it doesn't help too much. Anyway, my version with Trie node counter.
+
+    class Solution {
+    private:
+    class Trie
+    {
+    public:    
+        Trie * children[26];
+        bool isLeaf;
+        int  wordIdx;
+        int prefixCount;
+        
+        Trie()
+        {
+            isLeaf = false;
+            wordIdx = 0;
+            prefixCount = 0;
+            fill_n(children, 26, nullptr);
+        }
+        
+        ~Trie()
+        {
+            for(auto i=0; i<26; ++i) delete children[i];
+        }
+    };
+        void insertWord(Trie *root,  const vector<string>& words, int idx)
+        {
+            int i, childID, len = words[idx].size();
+            for(i=0, root->prefixCount++ ; i<len; ++i)
+            {
+                childID = words[idx][i]-'a';
+                if(!root->children[childID]) root->children[childID] = new Trie();
+                root = root->children[childID];
+                ++root->prefixCount;
+            }
+            root->isLeaf = true; 
+            root->wordIdx = idx;
+        }
+        
+        Trie *buildTrie(const vector<string> &words)
+        {
+            Trie *root = new Trie();
+            for(int i=0; i < words.size(); ++i) insertWord(root, words, i);
+            return root;
+        }
+        
+        int dfs_Trie(vector<string> &res, Trie *root, vector<vector<char>>& board, vector<string>& words, int row, int col)
+        {
+            int detected = 0;
+    
+            if(root->isLeaf)
+            {
+                ++detected;
+                root->isLeaf = false;
+                res.push_back(words[root->wordIdx]);
+            }
+            
+            if( row<0 || row>=board.size() || col<0 || col>=board[0].size() || board[row][col]=='*' || !root->children[ board[row][col]-'a'] || root->children[ board[row][col]-'a']->prefixCount <= 0 ) return detected;
+            int curC = board[row][col] - 'a';
+            board[row][col] = '*';
+            detected += dfs_Trie(res, root->children[curC], board, words, row-1, col) + 
+                   dfs_Trie(res, root->children[curC], board, words, row+1, col) +    
+                   dfs_Trie(res, root->children[curC], board, words, row, col - 1) +    
+                   dfs_Trie(res, root->children[curC], board, words, row, col + 1) ;
+            root->prefixCount -=detected;
+            board[row][col] = curC+'a';
+            return detected;
+        }
+        
+    public:
+        vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+            int M, N, wordNum = words.size();
+            vector<string> res;
+            if( !(M = board.size()) || !(N = board[0].size()) || !wordNum) return res;
+            Trie *root = buildTrie(words);
+            for(auto i=0; i<M && root->prefixCount; ++i)
+                for(auto j=0; j<N; ++j)
+                    dfs_Trie(res, root, board, words, i, j);
+            delete root;
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My AC very clean C++ code
+The idea is start from every position of the board, and then see if we can find a word starting from this position with checking if is_end is true in TrieNode structure
+
+    class TrieNode{
+    public:
+        bool is_end;
+        vector<TrieNode*> children;
+        TrieNode(){
+            is_end=false;
+            children=vector<TrieNode*>(26, NULL);
+        }   
+    };
+    
+    class Trie{
+    public:
+        TrieNode* getRoot(){return root;}
+        Trie(vector<string>& words){
+            root=new TrieNode();
+            for(int i=0; i<words.size(); ++i)
+                addWord(words[i]);
+        }
+        void addWord(const string& word){
+            TrieNode* cur=root;
+            for(int i=0; i<word.size(); ++i){
+                int index=word[i]-'a';
+                if(cur->children[index]==NULL)   
+                   cur->children[index]=new TrieNode();
+                cur=cur->children[index];    
+            }
+            cur->is_end=true;
+        }
+    private:
+        TrieNode* root;
+    };
+    
+    class Solution {
+    public:
+        vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+            Trie* trie = new Trie(words);
+            TrieNode* root=trie->getRoot();
+            set<string> result_set;
+            for(int x=0; x<board.size(); ++x)
+                for(int y=0; y<board[0].size(); ++y)
+                    findWords(board, x, y, root, "", result_set);
+            
+            vector<string> result;
+            for(auto it:result_set)    result.push_back(it);
+            return result;        
+        }
+    private:
+        void findWords(vector<vector<char>>& board, int x, int y, TrieNode* root, string word, set<string>& result){
+            if(x<0||x>=board.size()||y<0||y>=board[0].size() || board[x][y]==' ') return;
+            
+            if(root->children[board[x][y]-'a'] != NULL){
+                word=word+board[x][y];
+                root=root->children[board[x][y]-'a']; 
+                if(root->is_end) result.insert(word);
+                char c=board[x][y];
+                board[x][y]=' ';
+                findWords(board, x+1, y, root, word, result);
+                findWords(board, x-1, y, root, word, result);
+                findWords(board, x, y+1, root, word, result);
+                findWords(board, x, y-1, root, word, result);
+                board[x][y]=c;        
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+27 lines, uses complex numbers
+I first build the tree of words with root `root` and also represent the board a different way, namely as one-dimensional dictionary where the keys are complex numbers representing the row/column indexes. That makes further work with it easier. Looping over all board positions is just `for z in board`, the four neighbors of a board position z are just `z + 1j**k` (for k in 0 to 3), and I don't need to check borders because `board.get` just returns "None" if I request an invalid position.
+
+After this preparation, I just take the tree and recursively dive with it into each board position. Similar to how you'd search a single word, but with the tree instead.
+
+    class Solution:
+        def findWords(self, board, words):
+    
+            root = {}
+            for word in words:
+                node = root
+                for c in word:
+                    node = node.setdefault(c, {})
+                node[None] = True
+            board = {i + 1j*j: c
+                     for i, row in enumerate(board)
+                     for j, c in enumerate(row)}
+    
+            found = []
+            def search(node, z, word):
+                if node.pop(None, None):
+                    found.append(word)
+                c = board.get(z)
+                if c in node:
+                    board[z] = None
+                    for k in range(4):
+                        search(node[c], z + 1j**k, word + c)
+                    board[z] = c
+            for z in board:
+                search(root, z, '')
+    
+            return found
+
+----------------------------------------------------------------------------------------------------
+Python code use trie and dfs 380ms
+    class Solution:
+        # @param {character[][]} board
+        # @param {string[]} words
+        # @return {string[]}
+        def findWords(self, board, words):
+        #make trie
+            trie={}
+            for w in words:
+                t=trie
+                for c in w:
+                    if c not in t:
+                        t[c]={}
+                    t=t[c]
+                t['#']='#'
+            self.res=set()
+            self.used=[[False]*len(board[0]) for _ in range(len(board))]
+            for i in range(len(board)):
+                for j in range(len(board[0])):
+                    self.find(board,i,j,trie,'')
+            return list(self.res)
+        
+        def find(self,board,i,j,trie,pre):
+            if '#' in trie:
+                self.res.add(pre)
+            if i<0 or i>=len(board) or j<0 or j>=len(board[0]):
+                return
+            if not self.used[i][j] and board[i][j] in trie:
+                self.used[i][j]=True
+                self.find(board,i+1,j,trie[board[i][j]],pre+board[i][j])
+                self.find(board,i,j+1,trie[board[i][j]],pre+board[i][j])
+                self.find(board,i-1,j,trie[board[i][j]],pre+board[i][j])
+                self.find(board,i,j-1,trie[board[i][j]],pre+board[i][j])
+                self.used[i][j]=False
+        
+
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution using Trie
+    public class Solution {
+        public class TrieNode{
+            public boolean isWord = false;
+            public TrieNode[] child = new TrieNode[26];
+            public TrieNode(){
+                
+            }
+        }
+        
+        TrieNode root = new TrieNode();
+        boolean[][] flag;
+        public List<String> findWords(char[][] board, String[] words) {
+            Set<String> result = new HashSet<>();
+            flag = new boolean[board.length][board[0].length];
+            
+            addToTrie(words);
+            
+            for(int i = 0; i < board.length; i++){
+                for(int j = 0; j < board[0].length; j++){
+                    if(root.child[board[i][j] - 'a'] != null){
+                        search(board, i, j, root, "", result);
+                    }
+                }
+            }
+            
+            return new LinkedList<>(result);
+        }
+        
+        private void addToTrie(String[] words){
+            for(String word: words){
+                TrieNode node = root;
+                for(int i = 0; i < word.length(); i++){
+                    char ch = word.charAt(i);
+                    if(node.child[ch - 'a'] == null){
+                        node.child[ch - 'a'] = new TrieNode();
+                    }
+                    node = node.child[ch - 'a'];
+                }
+                node.isWord = true;
+            }
+        }
+        
+        private void search(char[][] board, int i, int j, TrieNode node, String word, Set<String> result){
+            if(i >= board.length || i < 0 || j >= board[i].length || j < 0 || flag[i][j]){
+                return;
+            }
+            
+            if(node.child[board[i][j] - 'a'] == null){
+                return;
+            }
+            
+            flag[i][j] = true;
+            node = node.child[board[i][j] - 'a'];
+            if(node.isWord){
+                result.add(word + board[i][j]);
+            }
+            
+            search(board, i-1, j, node, word + board[i][j], result);
+            search(board, i+1, j, node, word + board[i][j], result);
+            search(board, i, j-1, node, word + board[i][j], result);
+            search(board, i, j+1, node, word + board[i][j], result);
+            
+            flag[i][j] = false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python dfs solution (directly use Trie implemented).
+Here is an implementation based on  [Implement Trie][1] in LeetCode. TrieNode, Trie, Solution are treated as seperated classes. 
+
+    class TrieNode():
+        def __init__(self):
+            self.children = collections.defaultdict(TrieNode)
+            self.isWord = False
+        
+    class Trie():
+        def __init__(self):
+            self.root = TrieNode()
+        
+        def insert(self, word):
+            node = self.root
+            for w in word:
+                node = node.children[w]
+            node.isWord = True
+        
+        def search(self, word):
+            node = self.root
+            for w in word:
+                node = node.children.get(w)
+                if not node:
+                    return False
+            return node.isWord
+        
+    class Solution(object):
+        def findWords(self, board, words):
+            res = []
+            trie = Trie()
+            node = trie.root
+            for w in words:
+                trie.insert(w)
+            for i in xrange(len(board)):
+                for j in xrange(len(board[0])):
+                    self.dfs(board, node, i, j, "", res)
+            return res
+        
+        def dfs(self, board, node, i, j, path, res):
+            if node.isWord:
+                res.append(path)
+                node.isWord = False
+            if i < 0 or i >= len(board) or j < 0 or j >= len(board[0]):
+                return 
+            tmp = board[i][j]
+            node = node.children.get(tmp)
+            if not node:
+                return 
+            board[i][j] = "#"
+            self.dfs(board, node, i+1, j, path+tmp, res)
+            self.dfs(board, node, i-1, j, path+tmp, res)
+            self.dfs(board, node, i, j-1, path+tmp, res)
+            self.dfs(board, node, i, j+1, path+tmp, res)
+            board[i][j] = tmp
+
+
+  [1]: https://leetcode.com/problems/implement-trie-prefix-tree/
+
+----------------------------------------------------------------------------------------------------
+Test Case &#91;a&#93;, &#91;a, a&#93; doesn&#x27;t make sense?
+Why is my output ["a", "a"] not correct, the description doesn't ask the output array to contain unique strings, right?
+
+Input: ["a"], ["a","a"]
+
+Output: ["a","a"]
+
+Expected: ["a"]
+
+----------------------------------------------------------------------------------------------------
+C++ 48ms - 56ms simple Trie structure 68lines
+    class Trie {
+        public:
+        Trie *next[26];
+        bool exist;
+        
+        Trie() {
+            fill_n(next, 26, nullptr);
+            exist = false;
+        }
+        
+        ~Trie() {
+            for (int i = 0; i < 26; ++i)
+                delete next[i];
+        }
+        
+        void insert(const string &t) {
+            Trie *iter = this;
+            for (int i = 0; i < t.size(); ++i) {
+                if (iter->next[t[i] - 'a'] == nullptr)
+                    iter->next[t[i] - 'a'] = new Trie();
+                iter = iter->next[t[i] - 'a'];
+            }
+            iter->exist = true;
+        }
+    };
+
+    class Solution {
+        public:
+        int m, n;
+        
+        vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+            Trie *trie = new Trie();
+            for (auto &s : words)
+                trie->insert(s);
+            m = board.size();
+            n = board[0].size();
+            
+            vector<string> ret;
+            string sofar;
+            for (int i = 0; i < m; ++i) {
+                for (int j = 0; j < n; ++j) {
+                    bc(board, ret, sofar, trie, i, j);
+                }
+            }
+            return ret;
+        }
+        
+        void bc(vector<vector<char>> &board, vector<string> &ret, string &sofar, Trie *root, int x, int y) {
+            if (x < 0 || y < 0 || x >= m || y >= n || board[x][y] == '\0' || root == nullptr)
+                return ;
+            if (root->next[board[x][y] - 'a'] == nullptr)
+                return ;
+            root = root->next[board[x][y] - 'a'];
+            char t = '\0';
+            swap(t, board[x][y]);
+            sofar.push_back(t);
+            if (root->exist) {
+                root->exist = false;
+                ret.push_back(sofar);
+            }
+            bc(board, ret, sofar, root, x, y + 1);
+            bc(board, ret, sofar, root, x + 1, y);
+            bc(board, ret, sofar, root, x - 1, y);
+            bc(board, ret, sofar, root, x, y - 1);
+            swap(t, board[x][y]);
+            sofar.pop_back();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean python code with Trie
+    class TrieNode(object):
+        def __init__(self):
+            self.word = None
+            self.children = {}
+    
+    
+    class Trie(object):
+        def __init__(self):
+            self.root = TrieNode()
+    
+        def insert(self, word):
+            root = self.root
+            for char in word:
+                root = root.children.setdefault(char, TrieNode())
+            root.word = word
+    
+    
+    class Solution(object):
+        def search(self, i, j, root, board, m, n, r):
+            char = board[i][j]
+            if not (char and char in root.children):
+                return
+    
+            board[i][j], root = None, root.children[char]
+    
+            if root.word:
+                r.append(root.word)
+                root.word = None
+    
+            for x, y in ((0, -1), (-1, 0), (0, 1), (1, 0)):
+                ii, jj = i + x, j + y
+                if 0 <= ii < m and 0 <= jj < n:
+                    self.search(ii, jj, root, board, m, n, r)
+    
+            board[i][j] = char
+    
+        def findWords(self, board, words):
+            if not board:
+                return []
+    
+            tree = Trie()
+            [tree.insert(word) for word in words]
+    
+            m, n, r = len(board), len(board[0]), []
+    
+            for i, row in enumerate(board):
+                for j, char in enumerate(row):
+                    self.search(i, j, tree.root, board, m, n, r)
+            return r
+
+Thanks @julien6 for pointing out a corner-case error.
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+AS I frist meet this question, I think we should grasp to implement Trie in 10 minutes. Then based the Trie,  we construct the Prefix Tree and traverse the board array and check whether the word exist in the dictionary.   
+
+
+    const int MAX_CHARS=26;
+    
+    class TrieNode{
+        public:
+            TrieNode(string s) : isWord(false), word(s) {
+                memset(children, 0, sizeof(children));
+            }
+        public:
+            /*** store-the-root-cur-pos-word ***/
+            string word;
+            bool isWord;
+            TrieNode* children[MAX_CHARS];
+    };
+    
+    class TrieTree{
+        public:
+            TrieTree():root(new TrieNode("")) {}
+            ~TrieTree(){ freeTree(root); }
+            TrieNode* getRoot(){
+                return root;
+            }
+            
+            void addWord(string& s){
+                TrieNode* node=root;
+                string t;
+                for(int i=0; i<s.size(); i++){
+                    t+=s[i];
+                    if(node->children[s[i]-'a']==NULL){
+                        node->children[s[i]-'a']=new TrieNode(t);
+                    }
+                    node=node->children[s[i]-'a'];
+                }
+                node->isWord=true;
+            }
+        private:
+            void freeTree(TrieNode* node){
+                for(int i=0; i<MAX_CHARS; i++){
+                    if(node->children[i]!=NULL){
+                        freeTree(node->children[i]);
+                    }
+                }
+                delete node;
+            }
+            TrieNode* root;
+    };
+    
+    class Solution {
+    public:
+        vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+            TrieTree t;
+            for(int i=0; i<words.size(); i++)   t.addWord(words[i]);
+            vector<string> result;
+            for(int i=0; i<board.size(); i++){
+                for(int j=0; j<board[i].size(); j++){
+                    help(board, t.getRoot(), i, j, result);
+                }
+            }
+            return result;
+        }
+        
+        void help(vector<vector<char>>& board, TrieNode* root, int row, int col, vector<string>& result){
+            if(row<0 || col<0 || row>=board.size() || col>=board[0].size() || board[row][col]=='*')  return;
+            char ch=board[row][col];
+            root=root->children[ch-'a'];
+            if(root==NULL)   return;
+            if(root->isWord){
+                result.push_back(root->word);
+                root->isWord=false;
+            }
+            board[row][col]='*';
+            help(board, root, row+1, col, result);
+            help(board, root, row-1, col, result);
+            help(board, root, row, col+1, result);
+            help(board, root, row, col-1, result);
+            board[row][col]=ch;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Simple Solution (Trie+DFS)
+The Algorithm works as follow:
+
+ - In the first step we build  a [Trie][1] with the words received as
+   parameter.
+ - Then for each square in the board, we perform the deep first search only if the next char in the board belongs to a valid branch in the Trie;
+ - At every step in the dfs, we add the current char to the string currentWord, and if the current node in the Trie is a valid word, we add this word to the final list of words.
+
+The class **Move** keeps the coordinates of the next step in the board
+
+The class **TrieSW** implements theTrie
+
+The method **search** performs the DFS
+
+The method **possMoves** retrieves the list of the possible moves from the current square
+
+The method **isInBound** check if the coordinates are in the board
+
+    class Move {
+    	int x;
+    	int y;
+    	public Move(int x,int y) {
+    		this.x = x;
+    		this.y = y;
+    	}
+    }
+    
+    class TrieSW {
+    	Map<Character,TrieSW> children;
+    	boolean isWord;
+    	
+    	public TrieSW() {
+    		this.children = new HashMap<Character, TrieSW>();
+    		this.isWord = false;
+    	}
+    	
+    	public void addWord(String word) {
+    		char[] chars = word.toCharArray();
+    		TrieSW current = this;
+    		for(char c:chars) {
+    			if(!current.children.containsKey(c)) current.children.put(c, new TrieSW());
+    			current = current.children.get(c);
+    		}
+    		current.isWord = true;
+    	}
+    	
+    	public void addWords(String[] words) {
+    		for(String w:words) this.addWord(w);
+    	}
+    }
+    
+    public class Solution {
+    	
+    	int[] dx = {0,1,0,-1};
+    	int[] dy = {1,0,-1,0};
+    	
+    	public List<String> findWords(char[][] board, String[] words) {
+            Set<String> foundWords = new HashSet<String>();
+            if(board==null || words==null || board.length==0 || words.length==0) return new ArrayList<String>(foundWords);
+            TrieSW trie = new TrieSW();
+            trie.addWords(words);
+            StringBuilder currentWord = new StringBuilder();
+            boolean[][] visited = new boolean[board.length][board[0].length];
+            for(int i=0;i<board.length;i++) {
+            	for(int j=0;j<board[i].length;j++) {
+            		if(trie.children.containsKey(board[i][j]))
+            			search(board,i,j,visited,trie,currentWord,foundWords);
+            	}
+            }
+            return new ArrayList<String>(foundWords);
+        }
+    	
+    	public void search(char[][] board, int y, int x, boolean[][] visited, TrieSW trie, StringBuilder currentWord, Set<String> foundWords) {
+    		char c = board[y][x];
+    		currentWord.append(c);
+    		TrieSW current = trie.children.get(c);
+    		if(current.isWord) foundWords.add(currentWord.toString());
+    		visited[y][x] = true;
+    		for(Move m: possMoves(board,y,x,visited,current)) {
+    			search(board,m.y,m.x,visited,current,currentWord,foundWords);
+    		}
+    		visited[y][x] = false;
+    		currentWord.deleteCharAt(currentWord.length()-1);
+    	}
+    	
+    	public List<Move> possMoves(char[][] board, int y, int x, boolean[][] visited, TrieSW trie) {
+    		List<Move> moves = new ArrayList<Move>();
+    		for(int d=0; d<dx.length; d++) {
+    			int newX = x+dx[d];
+    			int newY = y+dy[d];
+    			if(isInBound(newY,newX,board) && trie.children.containsKey(board[newY][newX]) && !visited[newY][newX])
+    				moves.add(new Move(newX,newY));
+    		}
+    		return moves;
+    	}
+    
+    	private boolean isInBound(int y, int x, char[][] board) {
+    		return x>=0 && y>=0 && y<board.length && x<board[y].length;
+    	}
+    	
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with Trie structure
+Basically the solution will go in two steps:
+
+1. Build up the Trie structure for the dictionary;  
+2. Search for words starting from each cell on the board, based on the Trie structure obtained above.
+
+For step 1, you may refer to problem "208 Implement Trie (Prefix Tree)"(Here we only need the "insert" method). 
+
+For step 2, we can use a standard backtracing function. Two key points for designing your backtracing function are "where to start" and "when to stop". For this problem, a straightforward starting point would be   for each cell on the board, try to match the letter at current cell to the first level of the Trie structure (root is defined as the zeroth level). If there is a match, then continue to match the letter at one of its four neighbors to the next level of the Trie and so on. The termination condition is either there is no match in the Trie for the letter at current cell or there are no more available cells out of its four neighbors(all visited). So your Trie structure should provide a quick way to check whether there is a match for current letter. You also need to mark current cell if it has been visited. One more point is when to record the searching result. After each successful match of letter at current cell, your Trie structure should be able to tell whether this letter in the Trie is an end of a word. If so, record the word and remove it from the Trie structure to avoid repetition.
+
+This is the function I used:
+
+    void findWordsSub(char[][] board, int i, int j, TrieNode trieNode, StringBuilder sb, List<String> res);
+
+Here board is the given char board; i and j are the row and column indices of current cell;
+trieNode is the matching TrieNode of the letter at current cell in the Trie structure(It is null if there is no such matching); sb will hold a character sequence from root to current level(exclusive) in the Trie structure (depending on your design of Trie structure, you may or may not need this variable); res will hold the searching results.
+
+When entering the backtracing function,  first check if trieNode is null or not. If it's null, then there is no matching for the letter at current cell in the Trie structure so no further search is needed. Else, we append current letter to sb and check if we have obtained a complete word in the dictionary(record the word and remove it from the Trie if so). After we are done with current character, we modified it to '{' to indicate that current cell has been visited. Here character '{' is chosen for the following reason: In the TrieNode definition, I used an array of length 27 instead of 26. For words containing only lowercase letters, the last element of this array will always be null. For an visited cell on the board, if we set the character at that cell to be '{'  (in terms of ASCII, '{' = 'a' + 26), then whenever it's visited again, the corresponding trieNode will be null and the search will terminate. With current cell marked as visited, we do need further search if any of its four neighbors is available on the board. At last, when we are done with all the neighbors, we restore the letter at current cell and also StringBuilder sb so the backtracing can continue. Here is the complete program:
+
+    // TrieNode for the Trie structure
+    class TrieNode {
+        TrieNode[] next;   // next level TrieNodes
+        boolean isWordEnd; // true if this is the end of a word
+        
+        public TrieNode() {
+            next = new TrieNode[27]; // Here I use an array of length 27 instead of 26 for later use
+            isWordEnd = false;
+        }
+    }
+    
+    public List<String> findWords(char[][] board, String[] words) {   	
+    	int m = board.length;
+    	int n = (m == 0 ? 0 : board[0].length);
+    	
+    	List<String> res = new ArrayList<>();        // holding results
+        StringBuilder sb = new StringBuilder(m * n); // holding the character sequence from root to current level(exclusive) in the Trie structure(initial capacity equal to the dimension of the board)
+        TrieNode root = new TrieNode();              // root node for the Trie structure
+        
+        // Step 1: build up the Trie structure
+        for (String word : words) {
+        	TrieNode trieNode = root;
+        	
+        	for (int i = 0; i < word.length(); i++) {
+        		if (trieNode.next[word.charAt(i) - 'a'] == null) {
+        			trieNode.next[word.charAt(i) - 'a'] = new TrieNode();
+        		}
+        		
+        		trieNode = trieNode.next[word.charAt(i) - 'a'];
+        	}
+        	
+        	trieNode.isWordEnd = true;
+        }             
+        
+        // Step 2: search for words starting from each cell on the board and record the results
+        for (int i = 0; i < m; i++) {
+        	for (int j = 0; j < n; j++) {
+        		findWordsSub(board, i, j, root.next[board[i][j] - 'a'], sb, res);
+        	}
+        }
+        
+        return res;
+    }
+    
+    // helper function for backtracing searching. 
+    private void findWordsSub(char[][] board, int i, int j, TrieNode trieNode, StringBuilder sb, List<String> res) {
+    	// only proceed if there is a match for the letter at current cell
+    	if (trieNode != null) {
+    		char ch = board[i][j];           // save current letter
+    		sb.append(ch);                   // append the letter to sb
+    		if (trieNode.isWordEnd) {        // check if current letter is the end of a word
+    			res.add(sb.toString());      // if so, record the word
+                trieNode.isWordEnd = false;  // remove this word from the Trie structure to avoid repetition
+    		}
+    		
+    		board[i][j] = '{';  // modify current letter to indicate that it's visited. Here '{' = 'a' + 26 (in terms of ASCII).
+    		
+    		// do further search if there are more cells available out of the four neighbors
+    		if (i + 1 < board.length) {
+    			findWordsSub(board, i + 1, j, trieNode.next[board[i + 1][j] - 'a'], sb, res);
+    		}
+    		
+    		if (i - 1 >= 0) {
+    			findWordsSub(board, i - 1, j, trieNode.next[board[i - 1][j] - 'a'], sb, res);
+    		}
+    		
+    		if (j + 1 < board[0].length ) {
+    			findWordsSub(board, i, j + 1, trieNode.next[board[i][j + 1] - 'a'], sb, res);
+    		}
+    		
+    		if (j - 1 >= 0) {
+    			findWordsSub(board, i, j - 1, trieNode.next[board[i][j - 1] - 'a'], sb, res);
+    		}  		
+    		
+    		// restore the letter at current cell and sb for backtracing
+    		board[i][j] = ch;
+    		sb.deleteCharAt(sb.length() - 1);
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Word Search JavaScript test case &#91;&quot;aa&quot;&#93;, &quot;aa&quot; problem?
+**My code here can pass input ["aa"], "aa" in w3cschools.com editor. but cannot pass text case in leetcode.
+Anyone know what's wrong with my code? or it's the leetcode test case problem?**
+
+    /** 
+     * @param {character[][]} board 
+     * @param {string} word 
+     * @return {boolean} 
+     */ 
+    var exist = function(board, word) { 
+        if(!word || word.length === 0  
+        || !board || board.length === 0  
+        || !board[0] || board[0].length === 0) { 
+            return false; 
+        } else if(word.length == 1) { 
+            return checkChar(board, word.charAt(0)); 
+        } else if(word.length > board.length * board[0].length) { 
+            return false; 
+        } 
+    
+        var tmp = checkChar(board, word.charAt(0)); 
+        if(!tmp) { 
+            return false; 
+        } 
+    
+        for(var i=1; i<word.length; i++) { 
+            var previousBoard = findChar(board, word.charAt(i-1)); 
+            var tmpResult = matchBoards(board, previousBoard, word.charAt(i)); 
+            if(!tmpResult) { 
+                return false; 
+            } 
+        } 
+    
+        return true; 
+    }; 
+    
+    function matchBoards(board, previousBoard, char){ 
+        for(var i=0; i<previousBoard.length; i++) { 
+            for(var j=0; j<previousBoard[i].length; j++) { 
+                var index = previousBoard[i][j]; 
+                if(i+1 < previousBoard.length && board[i+1].toString().charAt(index) == char) { 
+                    return true; 
+                } 
+                if(index+1 < board[i].toString().length && board[i].toString().charAt(index+1) == char) { 
+                    return true; 
+                } 
+                if(i-1 >= 0 && board[i-1].toString().charAt(index) == char) { 
+                    return true; 
+                }  
+                if(index-1 >= 0 && board[i].toString().charAt(index-1) == char) { 
+                    return true; 
+                } 
+            } 
+        } 
+        return false; 
+    } 
+    
+    function findChar(board, char) { 
+        var resultBoard = []; 
+        for(var i=0; i<board.length; i++) { 
+            resultBoard[i] = []; 
+            var str = board[i].toString(); 
+            var index = str.indexOf(char); 
+            while(index > -1) { 
+                resultBoard[i].push(index); 
+                if(index+1 >= str.length) { 
+                    break; 
+                } 
+                index = str.indexOf(char, index+1); 
+            } 
+        } 
+        return resultBoard; 
+    } 
+    
+    function checkChar(board, char) { 
+        for(var i=0; i<board.length; i++) { 
+            var str = board[i].toString(); 
+            if(str.indexOf(char) >= 0) { 
+                return true; 
+            } 
+        } 
+        return false; 
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 60ms solution
+    class Trie {
+    public:
+	struct TrieNode {
+		TrieNode* nodes[26];
+		bool isEnd;
+		TrieNode() { 
+			for (int i = 0; i < 26; i++)
+				nodes[i] = NULL;
+			isEnd = false; 
+		}
+	};
+
+	Trie() { root = new TrieNode(); }
+	TrieNode* getRoot() { return root; }
+
+	void addString(string s) {
+		TrieNode* t = root;
+		for (int i = 0; i<s.length(); i++) {
+			if (t->nodes[s[i] - 'a'])
+				t = t->nodes[s[i] - 'a'];
+			else {
+				TrieNode* n = new TrieNode();
+				t->nodes[s[i] - 'a'] = n;
+				t = n;
+			}
+		}
+		t->isEnd = true;
+	}
+
+	TrieNode* moveNext(TrieNode* t, char c) {
+		return t->nodes[c - 'a'];
+	}
+
+    private:
+	   TrieNode* root;
+    };
+
+
+
+    class Solution {
+	Trie t;
+
+	void findWords(vector<string>& result, vector<vector<char>>& board, Trie::TrieNode* root, int row, int col, string str) {
+		root = t.moveNext(root, board[row][col]);
+
+		if (root) {
+			if (root->isEnd) {
+				result.push_back(str + board[row][col]);
+				root->isEnd = false;
+			}
+
+			char c = board[row][col];
+			board[row][col] = NULL;
+			
+			if (col - 1 >= 0 && board[row][col - 1]) 
+				findWords(result, board, root, row, col - 1, str + c);
+			if (row - 1 >= 0 && board[row - 1][col]) 
+				findWords(result, board, root, row - 1, col, str + c);
+			if (col + 1 < board[row].size() && board[row][col + 1]) 
+				findWords(result, board, root, row, col + 1, str + c);
+			if (row + 1 < board.size() && board[row + 1][col]) 
+				findWords(result, board, root, row + 1, col, str + c);
+
+			board[row][col] = c;
+		}
+	}
+
+    public:
+	vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+		for (int i = 0; i<words.size(); i++)
+			t.addString(words[i]);
+
+		vector<string> result;
+		for (int i = 0; i<board.size(); i++)
+			for (int j = 0; j < board[i].size(); j++) 
+				findWords(result, board, t.getRoot(), i, j, "");
+		return result;
+	  }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java DFS +TRIE 20ms solution
+    public class Solution {
+    public class TrieNode {
+        public String result;
+        public TrieNode[] next = new TrieNode[26];
+    }
+    public List<String> findWords(char[][] board, String[] words) {
+        // build trie
+        TrieNode root = new TrieNode();
+        for (int i = 0; i < words.length; i ++) {
+            String word = words[i];
+            TrieNode curr = root;
+            for (int j = 0; j < word.length(); j ++) {
+                char c = word.charAt(j);
+                if (curr.next[c -'a'] == null) {
+                    TrieNode newnode = new TrieNode();
+                    curr.next[c - 'a'] = newnode;
+                }
+                curr = curr.next[c - 'a'];
+            }
+            curr.result = word;
+        }
+        int[][] visited = new int [board.length][board[0].length];
+        ArrayList<String> result = new ArrayList<String>();
+        for (int i = 0; i < board.length; i ++) {
+            for (int j = 0; j < board[0].length; j++) {
+                
+                dfs(board, i, j, root, result, visited);
+            }
+        }
+        return result;
+    }
+    
+    private void dfs (char[][] board, int i, int j, TrieNode root, List<String> result, int[][] visited){
+        if (visited[i][j] == 1) return;
+        char c = board[i][j];
+        if (root.next[c - 'a'] == null) return;
+        if (root.next[c - 'a'].result != null && !result.contains(root.next[c - 'a'].result)) {
+            result.add(root.next[c - 'a'].result);
+        }
+        visited[i][j] = 1;
+        if (i > 0) dfs(board, i - 1, j, root.next[c-'a'], result, visited);
+        if (i < board.length - 1) dfs(board, i + 1, j, root.next[c-'a'], result, visited);
+        if (j > 0) dfs(board, i, j - 1, root.next[c-'a'], result, visited);
+        if (j < board[0].length - 1) dfs(board, i, j + 1, root.next[c-'a'], result, visited);
+        visited[i][j] = 0;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Sharing my 84ms C++ solution using trie and recursion
+    // build a trie class to store the dictionary of words
+    class TrieNode
+    {
+    public:
+        vector<TrieNode*> children;
+        bool endOfWord;
+        
+        TrieNode()
+        {
+            children.resize(26, nullptr);
+            endOfWord = false;
+        }
+        
+        ~TrieNode(){}
+        
+        void addWord(string word)
+        {
+            if(word.length() == 0)
+                return;
+                
+            TrieNode* node = this;
+            for(int i=0; i<word.length(); i++)
+            {
+                if(node->children[word[i]-'a'])
+                    node = node->children[word[i]-'a'];
+                else
+                {
+                    node->children[word[i]-'a'] = new TrieNode();
+                    node = node->children[word[i]-'a'];
+                }
+            }
+            
+            node->endOfWord = true;
+        }
+    };
+    
+    class Solution {
+    public:
+        int m;
+        int n;
+        
+        void findWordsHelper(vector<vector<char>>& board, TrieNode* node, int x, int y, string& s, vector<string>& result)
+        {
+            if(x<0 || y<0 || x>=m || y>=n || node == nullptr || board[x][y] == '\0')
+                return;
+                
+            char t = board[x][y];
+            if(node->children[t-'a'] == nullptr)
+                return;
+            
+            s.push_back(t);
+            node = node->children[t-'a'];
+            board[x][y] = '\0';
+            if(node->endOfWord)
+            {
+                result.push_back(s);
+                node->endOfWord = false; // already been picked up
+            }
+            
+            findWordsHelper(board, node, x-1, y, s, result);
+            findWordsHelper(board, node, x+1, y, s, result);
+            findWordsHelper(board, node, x, y-1, s, result);
+            findWordsHelper(board, node, x, y+1, s, result);
+            
+            board[x][y] = t;
+            s.pop_back();
+        }
+        
+        vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+            TrieNode *root = new TrieNode();
+            int i, x, y;
+            for(i=0; i<words.size(); i++)
+                root->addWord(words[i]);
+                
+            m = board.size();
+            n = board[0].size();
+            string s;
+            vector<string> result;
+            for(x=0; x<m; x++)
+                for(y=0; y<n; y++)
+                {
+                    findWordsHelper(board, root, x, y, s, result);
+                }
+                
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Solved with DFS backtracking with Trie
+    public class Solution {
+    
+    int maxLen = 0;
+
+    public class Trie {
+        class TrieNode {
+    // Initialize your data structure here.
+            public boolean isString;
+            public HashMap<Character, TrieNode> subTrie = new HashMap<Character, TrieNode>();
+            public char c;
+	        public TrieNode() {}
+        }
+        protected TrieNode root;
+
+        public Trie() {
+            root = new TrieNode();
+        }
+
+    // Inserts a word into the trie.
+        public void insert(String word) {
+            if(word == null)return;
+            TrieNode node = root;
+            for(int i = 0; i < word.length(); i++){
+                if(!node.subTrie.containsKey(word.charAt(i))){
+                    TrieNode newNode = new TrieNode();
+                    newNode.c = word.charAt(i);
+                    node.subTrie.put(word.charAt(i), newNode);
+                }
+                node = node.subTrie.get(word.charAt(i));
+            }
+            node.isString = true;
+        }
+
+    // Returns if the word is in the trie.
+        public void search(TrieNode node, char[][] board, int r, int c, StringBuilder sb, HashSet<String> result) {
+            if(r < 0 || r >= board.length || c < 0 || c >= board[0].length || sb.length() > maxLen)
+                return;
+            if(node.subTrie.containsKey(board[r][c])){
+                node = node.subTrie.get(board[r][c]);
+                sb.append(board[r][c]);
+                board[r][c] = '#';
+                if(node.isString)
+                    result.add(sb.toString());
+                search(node, board, r+1 , c, sb, result);
+                search(node, board, r-1 , c, sb, result);
+                search(node, board, r, c+1, sb, result);
+                search(node, board, r, c-1, sb, result);
+                board[r][c] = sb.charAt(sb.length() - 1);
+                sb.deleteCharAt(sb.length()-1);
+            }
+        }
+
+    }
+    public List<String> findWords(char[][] board, String[] words) {
+        ArrayList<String> result = new ArrayList<String>();
+        HashSet<String> set = new HashSet<String>();
+        if(board == null || board.length == 0 || board[0].length == 0)
+            return result;
+        Trie tree  = new Trie();
+        for(String s : words){
+            maxLen = Math.max(s.length(), maxLen);
+            tree.insert(s);
+        }
+        //char[] temp = new char[maxLen];
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < board.length; i++){
+            for(int j = 0; j < board[0].length; j++){
+                tree.search(tree.root, board, i , j, sb, set);
+            }
+        }
+        for(String s : set){
+        	result.add(s);
+        	System.out.println(s);
+        }
+        return result;
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution with Trie
+I'm removing found words from trie so no need to track for duplicate words.
+
+    public class Solution {
+       public List<String> findWords(char[][] board, String[] words) {
+    		List<String> foundWords = new ArrayList<String>();
+    		DisposableTrie t = new DisposableTrie();
+    		for (int i = 0; i < words.length; i++) {
+    			t.insert(words[i]);
+    		}
+    		boolean[][] visited = new boolean[board.length][board[0].length];
+    		for (int i = 0; i < board.length; i++) {
+    			for (int j = 0; j < board[0].length; j++) {
+    				findWords(t, foundWords, i, j, visited,
+    						board, "");
+    			}
+    		}
+    		return foundWords;
+    	}
+    
+    	private void findWords(DisposableTrie t, List<String> foundWords, int i, int j,
+    			boolean[][] visited, char[][] board, String s){
+    		if (i < 0 || j < 0 || i == board.length || j == board[0].length) {
+    			return;
+    		}
+    		if (visited[i][j]) {
+    			return;
+    		}
+    		char c = board[i][j];
+    		s= s + c;
+    
+    		if (t.startsWith(s)) {
+    			visited[i][j]=true;
+    			if (t.search(s)) {
+    				foundWords.add(s);
+    			}
+    			findWords(t, foundWords, i, j - 1, visited, board, s);
+    			findWords(t, foundWords, i, j + 1, visited, board, s);
+    			findWords(t, foundWords, i - 1, j, visited, board, s);
+    			findWords(t, foundWords, i + 1, j, visited, board, s);
+    			visited[i][j]=false;
+    		}
+    	}
+    
+    	private class DisposableTrie {
+    		private TrieNode root;
+    
+    		DisposableTrie() {
+    			root = new TrieNode();
+    		}
+    
+    		public void insert(String word) {
+    			root.insert(word.toCharArray(), 0);
+    		}
+    
+    		public boolean search(String word) {
+    			return root.search(word.toCharArray(), 0);
+    		}
+    
+    		public boolean startsWith(String prefix) {
+    			return root.startsWith(prefix.toCharArray(), 0);
+    		}
+    		
+    		private class TrieNode {
+        		private TrieNode[] children = new TrieNode[26];
+        		boolean valueNode = false;
+        
+        		public void insert(char[] chars, int index) {
+        			if (index >= chars.length) {
+        				return;
+        			}
+        			int i = chars[index] - 'a';
+        			if (children[i] == null) {
+        				children[i] = new TrieNode();
+        			}
+        			children[i].insert(chars, index + 1);
+        			if (index == chars.length - 1) {
+        				children[i].valueNode = true;
+        			}
+        		}
+        
+        		public boolean search(char[] chars, int index) {
+        			if (index >= chars.length) {
+        				if (valueNode) {
+        				    valueNode = false;  //One time use baby!!!
+        					return true;
+        				}
+        				return false;
+        			}
+        			int i = chars[index] - 'a';
+        			if (children[i] == null) {
+        				return false;
+        			}
+        			return children[i].search(chars, index + 1);
+        		}
+        
+        		public boolean startsWith(char[] chars, int index) {
+        			if (index >= chars.length) {
+        				return true;
+        			}
+        
+        			int i = chars[index] - 'a';
+        			if (children[i] == null) {
+        				return false;
+        			}
+        			return children[i].startsWith(chars, index + 1);
+        		}
+        	}
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------

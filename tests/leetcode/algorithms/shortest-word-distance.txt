@@ -1,0 +1,460 @@
+My short post order traversal Java solution for share
+    private TreeNode prev = null;
+
+    public void flatten(TreeNode root) {
+        if (root == null)
+            return;
+        flatten(root.right);
+        flatten(root.left);
+        root.right = prev;
+        root.left = null;
+        prev = root;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my simple NON-recursive solution, O(1) space complexity!
+    class Solution {
+    public:
+        void flatten(TreeNode *root) {
+    		TreeNode*now = root;
+    		while (now)
+    		{
+    			if(now->left)
+    			{
+                    //Find current node's prenode that links to current node's right subtree
+    				TreeNode* pre = now->left;
+    				while(pre->right)
+    				{
+    					pre = pre->right;
+    				}
+    				pre->right = now->right;
+                    //Use current node's left subtree to replace its right subtree(original right 
+                    //subtree is already linked by current node's prenode
+    				now->right = now->left;
+    				now->left = NULL;
+    			}
+    			now = now->right;
+    		}
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java Solution
+    public void flatten(TreeNode root) {
+            if (root == null) return;
+            
+            TreeNode left = root.left;
+            TreeNode right = root.right;
+            
+            root.left = null;
+            
+            flatten(left);
+            flatten(right);
+            
+            root.right = left;
+            TreeNode cur = root;
+            while (cur.right != null) cur = cur.right;
+            cur.right = right;
+        }
+
+
+This solution is based on recursion. We simply flatten left and right subtree and paste each sublist to the right child of the root. (don't forget to set left child to null)
+
+----------------------------------------------------------------------------------------------------
+Accepted simple Java solution , iterative
+it is DFS so u need a stack. Dont forget to set the left child to null, or u'll get TLE. (tricky!)
+ 
+
+       public void flatten(TreeNode root) {
+            if (root == null) return;
+            Stack<TreeNode> stk = new Stack<TreeNode>();
+            stk.push(root);
+            while (!stk.isEmpty()){
+                TreeNode curr = stk.pop();
+                if (curr.right!=null)  
+                     stk.push(curr.right);
+                if (curr.left!=null)  
+                     stk.push(curr.left);
+                if (!stk.isEmpty()) 
+                     curr.right = stk.peek();
+                curr.left = null;  // dont forget this!! 
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+8ms, Non-recursive, No stack, C++ solution
+    void flatten(TreeNode *root) {
+		while (root) {
+			if (root->left && root->right) {
+				TreeNode* t = root->left;
+				while (t->right)
+					t = t->right;
+				t->right = root->right;
+			}
+
+            if(root->left)
+			    root->right = root->left;
+			root->left = NULL;
+			root = root->right;
+		}
+	}
+
+----------------------------------------------------------------------------------------------------
+My recursive solution is easy and clean!
+    void flatten(TreeNode* root) {
+        if (!root) return;
+        flatten(root->left);
+        flatten(root->right);
+        TreeNode *tmp = root->right;
+        root->right = root->left;
+        root->left = nullptr;
+        while (root->right)
+            root = root->right;
+        root->right = tmp;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my accepted recursive solution with comments - Java
+The idea is very simple:
+
+1. flatten left subtree
+
+2. flatten right subtree
+
+3. concatenate root -> left flatten subtree -> right flatten subtree
+
+        public void flatten(TreeNode root) {
+            if(root == null)
+        	return;
+        	
+            flatten(root.left);
+            flatten(root.right);
+        
+            // save current right for concatination
+            TreeNode right = root.right;
+        
+            if(root.left != null) {
+            
+                // step 1: concatinate root with left flatten subtree
+            	root.right = root.left;
+            	root.left = null; // set left to null
+        	
+            	// step 2: move to the end of new added flatten subtree
+            	while(root.right != null)
+            		root = root.right;
+        		
+            	// step 3: contatinate left flatten subtree with flatten right subtree	
+            	root.right = right;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Easy 1ms Java DFS solution
+     public class Solution {
+        public void flatten(TreeNode root) {
+            if(root==null)
+                return;
+            flatten(root.left);
+            flatten(root.right);
+            TreeNode left  = root.left;
+            TreeNode right = root.right;
+            root.left  = null;
+            root.right = left; 
+            while(root.right!=null)
+                root = root.right;
+            root.right = right;
+        }
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+16 lines iterative c++ solution
+    void flatten(TreeNode *root) {
+        while(root){
+            if(root->left == NULL)
+                root = root->right;
+            else {
+                if(root->right){
+                    TreeNode *l = root->left;
+                    while(l->right) l = l->right;
+                    l->right = root->right;
+                }
+                root->right = root->left;
+                root->left = NULL;
+                root = root->right;
+            }
+        }
+    }
+
+Inspired by Morris traversal.
+
+----------------------------------------------------------------------------------------------------
+Can you improve upon my recursive approach?
+I am basically storing the last visited pre-order traversal node in a static "lastVisited" TreeNode, and re-assigning its children.
+Can my algorithm be improved so that we don't need that static variable, and all is handled by the recursive algorithm.
+
+    private static TreeNode lastVisited = null;
+    
+    public static void flattenHelper(TreeNode root) {
+        if(root == null)
+            return;
+    
+        TreeNode savedRight = root.right;
+        if(lastVisited != null) {
+            lastVisited.left = null;
+            lastVisited.right = root;
+        }
+        lastVisited = root;
+        
+        flattenHelper(root.left);
+        flattenHelper(savedRight);
+    }    
+
+----------------------------------------------------------------------------------------------------
+An inorder python solution
+    class Solution:
+    # @param root, a tree node
+    # @return nothing, do it in place
+    prev = None
+    def flatten(self, root):
+        if not root:
+            return
+        self.prev = root
+        self.flatten(root.left)
+
+        temp = root.right
+        root.right, root.left = root.left, None
+        self.prev.right = temp
+
+        self.flatten(temp)
+
+
+
+             *
+           /
+          n
+       /     \
+     left   right
+      \ 
+       *
+        *
+         \
+          p
+
+
+The idea is very simple. Suppose n is the current visiting node, and p is the previous node of preorder traversal to n.right.
+
+We just need to do the inorder replacement:
+
+n.left -> NULL
+
+n.right - > n.left
+
+p->right -> n.right
+
+
+
+----------------------------------------------------------------------------------------------------
+My 8ms C++ Solution
+    class Solution {
+    public:
+        void flatten(TreeNode* root) {
+            TreeNode *head = nullptr;
+            flattenWorker(root, head);
+        }
+    private:
+        void flattenWorker(TreeNode* root, TreeNode*& head) {
+            if (root == nullptr) {
+                return;
+            }
+            flattenWorker(root->right, head);
+            flattenWorker(root->left, head);
+            root->left = nullptr;
+            root->right = head;
+            head = root;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+8 lines of python solution (reverse preorder traversal)
+    def __init__(self):
+        self.prev = None
+        
+    def flatten(self, root):
+        if not root:
+            return None
+        self.flatten(root.right)
+        self.flatten(root.left)
+        
+        root.right = self.prev
+        root.left = None
+        self.prev = root
+
+----------------------------------------------------------------------------------------------------
+Java solution refer to Mirris traversal using constant place
+    public void flatten(TreeNode root) {
+        TreeNode cur = root;
+        TreeNode prev = null;
+        while(cur != null){
+            if(cur.left == null) cur = cur.right;
+            else {
+                prev = cur.left;
+                while(prev.right != null) prev = prev.right;
+                prev.right = cur.right;
+                cur.right = cur.left;
+                cur.left = null;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution Recursive &amp; Non-Recursive
+I am ambiguous about if "recursive" is qualified for "in place", as sb in discussion says it's NOT.
+Here I have Java solution in recursive and non-recursive.
+
+
+
+    /**
+     * Move from root down,
+     * for each node, 
+     *  attach original right as the right child of the rigthmost node of left subtree,
+     *  set original left as new right child.
+     * repeat with next right child.
+     */
+    /// SOLUTION II: non-recursive ///
+    public void flatten(TreeNode root) {
+        TreeNode node = root;
+        while (node != null) {
+            TreeNode left = node.left;
+            TreeNode right = node.right;
+            if (left != null) {
+                TreeNode temp = left;
+                while (temp.right != null)
+                    temp = temp.right;
+                temp.right = right;
+                node.right = left;
+                node.left = null;
+            }
+            node = node.right;
+        }
+    }
+    
+    /// SOLUTION I: accepted, recursion ///
+    public void flatten(TreeNode root) {
+        if (root == null)
+            return;
+        TreeNode left = root.left;
+        TreeNode right = root.right;
+        if (left != null) {
+            TreeNode rightmost = getRightmost(left);
+            rightmost.right = right;
+            root.left = null; // CATCH: must set left to null explicitly
+            root.right = left;
+        }
+        flatten(root.right);
+    }
+    
+    // return the rightmost node of a subtree;
+    // node must not be null.
+    private TreeNode getRightmost(TreeNode node) {
+        while (node.right != null)
+            node = node.right;
+        return node;
+    }
+
+----------------------------------------------------------------------------------------------------
+An standard recursive dfs solution
+    void flatten(TreeNode *root) {
+        dfs(root);
+    }
+    
+    TreeNode *dfs(TreeNode *root) {
+        if (!root) return root;
+        
+        TreeNode *cur = root;
+        TreeNode *left = dfs(root->left);
+        TreeNode *right = dfs(root->right);
+        
+        if (left) {
+            cur->left = NULL;
+            cur->right = left; // set right pointer of the root node
+            while (cur->right) cur = cur->right; // get the last node of the left side
+        }
+        
+        cur->right = right; // right pointer of the last node of the left side
+        return root;
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple c solution with 4 ms
+//4 ms
+
+    void flatten(struct TreeNode* root) {
+        struct TreeNode* left_r;
+        while(root!=NULL){
+            if(root->left != NULL) {
+            left_r = root->left;
+            while(left_r->right != NULL) left_r = left_r->right;
+            left_r->right = root->right;
+            root->right = root->left;
+            root->left = NULL;
+            }
+            root = root->right;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+simple dfs python solution
+def flatten(self, root):
+    last=TreeNode(-1)
+    qstack=[root]
+    while qstack:
+        node=qstack.pop()
+        last.right=node
+        last.left=None
+        if node and node.right:
+            qstack.append(node.right)
+        if node and node.left:
+            qstack.append(node.left)
+        last=node
+    '''
+
+----------------------------------------------------------------------------------------------------
+Perhaps the most simple code (C++)
+    class Solution {
+    public:
+        TreeNode *sidend = NULL;// this record the left most node;
+        void flatten(TreeNode *root) {
+            if (root == NULL) return;
+            sidend = root;
+            TreeNode *r = root->right;
+            root->right = root->left;
+            root->left = NULL;
+            flatten(root->right);
+            sidend->right = r;
+            flatten(r);
+            return ;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Pre-order solution
+use a pointer "pre", then  pre order the tree.
+
+    void flatten(TreeNode* root) {
+        if (!root) return;
+        TreeNode dummy(-1), *pre = &dummy;
+        flatten(root, pre);
+    }
+    
+    void flatten(TreeNode* root, TreeNode* &pre) {
+        if (!root) return;
+        TreeNode *rightChild = root->right;
+        pre->right = root;
+        pre->left = NULL;
+        pre = root;
+        flatten(root->left, pre);
+        flatten(rightChild, pre);
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,753 @@
+O(n) solution by using two pointers without change anything
+my solution is like this: using two pointers, one of them one step at a time. another pointer each take two steps. Suppose the first meet at step ***k***,the length of the Cycle is ***r***.   so..**2k-k=nr,k=nr**
+Now, the distance between the start node of list and the start node of cycle is  ***s***. the distance between the start of list and the first meeting node is ***k***(the pointer which wake one step at a time waked k steps).the distance between the start node of cycle and the first meeting node is ***m***, so...**s=k-m,
+s=nr-m=(n-1)r+(r-m),here we takes n = 1**..so, using one pointer start from the start node of list, another pointer start from the first meeting node, all of them wake one step at a time, the first time they meeting each other is the start of the cycle.
+
+        ListNode *detectCycle(ListNode *head) {
+        if (head == NULL || head->next == NULL) return NULL;
+        
+        ListNode* firstp = head;
+        ListNode* secondp = head;
+        bool isCycle = false;
+        
+        while(firstp != NULL && secondp != NULL) {
+            firstp = firstp->next;
+            if (secondp->next == NULL) return NULL;
+            secondp = secondp->next->next;
+            if (firstp == secondp) { isCycle = true; break; }
+        }
+        
+        if(!isCycle) return NULL;
+        firstp = head;
+        while( firstp != secondp) {
+            firstp = firstp->next;
+            secondp = secondp->next;
+        }
+
+        return firstp;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise O(n) solution by using C++ with Detailed Alogrithm Description
+**Alogrithm Description:**
+================================================================
+**Step 1: Determine whether there is a cycle**
+
+1.1) Using a slow pointer that move forward 1 step  each time
+
+1.2) Using a fast  pointer that move forward 2 steps each time
+
+1.3) If the slow pointer and fast pointer both point to the same location after several moving steps, there is a cycle;
+
+1.4) Otherwise, if (fast->next == NULL || fast->next->next == NULL), there has no cycle.
+
+**Step 2: If there is a cycle, return the entry location of the cycle**
+
+2.1) L1 is defined as the distance between the head point and entry point
+
+2.2) L2 is defined as the distance between the entry point and the meeting point
+
+2.3) C   is defined as the length of the cycle
+
+2.4) n   is defined as the travel times of the fast pointer around the cycle When the first encounter of the slow pointer and the fast pointer
+
+**According to the definition of L1, L2 and C, we can obtain:**
+
+ - the total distance of the slow pointer traveled when encounter is L1 + L2
+
+ - the total distance of the fast  pointer traveled when encounter is L1 + L2 + n * C
+
+ - Because the total distance the fast pointer traveled is twice as the slow pointer, Thus:
+
+ - 2 * (L1+L2) = L1 + L2 + n * C => L1 + L2 = n * C => **L1 = (n - 1)* C + (C - L2)**
+
+**It can be concluded that the distance between the head location and entry location is equal to the distance between the meeting location and the entry location along the direction of forward movement.**
+
+So, when the slow pointer and the fast pointer encounter in the cycle, we can define a pointer "entry" that point to the head, this "entry" pointer moves one step each time so as the slow pointer. When this "entry" pointer and the slow pointer both point to the same location, this location is the node where the cycle begins.
+
+================================================================
+
+Here is the code:
+
+    ListNode *detectCycle(ListNode *head) {
+        if (head == NULL || head->next == NULL)
+            return NULL;
+        
+        ListNode *slow  = head;
+        ListNode *fast  = head;
+        ListNode *entry = head;
+        
+        while (fast->next && fast->next->next) {
+            slow = slow->next;
+            fast = fast->next->next;
+            if (slow == fast) {                      // there is a cycle
+                while(slow != entry) {               // found the entry location
+                    slow  = slow->next;
+                    entry = entry->next;
+                }
+                return entry;
+            }
+        }
+        return NULL;                                 // there has no cycle
+    }
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(1) space solution with detailed explanation.
+Define two pointers slow and fast. Both start at head node, fast is twice as fast as slow. If it reaches the end it means there is no cycle, otherwise eventually it will eventually catch up to slow pointer somewhere in the cycle.
+
+Let the distance from the first node to the the node where cycle begins be A, and let say the slow pointer travels travels A+B.  The fast pointer must travel 2A+2B to catch up.  The cycle size is N.  Full cycle is also how much more fast pointer has traveled than slow pointer at meeting point.
+
+    A+B+N = 2A+2B
+    N=A+B
+
+From our calculation slow pointer traveled exactly full cycle when it meets fast pointer, and since originally it travled A before starting on a cycle, it must travel A to reach the point where cycle begins! We can start another slow pointer at head node, and move both pointers until they meet at the beginning of a cycle.
+
+    public class Solution {
+                public ListNode detectCycle(ListNode head) {
+                    ListNode slow = head;
+                    ListNode fast = head;
+            
+                    while (fast!=null && fast.next!=null){
+                        fast = fast.next.next;
+                        slow = slow.next;
+                        
+                        if (fast == slow){
+                            ListNode slow2 = head; 
+                            while (slow2 != slow){
+                                slow = slow.next;
+                                slow2 = slow2.next;
+                            }
+                            return slow;
+                        }
+                    }
+                    return null;
+                }
+            }
+
+
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution based on slow fast pointers
+**Explanations**
+
+Definitions: 
+Cycle = length of the cycle, if exists.
+        C is the beginning of Cycle, S is the distance of slow pointer from C when slow pointer meets fast pointer.
+
+Distance(slow) = C + S, Distance(fast) = 2 * Distance(slow) = 2 * (C + S). To let slow poiner meets fast pointer,  only if fast pointer run 1 cycle more than slow pointer.  Distance(fast) - Distance(slow) = Cycle 
+           =>   2 * (C + S)    - (C + S)		= Cycle
+           =>	C + S = Cycle   
+           =>	C = Cycle - S 
+           => This means if slow pointer runs (Cycle - S) more, it will reaches C. So at this time, if there's another point2 running from head
+           =>  After C distance, point2 will meet slow pointer at C, where is the beginning of the cycle.
+
+
+
+    public ListNode detectCycle(ListNode head) {
+    	ListNode slow = head, fast = head;
+    	while(fast != null && fast.next != null) {
+    		fast = fast.next.next;
+    		slow = slow.next;
+    		if (slow == fast) {
+    			while (head != slow) {
+    				head = head.next;
+    				slow = slow.next;
+    			}
+    			return slow;				
+    		}
+    	}			
+    	return null;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my python solution with detailed explanation
+My solution consists of two parts. The first one checks if a cycle exists or not. The second one determines the entry of the cycle if it exists.
+The first part is inspired by [this post][1]. about Linked List Cycle I
+The logic behind the 2nd part is like this:
+
+ 
+           Consider the following linked list, where E is the cylce entry and X, the crossing point of fast and slow.
+            H: distance from head to cycle entry E
+            D: distance from E to X
+            L: cycle length
+                              _____
+                             /     \
+            head_____H______E       \
+                            \       /
+                             X_____/   
+            
+        
+            If fast and slow both start at head, when fast catches slow, slow has traveled H+D and fast 2(H+D). 
+            Assume fast has traveled n loops in the cycle, we have:
+            2H + 2D = H + D + L  -->  H + D = nL  --> H = nL - D
+            Thus if two pointers start from head and X, respectively, one first reaches E, the other also reaches E. 
+            In my solution, since fast starts at head.next, we need to move slow one step forward in the beginning of part 2
+ 
+    class Solution:
+        # @param head, a ListNode
+        # @return a list node
+        def detectCycle(self, head):
+            try:
+                fast = head.next
+                slow = head
+                while fast is not slow:
+                    fast = fast.next.next
+                    slow = slow.next
+            except:
+                # if there is an exception, we reach the end and there is no cycle
+                return None
+    
+            # since fast starts at head.next, we need to move slow one step forward
+            slow = slow.next
+            while head is not slow:
+                head = head.next
+                slow = slow.next
+    
+            return head
+
+  [1]: https://leetcode.com/discuss/40120/except-ionally-fast-python
+
+
+----------------------------------------------------------------------------------------------------
+Java solution without extra space with explanation
+ 
+
+   First Step:
+    Assume the first pointer runs from head at a speed of 1-by-1 step, as S, and the second pointer runs at a speed of 2-by-2 step, as 2S, then two pointers will meet at MEET-POINT, using the same time. Define outer loop is A, the distance from CIRCLE-START-POINT to MEET-POINT is B, and the distance from MEET-POINT to CIRCLE-START-POINT is C (Apparently, C=loop-B), then (n*loop+a+b)/2S = (a+b)/S, n=1,2,3,4,5,.... 
+
+Converting that equation can get A/S=nloop/S-B/S. Since C=loop-B, get A/S = ((n-1)loop+C)/S. 
+
+That means, as second step, assuming a pointer running from head and another pointer running from MEET-POINT both at a speed S will meet at CIRCLE-START-POINT;
+    
+        (CIRCLE-START-POINT)
+                |
+    -------A----@----------------
+                |               |
+                |               |
+                C               B
+                |               |
+                |-------@-------|
+                        |
+                   (MEET-POINT)
+    
+    
+    public ListNode detectCycle(ListNode head) {
+        if(head==null || head.next==null || head.next.next==null)  return null;
+        ListNode pointer1 = head.next;
+        ListNode pointer2 = head.next.next;
+        //Step 1
+        while(pointer1!=pointer2){
+            if(pointer2.next==null || pointer2.next.next==null)   return null;
+            pointer1 = pointer1.next;
+            pointer2 = pointer2.next.next;
+        }
+        pointer1 = head;
+        //Step 2
+        while(pointer1!=pointer2){
+            pointer1 = pointer1.next;
+            pointer2 = pointer2.next;
+        }
+        return pointer1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My two cents - still O(1) memory and O(n) time
+The most elegant solution involves a little bit maths.  However if you've got a headache on maths, the following thoughts will probably be a good alternative.
+
+The solution to the problem can be stacked on the solutions to the existing questions: [Linked List Cycle][1] and [Intersection of Two Linked Lists][2].  If properly crafted, both of them requires linear running time and constant memory.  Hence we still get O(1) memory and O(n) time.
+
+Details:
+
+1. Determine if there exists a cycle, return *nullptr* if not, otherwise return the ListNode where the fast pointer and the slow pointer meet, denoted as **tail**.
+1. Get intersection of the two linked list: *head --> ... --> tail* and *tail->next --> ... --> tail*
+
+That solves the problem.
+
+  [1]: https://leetcode.com/problems/linked-list-cycle/
+  [2]: https://leetcode.com/problems/intersection-of-two-linked-lists/
+
+----------------------------------------------------------------------------------------------------
+C++ implementation with much more clear and strict explanation ! any one can give  more clear ?
+Just use the dummy head pointer and why first find the meeting point and then set the result-pointer at the dummy and move forward to find the result position.
+There are the reasons :
+
+set the 
+
+       [#cycle length = C ]  
+
+       [#length-from-head-to-cycle-start-point = L] 
+
+       [#cycle-start-point-meeting-point=S] 
+
+       [#meeting-point-clock-direction-to-cycle-start-point=Y]
+
+       [#step needed to meeting=T]
+
+Then when they meet, we have 
+
+       2 * T = T + N1 * C    N1=0,1,2...
+
+so we get 
+
+       T = N1 * C
+
+Also we have 
+
+       2 * T = L + N2 * C + S    N2=0,1,2...
+
+we can get 
+
+       N3 * C = L + S  with C = S + Y   N3 = 2 * N1 - N2
+
+so we have 
+
+      (N3 - 1) * C + S + Y = L + S
+
+then we have
+
+      (N3 - 1) * C + Y = L
+
+just means that we can do the things that have been explained by others.
+
+We can move a node from head and node from the meeting point, then when they meet, it is the 
+
+start point of the cycle.
+
+Here is the code :
+
+    class Solution {
+        public:
+            ListNode *detectCycle(ListNode *head) {
+                ListNode* dummy=new ListNode(-1);
+                dummy->next=head;
+                ListNode *slow=dummy, *fast=dummy;
+                bool flag=false;
+                while(fast && fast->next){
+                    slow=slow->next;
+                    fast=fast->next->next;
+                    if(fast==slow)  { flag=true; break; }
+                }
+                if(!flag)   return NULL;
+                ListNode* result=dummy;
+                while(result != slow){
+                    result=result->next;
+                    slow=slow->next;**strong text**
+                }
+                return result;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Sharing my Python solution
+Same idea as many other posts, just the python version:
+     
+    
+    def detectCycle(self, head):
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+            if slow == fast:
+                break
+        else:
+            return None
+        while head != slow:
+            slow = slow.next
+            head = head.next
+        return head
+
+----------------------------------------------------------------------------------------------------
+Java two pointers solution
+    public ListNode detectCycle(ListNode head) {
+        ListNode p1 = head;
+    	ListNode p2 = head;
+    	while(p2 != null && p2.next != null){
+    		p1 = p1.next;
+    		p2 = p2.next.next;
+    		if (p1 == p2) break;
+    	}
+    	if (p2 == null || p2.next == null){
+    		return null;
+    	}
+    	p1 = head;
+    	while(p1 != p2){
+    		p1 = p1.next;
+    		p2 = p2.next;
+    	}
+    	return p2;
+    }
+
+the trick is that two pointers meet x positions before the loop start in the cycle body, where x is 
+the distance from head to cycle start.
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time, O(1) space solution. Really easy to understand
+
+
+    public class Solution {
+        public ListNode detectCycle(ListNode head) {
+            if(head==null) return head;
+            ListNode cur = head;
+            ListNode fast = head.next;
+            // same as idea as LinkedList Cycle I, try to detect a loop
+            while(fast != null && fast.next != null) {
+                if(fast == cur) { // loop detected.
+                    fast = fast.next;
+                    int loopSize = 1;
+                    while(fast!=cur) { // find the loop size
+                        fast = fast.next;
+                        loopSize++;
+                    }
+                    fast = head;  // start from head again
+                    cur = head;
+                    for(int i = loopSize; i > 0; i--) { //this time, put fast node "loopSize" ahead
+                        fast = fast.next;
+                    }
+                    while(cur!=fast){
+                        cur=cur.next;
+                        fast = fast.next;
+                    }
+                    return cur;
+                }
+                fast = fast.next.next;
+                cur = cur.next;
+            }
+            return null;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ solution in O(n) time cost without using extra space
+    ListNode *detectCycle(ListNode *head) 
+    {
+        ListNode *p1=head,*p2=head,*p=NULL;
+        while(p2 && p2->next)
+        {
+            p1= p1->next;
+            p2= p2->next->next;
+            if(p1== p2)   /* find cycle*/
+            {
+                p2= head; /* head and p1 have the same distance from the cycle begins*/
+                while(p2!=p1) /* find the cycle begin node if p1==p2*/
+                {
+                    p1= p1->next;
+                    p2= p2->next;
+                }
+                p= p1;
+                break;
+            }
+        }
+        return p;
+    }
+
+----------------------------------------------------------------------------------------------------
+Is there any better answer for the Linked list Cycle II?
+Here is my answer using HashSet:
+
+    public class Solution {
+    public ListNode detectCycle(ListNode head) {
+        // IMPORTANT: Please reset any member data you declared, as
+        // the same Solution instance will be reused for each test case.
+        HashSet nodes = new HashSet();
+        ListNode current = head;
+        
+        while(current != null){
+            if(nodes.contains(current))
+                return current;
+            nodes.add(current);
+            current = current.next;
+        }
+        
+        return null;
+    }
+
+the space complexity is *O(n)*, I think there should be some better answer with lower space complexity.
+
+----------------------------------------------------------------------------------------------------
+Share my O(n) complexity and constant space code. Keep the original list. Any comments.
+The idea is :
+
+1. First, scanning the list using `slow` and `fast` pointers, and using `slowVal`, `fastVal` records the steps two pointers have past. If the list has loop, then `fastVal - slowVal` equals the size of the loop.
+2. Then, let `slow` points head, and `fast` points `loopSize` ahead.
+3. Let slow and fast points the next until `slow == fast`, here we found the begin of the loop.
+
+Here, we scan the list twice, and use constant space. 
+The code:
+
+    ListNode *detectCycle(ListNode *head) {
+    	if (head == NULL){
+    		return NULL;
+    	}
+    	ListNode *slow = head, *fast = slow->next;
+    	long long slowVal = 0, fastVal = slowVal + 1;
+    	while (fast != NULL){
+    		if (slow == fast){
+    			break;
+    		}
+    		slow = slow->next;
+    		fast = fast->next;
+    		++slowVal;
+    		++fastVal;
+    		if (fast != NULL){
+    			fast = fast->next;
+    			++fastVal;
+    		}
+    	}
+    	// No loop
+    	if (fast == NULL){
+    		return NULL;
+    	}
+    	long long loopSize = fastVal - slowVal;
+    	slow = fast = head;
+    	while (loopSize){
+    		fast = fast->next;
+    		--loopSize;
+    	}
+    	while (slow != fast){
+    		slow = slow->next;
+    		fast = fast->next;
+    	}
+    	return fast;
+    }
+
+Any comments are welcome.
+
+----------------------------------------------------------------------------------------------------
+Python O(N) NO extra space with MATHEMATICAL explanation
+    class Solution(object):
+        def detectCycle(self, head):
+            slow = fast = head
+            while fast is not None:
+                fast = fast.next
+                if fast is None:
+                    return None
+                fast = fast.next
+                slow = slow.next
+                if slow == fast:
+                    break
+            if fast is None:
+                return None
+            slow = head
+            while slow != fast:
+                slow = slow.next
+                fast = fast.next
+            return slow
+ 
+The main idea is to use two pointers, slow and fast. At each step, slow advances one position, whereas fast advances two positions. If there is a cycle, the two pointers will be equal after some iterations. Why? Let's assume that they don't, so a some point there would be a situation in which fast = slow.next (fast has surpassed slow, but they didn't meet). This means that at the iteration before that, fast = slow (that is, they have met.
+
+Where do they meet in the cycle?
+
+Let's assume that the head is far K steps from the beginning of the cycle. Therefore, when slow enters the cycle (after K steps), fast will have done 2K (because it moves 2x faster). Let's assume the cycle is long C steps. Here it comes modular arithmetic: after how many steps will slow == fast? The following congruence must hold:
+
+    X = 2X + K (mod C)
+
+That is, slow makes X steps, fast makes 2X steps, and it was ahead of K steps. Therefore, this means that
+
+    X = -K (mod C)
+
+Which means that slow == fast after -K steps (which means, they are K steps from the beginning of the cycle). This is what we need! Because now we can reset slow = head, and since there are K steps from head to beginning of cycle, and K steps from slow == fast to beginning of cycle, we increment both and we will reach beginning of cycle, without even knowing the values of C and K!
+
+    X ---  X --- X
+               /   \
+              X     X
+               \   /
+                 X   
+
+In the example above, to clarify, K = 2 and C = 4.   
+
+----------------------------------------------------------------------------------------------------
+C++simple solution
+    class Solution {
+    public:
+        ListNode *detectCycle(ListNode *head) {
+            ListNode *fast = head;
+            ListNode *slow = head;
+            ListNode *detect = head;
+            while(fast != NULL && fast->next != NULL){
+                slow = slow->next;
+                fast = fast->next->next;
+                if(slow == detect) return detect;
+                if(slow == fast) detect = detect->next;
+            }
+            return NULL;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+12ms C++ solution and explanation of Floyd Cycle algorithm
+**Finding start of the cycle in a linked list, if any exists :**
+
+    ListNode *detectCycle(ListNode *head) {
+                ListNode *slow = head, *fast = head;
+                bool flag = false;
+                while(fast && fast->next && fast->next->next){
+                    fast = fast->next->next;
+                    slow = slow->next;
+                    if(fast == slow){
+                        flag = true;
+                        break;
+                    }
+                }
+                if(!flag)
+                    return NULL;
+                slow = head;
+                while(slow != fast){
+                    slow = slow->next;
+                    fast = fast->next;
+                }
+                return slow;
+            }
+
+So this works because, if there exists a cycle in the linked list, the fast and slow pointer will surely meet atleast once, when the fast pointer has traversed an entire loop at least once.
+
+So, let us say, 
+
+ - the straight path before the cycle in the linked list is of length :
+   **x**
+ - the place where slow and fast meet is **y** distance from the start of
+   the cycle
+ - there are **z** steps left to reach the start of the cycle again from the
+   meeting place
+
+ 
+**slow pointer :**
+
+travels `x + y` distance to meet the fast pointer
+
+**fast pointer :**
+
+travels `(x + y + (z + y))` distance to meet the slow pointer [reason : `(x + y)` to reach the meeting place, but it again goes around the loop and meets it on its way back, so `(z + y)` steps are needed]
+
+
+But the fast pointer travels at speed 2 times that of slow pointer
+
+So, `2(x + y) = (x + 2y + z)`
+`=> x = z`
+
+This is an extremely powerful result, which means that the distance between the start of the linked list and the start of the cycle, **x** is equal to the distance between the start of the cycle and the meeting point, **z**.
+
+So, if slow walks at a step of 1 each time from the head of the list, and if fast walks at a pace of 1 step each time. They are to meet at the start of the cycle, because slow will travel **x** steps and fast will travel **z** steps.
+
+Follow up question : 
+
+**Size of the loop :**
+
+    int lengthCycle(ListNode *head) {
+            ListNode *slow = head, *fast = head;
+            bool flag = false;
+            while(fast && fast->next && fast->next->next){
+                fast = fast->next->next;
+                slow = slow->next;
+                if(fast == slow){
+                    flag = true;
+                    break;
+                }
+            }
+            if(!flag)
+                return 0;
+            int steps = 1;
+            fast = fast->next;
+            while(slow != fast){
+                fast = fast->next;
+                steps ++;
+            }
+            return steps;
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+Straight Forward C++ Solution with Explanation by using 2-Pointers (16ms)
+    /**
+     * Definition for singly-linked list.
+     * struct ListNode {
+     *     int val;
+     *     ListNode *next;
+     *     ListNode(int x) : val(x), next(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        ListNode *detectCycle(ListNode *head) {
+            if(!head) return NULL;
+            ListNode *p1=head;
+            ListNode *p2=head;
+            int count=0;    //using count to record the length of cycle, if it exists.
+            while(p1&&p2){
+                count++;
+                p1=p1->next;
+                p2=p2->next;
+                if(p2!=NULL) p2=p2->next;
+                if(p1==p2&&p1&&p2){
+                    p1=head;
+                    p2=head;
+                    //make the distance between p1 and p2 be the length of cycle
+                    //when p1 and p2 meet at the first time, this postion will be the start node of the cycle.
+                    for(int i=0;i<count;i++) p2=p2->next;   
+                    while(p1!=p2){
+                        p1=p1->next;
+                        p2=p2->next;
+                    }
+                    return p1;
+                }
+            }
+            return NULL;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Clean Solution
+    public class Solution {
+        /**
+         * @param head: The first node of linked list.
+         * @return: The node where the cycle begins. 
+         *           if there is no cycle, return null
+         */
+        public ListNode detectCycle(ListNode head) {  
+            // write your code here
+            if(head == null) return null;
+            ListNode slow = head, fast = head;
+            do{
+                if(fast == null || fast.next == null) return null;
+                slow = slow.next;
+                fast = fast.next.next;
+                
+            }while(slow != fast);
+            fast = head;
+            while(slow != fast){
+                slow = slow.next;
+                fast = fast.next;
+            }
+            return slow;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java two-pointer solution.
+        
+    public ListNode detectCycle(ListNode head) {
+        if (head == null || head.next == null) {
+            return null;   // no circle
+        }
+        ListNode slow = head, fast = head;
+        while (fast != null && fast.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+            if (fast == slow) {  // circle detected
+                while (head != fast) {
+                    fast = fast.next;
+                    head = head.next;
+                }
+                return head;
+            }
+        }
+        return null; // no circle
+    }
+
+----------------------------------------------------------------------------------------------------

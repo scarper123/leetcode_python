@@ -1,0 +1,137 @@
+Java solution using HashMap with detailed explanation
+maxChoosableInteger
+
+----------------------------------------------------------------------------------------------------
+Python solution, easy to understand
+    def canIWin(self, maxChoosableInteger, desiredTotal):
+        """
+        :type maxChoosableInteger: int
+        :type desiredTotal: int
+        :rtype: bool
+        """
+        if (1 + maxChoosableInteger) * maxChoosableInteger/2 < desiredTotal:
+            return False
+        self.memo = {}
+        return self.helper(range(1, maxChoosableInteger + 1), desiredTotal)
+
+        
+    def helper(self, nums, desiredTotal):
+        
+        hash = str(nums)
+        if hash in self.memo:
+            return self.memo[hash]
+        
+        if nums[-1] >= desiredTotal:
+            return True
+            
+        for i in range(len(nums)):
+            if not self.helper(nums[:i] + nums[i+1:], desiredTotal - nums[i]):
+                self.memo[hash]= True
+                return True
+        self.memo[hash] = False
+        return False
+
+----------------------------------------------------------------------------------------------------
+Java solution
+public class Solution {
+
+    private Boolean[] win;
+    int choosen = 0;
+
+    public boolean canIWin(int maxChoosableInteger, int desiredTotal) {
+        if (desiredTotal == 0) {
+            return true;
+        }
+        if ((1 + maxChoosableInteger) * maxChoosableInteger / 2 < desiredTotal) {
+            return false;
+        }
+        win = new Boolean[1 << maxChoosableInteger];
+        return canWin(maxChoosableInteger, desiredTotal, 0);
+    }
+
+    private boolean canWin(int n, int total, int now) {
+        if (win[choosen] != null)
+            return win[choosen];
+        if (now >= total) {
+            win[choosen] = false;
+            return false;
+        }
+        for (int i = 1; i <= n; i++) {
+            int bit = 1 << (i - 1);
+            if ((choosen & bit) == 0) {
+                choosen ^= bit;
+                boolean ulose = !canWin(n, total, now + i);
+                choosen ^= bit;
+
+                if (ulose) {
+                    win[choosen] = true;
+                    return true;
+                }
+            }
+        }
+        win[choosen] = false;
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+brute force and memoization
+    bool canIWin(int maxChoosableInteger, int desiredTotal) {
+        if(!desiredTotal) return 1;
+        if(maxChoosableInteger*(maxChoosableInteger+1)/2<desiredTotal) return 0;
+        unordered_map<int,char> mem;
+        return canWin(~0<<maxChoosableInteger, maxChoosableInteger, desiredTotal, mem);
+    }
+    bool canWin(int pool, int maxint, int tot, unordered_map<int,char>& mem) {
+        if(tot<=0) return 0;
+        auto it = mem.find(pool);
+        if(it != mem.end()) return it->second;
+        for(int i=0;i<maxint;i++) {
+            int mask = 1<<i;
+            if(pool & mask) continue;
+            pool|=mask;
+            if(!canWin(pool,maxint,tot-i-1,mem)) return mem[pool^=mask]=1;
+            pool^=mask;
+        }
+        return mem[pool] = 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java easy strightforward solution with explanation
+public class Solution {
+    Map<Integer, Boolean> set[];
+    public boolean canIWin(int maxChoosableInteger, int desiredTotal) {
+        if(maxChoosableInteger >= desiredTotal) return true;
+        if(maxChoosableInteger+1 >=desiredTotal) return false;
+        set = new Map[301];
+        for(int i  =0 ;i<301;i++) set[i] = new HashMap<>();
+        if(maxChoosableInteger*(maxChoosableInteger+1)/2 < desiredTotal) return false;
+        return canWin((1<<maxChoosableInteger+1)-1, desiredTotal);
+    }
+    
+    public boolean canWin(int set1, int total){
+        if(set[total].containsKey(set1)) return set[total].get(set1);
+        for(int i = 20;i>=1;i--){
+            int p = (1<<i);
+            if((p&set1) == p){
+                int set1next = (set1^p);
+                int totalNext = total - i;
+                if(totalNext<=0) return true;
+                boolean x;
+                if(set[totalNext].containsKey(set1next)) x = set[totalNext].get(set1next);
+                else x = canWin(set1next, totalNext);
+                if(!x){
+                    set[total].put(set1, true);
+                    return true;
+                }
+            }
+        }
+        set[total].put(set1, false);
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ DP solution 15ms 20 lines

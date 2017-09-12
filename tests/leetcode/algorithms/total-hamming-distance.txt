@@ -1,0 +1,431 @@
+Java: Least is Most
+    public int eraseOverlapIntervals(Interval[] intervals) {
+        if (intervals.length == 0)  return 0;
+
+        Arrays.sort(intervals, new myComparator());
+        int end = intervals[0].end;
+        int count = 1;        
+
+        for (int i = 1; i < intervals.length; i++) {
+            if (intervals[i].start >= end) {
+                end = intervals[i].end;
+                count++;
+            }
+        }
+        return intervals.length - count;
+    }
+    
+    class myComparator implements Comparator<Interval> {
+        public int compare(Interval a, Interval b) {
+            return a.end - b.end;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short Ruby and Python
+def eraseOverlapIntervals(self, intervals):
+    end = float('-inf')
+    erased = 0
+    for i in sorted(intervals, key=lambda i: i.end):
+        if i.start >= end:
+            end = i.end
+        else:
+            erased += 1
+    return erased
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Solution
+class Solution {
+public:
+    int eraseOverlapIntervals(vector<Interval>& intervals) {
+        auto comp = [](const Interval& i1, const Interval& i2){ return i1.start < i2.start; };
+        sort(intervals.begin(), intervals.end(), comp);
+        int res = 0, pre = 0;
+        for (int i = 1; i < intervals.size(); i++) {
+            if (intervals[i].start < intervals[pre].end) {
+                res++;
+                if (intervals[i].end < intervals[pre].end) pre = i;
+            }
+            else pre = i;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution with clear explain
+/**
+     * 16 / 16 test cases passed
+     * Status: Accepted
+     * Runtime: 9 - 10 ms
+     *
+     * @param intervals
+     * @return
+     */
+public int eraseOverlapIntervals(Interval[] intervals) {
+        Arrays.sort(intervals, new Comparator<Interval>() {
+            @Override
+            public int compare(Interval o1, Interval o2) {
+                if (o1.end != o2.end) return o1.end - o2.end;  //first sort by end
+                return o2.start - o1.start;  //second sort by start
+            }
+        });
+
+        int end = Integer.MIN_VALUE;
+        int count = 0;
+        for (Interval interval : intervals) {
+            if (interval.start >= end) end = interval.end;
+            else count++;
+        }
+
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python greedy solution with explanation
+def eraseOverlapIntervals(self, intervals):
+        """
+        :type intervals: List[Interval]
+        :rtype: int
+        """
+        if not intervals: return 0
+        intervals.sort(key=lambda x: x.start)  # sort on start time
+        currEnd, cnt = intervals[0].end, 0
+        for x in intervals[1:]:
+            if x.start < currEnd:  # find overlapping interval
+                cnt += 1
+                currEnd = min(currEnd, x.end)  # erase the one with larger end time
+            else:
+                currEnd = x.end   # update end time
+        return cnt
+
+
+----------------------------------------------------------------------------------------------------
+Simple Solution
+public int eraseOverlapIntervals(Interval[] intervals) {
+	if(intervals==null || intervals.length==0) return 0;
+	Arrays.sort(intervals, new Comparator<Interval>() {
+		public int compare(Interval i1, Interval i2) {
+			return i1.start-i2.start;
+		}
+	});
+	int count=1;
+	int lastEnd = intervals[0].end;
+	for(int i=1;i<intervals.length;i++) {
+		Interval currentInterval = intervals[i];
+		if(currentInterval.start>=lastEnd) {
+			count++;
+			lastEnd=currentInterval.end;
+		} else {
+			lastEnd=Math.min(currentInterval.end,lastEnd);
+		}
+	}
+	return intervals.length-count;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) java solution,
+public int eraseOverlapIntervals(Interval[] intervals) {
+        if (intervals == null || intervals.length < 2){
+            return 0;
+        }
+        
+        //sort based on start time of the interval
+        Arrays.sort(intervals, new Comparator<Interval>(){
+            @Override
+            public int compare(Interval e0, Interval e1){
+                return Integer.compare(e0.start, e1.start);
+            }
+        });
+        
+        int n = intervals.length;
+        int endLast = intervals[0].end;
+        
+        int ret = 0;
+        for (int i = 1; i < n; i++){
+           int incremental = endLast > intervals[i].start? +1: 0;
+           endLast  = incremental == 1? Math.min(endLast, intervals[i].end): intervals[i].end;
+           ret += incremental;
+        }
+        return ret;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(nlogn) very easy solution
+public int eraseOverlapIntervals(Interval[] intervals) {
+    if (intervals == null || intervals.length == 0) return 0;
+    
+    Arrays.sort(intervals, new Comparator<Interval>() {
+        public int compare(Interval o1, Interval o2) {
+            return o1.end - o2.end;
+        }
+    });
+    
+    int count = 1;
+    int last = 0;
+    for (int i = 1; i < intervals.length; i++) {
+        if (intervals[last].end <= intervals[i].start) {
+            count++;
+            last = i;
+        }
+    }
+    return intervals.length - count;
+    
+}
+
+----------------------------------------------------------------------------------------------------
+java O(n^2) using DP &#91;Accepted&#93;
+public class Solution {
+    class myComparator implements Comparator<Interval> {
+        public int compare(Interval a, Interval b) {
+            return a.start - b.start;
+        }
+    }
+    public boolean isOverlapping(Interval i, Interval j) {
+        return i.end > j.start;
+    }
+    public int eraseOverlapIntervals(Interval[] intervals) {
+        if (intervals.length == 0) {
+            return 0;
+        }
+        Arrays.sort(intervals, new myComparator());
+        int dp[] = new int[intervals.length];
+        dp[0] = 1;
+        int ans = 1;
+        for (int i = 1; i < dp.length; i++) {
+            int max = 0;
+            for (int j = i - 1; j >= 0; j--) {
+                if (!isOverlapping(intervals[j], intervals[i])) {
+                    max = Math.max(dp[j], max);
+                }
+            }
+            dp[i] = max + 1;
+            ans = Math.max(ans, dp[i]);
+
+        }
+        return intervals.length - ans;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python short (8 lines) greedy solution with explanation
+def eraseOverlapIntervals(self, intervals):
+    intervals.sort(key=operator.attrgetter('start', 'end'))
+    res = lo = 0
+    for hi in range(1, len(intervals)):
+        if intervals[lo].end > intervals[hi].start:
+            res += 1
+        if not intervals[hi].start < intervals[lo].end < intervals[hi].end:
+            lo = hi
+    return res
+
+
+----------------------------------------------------------------------------------------------------
+Share my simple greedy solution, Java, 6ms
+public class Solution {
+    public int eraseOverlapIntervals(Interval[] intervals) {
+        if(intervals.length<2) return 0;
+        Arrays.sort(intervals, new Comparator<Interval>(){
+            public int compare(Interval A, Interval B){
+                if(A.start!=B.start) return A.start-B.start;
+                else return A.end-B.end;
+            }
+        });
+        int ret=0;
+        Interval pre = intervals[0];
+        for(int i=1;i<intervals.length;i++){
+            if(pre.end<=intervals[i].start) pre = intervals[i];
+            else{
+                ret++;
+                if(pre.end>intervals[i].end) pre = intervals[i];
+            }
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) solution in 7 lines
+int eraseOverlapIntervals(vector<Interval>& intervals) {
+    sort(intervals.begin(), intervals.end(), [] (Interval i, Interval j) {return i.end < j.end;});
+    int res = 0, temp = INT_MIN;
+    for (auto i : intervals) {
+        if (temp > i.start) res++;
+        else if (i.end > temp) temp = i.end;
+    }
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+Why can&#x27;t we remove the most overlapping intervals?
+<p>It&#39;s easy to think that:</p>
+<ul>
+<li>If we count the overlapping times with each interval.</li>
+<li>Then, for each time we remove the interval with most overlapping interval(let&#39;s call it A)</li>
+<li>And we update the other intervals&#39; overlapping time which is overlapped with A.</li>
+<li>When all interval has zero overlapping times, we get the result.</li>
+</ul>
+<p>I know how to do it in greedy in O(nlgn) time, but I wonder why this cant work...<br/>
+This idea failed in the last test case(that with 10k inputs).I can&#39;t figure out why... Can someone help me?please...?<br/>
+Thanks your time for seeing these. Thank you~</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ Greedy with Comments - Sharing my thought process - Variation of Activity-Selection Problem
+int eraseOverlapIntervals(vector<Interval>& intervals) {
+    
+    int n = intervals.size();
+    if(n <= 1) {return 0;}
+
+    // Sort intervals based on earliest 'end' time - Greedy
+    sort(intervals.begin(), intervals.end(), [] (Interval &a, Interval &b) {return a.end < b.end;});
+    
+    int finishTime = intervals[0].end;
+    int len = 1;
+    
+    for(int i = 1; i < n; i++)
+    {
+        if(intervals[i].start >= finishTime) // This activity is compatible with our list.
+        {
+            len++;
+            finishTime = intervals[i].end;
+        }
+    }
+    
+    return n - len;
+}
+
+----------------------------------------------------------------------------------------------------
+Question: Why there is a inconsistent result with a same testcase when i submit solution ?
+# Definition for an interval.
+# class Interval(object):
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class Solution(object):
+    def eraseOverlapIntervals(self, intervals):
+        if len(intervals)==0:
+            return 0
+        
+        count=0
+        intervals.sort()
+        temend=intervals[0].end
+        
+        for n in intervals[1:]:
+            if n.start>=temend:
+                temend=n.end
+            else:
+                count+=1
+                temend=min(temend,n.end)
+        return count
+            
+        
+        """
+        :type intervals: List[Interval]
+        :rtype: int
+        """
+        
+
+
+----------------------------------------------------------------------------------------------------
+Sort by ends. count overlaps
+public class Solution {
+    public int eraseOverlapIntervals(Interval[] intervals) {
+        if (intervals==null || intervals.length==0) return 0;
+        
+        Arrays.sort(intervals, new Comparator<Interval>() {
+            @Override
+            public int compare(Interval i1, Interval i2) {
+                int res = i1.end - i2.end;
+                if (res==0) res = i2.start - i1.start;
+                return res;
+            }
+        });
+        
+        int counter = 0;
+        int end = intervals[0].end;
+        for (int i=1; i<intervals.length; i++) {
+            if (intervals[i].start>=end) {
+                end = intervals[i].end;
+            } else {
+                counter++;
+            }
+        }
+        return counter;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+7 lines java solution
+public int eraseOverlapIntervals(Interval[] intervals) {
+        Arrays.sort(intervals, (a, b) -> (a.end == b.end ? b.start - a.start : a.end - b.end));
+        int end = Integer.MIN_VALUE, count = 0;
+        for (int i = 0; i < intervals.length; i++) {
+            if (intervals[i].start >= end) end = intervals[i].end;
+            else count++;
+        }
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ beast 90%
+class Solution {
+public:
+    int eraseOverlapIntervals(vector<Interval>& intervals) {
+auto comp = [&](const Interval& i1, const Interval& i2){return i1.end<i2.end||(i1.end==i2.end&&i1.start<i2.start);};
+ sort(intervals.begin(), intervals.end(), comp);
+        int res = 0, pre = 0;
+        for (int i = 1; i < intervals.size(); i++) {
+            if (intervals[i].start < intervals[pre].end) {
+                res++;
+            }
+            else pre = i;
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+JAVA Solution beats 99.26% - solve by finding max non-overlapping intervals
+public int eraseOverlapIntervals(Interval[] intervals) {
+        Arrays.sort(intervals, new Comparator<Interval>() {
+            public int compare(Interval a, Interval b) {
+                if (a.start == b.start) return a.end - b.end;
+                return a.start - b.start;
+            }
+        });
+        
+        int len = intervals.length;
+        if (len == 0) {
+            return 0;
+        }
+        int maxNonOverLapping = 1, prevStart = intervals[0].start, prevEnd = intervals[0].end;
+        for (int i = 1; i < len; i++) {
+            if (prevEnd > intervals[i].start && intervals[i].end < prevEnd) {
+                // if the current interval has smaller end value, replace previous interval with current on to allow more future non-overlapping intervals
+                prevEnd = intervals[i].end;
+            } else if (prevEnd <= intervals[i].start) {
+                // The current interval is non-overlapping interval to previous interval
+                maxNonOverLapping++;
+                prevStart = prevEnd;
+                prevEnd = intervals[i].end;
+            }
+        }
+        return len-maxNonOverLapping;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Could anyone tell me what&#x27;s wrong?
+[[-100,-87],[-99,-44],[-98,-19],[-97,-33],[-96,-60],[-95,-17],[-94,-44],[-93,-9],[-92,-63],[-91,-76],[-90,-44],[-89,-18],[-88,10],[-87,-39],[-86,7],[-85,-76],[-84,-51],[-83,-48],[-82,-36],[-81,-63],[-80,-71],[-79,-4],[-78,-63],[-77,-14],[-76,-10],[-75,-36],[-74,31],[-73,11],[-72,-50],[-71,-30],[-70,33],[-69,-37],[-68,-50],[-67,6],[-66,-50],[-65,-26],[-64,21],[-63,-8],[-62,23],[-61,-34],[-60,13],[-59,19],[-58,41],[-57,-15],[-56,35],[-55,-4],[-54,-20],[-53,44],[-52,48],[-51,12],[-50,-43],[-49,10],[-48,-34],[-47,3],[-46,28],[-45,51],[-44,-14],[-43,59],[-42,-6],[-41,-32],[-40,-12],[-39,33],[-38,17],[-37,-7],[-36,-29],[-35,24],[-34,49],[-33,-19],[-32,2],[-31,8],[-30,74],[-29,58],[-28,13],[-27,-8],[-26,45],[-25,-5],[-24,45],[-23,19],[-22,9],[-21,54],[-20,1],[-19,81],[-18,17],[-17,-10],[-16,7],[-15,86],[-14,-3],[-13,-3],[-12,45],[-11,93],[-10,84],[-9,20],[-8,3],[-7,81],[-6,52],[-5,67],[-4,18],[-3,40],[-2,42],[-1,49],[0,7],[1,104],[2,79],[3,37],[4,47],[5,69],[6,89],[7,110],[8,108],[9,19],[10,25],[11,48],[12,63],[13,94],[14,55],[15,119],[16,64],[17,122],[18,92],[19,37],[20,86],[21,84],[22,122],[23,37],[24,125],[25,99],[26,45],[27,63],[28,40],[29,97],[30,78],[31,102],[32,120],[33,91],[34,107],[35,62],[36,137],[37,55],[38,115],[39,46],[40,136],[41,78],[42,86],[43,106],[44,66],[45,141],[46,92],[47,132],[48,89],[49,61],[50,128],[51,155],[52,153],[53,78],[54,114],[55,84],[56,151],[57,123],[58,69],[59,91],[60,89],[61,73],[62,81],[63,139],[64,108],[65,165],[66,92],[67,117],[68,140],[69,109],[70,102],[71,171],[72,141],[73,117],[74,124],[75,171],[76,132],[77,142],[78,107],[79,132],[80,171],[81,104],[82,160],[83,128],[84,137],[85,176],[86,188],[87,178],[88,117],[89,115],[90,140],[91,165],[92,133],[93,114],[94,125],[95,135],[96,144],[97,114],[98,183],[99,157]]
+
+----------------------------------------------------------------------------------------------------

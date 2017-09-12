@@ -1,0 +1,439 @@
+Here is my brief O(k) solution
+The basic idea is to iteratively update the array from the end to the beginning. 
+
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> A(rowIndex+1, 0);
+            A[0] = 1;
+            for(int i=1; i<rowIndex+1; i++)
+                for(int j=i; j>=1; j--)
+                    A[j] += A[j-1];
+            return A;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My accepted java solution, any better code?
+      public List<Integer> getRow(int rowIndex) {
+		List<Integer> list = new ArrayList<Integer>();
+		if (rowIndex < 0)
+			return list;
+
+		for (int i = 0; i < rowIndex + 1; i++) {
+			list.add(0, 1);
+			for (int j = 1; j < list.size() - 1; j++) {
+				list.set(j, list.get(j) + list.get(j + 1));
+			}
+		}
+		return list;
+	}
+
+----------------------------------------------------------------------------------------------------
+My 8 lines java solution use ArrayList
+    public List<Integer> getRow(int rowIndex) {
+        List<Integer> res = new ArrayList<Integer>();
+        for(int i = 0;i<rowIndex+1;i++) {
+        		res.add(1);
+        		for(int j=i-1;j>0;j--) {
+        			res.set(j, res.get(j-1)+res.get(j));
+        		}
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Very simple Python solution
+    class Solution:
+    # @param {integer} rowIndex
+    # @return {integer[]}
+    def getRow(self, rowIndex):
+        row = [1]
+        for i in range(1, rowIndex+1):
+            row = list(map(lambda x,y: x+y, [0]+row, row + [0]))
+        return row
+
+----------------------------------------------------------------------------------------------------
+Sharing my c++ code, very simple
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> vi(rowIndex + 1);
+           	vi[0] = 1;
+            for (int i = 0; i <= rowIndex ; ++i)
+            {
+            	for (int j = i; j > 0; --j)
+            	{
+    	        	vi[j] = vi[j] + vi[j-1];
+            	}
+            }
+            return vi;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My 12 Lines of C++ Solution in 2ms, with only one loop. O(k) time and O(k) space.
+class Solution {
+public:
+
+    vector<int> getRow(int rowIndex) {
+        vector<int> ans(rowIndex+1,1);
+        int small = rowIndex/2;
+        long comb = 1;
+        int j = 1;
+        for (int i=rowIndex; i>=small; i--){
+            comb *= i;
+            comb /= j;
+            j ++;
+            ans[i-1] = (int)comb;
+            ans[j-1] = (int)comb;
+        }
+        return ans;
+    }
+
+};
+
+Note that this solution is math derived from number of Combinations. 
+
+Each line of Pascal's Triangle is a full set of Combination number based on k .
+
+comb(k,p) = k! /( p! *(k-p)!) = comb(k,k-p)
+
+if p < k-p
+
+comb(k,p) = comb(k,p-1) * (k-p+1) / p
+
+                                          
+Because :
+
+comb(k,p) =     [ k * (k-1) * (k-2) *... (k-p+1)] /   [1 * 2      * 3       *...(p)]
+                                        
+
+----------------------------------------------------------------------------------------------------
+My clean O(k) java solution
+Based on rules:
+
+row k of Pascal's Triangle: 
+
+`[C(k,0), C(k,1), ..., C(k, k-1), C(k, k)]`
+
+and
+
+`C[k,i] = C[k,i-1]*(k-i+1)/i`
+
+ 
+ 
+
+        public class Solution {
+            public List<Integer> getRow(int rowIndex) {
+                Integer[] rowList = new Integer[rowIndex+1];
+                rowList[0] = 1;
+                for(int i=1; i<rowList.length;i++) {
+                    rowList[i] = (int)((long)rowList[i-1]*(rowIndex-(i-1))/(i));
+                }
+                return Arrays.asList(rowList);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Another accepted Java solution
+    public class Solution {
+        public List<Integer> getRow(int k) {
+            Integer[] arr = new Integer[k + 1];
+            Arrays.fill(arr, 0);
+            arr[0] = 1;
+            
+            for (int i = 1; i <= k; i++) 
+                for (int j = i; j > 0; j--) 
+                    arr[j] = arr[j] + arr[j - 1];
+            
+            return Arrays.asList(arr);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution, 0ms, one pass, no extra space
+Two considerations:
+1) At Nth row, each k-th element is determined by a well-known formula: C(n, k) = n! / (k!*(n-k)!). Obviously, we don't want to calculate factorial each time since we need to fill in the whole row, so we can just multiply both the numerator and denominator sequentially
+
+2) A row in Pascal triangle is always symmetric, so we fill up two elements at each loop iteration
+
+A drawback: In order to avoid overflows, we need to employ ugly casts to unsigned long
+
+
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> r;
+            r.resize(rowIndex + 1);
+            r[0] = r[rowIndex] = 1;
+            for(auto i = 1; i < (r.size() + 1)/2; ++i)
+            {
+                r[i] = r[rowIndex - i] = (unsigned long)r[i - 1]*(unsigned long)(rowIndex - i + 1)/i;
+            }
+            return r;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(k) solution with explanation
+When generating each row, we can use the previous row directly, so this way we only use O(k) space with k being the number of row.  For each new row, we append a `1`, letting j iterate from `i - 1` backward to `1`, and set the `jth` element as `res.set(j, res.get(j-1) + res.get(j))`.  For example, when `k = 4`, the process goes like this:
+
+    k == 0
+    [1] 
+    k == 1
+    [11] 
+    k == 2
+    [111]  add 1
+    [121]  calculate jth spot
+    k == 3
+    [1211]  add 1
+    [1331]   calculate jth spot
+    k == 4
+    [13311]  add 1
+    [14641]  calculate jth spot
+
+
+Java
+
+       public List<Integer> getRow(int rowIndex) {
+            List<Integer> res = new ArrayList<>();
+            for(int i = 0; i <= rowIndex; i++) {
+                res.add(1);
+                for(int j = i-1; j > 0; j--) {
+                    res.set(j, res.get(j-1) + res.get(j));
+                }
+            }
+            return res;
+        }
+
+----------------------------------------------------------------------------------------------------
+Here is my O(n) solution and the proof
+the mth element of  the nth row of the Pascal's triangle is C(n, m) = n!/(m! * (n-m)!)
+
+C(n, m-1) = n!/((m-1)! * (n-m+1)!)
+
+so C(n, m) = C(n, m-1) * (n-m+1) / m
+
+In additional, C(n, m) == C(n, n-m)
+
+      class Solution {
+        public:
+            vector<int> getRow(int rowIndex) {
+                vector<int> row;
+                if(rowIndex < 0) {
+                	return row;
+                }
+                row.resize(rowIndex + 1);
+                row[0] = row[rowIndex] = 1;
+                for(int m =1; m < rowIndex /2 + 1; m++) {
+                	row[m] = row[rowIndex - m] = ((long long int)row[m - 1] * (rowIndex - m + 1)) / m;
+                }
+                return row;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Solution based on Mathematics.
+If anyone has ever learnt the mathematics equations related to the pascal triangle, they would know the following:
+
+The nth row of pascal triangle will have the following format: 1 a(1) a(2) ... a(n)
+here we have a(1) = n; a(k+1) = a(k) * (n-k)/(k+1).
+
+Hence, the following code is based on the above knowledge. However, there would be a test case that this solution won't work. Do you know any?
+
+    public class Solution {
+        public List<Integer> getRow(int rowIndex) {
+            List<Integer> results = new ArrayList<Integer>();
+            
+            if(rowIndex<0) return results;
+            
+            results.add(1);
+            if(rowIndex == 0) return results;
+            long pre = 1;
+            for(int k = 0; k<rowIndex; k++){
+                pre = pre * (rowIndex - k) / (k+1);
+                results.add((int) pre);
+            }
+            
+            return results;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My very simple C++ solution
+Basically, I will insert 1 at the head of vector each iteration and calculate result[j] based on result[j] and result[j+1].
+For example, if I want to get [1, 3, 3, 1] from [1, 2, 1], I will first insert 1 and get [1, 1, 2, 1].
+Then begin with j = 1, result[j] = result[j] + result[j+1]. second position is 1+2=3, third position is 2+1=3
+Finally we get [1, 3, 3, 1]
+
+
+
+    #include <vector>
+    using namespace std;
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> result(1,1);
+            for(int i=1;i<=rowIndex;i++){
+                result.insert(result.begin(),1);
+                for(int j=1;j<result.size()-1;j++){
+                    result[j] = result[j] + result[j+1];
+                }
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A concise 7-line java solution. o(k)
+    public class Solution {
+        public List<Integer> getRow(int rowIndex) {
+            Integer[] ret = new Integer[rowIndex+1];
+            Arrays.fill(ret, 0);       
+            for (int i=0; i<= rowIndex; i++)
+                for (int j=i; j>0; j--)
+                    ret[j] = ret[j] + ret[j-1];
+                ret[0] = 1;
+            return Arrays.asList(ret);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+7 lines C++ solution, one pass, O(k) space for return, with detailed explanation
+We know that the elements of the ith line of pascal triangle is just the coefficients of the expansion of 
+
+> (a + b) ^ i
+
+For example, the 4th line:
+
+> 1 4 6 4 1  
+(a + b) ^ 4 = a^4 + 4a^3b + 6a^2b^2 + 4ab^3 + b^4
+
+And the we know the coefficients can be computed by composition. For the above example, the coefficients are respectively C(4, 0), C(4, 1), C(4, 2), C(4, 3), C(4, 4).
+
+Then we have the following code:
+
+    vector<int> getRow(int rowIndex) {
+        vector<int> ret(rowIndex + 1, 1);
+        long C = 1;
+        for (int i = 1; i < rowIndex; i++) {
+            C = C * (rowIndex - i + 1) / i;
+            ret[i] = C;
+        }
+        return ret;
+    }
+
+Notice that C(n, i) = C(n, n - i). We can optimize the code for only computing the first half.I didn't do the optimization here for simplicity.
+
+----------------------------------------------------------------------------------------------------
+My Concise Java Solution within 10 lines.
+My Concise Java Solution within 10 lines. Any improvement?
+
+    public class Solution {
+        public List<Integer> getRow(int rowIndex) {
+            List<Integer> ans = new ArrayList<Integer>();
+            
+            for(int i=0;i<rowIndex+1;i++){
+                ans.add(1);
+                for(int j=i-1;j>0;j--){
+                    ans.set(j,ans.get(j)+ans.get(j-1));
+                }
+            }
+            
+            return ans;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++  4 lines solution using math,  6 lines solution using for loop, Both 0ms
+     
+
+ Based on math, the kth element for nth row is C(n, k) = n! / (k!*(n-k)!),  then res[k] = res[n - k]
+ 
+
+ so the relationship between res[i] and res[i-1] is  n! / (k!*(n-k)!) / n! **/** ((k-1)!*(n-k + 1)!) = (n - k + 1) / k;
+   
+
+     vector<int> getRow(int rowIndex) {
+       vector<int> res(rowIndex + 1, 1);
+       for(int k = 1; k <= (rowIndex + 1)/2; k++)
+            res[k] = res[rowIndex - k] = (long)res[k - 1]*(long)(rowIndex - k + 1)/k;
+       return res;
+    }
+
+   // normal loop 
+
+    vector<int> getRow(int rowIndex) {
+        vector<int> res;
+        for (int i = 0; i <= rowIndex; i++) {
+            res.push_back(1);
+            for (int j = i - 1; j >= 1; --j) res[j] = res[j] + res[j-1];
+        }
+        return res;
+    }
+       
+
+  
+
+----------------------------------------------------------------------------------------------------
+Pascal&#x27;s Triangle II  with O(1) space
+I got an answer with O(1) space.
+
+The idea is that, for n-th row, the value at col j is (n,j) (I mean n choose j here).
+And we have (n,j) = (n, j-1) * (n-j+1) / j. 
+
+Then we can have the solution as below:
+
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> res;
+            if (rowIndex >= 0) {
+                res.push_back(1);
+            }
+            for (int j = 1; j <= rowIndex; j++) {
+                res.push_back((double)res.back() * (double)(rowIndex - j + 1) / (double)j);
+            }
+            return res;
+        }
+    };
+
+One further question I'm wondering is, is it possible eliminate type cast here (which was to avoid overflow)?
+
+
+----------------------------------------------------------------------------------------------------
+Share  my c code, easy understand
+int* getRow(int rowIndex, int* returnSize) {
+
+    if (rowIndex < 0)
+        return NULL;
+
+    int *res = (int*)malloc(sizeof(int) * (rowIndex + 1));
+
+    for (int row = 0; row <= rowIndex; row++)
+        for (int col = row; col >= 0; col--)
+            res[col] = (col == 0 || col == row) ? 1 : res[col] + res[col - 1];
+
+    *returnSize = rowIndex + 1;
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ implementation
+    class Solution {
+    public:
+        vector<int> getRow(int rowIndex) {
+            vector<int> result(rowIndex+1, 0);
+            result[0]=1;
+            for(int i=1; i<=rowIndex; i++){
+                for(int j=i; j>=1; j--)
+                    result[j]=result[j]+result[j-1];
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

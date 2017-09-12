@@ -1,0 +1,460 @@
+Java 10 lines linear time complexity O(n) with explanation
+    public int[] nextGreaterElement(int[] findNums, int[] nums) {
+        Map<Integer, Integer> map = new HashMap<>(); // map from x to next greater element of x
+        Stack<Integer> stack = new Stack<>();
+        for (int num : nums) {
+            while (!stack.isEmpty() && stack.peek() < num)
+                map.put(stack.pop(), num);
+            stack.push(num);
+        }   
+        for (int i = 0; i < findNums.length; i++)
+            findNums[i] = map.getOrDefault(findNums[i], -1);
+        return findNums;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ stack + unordered_map
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+        stack<int> s;
+        unordered_map<int, int> m;
+        for (int n : nums) {
+            while (s.size() && s.top() < n) {
+                m[s.top()] = n;
+                s.pop();
+            }
+            s.push(n);
+        }
+        vector<int> ans;
+        for (int n : findNums) ans.push_back(m.count(n) ? m[n] : -1);
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Meh, 1000 is small
+def nextGreaterElement(self, findNums, nums):
+    return [next((y for y in nums[nums.index(x):] if y > x), -1) for x in findNums]
+
+----------------------------------------------------------------------------------------------------
+Python Solution with O(n)
+        d = {}
+        st = []
+        ans = []
+        
+        for x in nums:
+            while len(st) and st[-1] < x:
+                d[st.pop()] = x
+            st.append(x)
+
+        for x in findNums:
+            ans.append(d.get(x, -1))
+            
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Whys is it -1 for findNums&#91;2&#93; = 2 instead of 4.
+<p>Input: nums1 = &#91;4,1,2&#93;, nums2 = &#91;1,3,4,2&#93;.<br/>
+Output: &#91;-1,3,-1&#93;</p>
+<p>in the above test case why is the result for findNums&#91;2&#93; = -1. Considering the third value is 2 and its corresponding nums value is 4 which is larger than it. So shouldn&#39;t the answer be &#91;-1,3,4&#93;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+class Solution(object):
+    def nextGreaterElement(self, findNums, nums):
+        """
+        :type findNums: List[int]
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        cache, st = {}, []
+        for x in nums:
+            while st and st[-1] < x:
+                cache[st.pop()] = x
+            st.append(x)
+        result = [-1]*len(findNums)
+        for idx,x in enumerate(findNums):
+            if x in cache:
+                result[idx] = cache[x]
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Simple O(m + n) java solution using stack
+public class Solution {
+    public int[] nextGreaterElement(int[] findNums, int[] nums) {
+        int[] ret = new int[findNums.length];
+        ArrayDeque<Integer> stack = new ArrayDeque<>();
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for(int i = nums.length - 1; i >= 0; i--) {
+            while(!stack.isEmpty() && stack.peek() <= nums[i]) {
+                stack.pop();
+            }
+            if(stack.isEmpty()) map.put(nums[i], -1);
+            else map.put(nums[i], stack.peek());
+            stack.push(nums[i]);
+        }
+        for(int i = 0; i < findNums.length; i++) {
+            ret[i] = map.get(findNums[i]);
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) HashMap method, beats 95% currently
+public int[] nextGreaterElement(int[] findNums, int[] nums) {
+    Map<Integer, Integer> m = new HashMap<>();
+    // go through each element in nums and set its location in HashMap
+    for(int i =0;i<nums.length;++i)
+        m.put(nums[i],i); //since every element is unique, there is no need (getOrDefault)
+    
+    //scan each element in the first array    
+    for(int i=0;i<findNums.length;++i)
+    {
+        int minIndex =-1;  //initially, set the finding index to be -1
+        int index = m.get(findNums[i]); //findout the corresponding index in the second (nums) array.
+        while(++index < nums.length) 
+        {
+            if(nums[index]>findNums[i])
+            {
+                minIndex =index;
+                break;
+            }
+        }
+        if(minIndex ==-1) findNums[i] = -1;
+        else findNums[i] = nums[minIndex];
+    }
+    return findNums;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Solution - Easy to Understand
+int search(vector<int> &nums,int A)
+{
+    int i=0;
+    for(i=0;i<nums.size();i++)
+        if(nums[i] == A)
+            break;
+    
+    if(i == nums.size() || i == nums.size()-1)
+        return -1;
+    
+    for(;i<nums.size();i++)
+        if(nums[i] > A)
+            return nums[i];
+    
+    return -1;
+}
+vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+    
+    vector<int> ans(findNums.size());
+    for(int i=0;i<findNums.size();i++)
+    {
+        ans[i] = search(nums,findNums[i]);
+    }
+    return ans;
+}
+
+----------------------------------------------------------------------------------------------------
+Intuitive Javascript Solution
+var nextGreaterElement = function(findNums, nums) {
+    return findNums.map(n => {
+        let found = nums.indexOf(n);
+        
+        if (found !== -1) {
+            // find the next greater element's index
+            while (nums[++found] < n);
+            // -1 if not found
+            if (found >= nums.length) found = -1;
+            else found = nums[found];
+        }
+        
+        return found;
+    });
+};
+
+
+----------------------------------------------------------------------------------------------------
+straightforward python solution
+    def nextGreaterElement(self, findNums, nums):
+        def helper(num):
+            for tmp in nums[nums.index(num):]:
+                if tmp > num:
+                    return tmp
+            return -1
+
+        return map(helper, findNums)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using stack O(n)
+public class Solution {
+    public int[] nextGreaterElement(int[] findNums, int[] nums) {
+        Map<Integer, Integer> map = new HashMap<>();
+        Stack<Integer> stack = new Stack<>();
+        
+        for (int num : nums) {
+            while (!stack.isEmpty() && stack.peek() < num) {
+                map.put(stack.pop(), num);
+            }
+            stack.push(num);
+        }
+        
+        int[] res = new int[findNums.length];
+        for (int i = 0; i < findNums.length; i++) {
+            res[i] = map.getOrDefault(findNums[i], -1);
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c solution, 3ms, beats 100%
+/**
+ * Return an array of size *returnSize.
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* nextGreaterElement(int* findNums, int findNumsSize, int* nums, int numsSize, int* returnSize) {
+    int* returnArray = NULL;
+    int* numsHash = NULL;
+
+    *returnSize = findNumsSize;
+
+    if(findNums != NULL && findNumsSize != 0 &&
+       nums != NULL && numsSize != 0) {
+        /* initalize the returnArray */
+        returnArray = malloc((*returnSize) * sizeof(int));
+        if(returnArray == NULL) {
+            err(-1, "nextGreaterElement: line 17: malloc: out of space!");
+        }
+
+        /* find the max element in the nums */
+        int max = 0;
+        for(int i = 0; i < numsSize; i++) {
+            if(max < nums[i]) {
+                max = nums[i];
+            }
+        }
+
+        /* initialize the numsHash */
+        numsHash = malloc((max+1) * sizeof(int));
+        if(numsHash == NULL) {
+            err(-1, "nextGreaterElement: line 31: malloc: out of space!");
+        }
+
+        /* hash the nums' element to numsHash, the key is nums's element, */
+        /* the velue is the next greater element, or -1 if does not exist */
+        /* nums[numsSize-1] is the last element of nums, don't have next, */
+        /* so set it to -1 directly */
+        for(int i = 0; i < numsSize-1; i++) {
+            numsHash[nums[i]] = -1;
+            for(int j = i+1; j < numsSize; j++) {
+                if(nums[j] > nums[i]) {
+                    numsHash[nums[i]] = nums[j];
+                    break;
+                }
+            }
+        }
+        numsHash[nums[numsSize-1]] = -1;
+
+        /* find the next greater element */
+        for(int i = 0; i < findNumsSize; i++) {
+            returnArray[i] = numsHash[findNums[i]];
+        }
+    }
+
+    return returnArray;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Beats 98%
+class Solution(object):
+    def nextGreaterElement(self, findNums, nums):
+        greater,stack = {},[]
+        for n in nums:
+            while stack and n > stack[-1]:
+                greater[stack.pop()] = n
+            stack.append(n)
+        return [greater[n] if n in greater else -1 for n in findNums]
+
+----------------------------------------------------------------------------------------------------
+My concise short solution
+public int[] nextGreaterElement(int[] findNums, int[] nums) {
+	int n1 = findNums.length, n2 = nums.length;
+	List<Integer> list = new ArrayList<>();
+	for (int i : nums) list.add(i);
+	int[] res = new int[n1];
+	for (int i = 0; i < n1; i++) {
+		int cur = findNums[i];
+		res[i] = -1;
+		for (int k = list.indexOf(cur); k < n2; k++) {
+			if (nums[k] > cur){
+				res[i] = nums[k];
+				break;
+			}
+		}
+	}
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Easy to understand
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+        vector<int> res;
+        for(int i=0;i<findNums.size();i++)
+        {
+            int flag = 0;
+            int k;
+            for(k=0;k<nums.size();k++)
+            {
+                if(findNums[i]==nums[k]) break;
+            }
+            for(int j=k+1;j<nums.size();j++)
+            {
+                if(nums[j]>findNums[i])
+                {
+                    flag = 1;
+                    res.push_back(nums[j]);
+                    break;
+                }
+            }
+            if(flag==0) res.push_back(-1);
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Simple O(n*m) solution
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+        unordered_map<int,int> start;
+        for(int i=0; i<nums.size(); ++i) start[nums[i]] = i+1;
+        
+        vector<int> gtr;
+        for(int i=0; i < findNums.size(); ++i){
+            int j = start[findNums[i]];
+            
+            while(j < nums.size() && findNums[i] >= nums[j]) ++j;
+            
+            if(j < nums.size()) gtr.push_back(nums[j]);
+            else gtr.push_back(-1);
+        }
+        
+        return gtr;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+c++ O(N*lgM) solution
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+        unordered_map<int, int> dict;
+        for (int i = 0; i < findNums.size(); i++) {
+            dict.insert(pair<int, int>(findNums[i], i));
+        }
+        
+        vector<int> solution(dict.size(), -1);
+        map<int, int> s;
+        for (int i = 0; i < nums.size(); i++) {
+            auto p = s.upper_bound(nums[i]);
+            for (auto v = s.begin(); v != s.end() && v != p; v++) {
+                if (solution[v->second] == -1) {
+                    solution[v->second] = nums[i];
+                }
+            }
+            
+            auto itr = dict.find(nums[i]);
+            if (itr != dict.end()) {
+                s.insert(pair<int, int>(nums[i], itr->second));
+            }
+        }
+        
+        return solution;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand O(MN) Java solution
+public class Solution {
+public int[] nextGreaterElement(int[] findNums, int[] nums) {
+    if(findNums == null ||  nums == null || 
+       findNums.length == 0 || nums.length == 0 || 
+       findNums.length > nums.length) return new int[0];
+    
+    int m = findNums.length;
+    int n = nums.length;
+    int[] result = new int[m];
+    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    
+    for(int j = 0; j < n; ++j){
+        map.put(nums[j], j);
+    }
+    for(int i = 0; i < m; ++i){
+        int j = map.get(findNums[i]);
+        for(; j < n; ++j){
+            if(nums[j] > findNums[i]) break;
+        }
+        result[i] = j < n ? nums[j] : -1;
+    }
+    return result;
+}
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution using heap
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& findNums, vector<int>& nums) {
+        unordered_map<int,int> num2idx; 
+        //map num to its index in findNums
+        for(int i=0; i<findNums.size(); i++)
+            num2idx[findNums[i]] = i;
+            
+        priority_queue<int,vector<int>,std::greater<int>> min_heap;
+        vector<int> ans(findNums.size(),0);
+        for(int i : nums){
+            
+            //In nums, we find an element from findNums. Push it into the heap.
+            //The elements in the heap are numbers whose first greater number still not found.
+            if(num2idx.count(i))         
+                min_heap.push(i);        
+                
+            //See if the current number i is the first greater number for elements in heap.
+            //If so, we found the first greater number i. 
+            //Since it's a min_heap, once we find an element not smaller than i, we can stop the loop.
+            while(!min_heap.empty() && min_heap.top()<i){     
+                int idx = num2idx[min_heap.top()];    
+                ans[idx] = i;                   
+                min_heap.pop();                    
+            }
+        }
+        
+        //Elements still in the heap are numbers without first greater number
+        while(!min_heap.empty()){ 
+            int idx = num2idx[min_heap.top()];
+            ans[idx] = -1;
+            min_heap.pop();
+        }
+        
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

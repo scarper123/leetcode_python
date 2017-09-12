@@ -1,0 +1,469 @@
+Clean java solution O(n^2)
+public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+    Map<Integer, Integer> map = new HashMap<>();
+    
+    for(int i=0; i<C.length; i++) {
+        for(int j=0; j<D.length; j++) {
+            int sum = C[i] + D[j];
+            map.put(sum, map.getOrDefault(sum, 0) + 1);
+        }
+    }
+    
+    int res=0;
+    for(int i=0; i<A.length; i++) {
+        for(int j=0; j<B.length; j++) {
+            res += map.getOrDefault(-1 * (A[i]+B[j]), 0);
+        }
+    }
+    
+    return res;
+}
+
+Time complexity:  O(n^2)
+Space complexity: O(n^2)
+
+----------------------------------------------------------------------------------------------------
+Easy 2 lines O(N^2) Python
+def fourSumCount(self, A, B, C, D):
+    AB = collections.Counter(a+b for a in A for b in B)
+    return sum(AB[-c-d] for c in C for d in D)
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution with Explanation
+public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+	Map<Integer,Integer> sums = new HashMap<>();
+	int count = 0;
+	for(int i=0; i<A.length;i++) {
+		for(int j=0;j<B.length;j++){
+			int sum = A[i]+B[j];
+			if(sums.containsKey(sum)) {
+				sums.put(sum, sums.get(sum)+1);
+			} else {
+				sums.put(sum, 1);
+			}
+		}
+	}
+	for(int k=0; k<A.length;k++) {
+		for(int z=0;z<C.length;z++){
+			int sum = -(C[k]+D[z]);
+			if(sums.containsKey(sum)) {
+				count+=sums.get(sum);
+			}
+		}
+	}
+	return count;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ 11 code beat 99.5%
+    int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D) {
+        unordered_map<int, int>  abSum;
+        for(auto a : A) {
+            for(auto b : B) {
+                ++abSum[a+b];
+            }
+        }
+        int count = 0;
+        for(auto c : C) {
+            for(auto d : D) {
+                auto it = abSum.find(0 - c - d);
+                if(it != abSum.end()) {
+                    count += it->second;
+                }
+            }
+        }
+        return count;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise hash map O(n^2) solution with explanation, c++
+class Solution {
+public:
+    void fillMap(vector<int>& A, vector<int>& B, unordered_map<int,int> &m)
+    {
+        int n = A.size();
+        for(int i = 0; i < n; ++i)
+        for(int j = 0; j < n; ++j)
+          ++m[A[i] + B[j]];
+          
+    }
+    int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D) {
+        unordered_map<int,int> m1, m2;
+        fillMap(A, B, m1);
+        fillMap(C, D, m2);
+        int res = 0;
+        for(auto it = m1.begin(); it != m1.end(); ++it)
+        {
+           auto it2 = m2.find(-it->first);
+           if(it2 != m2.end())
+             res += it->second*it2->second;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Dividing arrays into two parts. Full thinking process from naive(N^4) to effective(N^2) solution
+public class Solution {
+    public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+        HashMap<Integer, Integer> sumCounter = getSumCounters(A,B);
+        int fourSumCounter = 0;
+        for (int c : C) {
+            for (int d: D) {
+                fourSumCounter += sumCounter.getOrDefault(c+d, 0);
+            }
+        }
+        return fourSumCounter;
+    }
+    
+    private HashMap<Integer, Integer> getSumCounters(int [] A, int [] B) {
+        HashMap<Integer, Integer> sumCounter = new HashMap<>();
+        for (int a : A) {
+            for (int b: B) {
+                int sum = -a-b;
+                sumCounter.put(sum, sumCounter.getOrDefault(sum, 0) + 1);
+            }
+        }
+        return sumCounter;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ O(n^2) algorithm with unordered_map
+class Solution {
+public:
+    int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D) {
+        int count = 0;
+        unordered_map<int, int> mp;
+        for (int i = 0; i < A.size(); i++) {
+            for (int j = 0; j < B.size(); j++) {
+                mp[A[i]+B[j]]++;
+            }
+        }
+        for (int i = 0; i < C.size(); i++) {
+            for (int j = 0; j < D.size(); j++) {
+                if (mp.find(-(C[i] + D[j])) != mp.end()) {
+                    count += mp[-(C[i] + D[j])];
+                }
+            }
+        }
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Awesome beautiful java python code
+    def fourSumCount(self, A, B, C, D):
+        AB = collections.Counter(a + b for a in A for b in B)
+        return sum(AB[-c - d] for c in C for d in D)
+
+
+----------------------------------------------------------------------------------------------------
+Efficient cpp solution O(n^2), 365 ms beats 100.00% of cpp submissions.
+class Solution {
+public:
+    int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D)
+    {
+        int N = A.size(), N2 = N * N, *sumAB, *sumCD;
+        if (N == 0)
+            return 0;
+
+        sumAB = (int *)malloc(sizeof(int) * N2);
+        sumCD = (int *)malloc(sizeof(int) * N2);
+        for (int i = 0, cn = 0; i < N; ++i)
+            for (int j = 0; j < N; ++j)
+            {
+                sumAB[cn] = A[i] + B[j];
+                sumCD[cn++] = C[i] + D[j];
+            }
+        sort(sumAB, sumAB + N2);
+        sort(sumCD, sumCD + N2);
+
+        int ans = 0;
+        int front = 0, back = N2 - 1;
+        while (front < N2 && back >= 0)
+        {
+            if(sumAB[front] + sumCD[back] > 0)
+                back--;
+            else if(sumAB[front] + sumCD[back] < 0)
+                front++;
+            else
+            {
+                int cnAB = 1, cnCD = 1;
+                while (++front < N2 && sumAB[front] == sumAB[front-1])  cnAB++;
+                while (--back >= 0 && sumCD[back] == sumCD[back+1])     cnCD++;
+                ans += cnAB * cnCD;
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+share my O(n^2) C++ 800ms easy-understanding code
+<p>&#39;&#39;&#39;<br/>
+class Solution {<br/>
+public:<br/>
+int fourSumCount(vector&lt;int&gt;&amp; A, vector&lt;int&gt;&amp; B, vector&lt;int&gt;&amp; C, vector&lt;int&gt;&amp; D) {<br/>
+unordered_map&lt;int, int&gt; mp;<br/>
+int ans = 0;<br/>
+for (int a:A)<br/>
+for (int b:B)<br/>
+++mp&#91;a+b&#93;;<br/>
+for(int c:C)<br/>
+for(int d:D)<br/>
+ans+=mp&#91;-(c+d)&#93;;<br/>
+return ans;<br/>
+}<br/>
+};</p>
+<p>&#39;&#39;&#39;</p>
+<ul>
+<li>list item</li>
+</ul>
+
+
+----------------------------------------------------------------------------------------------------
+python O(n^2) solution with hashtable
+class Solution(object):
+    def fourSumCount(self, A, B, C, D):
+        """
+        :type A: List[int]
+        :type B: List[int]
+        :type C: List[int]
+        :type D: List[int]
+        :rtype: int
+        """
+        hashtable = {}
+        for a in A:
+            for b in B :
+                if a + b in hashtable :
+                    hashtable[a+b] += 1
+                else :
+                    hashtable[a+b] = 1
+        count = 0         
+        for c in C :
+            for d in D :
+                if -c - d in hashtable :
+                    count += hashtable[-c-d]
+        return count
+
+----------------------------------------------------------------------------------------------------
+C# solution using a dictionary
+public class Solution {
+    public int FourSumCount(int[] A, int[] B, int[] C, int[] D) {
+        IDictionary<int, int> dict = new Dictionary<int, int>();
+        int result = 0;
+        
+        for(int i = 0; i < A.Length; i++) {
+            for(int j = 0; j < B.Length; j++) {
+                int value = A[i] + B[j];
+                
+                if(dict.ContainsKey(A[i] + B[j])) {
+                    dict[value]++;
+                }
+                else {
+                    dict[value] = 1;
+                }
+            }
+        }
+        
+        for(int i = 0; i < C.Length; i++) {
+            for(int j = 0; j < D.Length; j++) {
+                int negatedValue = -1 * (C[i] + D[j]);
+                
+                if(dict.ContainsKey(negatedValue)) {
+                    result += dict[negatedValue];
+                }
+            }
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+How to use Binary Search with &quot;4Sum II&quot;?
+<p>This question has &#34;Binary Search&#34; as a tag but in the solutions proposed (in discuss) I don&#39;t see it used. How is that?<br/>
+Is it actually possible to use binary search to solve such problem?</p>
+
+
+----------------------------------------------------------------------------------------------------
+C sharp(C#) solution O(n^2)
+        foreach (var c in C)
+        {
+            foreach (var d in D)
+            {
+                if (twoSums.ContainsKey(c + d))  rs += twoSums[c + d];
+            }
+        }
+        return rs;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java HashMap O(n^2) solution
+    public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+        Map<Integer, Integer> m1 = new HashMap<>();
+        Map<Integer, Integer> m2 = new HashMap<>();
+        int i,j, N =A.length, sum;
+        Integer count;
+        
+        for (i=0;i<N;i++) {
+            for (j=0;j<N;j++) {
+                sum = A[i] + B[j];
+                count = m1.get(sum);
+                if (count == null)
+                    m1.put(sum, 1);
+                else
+                    m1.put(sum, count + 1);
+                sum = C[i] + D[j];
+                count = m2.get(sum);
+                if (count == null)
+                    m2.put(sum,1);
+                else
+                    m2.put(sum , count + 1);
+            }
+        }
+        
+        int result = 0;
+        for (Map.Entry<Integer , Integer> entry : m1.entrySet()) {
+            int c1 = entry.getValue();
+            Integer c2 = m2.get(-entry.getKey());
+            if (c2 != null)
+                result += c1 * c2;
+        }
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(n^2) c++ optimized Solution (165ms) with hash_map
+class Solution {
+public:
+    typedef unordered_map<int, int> MyMap;
+    int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D) {
+        int res = 0, nA = A.size(), nB = B.size(), nC = C.size(), nD = D.size();
+        int i, j, opt, count;
+        MyMap mymap, mapA, mapB, mapC, mapD;
+        MyMap::iterator it, it1, it2;
+        pair<MyMap::iterator, bool> ins_res;
+        vector<int> &myA = A, &myB = B, &myC = C, &myD = D;
+        if(nA == 0 || nB == 0 || nC == 0 || nD == 0) return 0;
+        /*
+        * complexity = The sum of product of array sizes in each group (2 groups, each with 2 arrays)
+        * To minimize this complexity, it is worth making a comparison to choose the best sub solution.
+        */
+        opt = opt_group(nA * nB + nC * nD, nA * nC + nB * nD, nA * nD + nB * nC);
+        if(1 == opt) { myA = A; myB = B; myC = C; myD = D; }
+        else if(2 == opt) { myA = A; myB = C; myC = B; myD = D; nB = C.size(); nC = B.size(); }
+        else if(3 == opt) { myA = A; myB = D; myC = C; myD = B; nB = D.size(); nD = B.size(); }
+        
+        /* Hash each array */
+        for(i = 0; i < nA; ++i) {
+            ins_res = mapA.insert(make_pair(myA[i], 1));
+            if(!ins_res.second) ++ ins_res.first->second;
+        }
+        for(i = 0; i < nB; ++i) {
+            ins_res = mapB.insert(make_pair(myB[i], 1));
+            if(!ins_res.second) ++ ins_res.first->second;
+        }
+        for(i = 0; i < nC; ++i) {
+            ins_res = mapC.insert(make_pair(myC[i], 1));
+            if(!ins_res.second) ++ ins_res.first->second;
+        }
+        for(i = 0; i < nD; ++i) {
+            ins_res = mapD.insert(make_pair(myD[i], 1));
+            if(!ins_res.second) ++ ins_res.first->second;
+        }
+        
+        for(it1 = mapA.begin(); it1 != mapA.end(); ++it1) {
+            for(it2 = mapB.begin(); it2 != mapB.end(); ++it2) {
+                ins_res = mymap.insert( make_pair(it1->first + it2->first, count = it1->second * it2->second) );
+                if(!ins_res.second) ins_res.first->second += count;
+            }
+        }
+        for(it1 = mapC.begin(); it1 != mapC.end(); ++it1) {
+            for(it2 = mapD.begin(); it2 != mapD.end(); ++it2) {
+                it = mymap.find(- it1->first - it2->first);
+                if(it != mymap.end()) res += it->second * it1->second * it2->second;
+            }
+        }
+        return res;
+    }
+    inline int opt_group(int n1, int n2, int n3) {
+        return (n1 < n2 ? (n3 > n2 ? 3 : 2) : (n1 < n3 ? 3 : 1) );
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java, hashmap solution
+public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+	        Arrays.sort(A);
+	        Arrays.sort(B);
+	        Arrays.sort(C);
+	        Arrays.sort(D);
+	        Map<Integer, Integer> first = new HashMap<>();
+	        Map<Integer, Integer> second = new HashMap<>();
+	        for(int i = 0; i < A.length; i++){
+	            for(int j = 0; j < B.length; j++){
+	                int val = A[i]+B[j];
+	                first.put(val, first.getOrDefault(val,0)+1);
+	            }
+	        }
+	        for(int i = 0; i < A.length; i++){
+	            for(int j = 0; j < B.length; j++){
+	                int val = C[i]+D[j];
+	                second.put(val, second.getOrDefault(val,0)+1);
+	            }
+	        }
+	        int count = 0;
+	        for(int key : first.keySet()){
+	            if(second.containsKey(0-key)){
+	                count += first.get(key)*second.get(-key);
+	            }
+	        }
+	        return count;
+	    }
+
+----------------------------------------------------------------------------------------------------
+Python solution. Concise (3 lines) &amp; efficient (O(n^2))
+def fourSumCount(self, A, B, C, D):
+    n = len(A)
+    s = collections.Counter(-A[a]-B[b] for a in range(n) for b in range(n))
+    return sum(s[C[c]+D[d]] for c in range(n) for d in range(n))
+
+
+----------------------------------------------------------------------------------------------------
+Share my O(N^2) solution using HashMap
+public class Solution {
+    public int fourSumCount(int[] A, int[] B, int[] C, int[] D) {
+        if(A.length==0) return 0;
+        Map<Integer, Integer> map1 = new HashMap<>();
+        Map<Integer, Integer> map2 = new HashMap<>();
+        for(int i=0;i<A.length;i++){
+            for(int j=0;j<B.length;j++){
+                int sum = A[i]+B[j];
+                if(!map1.containsKey(sum)) map1.put(sum, 0);
+                map1.put(sum, map1.get(sum)+1);
+                sum = C[i]+D[j];
+                if(!map2.containsKey(sum)) map2.put(sum, 0);
+                map2.put(sum, map2.get(sum)+1);
+            }
+        }
+        int ret = 0;
+        for(Integer key1 : map1.keySet()){
+            if(map2.containsKey(-key1)) ret += map1.get(key1) * map2.get(-key1);
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

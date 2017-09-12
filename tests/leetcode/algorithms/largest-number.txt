@@ -1,0 +1,510 @@
+0ms, 5-lines DP Solution in C++ with Explanations
+This is a fundamental DP problem. First of all, let's make some observations.
+
+Since the robot can only move right and down, when it arrives at a point, there are only two possibilities:
+
+ 1. It arrives at that point from above (moving down to that point);
+ 2. It arrives at that point from left (moving right to that point).
+
+Thus, we have the following state equations: suppose the number of paths to arrive at a point `(i, j)` is denoted as `P[i][j]`, it is easily concluded that `P[i][j] = P[i - 1][j] + P[i][j - 1]`.
+
+The boundary conditions of the above equation occur at the leftmost column (`P[i][j - 1]` does not exist) and the uppermost row (`P[i - 1][j]` does not exist). These conditions can be handled by initialization (pre-processing) --- initialize `P[0][j] = 1, P[i][0] = 1` for all valid `i, j`. Note the initial value is `1` instead of `0`!
+
+Now we can write down the following (unoptimized) code.
+    
+    class Solution {
+        int uniquePaths(int m, int n) {
+            vector<vector<int> > path(m, vector<int> (n, 1));
+            for (int i = 1; i < m; i++)
+                for (int j = 1; j < n; j++)
+                    path[i][j] = path[i - 1][j] + path[i][j - 1];
+            return path[m - 1][n - 1];
+        }
+    };
+
+As can be seen, the above solution runs in `O(n^2)` time and costs `O(m*n)` space. However, you may have observed that each time when we update `path[i][j]`, we only need `path[i - 1][j]` (at the same column) and `path[i][j - 1]` (at the left column). So it is enough to maintain two columns (the current column and the left column) instead of maintaining the full `m*n` matrix. Now the code can be optimized to have `O(min(m, n))` space complexity.
+
+    class Solution {
+        int uniquePaths(int m, int n) {
+            if (m > n) return uniquePaths(n, m); 
+            vector<int> pre(m, 1);
+            vector<int> cur(m, 1);
+            for (int j = 1; j < n; j++) {
+                for (int i = 1; i < m; i++)
+                    cur[i] = cur[i - 1] + pre[i];
+                swap(pre, cur);
+            }
+            return pre[m - 1];
+        }
+    };
+
+Further inspecting the above code, we find that keeping two columns is used to recover `pre[i]`, which is just `cur[i]` before its update. So there is even no need to use two vectors and one is just enough. Now the space is further saved and the code also gets much shorter.
+
+    class Solution {
+        int uniquePaths(int m, int n) {
+            if (m > n) return uniquePaths(n, m);
+            vector<int> cur(m, 1);
+            for (int j = 1; j < n; j++)
+                for (int i = 1; i < m; i++)
+                    cur[i] += cur[i - 1]; 
+            return cur[m - 1];
+        }
+    }; 
+
+Well, till now, I guess you may even want to optimize it to `O(1)` space complexity since the above code seems to rely on only `cur[i]` and `cur[i - 1]`. You may think that 2 variables is enough? Well, it is not. Since the whole `cur` needs to be updated for `n - 1` times, it means that all of its values need to be saved for next update and so two variables is not enough. 
+
+----------------------------------------------------------------------------------------------------
+My AC solution using formula
+Binomial coefficient:
+ 
+
+    class Solution {
+        public:
+            int uniquePaths(int m, int n) {
+                int N = n + m - 2;// how much steps we need to do
+                int k = m - 1; // number of steps that need to go down
+                double res = 1;
+                // here we calculate the total possible path number 
+                // Combination(N, k) = n! / (k!(n - k)!)
+                // reduce the numerator and denominator and get
+                // C = ( (n - k + 1) * (n - k + 2) * ... * n ) / k!
+                for (int i = 1; i <= k; i++)
+                    res = res * (N - k + i) / i;
+                return (int)res;
+            }
+        };
+
+First of all you should understand that we need to do n + m - 2 movements : m - 1 down, n - 1 right, because we start from cell (1, 1).
+
+Secondly, the path it is the sequence of movements( go down / go right), 
+therefore we can say that two paths are different 
+when there is  i-th (1 .. m + n - 2)  movement in path1 differ  i-th movement in path2.
+
+So, how we can build paths.
+Let's choose (n - 1) movements(number of steps to the right) from (m + n - 2), 
+and rest (m - 1) is (number of steps down).
+
+I think now it is obvious that count of different paths are all combinations (n - 1) movements from (m + n-2).
+
+----------------------------------------------------------------------------------------------------
+Java DP solution with complexity O(n*m)
+   
+
+     public class Solution {
+        public int uniquePaths(int m, int n) {
+            Integer[][] map = new Integer[m][n];
+            for(int i = 0; i<m;i++){
+                map[i][0] = 1;
+            }
+            for(int j= 0;j<n;j++){
+                map[0][j]=1;
+            }
+            for(int i = 1;i<m;i++){
+                for(int j = 1;j<n;j++){
+                    map[i][j] = map[i-1][j]+map[i][j-1];
+                }
+            }
+            return map[m-1][n-1];
+        }
+    }
+
+
+The assumptions are 
+
+ 1. When (n==0||m==0) the function always returns 1 since the robot
+    can't go left or up.
+ 2. For all other cells. The result = uniquePaths(m-1,n)+uniquePaths(m,n-1)
+
+Therefore I populated the edges with 1 first and use DP to get the full 2-D array.
+
+Please give any suggestions on improving the code.
+
+
+
+----------------------------------------------------------------------------------------------------
+Math solution, O(1) space
+This is a combinatorial problem and can be solved without DP. For mxn grid, robot has to move exactly m-1 steps down and n-1 steps right and these can be done in any order.
+
+For the eg., given in question, 3x7 matrix, robot needs to take 2+6 = 8 steps with 2 down and 6 right in any order. That is nothing but a permutation problem. Denote down as 'D' and right as 'R', following is one of the path :-
+
+D R R R D R R R
+
+We have to tell the total number of permutations of the above given word. So, decrease both m & n by 1 and apply following formula:-
+
+Total permutations = (m+n)! / (m! * n!)
+
+Following is my code doing the same :-
+
+    public class Solution {
+        public int uniquePaths(int m, int n) {
+            if(m == 1 || n == 1)
+                return 1;
+            m--;
+            n--;
+            if(m < n) {              // Swap, so that m is the bigger number
+                m = m + n;
+                n = m - n;
+                m = m - n;
+            }
+            long res = 1;
+            int j = 1;
+            for(int i = m+1; i <= m+n; i++, j++){       // Instead of taking factorial, keep on multiply & divide
+                res *= i;
+                res /= j;
+            }
+                
+            return (int)res;
+        }
+    }
+
+ 
+
+----------------------------------------------------------------------------------------------------
+Clean and simple DP java
+    public class Solution {
+    public int uniquePaths(int m, int n) {
+        int[][] grid = new int[m][n];
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                if(i==0||j==0)
+                    grid[i][j] = 1;
+                else
+                    grid[i][j] = grid[i][j-1] + grid[i-1][j];
+            }
+        }
+        return grid[m-1][n-1];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Simple C++ version using Math
+    class Solution {
+    public:
+        int uniquePaths(int m, int n) {
+            if(m <=0 || n <= 0) return 0;
+            long long res = 1;
+            for(int i = n; i < m+n-1 ; i++){
+                res = res * i / (i- n + 1);
+            }
+            return (int)res;
+        }
+    };
+
+The total step number should be m+n-2. This means that we have to move down for m-1 steps and move right n-1 steps to reach the definition. Then different choice number would be:
+
+
+----------
+UniqueStepNum = choose (m-1) from (m+n-2) = choose (n-1) from (m+n-2)
+
+----------
+ = (m+n-2)! / [(m-1)! * (n-1)!] 
+
+----------
+ = ( (m+n-2) / (m-1) ) * ( (m+n-3) / (m-2) ) * ... * (n / 1) 
+
+----------------------------------------------------------------------------------------------------
+JAVA solution 0ms 4lines
+If you mark the south move as '1' and the east move as '0'. This problem shall be equal to :
+Given (m+n-2) bits. you can fill in '1' for (m-1) times and '0' for (n-1) times, what is the number of different numbers?
+ the result is clear that the formula shall be C(m-1)(m+n-2), where m-1 is the superscript behind C and m+n-2 is the subscript behind C.
+To avoid overflow, I write the program in this manner.
+
+public class Solution {
+
+    public int uniquePaths(int m, int n) {
+
+         long result = 1;
+         for(int i=0;i<Math.min(m-1,n-1);i++)
+             result = result*(m+n-2-i)/(i+1); 
+         return (int)result;
+
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+1 Line Math Solution (Python)
+    class Solution(object):
+        def uniquePaths(self, m, n):
+            """
+            :type m: int
+            :type n: int
+            :rtype: int
+            """
+            return math.factorial(m+n-2)/math.factorial(m-1)/math.factorial(n-1)
+
+----------------------------------------------------------------------------------------------------
+Accpeted simple Python DP solution.
+    class Solution:
+        # @return an integer
+        def uniquePaths(self, m, n):
+            aux = [[1 for x in range(n)] for x in range(m)]
+            for i in range(1, m):
+                for j in range(1, n):
+                    aux[i][j] = aux[i][j-1]+aux[i-1][j]
+            return aux[-1][-1]
+
+----------------------------------------------------------------------------------------------------
+Java DP with O(n) space
+We only need to store the previous row/column to perform the calculation for the next one. So an 1-d array would suffice. You could also choose to iterate through m or n depending on which direction you choose to go (by row or by column). Note that the first element of the array will always be 1.
+
+    public class Solution {
+        public int uniquePaths(int m, int n) {
+            int[] arr = new int[m];
+            for (int i = 0; i < m; i++) {
+                arr[i] = 1;
+            }
+            for (int i = 1; i < n; i++) {
+                for (int j = 1; j < m; j++) {
+                    arr[j] = arr[j] + arr[j-1];
+                }
+            }
+            return arr[m-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing my 0ms java solution with detailed exploration
+public class UniquePaths {
+
+	 public int uniquePathsSample(int m, int n) {
+		int[] dp = new int[m];
+		dp[0] = 1;
+		for (int i = 0; i < n; i++)
+			for (int j = 1; j < m; j++)
+				dp[j] = dp[j - 1] + dp[j];
+		return dp[m - 1];
+	}
+
+}
+
+First, image you have a m*n matrix, and you start from the left-top corner, to the right-bottom corner. And at the beginning, the matrix[0][0] would be 1, means you only have one way to reach the position where you are. And then if you want to move to the end of the first row, which is matrix[0][n-1], you only have one way to be there, too, you just need to move along the first row, to the rightmost position. Thus, you may set all values in the first row to 1.
+
+And then you move down, if you want to reach the bottom of the leftmost column. Similarly, you only have one way to be there, too, thus you can also set all values in the leftmost column to be 1.
+
+Let's go further, if you want to reach the right end of second row, how many different paths you can choose? Let's say, if you want to get matrix[1][1], you can either move right firstly, then move down, or you can move down firstly, then move right. So you will have two paths to reach the position(1,1), then matrix[1][1] will equal 2. So how can we get this number in general?
+
+Obviously, we could know matrix[i][j] = matrix[i-1][j] + matrix[i][j-1], because if we can get the position (i-1,j) or (i, j-1), then we only have one way to reach the destination -- move down or move right -- thus we use this formula matrix[i][j] = matrix[i-1][j] + matrix[i][j-1] to fill up all of the values in the matrix.
+
+Further more, do we really need o(m*n) space to help us finishing this task? Not really, through filling the matrix, we may see the filling task could be fulfilled layer by layer. Another saying, we could use only 1-dimension array to present each row of the matrix. And we fill the array again and again till n times (0,1,2...n-1). And finally we will get the result we want.
+
+
+----------------------------------------------------------------------------------------------------
+Dynamic programming in O(M*N) , solution in C++.
+    class Solution {
+    public:
+        int uniquePaths(int m, int n) {
+            int P[101][101];
+            P[1][1]=1;
+            for (int i=2; i<=n; i++)
+            {
+                P[1][i]=1;
+            }
+            for (int i=2; i<=m; i++)
+            {
+                P[i][1]=1;
+            }
+            for (int i=2; i<=m; i++)
+            {
+                for (int j=2; j<=n; j++)
+                {
+                    P[i][j]=P[i-1][j]+P[i][j-1];
+                }
+            }
+            return P[m][n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Trickily solve the problem with MATH, code is simple
+This problem can be trickily solved with math, the principle is simple:
+      In total the robot should walk m + n - 2 steps, m - 1 steps to right and n - 1 steps to bottom, so all what we should do is to select which m - 1 steps to be right, therefore the problem is actually a combination problem, then we just need to calculate  (n + m - 2)! / ((m - 1)!  * (n - 1)!), here is the code:
+
+    class Solution {
+    public:
+    long long fab(int x, int y) {
+        long long ret = 1;
+        for (int i = x; i >= y && i > 0; --i) {
+            ret *=i;
+        }
+        return ret;
+    }
+
+    int uniquePaths(int m, int n) {
+        if (0 == m || 0 == n) {
+            return 0;
+        }
+
+        int max = std::max(m, n) - 1;
+        int min = std::min(m, n) - 1;
+
+        int ret = int(fab(max + min, max + 1) / fab(min, 1));
+
+        return ret;
+    }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+0ms Java 10 line code
+    public int uniquePaths(int m, int n) {
+        int smaller = m>n ? n-1 : m-1;
+        int totalsteps = m+n-2;
+        long result = 1;
+        for (int counter = 1; counter<=smaller; counter++){
+            result *= totalsteps--;
+            result /= counter;
+        }
+        return (int)result;
+    }
+Basically it is math: select m (or n) from [(m-1)+(n-1)]
+
+----------------------------------------------------------------------------------------------------
+Solve Unique Paths with linear algorithm?
+1. The formula : C(n + m - 2, n - 1)  
+    Overflow is the problem. Would you do it with this formula? Thanks.
+
+2. Using DP  Time Complexity is O(m * n)  Space Complexity is O(min(m, n))
+
+        class Solution {
+        public:
+            int uniquePaths(int m, int n) {
+                // IMPORTANT: Please reset any member data you declared, as
+                // the same Solution instance will be reused for each test case.
+                if((m <= 0) || (n <= 0)) return 0;
+                if((1 == m) || (1 == n)) return 1;
+                int map[n + 1];
+                memset(map, 0, sizeof(map));
+                for(int i = 1; i <= n; i ++) map[i] = 1;
+                for(int i = 2; i <= m; i ++) {
+                    for(int j = 2; j <= n; j ++) {
+                        map[j] += map[j - 1];
+                    }
+                }
+                return map[n];
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+6 lines java 0ms solution
+    public int uniquePaths(int m, int n) {
+        int[] dp = new int[m];
+        dp[0] = 1;
+        for(int i = 0; i < n; i++)
+            for(int j = 1; j < m; j++)
+                dp[j] = dp[j-1] + dp[j];
+        return dp[m-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;With Explanation&#93; Simplest method based on a little bit math knowledge. NO dp or any programming trick needed.
+When the grid is m*n, Robot on top left need to move right m-1 times and down n-1 times to get to Finish Spot in total, since it doesn't know to go left or up. Nothing more, nothing less.  
+
+So the problem now is "how many possible combination of m-1 right moves and n-1 down moves", obviously it is C(m+n-2, m-1), aka  \frac{(m+n-2)!}{(m-1)!(n-1)!}, which is shown by the code below.
+
+    class Solution:
+        def c(self,n,k):
+            r = 1
+            for i in range(n,n-k,-1):
+                r *= i
+            for i in range(1,k+1):
+                r /= i
+            return r
+            
+        def uniquePaths(self, m, n):
+            return self.c(m+n-2,m-1)
+
+----------------------------------------------------------------------------------------------------
+Python easy to understand solutions (math, dp O(m*n) and O(n) space).
+        
+    # math C(m+n-2,n-1)
+    def uniquePaths1(self, m, n):
+        if not m or not n:
+            return 0
+        return math.factorial(m+n-2)/(math.factorial(n-1) * math.factorial(m-1))
+     
+    # O(m*n) space   
+    def uniquePaths2(self, m, n):
+        if not m or not n:
+            return 0
+        dp = [[1 for _ in xrange(n)] for _ in xrange(m)]
+        for i in xrange(1, m):
+            for j in xrange(1, n):
+                dp[i][j] = dp[i-1][j] + dp[i][j-1]
+        return dp[-1][-1]
+    
+    # O(n) space 
+    def uniquePaths(self, m, n):
+        if not m or not n:
+            return 0
+        cur = [1] * n
+        for i in xrange(1, m):
+            for j in xrange(1, n):
+                cur[j] += cur[j-1]
+        return cur[-1]
+
+----------------------------------------------------------------------------------------------------
+C++, dp, O(n^2) time, O(n) space
+The state transition equation is: `memo[i][j] = memo[i][j-1] + memo[i-1][j]`
+                
+For example: A 3x4 grid, you need to reach bottom-right corner from top-left corner. 
+               
+We use memo[3][4] to save number of paths.
+
+    x x x x
+    x x x x 
+    x x x x 
+
+Number of paths of first row is 1 1 1 1, because you can only go down and left, you only have one way to go to destination in row 0. So I init the row 0 with 1. 
+
+And the second row, we only have one way to go to grid[1][0], is start->down->down.so memo[1][0] = 1. 
+
+And for memo[1][1], you can go from grid[1][0] and grid[0][1], so memo[1][1] = memo[1][0]+memo[0][1], and the others are the similar. 
+
+so the number of paths of 3x4 grid is: 
+
+    1 1 1  1 
+    1 2 3  4 
+    1 3 6 10, and return memo[2][3].
+
+And take a closer look at the question, you can just use O(n) space, because when you calculate m[i][j], you need to add up m[i][j-1] and m[i-1][j]. 
+
+In my solution, m[i][j-1] is m[i-1],has been calculated just before m[i]j, and m[i-1][j] is old m[i] saved in m[i]. 
+
+You add up old m[i] and new m[i-1], the answer saves in m[i]. 
+
+My English is not so good, I hope this can answer you question.   
+
+       int uniquePaths(int m, int n) {
+            int *memo = new int[n];
+            for(int i = 0; i < n; i++)
+                memo[i] = 1;
+            for(int i = 1 ; i < m; i++)
+                for(int j = 1; j < n; j++)
+                    memo[j] += memo[j-1];
+            return memo[n-1];
+        }
+
+
+----------------------------------------------------------------------------------------------------
+Similar to Pascal Triangle. O(1) space and O(min(m, n)) solution with image explanation
+![enter image description here][1]
+
+
+  [1]: http://uiinventory.netne.net/LC_62.png
+
+    import java.math.BigInteger;
+    
+    public class Solution {
+        
+        private int comb(int n, int k) {
+            long r = 1;
+            for(int d = 1; d <= k; ++d) r = r * n-- / d;
+            return (int)r;
+        }
+        
+        public int uniquePaths(int m, int n) {
+            return comb(m + n - 2, Math.min(n - 1, m - 1));
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

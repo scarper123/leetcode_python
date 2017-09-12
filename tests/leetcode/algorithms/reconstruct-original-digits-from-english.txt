@@ -1,0 +1,682 @@
+Java solution using a HashMap and an ArrayList along with a follow-up. (131 ms)
+public class RandomizedSet {
+    ArrayList<Integer> nums;
+    HashMap<Integer, Integer> locs;
+    java.util.Random rand = new java.util.Random();
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        nums = new ArrayList<Integer>();
+        locs = new HashMap<Integer, Integer>();
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        boolean contain = locs.containsKey(val);
+        if ( contain ) return false;
+        locs.put( val, nums.size());
+        nums.add(val);
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        boolean contain = locs.containsKey(val);
+        if ( ! contain ) return false;
+        int loc = locs.get(val);
+        if (loc < nums.size() - 1 ) { // not the last one than swap the last one with this val
+            int lastone = nums.get(nums.size() - 1 );
+            nums.set( loc , lastone );
+            locs.put(lastone, loc);
+        }
+        locs.remove(val);
+        nums.remove(nums.size() - 1);
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        return nums.get( rand.nextInt(nums.size()) );
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple solution in Python
+import random
+
+class RandomizedSet(object):
+
+    def __init__(self):
+        self.nums, self.pos = [], {}
+        
+    def insert(self, val):
+        if val not in self.pos:
+            self.nums.append(val)
+            self.pos[val] = len(self.nums) - 1
+            return True
+        return False
+        
+
+    def remove(self, val):
+        if val in self.pos:
+            idx, last = self.pos[val], self.nums[-1]
+            self.nums[idx], self.pos[last] = last, idx
+            self.nums.pop(); self.pos.pop(val, 0)
+            return True
+        return False
+            
+    def getRandom(self):
+        return self.nums[random.randint(0, len(self.nums) - 1)]
+
+# 15 / 15 test cases passed.
+# Status: Accepted
+# Runtime: 144 ms
+
+
+----------------------------------------------------------------------------------------------------
+AC C++ Solution. Unordered_map + Vector
+class RandomizedSet {
+public:
+    /** Initialize your data structure here. */
+    RandomizedSet() {
+        
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    bool insert(int val) {
+        if (m.find(val) != m.end()) return false;
+        nums.emplace_back(val);
+        m[val] = nums.size() - 1;
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    bool remove(int val) {
+        if (m.find(val) == m.end()) return false;
+        int last = nums.back();
+        m[last] = m[val];
+        nums[m[val]] = last;
+        nums.pop_back();
+        m.erase(val);
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    int getRandom() {
+        return nums[rand() % nums.size()];
+    }
+private:
+    vector<int> nums;
+    unordered_map<int, int> m;
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Are hash tables ok here? They&#x27;re not really O(1), are they?
+<p>I predict that many of us will think of using a hash table, but I&#39;m not aware of any that really offer the needed operations in O(1). Are there any?</p>
+<p>We do usually think of them as O(1), and I think that&#39;s ok because in practice they do average/amortize O(1) and everybody knows what is meant (right?) and they&#39;re usually just a small building block in the actual algorithm. Would be pretty annoying if we had to always asterisk the complexity discussion of every algorithm that uses hash tables. But here, the set data structure isn&#39;t just a helping part in the actual thing we&#39;re building. It <strong><em>is</em></strong> the actual thing. And we&#39;re explicitly required to achieve O(1), it&#39;s even the problem title. So I think we shouldn&#39;t be sloppy here.</p>
+<p><strong>Update:</strong> The problem has been updated to say &#34;average&#34;.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with two HashMaps: easy to understand
+import java.util.Random;
+
+public class RandomizedSet {
+    
+    private HashMap<Integer, Integer> keyMap = null;
+    private HashMap<Integer, Integer> valueMap = null;
+    int count;
+
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        keyMap = new HashMap<Integer, Integer>();
+        valueMap = new HashMap<Integer, Integer>();
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if(keyMap.containsKey(val)) {
+            return false;
+        } else {
+            keyMap.put(val, count);
+            valueMap.put(count, val);
+            count = keyMap.size();
+            return true;
+        }
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if(!keyMap.containsKey(val)) {
+            return false;
+        } else {
+            int valueKey = keyMap.get(val);
+            keyMap.remove(val);
+            if(valueKey != valueMap.size() - 1) {
+                valueMap.put(valueKey, valueMap.get(valueMap.size() - 1));
+                keyMap.put(valueMap.get(valueMap.size() - 1), valueKey);
+                valueMap.remove(valueMap.size() - 1);
+            } else {
+                valueMap.remove(valueKey);
+            }
+            count = keyMap.size();
+            return true;
+        }
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        Random random = new Random();
+        int n = random.nextInt(keyMap.size());
+        return valueMap.get(n);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+JAVA Solution, concise code with HashMap and ArrayList, easy to understand
+public class RandomizedSet {
+    HashMap<Integer, Integer> map;
+    ArrayList<Integer> list;
+    
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        map = new HashMap<Integer, Integer>();
+        list = new ArrayList<Integer>();
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if(map.containsKey(val)) {
+            return false;
+        }else {
+            map.put(val, list.size());
+            list.add(val);
+            return true;
+        }
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if(!map.containsKey(val)) {
+            return false;
+        }else {
+            int key = map.get(val);
+            int lastElement = list.get(list.size() - 1);
+            map.put(lastElement, key);
+            list.set(key, lastElement);
+            map.remove(val);
+            list.remove(list.size() - 1);
+            return true;
+        }
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        Random random = new Random();
+        return list.get( random.nextInt(list.size()) );
+    }
+}
+
+/**
+ * Your RandomizedSet object will be instantiated and called as such:
+ * RandomizedSet obj = new RandomizedSet();
+ * boolean param_1 = obj.insert(val);
+ * boolean param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
+
+
+----------------------------------------------------------------------------------------------------
+2 Python implementations using dictionary and list (Syned and Asyned), with explanation
+import random
+class RandomizedSet(object):
+
+    def __init__(self):
+        self.l = []
+        self.d = {}
+
+    def insert(self, val):
+        if val in self.d:
+            return False
+        i = len(self.d)
+        self.d[val] = i
+        if i < len(self.l):
+            self.l[i] = val
+        else:
+            self.l.append(val)
+        return True        
+
+    def remove(self, val):
+        if val not in self.d:
+            return False
+        i, newVal = self.d[val], self.l[len(self.d)-1]
+        self.l[i], self.d[newVal] = newVal, i
+        del self.d[val]
+        return True
+
+    def getRandom(self):
+        return self.l[random.randrange(len(self.d))]
+
+
+----------------------------------------------------------------------------------------------------
+Java with HashTable + ArrayList
+public class RandomizedSet {
+
+    Map<Integer, Integer> map = new HashMap<>();
+    List<Integer> list = new ArrayList<>();
+    Random rnd = new Random();
+
+    public boolean insert(int val) {
+        if(map.containsKey(val)) {
+            return false;
+        }
+        
+        map.put(val, list.size());
+        list.add(val);
+        return true;
+    }
+    
+    public boolean remove(int val) {
+        if(!map.containsKey(val)) {
+            return false;
+        }
+        
+        int idx = map.remove(val);
+        int last = list.remove(list.size() - 1);
+        if(val != last) {
+            list.set(idx, last);
+            map.put(last, idx);
+        }
+        return true;
+    }
+    
+    public int getRandom() {
+        return list.get(rnd.nextInt(list.size()));
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+How is this tested?
+<p>This OJ problem is intrinsically different from all others, as randomness is involved here.</p>
+<p>Let&#39;s say someone comes up with an answer where getRandom always returns the smallest val (or maybe first val in some array or hash set). Then, how can the test cases tell that this solution is wrong?</p>
+<p>Even when some random choice algorithm is used, how can it be tested that all values are equally likely to be chosen, and different calls of getRandom are independent?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Simple intuitive java O(1) solution,using hashmap and arraylist, beats 91%
+ArrayList<Integer> nums = new ArrayList<>();
+    HashMap<Integer, Integer> map = new HashMap<>(); //stores indices
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if(!map.containsKey(val)){
+            nums.add(val);
+            map.put(val, nums.size()-1);
+            return true;
+        }
+        return false;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if(map.containsKey(val)){
+            int last = nums.get(nums.size()-1);
+            int removePos = map.get(val);
+            nums.set(removePos, last); //replace the removed number with the last number
+            nums.remove(nums.size()-1); //always remove the last element, takes O(1)
+            map.put(last, removePos); //upadate index
+            map.remove(val);
+            return true;
+        }
+        return false;
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        int index = (int)(Math.random() * nums.size());
+        return nums.get(index);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+For C++, please change delete() to remove()
+<p>I&#39;m using C++ and the interface given in the code snippet is delete(), while in the description the function is actually named as remove(). Also, using delete as the function name would cause compiler error as well.</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ 80ms solution
+}
+
+/** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+bool insert(int val) {
+    if(umap.find(val) == umap.end()) {
+        umap[val] = vec.size();
+        vec.push_back(val);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/** Removes a value from the set. Returns true if the set contained the specified element. */
+bool remove(int val) {
+    auto iter = umap.find(val);
+    if(iter == umap.end()) {
+        return false;
+    } else {
+        int back = vec.back();
+        if(back != val) {
+            vec[umap[val]] = back;
+            umap[back] = umap[val];
+        }
+        umap.erase(iter);
+        vec.pop_back();
+        return true;
+    }
+}
+
+/** Get a random element from the set. */
+int getRandom() {
+    int size = vec.size();
+    srand(time(0));
+    return vec[rand()%size];
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+python solution using two maps &#x2F; or map + list, inline explanation
+# bijective maps.
+# when remove an element , use the last element in the map to fill the hole left by the removed element.
+import random
+class RandomizedSet(object):
+
+    def __init__(self):
+        self.key_val = {}  #key from 1 to self.size; val is the inserted val. can use list here instead.
+        self.val_key = {}  #reversed map of the above. 
+        self.size = 0
+
+    def insert(self, val):
+        if val in self.val_key:
+            return False
+        else:
+            self.size += 1
+            self.val_key[val] = self.size
+            self.key_val[self.size] = val
+            return True
+            
+    def remove(self, val):
+        if val not in self.val_key:
+            return False
+        else:
+            # use the last element to fill the hole left by the removed element
+            key = self.val_key[val]
+            last = self.key_val[self.size]
+            self.key_val[key] = last
+            self.val_key[last] = key
+            del self.val_key[val]
+            del self.key_val[self.size]
+            self.size -= 1
+            return True
+
+    def getRandom(self):
+        i = random.randrange(1, self.size+1)
+        return self.key_val[i]
+        
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using unordered_map and vector
+class RandomizedSet {
+private:
+    unordered_map<int, int> indices; // the value is the index of the key
+    vector<int> vals;
+public:
+    /** Initialize your data structure here. */
+    RandomizedSet() {
+        srand((int)time(0));
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    bool insert(int val) {
+        unordered_map<int, int>::iterator it = indices.find(val);
+        if (it == indices.end())   {
+            // add the new value's index
+            indices.insert(pair<int, int>(val, vals.size()));
+            vals.push_back(val);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    bool remove(int val) {
+        unordered_map<int, int>::iterator it = indices.find(val);
+        if (it == indices.end())   {
+            return false;
+        }
+        
+        // remove val
+        int index = it->second;
+        vals[index] = vals[vals.size() - 1];
+        indices.find(vals[index])->second = index;
+        vals.pop_back();
+        indices.erase(it);
+
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    int getRandom() {
+        int pick = rand() % vals.size();
+
+        return vals[pick];
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Logic behind using a hashmap and an arraylist.
+getRandom()
+
+----------------------------------------------------------------------------------------------------
+Test Case issue? cannot pass by random selection
+
+public class RandomizedSet {
+
+    List<Integer> list = new ArrayList<Integer>();
+    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    
+    
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if(map.containsKey(val)){
+            return false;
+        }
+        list.add(val);
+        map.put(val, list.size()-1);
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if(!map.containsKey(val)){
+            return false;
+        }
+        int last = list.get(list.size()-1);
+        int idx = map.get(val);
+        if(list.size()-1 != idx){
+            list.set(idx, last);
+            map.put(last, idx);
+        }
+        map.remove(val);
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+         // can't pass by random select?
+    //   java.util.Random random = new java.util.Random();
+    //   int idx = random.nextInt(list.size());
+      
+      return list.get(0);
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Not related to this problem but please stop your plagiarisms
+<p>Not really wanna talk about such a topic but more and more plagiarisms happen in recent questions. Here I am saying that someone is trying to simply copy other user&#39;s code in the community and replace the variable names to pretend as his own work (not even change the coding style and spacing!). What&#39;s worse, these guys may also copy the explanation from others with poor rephrasing. Few minutes later, this plagiarism gets upvotes VERY FAST. I don&#39;t know what&#39;s happening...are you doing this in order to obtain a higher reputation or sth? Will this do you good? If you dare do these things in a programming class, you are probably DEAD. IMO, this is a community to share bright thoughts and motivate everyone to perform better. Please don&#39;t plagiarize, don&#39;t discourage people! I will give you a downvote if I discover your plagiarism.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Using a HashTable directly but got accepted...
+class RandomizedSet(object):
+
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self.elements = dict()
+        
+
+    def insert(self, val):
+        """
+        Inserts a value to the set. Returns true if the set did not already contain the specified element.
+        :type val: int
+        :rtype: bool
+        """
+        if val in self.elements:
+            return False
+        else:
+            self.elements[val] = 0
+            return True
+        
+
+    def remove(self, val):
+        """
+        Removes a value from the set. Returns true if the set contained the specified element.
+        :type val: int
+        :rtype: bool
+        """
+        if val in self.elements:
+            self.elements.pop(val)
+            return True
+        else:
+            return False
+        
+
+    def getRandom(self):
+        """
+        Get a random element from the set.
+        :rtype: int
+        """
+        from random import randint
+        
+        return self.elements.keys()[randint(0, len(self.elements) - 1)]
+
+
+----------------------------------------------------------------------------------------------------
+why this golang solution wrong, get runtime err when i submit
+
+type RandomizedSet struct {
+	arr []int
+	set map[int]int
+}
+
+/** Initialize your data structure here. */
+func Constructor() RandomizedSet {
+	return RandomizedSet{
+		arr: make([]int, 0),
+		set: make(map[int]int),
+	}
+}
+
+/** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+func (this *RandomizedSet) Insert(val int) bool {
+	if _, ok := this.set[val]; !ok {
+		this.set[val] = len(this.arr)
+		this.arr = append(this.arr, val)
+		return true
+	}
+	return false
+}
+
+/** Removes a value from the set. Returns true if the set contained the specified element. */
+func (this *RandomizedSet) Remove(val int) bool {
+	if index, ok := this.set[val]; ok {
+		tail := this.arr[len(this.arr)-1]
+		if tail != val {
+			this.arr[index] = tail
+			this.set[tail] = index
+		}
+		delete(this.set, val)
+		this.arr = this.arr[:len(this.arr)-1]
+		return true
+	}
+	return false
+}
+
+/** Get a random element from the set. */
+func (this *RandomizedSet) GetRandom() int {
+	return this.arr[rand.Intn(len(this.arr))]
+}
+
+
+----------------------------------------------------------------------------------------------------
+Can we use HashSet instead of HashMap?
+/** Initialize your data structure here. */
+HashSet<Integer> set;
+List<Integer> list;
+
+
+public RandomizedSet() {
+    set = new HashSet<>();
+    list = new ArrayList<>();
+}
+
+/** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+public boolean insert(int val) {
+    if(set.contains(val))
+        return false;
+    else {
+        set.add(val);
+        list.add(val);
+        return true;
+    }
+}
+
+/** Removes a value from the set. Returns true if the set contained the specified element. */
+public boolean remove(int val) {
+    if(set.contains(val)) {
+        set.remove(val);
+        list.remove(new Integer(val));
+        return true;
+    } else
+        return false;
+}
+
+/** Get a random element from the set. */
+public int getRandom() {
+    Random random = new Random();
+    int index = random.nextInt(list.size());
+    return list.get(index);
+}
+
+
+----------------------------------------------------------------------------------------------------

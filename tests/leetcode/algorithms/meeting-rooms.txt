@@ -1,0 +1,642 @@
+Is it Best Solution with O(n), O(1).
+The thinking is simple and is inspired by the best solution from Single Number II (I read through the discussion after I use DP). 
+Assume we only have 0 money at first;
+4 Variables to maintain some interested 'ceilings' so far:
+The maximum of if we've just buy 1st stock, if we've just sold 1nd stock, if we've just buy  2nd stock, if we've just sold 2nd stock.
+Very simple code too and work well. I have to say the logic is simple than those in Single Number II.
+
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            int hold1 = Integer.MIN_VALUE, hold2 = Integer.MIN_VALUE;
+            int release1 = 0, release2 = 0;
+            for(int i:prices){                              // Assume we only have 0 money at first
+                release2 = Math.max(release2, hold2+i);     // The maximum if we've just sold 2nd stock so far.
+                hold2    = Math.max(hold2,    release1-i);  // The maximum if we've just buy  2nd stock so far.
+                release1 = Math.max(release1, hold1+i);     // The maximum if we've just sold 1nd stock so far.
+                hold1    = Math.max(hold1,    -i);          // The maximum if we've just buy  1st stock so far. 
+            }
+            return release2; ///Since release1 is initiated as 0, so release2 will always higher than release1.
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A clean DP solution which generalizes to k transactions
+Solution is commented in the code. Time complexity is O(k*n), space complexity can be O(n) because this DP only uses the result from last step. But for cleaness this solution still used O(k*n) space complexity to preserve similarity to the equations in the comments.
+
+    class Solution {
+    public:
+        int maxProfit(vector<int> &prices) {
+            // f[k, ii] represents the max profit up until prices[ii] (Note: NOT ending with prices[ii]) using at most k transactions. 
+            // f[k, ii] = max(f[k, ii-1], prices[ii] - prices[jj] + f[k-1, jj]) { jj in range of [0, ii-1] }
+            //          = max(f[k, ii-1], prices[ii] + max(f[k-1, jj] - prices[jj]))
+            // f[0, ii] = 0; 0 times transation makes 0 profit
+            // f[k, 0] = 0; if there is only one price data point you can't make any money no matter how many times you can trade
+            if (prices.size() <= 1) return 0;
+            else {
+                int K = 2; // number of max transation allowed
+                int maxProf = 0;
+                vector<vector<int>> f(K+1, vector<int>(prices.size(), 0));
+                for (int kk = 1; kk <= K; kk++) {
+                    int tmpMax = f[kk-1][0] - prices[0];
+                    for (int ii = 1; ii < prices.size(); ii++) {
+                        f[kk][ii] = max(f[kk][ii-1], prices[ii] + tmpMax);
+                        tmpMax = max(tmpMax, f[kk-1][ii] - prices[ii]);
+                        maxProf = max(f[kk][ii], maxProf);
+                    }
+                }
+                return maxProf;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My C++ solution (O(N) time, O(1) space, 8ms)
+It is similar to other buy/sell problems. just do DP and define an array of states to track the current maximum profits at different stages. For example, in the below code
+
+ - states[][0]: one buy
+ - states[][1]: one buy, one sell
+ - states[][2]: two buys, one sell
+ - states[][3]: two buy, two sells
+
+The states transistions occurs when buy/sell operations are executed. For example, state[][0] can move to state[][1] via one sell operation. 
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            int states[2][4] = {INT_MIN, 0, INT_MIN, 0}; // 0: 1 buy, 1: one buy/sell, 2: 2 buys/1 sell, 3, 2 buys/sells
+            int len = prices.size(), i, cur = 0, next =1;
+            for(i=0; i<len; ++i)
+            {
+                states[next][0] = max(states[cur][0], -prices[i]);
+                states[next][1] = max(states[cur][1], states[cur][0]+prices[i]);
+                states[next][2] = max(states[cur][2], states[cur][1]-prices[i]);
+                states[next][3] = max(states[cur][3], states[cur][2]+prices[i]);
+                swap(next, cur);
+            }
+            return max(states[cur][1], states[cur][3]);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My explanation for O(N) solution!
+First assume that we have no money, so buy1 means that we have to borrow money from others,  we want to borrow less so that we have to make our balance as max as we can(because this is negative).
+
+sell1 means we decide to sell the stock, after selling it we have price[i] money and we have to give back the money we owed, so we have price[i] - |buy1| = prices[i ] + buy1, we want to make this max.
+
+buy2 means we want to buy another stock, we already have sell1 money, so after buying stock2 we have buy2 = sell1 - price[i] money left, we want more money left, so we make it max
+
+sell2 means we want to sell stock2, we can have price[i] money after selling it, and we have buy2 money left before, so sell2 = buy2 + prices[i], we make this max.
+
+So sell2 is the most money we can have.
+
+Hope it is helpful and welcome quesions!
+
+    public int maxProfit(int[] prices) {
+    		int sell1 = 0, sell2 = 0, buy1 = Integer.MIN_VALUE, buy2 = Integer.MIN_VALUE;
+    		for (int i = 0; i < prices.length; i++) {
+    			buy1 = Math.max(buy1, -prices[i]);
+    			sell1 = Math.max(sell1, buy1 + prices[i]);
+    			buy2 = Math.max(buy2, sell1 - prices[i]);
+    			sell2 = Math.max(sell2, buy2 + prices[i]);
+    		}
+    		return sell2;
+    	}
+
+----------------------------------------------------------------------------------------------------
+2ms Java DP Solution
+Sorry for my poor English
+
+    public int maxProfit(int[] prices) {
+        // these four variables represent your profit after executing corresponding transaction
+        // in the beginning, your profit is 0. 
+        // when you buy a stock ,the profit will be deducted of the price of stock.
+        int firstBuy = Integer.MIN_VALUE, firstSell = 0;
+        int secondBuy = Integer.MIN_VALUE, secondSell = 0;
+
+        for (int curPrice : prices) {
+            if (firstBuy < -curPrice) firstBuy = -curPrice; // the max profit after you buy first stock
+            if (firstSell < firstBuy + curPrice) firstSell = firstBuy + curPrice; // the max profit after you sell it
+            if (secondBuy < firstSell - curPrice) secondBuy = firstSell - curPrice; // the max profit after you buy the second stock
+            if (secondSell < secondBuy + curPrice) secondSell = secondBuy + curPrice; // the max profit after you sell the second stock
+        }
+        
+        return secondSell; // secondSell will be the max profit after passing the prices
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution with just two traverses.
+Go from left to right and calculate max profit for each index (i). Go from right to left and calculate max profit  for (i). Add max right profit for (i) and max left profit for (i-1) and check if it's max profit.
+
+    public int maxProfit(int[] prices) {
+		if (prices == null || prices.length == 0) return 0;
+		int lenght = prices.length;
+		
+		int[] leftProfit = new int[lenght];
+		int leftMaxProfit = 0;
+		int leftMin = prices[0];
+        for (int i=0; i<lenght; i++) {
+        	if (prices[i] < leftMin) leftMin = prices[i];
+        	if (prices[i] - leftMin > leftMaxProfit) leftMaxProfit = prices[i]-leftMin;
+        	leftProfit[i] = leftMaxProfit;
+        }
+        
+        int maxProfit = 0;
+        int rightMaxProfit = 0;
+		int rightMax = prices[lenght-1];
+		for (int i=lenght-1; i>=0; i--) {
+        	if (prices[i] > rightMax) rightMax = prices[i];
+        	if (rightMax - prices[i] > rightMaxProfit) rightMaxProfit = rightMax - prices[i];
+        	int currentProfit = rightMaxProfit + (i>0 ? leftProfit[i-1] : 0);
+        	if (currentProfit > maxProfit) {
+        		maxProfit = currentProfit;
+        	}
+        }
+		
+        return maxProfit;
+    }
+
+----------------------------------------------------------------------------------------------------
+A solution not so dynamic programming.
+I think the most difficult part is how to connect the first transaction to the second transaction. The final target is to get the maximum value of profit2. You must try to get money as much as possible after you buy the stock second time. Then after the second time of sell, with the as high as possible price, you get the maximum profit. 
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            int size=prices.size();
+            int profit1=0;
+            int profit2=0;
+            int o1=INT_MAX;
+            int o2=INT_MIN;
+            for(int i=0; i<size; ++i){
+                o1=min(o1, prices[i]);
+                profit1=max(profit1, prices[i]-o1);
+                o2=max(o2, profit1-prices[i]);
+                profit2=max(profit2, prices[i]+o2);
+            }
+            return profit2;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A clear o(n) time and space Java Solution
+    public class Solution { 
+        public int maxProfit(int[] prices) {
+            int len = prices.length;
+            if (len < 2)
+                return 0;
+            int [] maxBefore = new int[len];
+            int min = prices[0];
+            for(int i=1; i<len; i++)
+            {
+                maxBefore[i] = Math.max(maxBefore[i-1], prices[i] - min);
+                min = Math.min(min, prices[i]);
+            }
+            int max = prices[len-1];
+            int ret = 0;
+            for (int i=len-2; i>=0; i--)
+            {
+                max = Math.max(prices[i], max);
+                ret = Math.max(ret, max - prices[i] + maxBefore[i]);   
+            }
+            return ret;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple DP 8ms Solution for Best Time to Buy and Sell Stock III
+ 
+        int maxProfit(vector<int>& prices) {
+        int size = prices.size();
+        if(size==0 || size ==1) return 0;
+        int profit[size];
+        int profit1[size];
+        int local_min=prices[0];
+        int local_max = prices[size-1];
+        int j = size-2;
+        int result=0;
+        profit[0]=0;
+        profit1[size-1] = 0;
+        for(int i = 1;i<size+1 && j >=0;i++,j--)
+        {
+            profit[i] = max(profit[i-1],prices[i]-local_min);
+            local_min= min(local_min,prices[i]);
+            profit1[j] = max(profit1[j+1],local_max-prices[j]);
+            local_max = max(local_max,prices[j]);
+        }
+        for(int i = 1; i<size; i++)
+        {
+            result = max(result,profit[i]+profit1[i]);
+        }
+        return result;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Don&#x27;t need DP to solve it within O(n)
+Don't need DP to solve this problem. It is still O(n) and basically use the same algorithm solving "Stock I" four times. 
+
+1. Get the max profit with one transaction to the **full array**. Keep down the start and end positions.
+2. the start and end positions will be included in the result of two transaction. It falls into two categories:
+A) it is one full transaction, B) they belong to two separate transactions(start belongs to first transaction and end belongs to second transaction).
+
+3. if A)-- get max profit with one transaction to subarray from **0 to start** ; get max profit with one transaction to subarray from **end to prices.length**.
+
+4. if B)-- get the max profit with one transaction within ****start and end** in **reverse order****
+
+5. return the max profit in those cases.
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, one iteration (O(n) time), constant space, with explanation
+    public int maxProfit(int[] prices) {
+        int len = prices.length;
+        if(len <= 1) return 0;
+        int a, b, c, d;
+        d = Math.max(prices[len-1], prices[len-2]);
+        c = Math.max(prices[len-1] - prices[len-2], 0);
+        b = d;
+        a = c;
+        for(int i=len-3; i>=0; i--) {
+            a = Math.max(b - prices[i], a);
+            b = Math.max(prices[i] + c, b);
+            c = Math.max(d - prices[i], c);
+            d = Math.max(prices[i], d);
+        }
+        return a;
+    }
+
+d is the value in the case when you have made a transaction before and you have a share at hand, that's basically the max from i to len.
+
+c is the value in the case when you can make one transaction from days i to len. So c is updated only if you buy a share on that day and sell afterward.
+
+b is the value in the case when you have a share at hand, and you can make one more transaction. So if you sell it on day i, it's prices[i] + c, otherwise it doesn't change.
+
+a is the value in the case when you can make two transactions.
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(1) space -- very elegant solution with comments
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            vector<int> res(4, 0);
+            res[0] = INT_MIN;
+            res[2] = INT_MIN;
+            for(int i = 0; i < prices.size(); ++i) {
+                res[3] = max(res[3], res[2] + prices[i]);  // Transaction 2: sell
+                res[2] = max(res[2], res[1] - prices[i]);  // Transaction 2: buy
+                res[1] = max(res[1], res[0] + prices[i]);  // Transaction 1: sell
+                res[0] = max(res[0], -prices[i]);          // Transaction 1: buy
+            }
+            return max(res[1], res[3]);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear c++ solution
+    int maxProfit(vector<int>& prices) {
+        //It's wrong if you choose the minimum price for buy2 , but you can maximize the left money.
+        //
+        int buy1 = INT_MIN, sale1 = 0, buy2 = INT_MIN, sale2 = 0;
+        for(int i=0; i<prices.size(); i++){                      //the more money left, the happier you will be
+            buy1 = max(buy1, -prices[i]);                        //left money after buy1
+            sale1 = max(sale1, prices[i] + buy1);                //left money after sale1
+            buy2 = max(buy2, sale1 - prices[i]);                 //left money after buy2
+            sale2 = max(sale2, prices[i] + buy2);                //left money after sale2
+        }
+        return sale2;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand DP solution
+This problem seems not easy to implement quickly. 
+
+Where is the difficulty of the problem?  
+
+          forward[i] : record the max-profit of [0,i] , end at most at pos i
+          
+          backward[i] : record the max-profit of [i,len], start at most at pos i
+          
+Code:
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            if(prices.size()<=1)  return 0;
+            int len=prices.size();
+            
+            /** forward[i] : record the max-profit of [0,i] **/
+            vector<int> forward(len);
+            forward[0]=0;
+            int min_buy=prices[0];
+            for(int i=1; i<len; i++){
+                forward[i]=max(forward[i-1], prices[i]-min_buy);
+                min_buy=min(min_buy, prices[i]);
+            }
+            
+            /** backward[i] : record the max-profit of [i,len]**/
+            vector<int> backward(len);
+            backward[len-1]=0;
+            int max_sell=prices[len-1];
+            for(int i=len-2; i>=0; i--){
+                backward[i]=max(backward[i+1], max_sell-prices[i]);
+                max_sell=max(max_sell, prices[i]);
+            }
+            
+            /** when i=0, we get the max-profit of doing one transaction */
+            int result=0;
+            for(int i=0; i<len; i++){
+                result=max(result, forward[i]+backward[i]);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(n) time and O(n) space solution, intuative and easy to understand. CPP
+Idea is to find the best profit in the forward direction and in reverse direction.
+then we look for a point where max of forward part and max of reverse part meet.
+
+eg if given array is 1 2 4 2 5 7 2 4 9 0
+and forward will be 0 1 3 1 4 6 1 3 8 0
+reverse will be 8 7 5 7 4 2 7 5 0 0
+
+now we will find the cumulative max of both array in respective direction. 
+now forward will be 0 1 3 3 4 6 6 6 8 8 and reverse will be 8 7 7 7 7 7 7 5 0 0
+
+so now we have to find a place where forward[i]+reverse[i+1] is maximum to get the desire value..
+
+at last step we are taking care of the base cases like when only 2 elements are given in the array..
+
+
+ 
+
+     class Solution {
+        public:
+            int maxProfit(vector<int>& prices) {
+                if(prices.size()<=1) return 0;
+                int n=prices.size();
+                int lr[n];
+                int rl[n];
+                lr[0]=0;
+                rl[n-1]=0;
+                int minYet=prices[0];
+                int maxYet=prices[n-1];
+                for(int i=1;i<n;i++)
+                {
+                    if(prices[i]>minYet) lr[i]=prices[i]-minYet;
+                    else 
+                    {
+                        minYet=prices[i];
+                        lr[i]=0;
+                    }
+                }
+                for(int i=n-2;i>=0;i--)
+                {
+                    if(prices[i]<maxYet) rl[i]=maxYet-prices[i];
+                    else
+                    {
+                        maxYet=prices[i];
+                        rl[i]=0;
+                    }
+                }
+                maxYet=lr[0];
+                for(int i=1;i<n;i++)
+                {
+                    maxYet=max(maxYet,lr[i]);
+                    lr[i]=maxYet;
+                }
+                maxYet=rl[n-1];
+                for(int i=n-2;i>=0;i--)
+                {
+                    maxYet=max(maxYet,rl[i]);
+                    rl[i]=maxYet;
+                }
+                int res=0;
+                for(int i=0;i<n-1;i++)
+                {
+                    res=max(res,lr[i]+rl[i+1]);
+                }
+                if(lr[n-1]>res) res=lr[n-1];
+                if(res<rl[0]) res=rl[0];
+                return res;
+                
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Any solutions better than O(n^2)
+My idea:
+
+ **1)** Find all valley and peek pairs (buy at valley point and sell at peek point) . ( in O(n) time)
+
+> input: 6 1 3 2 4 7  6  10 15
+
+> output of this step: (1, 3), (2,7), (6, 15)
+
+ **2)** Find the split point that maximize profit, since we can complete at most two transactions. (in O(m^2), m is the number of pairs generated in step 1)
+
+> total_profit = 0
+
+> for i =0 to m-1:
+
+>      first transaction complete before pair[i] ( include pair[i])
+>         compute max profit of the first transaction in O(i)
+>      second transaction complete after pair[i] (exclude pair[i])
+>         compute max profit of the second transaction in O(m-i)
+>      total_profit = max( total_profit, first + second)
+
+my accepted code:
+
+    int maxProfit(vector<int> &prices) {
+            // step 1, find pairs
+            vector<int> lows;  // local low points
+            vector<int> highs; // local peek points
+            
+            int n = prices.size();
+            int i = 0;
+            while(i < n) {
+                while(i+1<n && prices[i+1] <= prices[i]) ++i;
+                lows.push_back(prices[i]);
+                
+                while(i+1<n && prices[i+1] >= prices[i]) ++i;
+                highs.push_back(prices[i]);
+                
+                ++i;
+            }
+            
+            // step 2: split
+            int total_profit = 0;
+            n = lows.size();
+            for (i = 0; i < n; ++i) {
+                int j = 0;
+                int low = INT_MAX;
+                int high = 0;
+                int first = 0;   // max profit of the first transaction
+                int second = 0;  // max profit of the second transaction
+                while (j <= i) {
+                    low = min(low, lows[j]);
+                    high = highs[j];
+                    first = max(first, high-low);
+                    ++j;
+                }
+                
+                low = INT_MAX;
+                high = 0;
+                j = i+1;
+                while (j < n) {
+                    low = min(low, lows[j]);
+                    high = highs[j];
+                    second = max(second, high - low);
+                    ++j;
+                }
+                total_profit = max(total_profit, first + second);
+            }
+            
+            return total_profit;
+        }
+
+
+**I think there are better solutions, but I haven't got it - -
+Anybody has one to share ?**
+
+----------------------------------------------------------------------------------------------------
+Why don&#x27;t we make our life easier
+The idea is very basic. At most two transactions means we can break at any time point and compute the max revenue before this time point and after this time point. For every possible time point, we choose the maximum.
+
+Note that right_max start from the last time point, which is just like a mirror algorithm from the Best Time to Buy and Sell Stock I
+
+    int maxProfit(vector<int>& prices) {
+        vector<int> left_max;
+        vector<int> right_max;
+        int n = prices.size();
+        if(n == 0){
+            return 0;
+        }
+        int cur_min = prices[0];
+        int max_r = 0;
+        for(int i = 0; i < n; i++){
+            max_r = max(max_r, prices[i] - cur_min);
+            left_max.push_back(max_r);
+            cur_min = min(cur_min, prices[i]);
+        }
+        int cur_max = prices[n-1];
+        max_r = 0;
+        for(int i = n-1; i >= 0; i--){
+            max_r = max(max_r, cur_max - prices[i]);
+            right_max.insert(right_max.begin(), max_r);
+            cur_max = max(cur_max, prices[i]);
+        }
+        int sum_max = 0;
+        for(int i = 0; i < n; i++){
+            sum_max = max(sum_max, left_max[i] + right_max[i]);
+        }
+        return sum_max;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ DP Solution, 12ms, with explanation and example
+    class Solution {
+    public:
+     int maxProfit(vector<int>& prices) {
+        if(prices.size()<=1) return 0;
+        int *dpLeft = new int[prices.size()+1]; dpLeft[0] = 0;
+        int tmp = prices[0];
+        for(int i = 1; i<prices.size(); i++){
+            tmp = min(tmp, prices[i]);
+            dpLeft[i] = max(dpLeft[i-1], prices[i]-tmp);
+        }
+        int *dpRight = new int[prices.size()]; dpRight[prices.size()-1] = 0;
+        tmp = prices[prices.size()-1];
+        for(int i = prices.size()-2; i>=0; i--){
+            tmp = max(tmp, prices[i]);
+            dpRight[i] = max(dpRight[i+1], tmp-prices[i]);
+        }
+        tmp = 0;
+        for(int i = 0; i<prices.size()-1; i++){
+            tmp = max(tmp, dpLeft[i]+dpRight[i+1]);
+        }
+        tmp = max(tmp, dpLeft[prices.size()-1]);
+        return tmp;
+    }
+    };
+
+
+ - We can combine DP solution and Divide And Conquer Solution here. I will explain this with a simple example.Assume the stock is: 5,4,6,3,4,2,1,6. It is easy to understand that the max profit is 2(6-4)+5(6-1)=7.
+ - here, I use two array to cache profit, dpLeft and dpRight.
+ - dpLeft: cache the profit from left to right, the stock [5,4,6,3,4,2,1,6] generate dpLeft:[0,0,2,2,2,2,2,5]
+ - dpRight: cache the profit from right to left,  stock [5,4,6,3,4,2,1,6] generate dpRight:[5,5,5,5,5,5,5,0]
+ - then, we use divide and conquer, the stock[5,4,6,3,4,2,1,6] , we compute profit from i = 0 to i = 7, and the maxProfit = max(maxProfit, dpLeft[i]+dpRight[i+1])
+ - finally, we finish this computation, the result is 7. the complexity is O(3n)=O(n)
+
+----------------------------------------------------------------------------------------------------
+Python DP solution, 120ms
+Two passes through the list, O(n) time, O(n) space:
+
+     
+    def maxProfit(self, prices):
+        if not prices:
+            return 0
+        
+        # forward traversal, profits record the max profit 
+        # by the ith day, this is the first transaction
+        profits = []
+        max_profit = 0
+        current_min = prices[0]
+        for price in prices:
+            current_min = min(current_min, price)
+            max_profit = max(max_profit, price - current_min)
+            profits.append(max_profit)
+        
+        # backward traversal, max_profit records the max profit
+        # after the ith day, this is the second transaction 
+        total_max = 0    
+        max_profit = 0
+        current_max = prices[-1]
+        for i in range(len(prices) - 1, -1, -1):
+            current_max = max(current_max, prices[i])
+            max_profit = max(max_profit, current_max - prices[i])
+            total_max = max(total_max, max_profit + profits[i])
+            
+        return total_max
+
+----------------------------------------------------------------------------------------------------
+Solution sharing, commented code ---- O(n) time and O(n) space
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            if (prices.length < 2) return 0;//one of zero days, cannot sell
+            // break the problem in to subproblems, what is the max profit if i decide to buy and sell one stock on or before day i
+            // and the other stock after day i
+            
+            int[] left = new int[prices.length];//store the max profit so far for day [0,i] for i from 0 to n
+            int[] right = new int[prices.length];//store the max profit so far for the days [i,n] for i from 0 to n
+            int minl,maxprofit,maxr,profit;
+            maxprofit = 0;//lower bound on profit
+            minl = Integer.MAX_VALUE;//minimum price so far for populating left array
+            for(int i = 0; i < left.length; i++){
+                if (prices[i] < minl) minl = prices[i];//check if this price is the minimum price so far
+                profit = prices[i] - minl;//get the profit of selling at current price having bought at min price so far
+                if (profit > maxprofit) maxprofit = profit;//if the profit is greater than the profit so far, update the max profit
+                left[i] = maxprofit;
+            }
+            maxprofit = 0;//reset maxprofit to its lower bound
+            maxr = Integer.MIN_VALUE;//maximum price so far for populating the right array
+            //same line of reasoning as the above
+            for(int i = left.length - 1; i >= 0; i--){
+                if (prices[i] > maxr) maxr = prices[i];
+                profit = maxr - prices[i];
+                if (profit > maxprofit) maxprofit = profit;
+                right[i] = maxprofit;
+            }
+            //get the best by combining the subproblems as described above
+            int best = 0;
+            for(int i = 0; i < prices.length - 1; i++){
+                if (left[i] + right[i+1] > best) best = left[i] + right[i+1];
+            }
+            best = best > maxprofit ? best : maxprofit;
+            // in total 3 passes required and 2 extra arrays of size n
+            return best;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,467 @@
+I DON&#x27;T THINK THERE IS A BETTER PERSON THAN ME TO ANSWER THIS QUESTION
+public class Solution {
+    public int leastBricks(List<List<Integer>> wall) {
+        if(wall.size() == 0) return 0;
+        int count = 0;
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for(List<Integer> list : wall){
+            int length = 0;
+            for(int i = 0; i < list.size() - 1; i++){
+                length += list.get(i);
+                map.put(length, map.getOrDefault(length, 0) + 1);
+                count = Math.max(count, map.get(length));
+            }
+        }
+        return wall.size() - count;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ 6 lines (hash map)
+int leastBricks(vector<vector<int>>& wall) {
+    unordered_map<int, int> edges;
+    auto min_bricks = wall.size();
+    for (auto row : wall)
+        for (auto i = 0, width = 0; i < row.size() - 1; ++i) // skip last brick
+            min_bricks = min(min_bricks, wall.size() - (++edges[width += row[i]]));
+    return min_bricks;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Neat Java Solution O(n) using hashmap
+public class Solution {
+    public int leastBricks(List < List < Integer >> wall) {
+        HashMap < Integer, Integer > map = new HashMap < > ();
+        for (List < Integer > row: wall) {
+            int sum = 0;
+            for (int i = 0; i < row.size() - 1; i++) {
+                sum += row.get(i);
+                if (map.containsKey(sum))
+                    map.put(sum, map.get(sum) + 1);
+                else
+                    map.put(sum, 1);
+            }
+        }
+        int res = wall.size();
+        for (int key: map.keySet())
+            res = Math.min(res, wall.size() - map.get(key));
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Verbose Java Solution, PriorityQueue
+public class Solution {
+    public int leastBricks(List<List<Integer>> wall) {
+        int R = wall.size(), min = R;
+        if (R == 1 && wall.get(0).size() > 1) return 0;
+        
+        // [0: end, 1: row, 2: col]
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> (a[0] - b[0]));
+        
+        for (int i = 0; i < R; i++) {
+            pq.add(new int[] {wall.get(i).get(0), i, 0});
+        }
+        
+        while (!pq.isEmpty()) {
+            int end = pq.peek()[0], count = 0;
+            
+            while (!pq.isEmpty() && pq.peek()[0] == end) {
+                count++;
+                int[] brick = pq.poll();
+                if (brick[2] < wall.get(brick[1]).size() - 1) {
+                    pq.add(new int[] {end + wall.get(brick[1]).get(brick[2] + 1), brick[1], brick[2] + 1});
+                }
+            }
+            
+            if (!pq.isEmpty()) {
+                min = Math.min(min, R - count);
+            }
+        }
+        
+        return min;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clear Python Solution
+class Solution(object):
+    def leastBricks(self, wall):
+        """
+        :type wall: List[List[int]]
+        :rtype: int
+        """
+        d = collections.defaultdict(int)
+        for line in wall:
+            i = 0
+            for brick in line[:-1]:
+                i += brick
+                d[i] += 1
+        # print len(wall), d
+        return len(wall)-max(d.values()+[0])
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code
+public class Solution {
+    public int leastBricks(List<List<Integer>> wall) {
+        Map<Integer, Integer> ends = new HashMap<Integer, Integer>();
+        int maxend = 0;
+        for (int i = 0; i < wall.size(); i++) {
+            int sum = 0;
+            for (int j = 0; j + 1 < wall.get(i).size(); j++) {
+                sum += wall.get(i).get(j);
+                ends.put(sum, ends.getOrDefault(sum, 0) + 1);
+                maxend = Math.max(maxend, ends.get(sum));
+            }
+        }
+
+        return wall.size() - maxend;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Python with dictionary
+class Solution(object):
+    def leastBricks(self, wall):
+        spaceMap = dict()
+        for row in wall:
+            spacelen = 0
+            for brick in row[:-1]: # avoid counting wall edge
+                spacelen += brick
+                if spacelen not in spaceMap:
+                    spaceMap[spacelen] = 1
+                else:
+                    spaceMap[spacelen] += 1
+        least = len(wall) - max(spaceMap.values())
+        return least
+
+
+----------------------------------------------------------------------------------------------------
+my java solution!
+public class Solution {
+    public int leastBricks(List<List<Integer>> wall) {
+        if(wall==null || wall.size()<1) return 0;
+        
+        
+        Map<Integer,Integer> map=new HashMap<>();
+        
+        int max=Integer.MIN_VALUE;
+        
+        for(int i=0;i<wall.size();i++){
+            int wid=0;
+            for(int j=0;j<wall.get(i).size()-1;j++){
+                 wid+=wall.get(i).get(j);
+                 map.put(wid,map.getOrDefault(wid,0)+1);
+            }
+        }
+        
+        for(Integer key:map.keySet()){
+            max=Math.max(max,map.get(key));
+        }
+        return max==Integer.MIN_VALUE?wall.size():wall.size()-max;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Golang solution using map to count each border of brick
+func leastBricks(wall [][]int) int {
+    wlen := len(wall)
+    
+    // get the width of row
+    width := 0
+    for i := 0; i < len(wall[0]); i++ {
+        width += wall[0][i]
+    }
+    
+    // store count of borders per index in map
+    edgeMap := make(map[int]int)
+    
+    min := wlen
+    for i := 0; i < wlen; i++ {
+        w := wall[i]
+        
+        x := 0
+        for j := 0; j < len(w); j++ {
+            x += w[j]
+            if x == width {
+                break
+            }
+            
+            var bricks int
+            if cnt, ok := edgeMap[x]; ok {
+                edgeMap[x] = cnt + 1
+                bricks = wlen - edgeMap[x]
+            } else {
+                edgeMap[x] = 1
+                bricks = wlen - 1
+            }
+            
+            if bricks < min {
+                min = bricks
+            }
+        }
+    }
+    return min
+}
+
+
+----------------------------------------------------------------------------------------------------
+JAVA hashmap with explanation
+public class Solution {
+    public int leastBricks(List<List<Integer>> wall) {
+        int row = wall.size();
+        if (row == 0)   return 0;
+        else{
+            int col = wall.get(0).size();
+            if (col == 0)   return 0;
+            else{
+                HashMap<Integer, Integer> map = new HashMap<>();
+                for(int i = 0; i < row; i++){
+                    int width = 0;
+                    for(int j = 0; j < wall.get(i).size() - 1; j++){
+                        width+=wall.get(i).get(j);
+                        if (map.containsKey(width) ){
+                            map.put(width, map.get(width) + 1);
+                        }
+                        else
+                            map.put(width, 1);
+                    }
+                }
+                int max = 0;
+                for(int key : map.keySet()){
+                    max = Math.max(max, map.get(key));
+                }
+                return row - max;
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Draw a line through the most common sum
+public int leastBricks(List<List<Integer>> wall) {
+        int max = Integer.MIN_VALUE;
+        int sum = 0;        
+        Map<Integer, Integer> map = new HashMap<>();
+        for(List<Integer> l : wall) {
+            sum = 0;
+            l.remove(l.size()-1);
+            for(int i : l) {
+                sum += i;
+                map.put(sum, map.getOrDefault(sum,0)+1);
+                max = Math.max(max, map.get(sum));
+            }
+        }
+        return (max==Integer.MIN_VALUE)?wall.size():wall.size()-max;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with dict
+        if not wall or not wall[0]:
+            return 0
+        h,w = len(wall),len(wall[0])
+        dic = {}
+        for i in xrange (h):
+            cnt = 0
+            for num in wall[i]:
+                cnt += num
+                dic[cnt] = dic.get(cnt,0) + 1
+        del dic[sum(wall[0])]
+        if not dic.values():
+            return h
+        return h - max(dic.values())
+
+
+----------------------------------------------------------------------------------------------------
+6-liner C++ Hash Map to count frequency of partial sums
+    int leastBricks(vector<vector<int>>& wall) {
+        unordered_map<int, int> edgeCount;
+        int maxEdgeCount = 0;
+        for (auto& row : wall)
+            for (int i = 0, sum = 0; i < row.size()-1; ++i)
+                maxEdgeCount = max(maxEdgeCount, ++edgeCount[sum += row[i]]);
+
+        return wall.size() - maxEdgeCount;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ unordered_map
+class Solution {
+public:
+    int leastBricks(vector<vector<int>>& wall) {
+        unordered_map<int, int> edges;
+        int width = 0;
+        for (auto &w:wall) {
+            int indx = 0;
+            for (int i:w) {
+                ++edges[indx+=i];
+            }
+            if (!width) width = indx;
+        }
+        edges.erase(width);
+        int throughs = 0;
+        for (auto &p:edges) {
+            rst = max(throughs, p.second);
+        }
+        return wall.size() - size_t(throughs);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ solution using hash table
+class Solution {
+public:
+    int leastBricks(vector<vector<int>>& wall) {
+        int height = wall.size();
+        if (height == 0) return 0;
+    
+        int max_width = 0;
+        unordered_map<int, int> width_cnt_map;
+    
+        for (int h=0; h<height; h++) {
+            calcAccuWidth(wall[h], max_width, width_cnt_map);
+        }
+    
+       int max_match = 0;
+       for (auto it = width_cnt_map.begin(); it != width_cnt_map.end(); it ++) {
+           if (it->first != max_width) {
+               max_match = max(max_match, it->second);
+           }
+       }
+       return (height - max_match);
+   }
+    
+   void calcAccuWidth(vector<int> v, int &max_width, unordered_map<int, int> &width_cnt_map) {
+       int sum = 0;
+       if(v.size()==0) return;
+    
+       for (int i=0; i<v.size(); i++) {
+           sum += v[i];
+           width_cnt_map[sum] ++;
+           max_width = max(max_width, sum);
+       } 
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My Short and Neat Java Solution - Using HashMap
+public int leastBricks(List<List<Integer>> wall) {
+	Map<Integer, Integer> map = new HashMap<>();
+	for (List<Integer> row : wall) {
+		int sum = 0;
+		for (int i = 0; i < row.size() - 1; i++) {
+			sum += row.get(i);
+			map.put(sum, map.getOrDefault(sum, 0) + 1);
+		}
+	}
+	int max = 0;
+	for (int i : map.keySet()) {
+		max = Math.max(max, map.get(i));
+	}
+	return wall.size() - max;        
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Unordered_map, Beats 100%
+public:
+    int leastBricks(vector<vector<int>>& wall) {
+        unordered_map<int,int>hash;
+        
+        for(int i=0; i<wall.size();i++)
+        {
+            int temp=0;
+            for(int j=0; j<wall[i].size()-1;j++)
+            {
+                temp+=wall[i][j];
+                hash[temp]++;
+            }
+            temp=0;
+        }
+        int max=0;
+        for(auto it=hash.begin(); it!=hash.end();it++)
+        {
+            if(it->second>max)
+                max=it->second;
+        }
+        return wall.size()-max;
+        
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+straightforward c++ solution, 39ms, beat 80%
+class Solution {
+public:
+    int leastBricks(vector<vector<int>>& wall) {
+        //add each layer to get the x position and count the max one!
+        unordered_map<int,int> mp;
+        for(int i=0;i<wall.size();i++)
+        {
+            int x=0;
+            for(int j=0;j<wall[i].size()-1;j++) //note the last one cannot be accounted
+            {
+                x+=wall[i][j];
+                mp[x]++;
+            }
+        }
+        //find the max
+        int maxlen=0;
+        for(auto it=mp.begin();it!=mp.end();it++) if(maxlen<it->second) maxlen=it->second;
+        return wall.size()-maxlen;
+        
+        
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ hash table easy to understand
+class Solution {
+public:
+    int leastBricks(vector<vector<int>>& wall) {
+        if(wall.size() == 0 || wall[0].size() == 0) return 0;
+        unordered_map<int, int>m;
+        for(auto x: wall){
+            int len = 0;
+            for(int i = 0; i < x.size() - 1; i++){
+                len += x[i];
+                m[len]++;
+            }
+        }
+        int n = wall.size();
+        int res = n;
+        for(auto x: m) res = min(res, n - x.second);
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python, with simple explanation
+class Solution(object):
+    def leastBricks(self, wall):
+        """
+        :type wall: List[List[int]]
+        :rtype: int
+        """
+        if len(wall)==0: return -1
+        Counter,cumSum=collections.defaultdict(int),[0]*len(wall)
+        for i in range(0,len(wall)):
+            for y in wall[i]:
+                cumSum[i]+=y
+                Counter[cumSum[i]]+=1
+        Counter[cumSum[0]]=0
+        return len(wall)-max(Counter.values())
+
+
+----------------------------------------------------------------------------------------------------

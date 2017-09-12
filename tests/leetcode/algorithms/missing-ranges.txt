@@ -1,0 +1,470 @@
+Short and easy to understand solution
+    public class Solution {
+        public double pow(double x, int n) {
+            if(n == 0)
+                return 1;
+            if(n<0){
+                n = -n;
+                x = 1/x;
+            }
+            return (n%2 == 0) ? pow(x*x, n/2) : x*pow(x*x, n/2);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+5 different choices when talk with interviewers
+After reading some good sharing solutions, I'd like to show them together. You can see different ideas in the code.
+1. nest myPow
+----------
+
+    double myPow(double x, int n) {
+        if(n<0) return 1/x * myPow(1/x, -(n+1));
+        if(n==0) return 1;
+        if(n==2) return x*x;
+        if(n%2==0) return myPow( myPow(x, n/2), 2);
+        else return x*myPow( myPow(x, n/2), 2);
+    }
+
+2. double myPow
+---------------
+
+    double myPow(double x, int n) { 
+        if(n==0) return 1;
+        double t = myPow(x,n/2);
+        if(n%2) return n<0 ? 1/x*t*t : x*t*t;
+        else return t*t;
+    }
+
+3. double x
+---------------
+
+    double myPow(double x, int n) { 
+        if(n==0) return 1;
+        if(n<0){
+            n = -n;
+            x = 1/x;
+        }
+        return n%2==0 ? myPow(x*x, n/2) : x*myPow(x*x, n/2);
+    }
+
+
+4. iterative one
+----------------
+
+    double myPow(double x, int n) { 
+        if(n==0) return 1;
+        if(n<0) {
+            n = -n;
+            x = 1/x;
+        }
+        double ans = 1;
+        while(n>0){
+            if(n&1) ans *= x;
+            x *= x;
+            n >>= 1;
+        }
+        return ans;
+    }
+
+5. bit operation
+---------------
+see this [solution][1]
+
+If you have other ideas, please leave it below. Thanks.
+
+  [1]: https://leetcode.com/discuss/12004/my-answer-using-bit-operation-c-implementation
+
+----------------------------------------------------------------------------------------------------
+Iterative Log(N) solution with Clear Explanation
+I couldn't find a clear explanation for an interative Log(n) solution so here's mine.  The basic idea is to decompose the exponent into powers of 2, so that you can keep dividing the problem in half.  For example, lets say 
+
+N = 9 = 2^3 + 2^0 = 1001 in binary. Then:
+
+x^9 = x^(2^3) * x^(2^0)
+
+We can see that every time we encounter a 1 in the binary representation of N, we need to multiply the answer with x^(2^i) where **i** is the **ith** bit of the exponent.  Thus, we can keep a running total of repeatedly squaring x - (x, x^2, x^4, x^8, etc) and multiply it by the answer when we see a 1.  
+
+To handle the case where N=INTEGER_MIN we use a long (64-bit) variable.  Below is solution:
+
+    public class Solution {
+        public double MyPow(double x, int n) {
+            double ans = 1;
+            long absN = Math.Abs((long)n);
+            while(absN > 0) {
+                if((absN&1)==1) ans *= x;
+                absN >>= 1;
+                x *= x;
+            }
+            return n < 0 ?  1/ans : ans;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O (logn) solution in Java
+/* This is a simple solution based on divide and conquer */   
+
+     public class Solution {
+            public double pow(double x, int m) {
+                double temp=x;
+                if(m==0)
+                return 1;
+                temp=pow(x,m/2);
+                if(m%2==0)
+                return temp*temp;
+                else 
+                {
+                if(m > 0)
+                    return x*temp*temp;
+                else
+                    return (temp*temp)/x;
+                }
+              
+        }
+
+----------------------------------------------------------------------------------------------------
+Non-recursive C++ log(n) solution
+    class Solution {
+    public:
+        double myPow(double x, int n) {
+        	double ans = 1;
+        	unsigned long long p;
+        	if (n < 0) {
+        		p = -n;
+        		x = 1 / x;
+        	} else {
+        		p = n;
+        	}
+    		while (p) {
+    			if (p & 1)
+    				ans *= x;
+    			x *= x;
+    			p >>= 1;
+    		}
+    		return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Shortest Python - Guaranteed
+[Surprisingly](http://stackoverflow.com/questions/30693639/why-does-class-x-mypow-pow-work-what-about-self), I can just use Python's existing `pow` like this:
+
+    class Solution:
+        myPow = pow
+
+That's even shorter than the other more obvious "cheat":
+
+    class Solution:
+        def myPow(self, x, n):
+            return x ** n
+
+And to calm down the haters, here's me *"doing it myself"*:
+
+Recursive:
+
+    class Solution:
+        def myPow(self, x, n):
+            if not n:
+                return 1
+            if n < 0:
+                return 1 / self.myPow(x, -n)
+            if n % 2:
+                return x * self.myPow(x, n-1)
+            return self.myPow(x*x, n/2)
+
+Iterative:
+
+    class Solution:
+        def myPow(self, x, n):
+            if n < 0:
+                x = 1 / x
+                n = -n
+            pow = 1
+            while n:
+                if n & 1:
+                    pow *= x
+                x *= x
+                n >>= 1
+            return pow
+
+----------------------------------------------------------------------------------------------------
+8 lines of c++ &#x2F; 7 ms
+       double pow(double x, int n) {
+            if (n==0) return 1;
+            double t = pow(x,n/2);
+            if (n%2) {
+                return n<0 ? 1/x*t*t : x*t*t;
+            } else {
+                return t*t;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My answer using bit operation (C++ implementation)
+    class Solution {
+    public:
+        double pow(double x, int n) {
+        	if(n<0){
+        		x = 1.0/x;
+        		n = -n;
+        	}
+        	int unsigned m = n;
+            double tbl[32] = {0};
+            double result = 1;
+            tbl[0] = x;
+            for(int i=1;i<32;i++){
+                tbl[i] = tbl[i-1]*tbl[i-1];
+            }
+            for(int i=0;i<32;i++){
+                if( m & (0x1<<i) )
+                result *= tbl[i];
+            }
+            return result;
+        }
+    };
+
+
+In bit format and for a unsigned number, the number is represented as `k0*2^0 + k1*2^1 + ... +k31*2^31`. Therefore, once we know the pow(x,2^0), pow(x,2^1), ..., pow(x,2^31), we can get pow(x,n). And pow(x,2^m) can be constructed easily as pow(x,2^m) = pow(x,2^(m-1)*pow(x,2^(m-1).
+
+----------------------------------------------------------------------------------------------------
+Simple iterative lg n solution
+The idea is similar to the recursive version.
+
+    double pow(double x, int n) {
+        double d = 1.; int m = n;
+        for (; n; x *= x, n /= 2) if (n % 2) d *= x;
+        return m >= 0 ? d : 1. / d;
+    }
+
+----------------------------------------------------------------------------------------------------
+Lg(n)  320ms JavaSolution (9 lines)
+// main code is the the last line. 
+
+
+public class Solution {
+    public double pow(double x, int n) {
+
+        if (x == 0) return 0; 
+        if (x == 1) return 1;
+        if (n == 0) return 1; 
+        if (n == 1) return x;
+        if (x == -1) return (n % 2) == 0 ? 1 : -1; 
+        if (n < 0 ) return 1/ pow (x, -n);
+        if (n == 2) return x * x;
+        
+        int halfPow = n/2; 
+
+        return pow(pow(x,halfPow),2) * pow(x, n%2); 
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Iterative Java&#x2F;Python short solution O(log n)
+**Java**
+
+    public double myPow(double x, int n) {
+        long m = n > 0 ? n : -(long)n;
+        double ans = 1.0;
+        while (m != 0) {
+            if ((m & 1) == 1)
+                ans *= x;
+            x *= x;
+            m >>= 1;
+        }
+        return n >= 0 ? ans : 1 / ans;
+    }
+    //299 / 299 test cases passed.
+    //Status: Accepted
+    //Runtime: 1 ms
+
+**Python**
+
+    def myPow(self, x, n):
+        m = abs(n)
+        ans = 1.0
+        while m:
+            if m & 1:
+                ans *= x
+            x *= x
+            m >>= 1
+        return ans if n >= 0 else 1 / ans
+
+
+    # 299 / 299 test cases passed.
+    # Status: Accepted
+    # Runtime: 44 ms
+
+----------------------------------------------------------------------------------------------------
+My answer bit operation O(1)
+    class Solution {
+    public:
+        double pow(double x, int n) {
+            double res=1;
+             if(n<0){
+                x=1/x;
+                n=-n;
+            }
+            while(n>0){
+                if(n&1==1){
+                    res=res*x;
+                }
+                x*=x;
+                n=n>>1;
+            }
+            return res;
+        }
+    };
+   
+
+----------------------------------------------------------------------------------------------------
+C++ 4 lines of code
+    double myPow(double x, int n) {
+        if (n==0) return 1;
+        if (n==1) return x;
+        if (n==-1) return 1/x;
+        return myPow(x*x,n/2)*(n%2==0?1:n>0?x:1/x);
+    }
+
+----------------------------------------------------------------------------------------------------
+Iterative C++ solution
+    class Solution {
+    public:
+    double pow(double x, int n) {
+        if(n < 0)
+            return 1/power(x, -n);
+        else 
+            return power(x, n);
+    }
+    
+    double power(double x, int n) {
+        double result = 1;
+        while(n>0)
+        {
+            if(n&0x01)
+                result *= x;
+            x *= x;
+            n = n >> 1;
+        }
+        
+        return result;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+1ms 4 Lines Java Solution O(1)
+    double ans= 1;
+     for(long i = Math.abs((long)n); i > 0; i = i >> 1, x *=x) 
+          if((i & 1) == 1) ans *= x;
+     return n > 0 ? ans : 1/ans;
+
+----------------------------------------------------------------------------------------------------
+My solution in java using divide and conquer
+    public class Solution {
+        public double myPow(double x, int n) {
+            double res=1;
+            while(n!=0)
+            {
+                if(n%2==0)
+                {
+                    
+                    x=x*x;
+                    n/=2;
+                }
+                else
+                {
+                    if(n>0)
+                    {
+                        res*=x;
+                        n--;
+                    }
+                    else
+                    {
+                        res/=x;
+                        n++;
+                    }
+                }
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+5 lines ,Python recursive solution
+    class Solution(object):
+    def myPow(self, x, n):
+        if n == 0: 
+            return 1
+        if n == -1: 
+            return 1 / x
+        return self.myPow(x * x, n / 2) * ([1, x][n % 2])  
+
+----------------------------------------------------------------------------------------------------
+Share my accepted python solution, (russian
+I guess, this is easy to understand, the time complex is O(log(n)), this is a fast implementation.
+
+
+
+
+    class Solution:
+    # @param x, a float
+    # @param n, a integer
+    # @return a float
+    def pow(self, x, n):
+        if(n==0):
+            return 1;
+        elif(n==1):
+            return x;
+        if(n<0):
+            return self.pow(1/x,-n);
+        else:
+            if(n%2==0):
+                return self.pow(x*x,n/2);
+            else:
+                return self.pow(x*x,(n-1)/2)*x;
+
+----------------------------------------------------------------------------------------------------
+Simple java solution with explanation, use binary search
+
+    public double myPow(double x, int n) {
+        // special case
+        if (x == 0 || x == 1 || n == 1) {return x;}
+        else if (n == 0) {return 1;}
+        // negative result
+        if (x < 0 && n % 2 != 0) {return -myPow(-x, n);}
+        else if (x < 0 && n % 2 == 0) {return myPow(-x, n);}
+        // fractor result
+        if (n < 0) {return 1/myPow(x, -n);}
+        // main calculation
+        return helper(x, n);
+    }
+    private double helper(double x, int n) {
+        // precondition: x > 0 && n > 0
+        if (n == 1) {return x;}
+        return (((n % 2) == 0)? helper(x*x, n/2): (helper(x*x, n/2)*x));
+    }
+
+
+----------
+my idea is:
+1. firstly, consider all special case and try to make the input x and n as positive number
+2. use the idea of binary search. it will decrease the n. Even though the x will increase, the total amount of calculation still decreases.
+
+----------------------------------------------------------------------------------------------------
+Simple c++ solution using 2^k-ary
+    class Solution {
+    public:
+        double myPow(double x, int n) {
+            double ret = 1;
+            if (n < 0){
+                n *= -1;
+                x = 1 / x;
+            }
+            while (n > 0){
+                if (n & 1) ret *= x;
+                x = x * x;
+                n >>= 1;
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

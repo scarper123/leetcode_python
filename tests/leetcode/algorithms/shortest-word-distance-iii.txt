@@ -1,0 +1,379 @@
+A simple accepted solution
+    void connect(TreeLinkNode *root) {
+        if (root == NULL) return;
+        TreeLinkNode *pre = root;
+        TreeLinkNode *cur = NULL;
+        while(pre->left) {
+            cur = pre;
+            while(cur) {
+                cur->left->next = cur->right;
+                if(cur->next) cur->right->next = cur->next->left;
+                cur = cur->next;
+            }
+            pre = pre->left;
+        }
+    }
+you need two additional pointer.
+
+----------------------------------------------------------------------------------------------------
+Java solution with O(1) memory+ O(n) time
+
+
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            TreeLinkNode level_start=root;
+            while(level_start!=null){
+                TreeLinkNode cur=level_start;
+                while(cur!=null){
+                    if(cur.left!=null) cur.left.next=cur.right;
+                    if(cur.right!=null && cur.next!=null) cur.right.next=cur.next.left;
+                    
+                    cur=cur.next;
+                }
+                level_start=level_start.left;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My recursive solution(Java)
+
+    public void connect(TreeLinkNode root) {
+        if(root == null)
+            return;
+            
+        if(root.left != null){
+            root.left.next = root.right;
+            if(root.next != null)
+                root.right.next = root.next.left;
+        }
+        
+        connect(root.left);
+        connect(root.right);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My simple non-iterative C++ code with O(1) memory
+    void connect(TreeLinkNode *root) {
+        if(!root)
+            return;
+        while(root -> left)
+        {
+            TreeLinkNode *p = root;
+            while(p)
+            {
+                p -> left -> next = p -> right;
+                if(p -> next)
+                    p -> right -> next = p -> next -> left;
+                p = p -> next;
+            }
+            root = root -> left;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Hint for O(1) space
+If you don't want a solution for O(1) space but just a hint, here it is: you need to make use of the *next* links that you're creating.
+
+----------------------------------------------------------------------------------------------------
+7 lines, iterative, real O(1) space
+Simply do it level by level, using the `next`-pointers of the current level to go through the current level and set the `next`-pointers of the next level.
+
+I say "real" O(1) space because of the many recursive solutions ignoring that recursion management needs space.
+
+    def connect(self, root):
+        while root and root.left:
+            next = root.left
+            while root:
+                root.left.next = root.right
+                root.right.next = root.next and root.next.left
+                root = root.next
+            root = next
+
+
+----------------------------------------------------------------------------------------------------
+Java solution traversing by level without extra space
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            if(root==null) return;
+            TreeLinkNode cur = root;
+            TreeLinkNode nextLeftmost = null;
+
+            while(cur.left!=null){
+                nextLeftmost = cur.left; // save the start of next level
+                while(cur!=null){
+                    cur.left.next=cur.right;
+                    cur.right.next = cur.next==null? null : cur.next.left;
+                    cur=cur.next;
+                }
+                cur=nextLeftmost;  // point to next level 
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+24ms Easy Iterative and Recursive C++ Solutions
+The idea is similar to a level-order traversal and remember to take full advantages of the prefect binary tree assumption in the problem statement.
+
+The code (iterative solution) is as follows.
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            TreeLinkNode* pre = root;
+            TreeLinkNode* cur = NULL;
+            while (pre) {
+                cur = pre;
+                while (cur && cur -> left) { 
+                    cur -> left -> next = cur -> right;
+                    if (cur -> next)
+                        cur -> right -> next = cur -> next -> left;
+                    cur = cur -> next;
+                }
+                pre = pre -> left;
+            }
+        } 
+    };
+
+This problem can also be solved recursively.
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            if (!root) return;
+            if (root -> left) {
+                root -> left -> next = root -> right;
+                if (root -> next)
+                    root -> right -> next = root -> next -> left;
+            }
+            connect(root -> left);
+            connect(root -> right);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+&quot;You may only use constant extra space.&quot; - So does it mean we cannot use recursion?
+Does anyone have an iteration method with constant space solution?
+
+----------------------------------------------------------------------------------------------------
+Python accepted code
+    def connect(self, root):
+        if not root: return
+        while root.left:
+            cur = root.left
+            prev = None
+            while root:
+                if prev: prev.next = root.left
+                root.left.next = root.right
+                prev = root.right
+                root = root.next
+            root = cur
+
+----------------------------------------------------------------------------------------------------
+An iterative java solution
+    public void connect(TreeLinkNode root) {
+        
+        TreeLinkNode n = root;
+        
+        while(n != null && n.left != null) {
+            TreeLinkNode pre = null;
+            
+            for(TreeLinkNode p = n; p != null; p = p.next) {
+                if(pre != null) pre.next = p.left;
+                p.left.next = p.right;
+                pre = p.right;
+            }
+            n = n.left;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple recursive Java solution O(1) space O(n) time
+    public void connect(TreeLinkNode root) {
+        
+        if(root==null) return ;
+        
+        link(root.left,root.right);
+    }
+    
+    //HELPER FUNCTION TO LINK TWO NODES TOGETHER
+    public void link(TreeLinkNode left, TreeLinkNode right){
+        
+        if(left==null && right==null) return ;
+        
+        left.next = right;
+        link(left.left,left.right);
+        link(left.right,right.left);
+        link(right.left,right.right);
+    }
+
+----------------------------------------------------------------------------------------------------
+A concise O(1) space complexity solution
+it fits problem 1 and 2, any comments will be welcome, thanks
+
+    void connect(TreeLinkNode *root) {
+        TreeLinkNode *head = root; // the left first node in every level
+        TreeLinkNode *cur = NULL;  // the current node in the upper level
+        TreeLinkNode *pre = NULL;  // the prev node in the downer level
+        
+        while (head) {
+            cur = head;
+            head = pre = NULL;
+            // travel one level in a loop
+            while (cur) {
+                // left child exist
+                if (cur->left) {
+                    if (pre) pre = pre->next = cur->left;
+                    else head = pre = cur->left;
+                    
+                }
+                // right child exist
+                if (cur->right) {
+                    if (pre) pre = pre->next = cur->right;
+                    else head = pre = cur->right;
+                }
+                // next node in the same level
+                cur = cur->next;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+5 lines C++ simple solution.
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            if (!root) return;
+            if (root->left) root->left->next = root->right;
+            if (root->right && root->next) root->right->next = root->next->left;
+            connect(root->left);
+            connect(root->right);
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Share my LOOP JAVA 1MS solution!! Easy understand!!
+    //Just remember to use result from the last step
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            if(root==null) return;
+            while(root.left!=null){
+                TreeLinkNode tmp = root;
+                while(tmp!=null){
+                    tmp.left.next = tmp.right;
+                    if(tmp.next!=null) tmp.right.next = tmp.next.left;
+                    tmp = tmp.next;
+                }
+                root = root.left;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ easy recursive solution
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            if(!root)
+                return;
+            if(root->left)
+                root->left->next = root->right;
+            if(root->next && root->right)
+                root->right->next = root->next->left;
+            connect(root->left);
+            connect(root->right);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+5-line 1ms java iterative solution O(n) time O(1) space
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            if (root == null) { return; }
+            for (TreeLinkNode head=root; head.left!=null; head=head.left) {
+                for (TreeLinkNode parent=head; parent!=null; parent=parent.next) {
+                    parent.left.next = parent.right;
+                    if (parent.next != null) { parent.right.next = parent.next.left; }
+                }
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My recursive solution
+    void connect(TreeLinkNode *root) {
+        if( root == NULL || root->left == NULL && root->right == NULL )        //{} \ {0}
+        {
+           return;
+        }
+        
+        TreeLinkNode *p, *q;
+        p = root->left;
+        q = root->right;
+        p->next = q;
+        while( p->right != NULL )
+        {
+            p = p->right;
+            q = q->left;
+            p->next = q;
+        }
+        
+        connect( root->left );
+        connect( root->right );
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Iterative solution
+Populate the levels one by one. curLevel points to node whose children will be linked, nextLevel points to the first node in the next level.
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            if(!root)return;
+            TreeLinkNode*curLevel=root,*nextLevel=root->left;
+            root->next=NULL;
+            while(curLevel->left){
+                curLevel->left->next=curLevel->right;
+                if (curLevel->next){
+                    curLevel->right->next = curLevel->next->left;
+                    curLevel=curLevel->next;
+                }
+                else {
+                    curLevel->right->next=NULL;
+                    curLevel=nextLevel;
+                    nextLevel=nextLevel->left;
+                }
+            }
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my Java O(1) extra space code
+    public void connect(TreeLinkNode root) {
+        TreeLinkNode cur;
+        TreeLinkNode nextLevel = root;
+        while (nextLevel != null) {
+            cur = nextLevel;
+            // at each level, connects the children nodes
+            while (cur != null && 
+                    cur.left != null // checking for leaf nodes
+                    ) 
+            {
+                cur.left.next = cur.right;
+                if (cur.next != null) {
+                    cur.right.next = cur.next.left;
+                }
+                cur = cur.next; 
+            }
+            
+            nextLevel = nextLevel.left;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

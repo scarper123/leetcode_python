@@ -1,0 +1,653 @@
+Recursive and non-recursive solutions in Java
+Recursive--400ms:
+
+    public boolean isSymmetric(TreeNode root) {
+        return root==null || isSymmetricHelp(root.left, root.right);
+    }
+    
+    private boolean isSymmetricHelp(TreeNode left, TreeNode right){
+        if(left==null || right==null)
+            return left==right;
+        if(left.val!=right.val)
+            return false;
+        return isSymmetricHelp(left.left, right.right) && isSymmetricHelp(left.right, right.left);
+    }
+
+Non-recursive(use Stack)--460ms:
+
+    public boolean isSymmetric(TreeNode root) {
+        if(root==null)  return true;
+        
+        Stack<TreeNode> stack = new Stack<TreeNode>();
+        TreeNode left, right;
+        if(root.left!=null){
+            if(root.right==null) return false;
+            stack.push(root.left);
+            stack.push(root.right);
+        }
+        else if(root.right!=null){
+            return false;
+        }
+            
+        while(!stack.empty()){
+            if(stack.size()%2!=0)   return false;
+            right = stack.pop();
+            left = stack.pop();
+            if(right.val!=left.val) return false;
+            
+            if(left.left!=null){
+                if(right.right==null)   return false;
+                stack.push(left.left);
+                stack.push(right.right);
+            }
+            else if(right.right!=null){
+                return false;
+            }
+                
+            if(left.right!=null){
+                if(right.left==null)   return false;
+                stack.push(left.right);
+                stack.push(right.left);
+            }
+            else if(right.left!=null){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ Accepted code in 16ms with iteration solution
+    /**
+     * Definition for binary tree
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        bool isSymmetric(TreeNode *root) {
+            TreeNode *left, *right;
+            if (!root)
+                return true;
+            
+            queue<TreeNode*> q1, q2;
+            q1.push(root->left);
+            q2.push(root->right);
+            while (!q1.empty() && !q2.empty()){
+                left = q1.front();
+                q1.pop();
+                right = q2.front();
+                q2.pop();
+                if (NULL == left && NULL == right)
+                    continue;
+                if (NULL == left || NULL == right)
+                    return false;
+                if (left->val != right->val)
+                    return false;
+                q1.push(left->left);
+                q1.push(left->right);
+                q2.push(right->right);
+                q2.push(right->left);
+            }
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1ms recursive Java Solution, easy to understand
+     public boolean isSymmetric(TreeNode root) {
+        if(root==null) return true;
+        return isMirror(root.left,root.right);
+    }
+    public boolean isMirror(TreeNode p, TreeNode q) {
+        if(p==null && q==null) return true;
+        if(p==null || q==null) return false;
+        return (p.val==q.val) && isMirror(p.left,q.right) && isMirror(p.right,q.left);
+    }
+
+----------------------------------------------------------------------------------------------------
+15 lines of c++ solution &#x2F; 8 ms
+    bool isSymmetric(TreeNode *root) {
+            if (!root) return true;
+            return helper(root->left, root->right);
+        }
+        
+        bool helper(TreeNode* p, TreeNode* q) {
+            if (!p && !q) {
+                return true;
+            } else if (!p || !q) {
+                return false;
+            }
+            
+            if (p->val != q->val) {
+                return false;
+            }
+            
+            return helper(p->left,q->right) && helper(p->right, q->left); 
+        }
+
+----------------------------------------------------------------------------------------------------
+Short and clean java iterative solution
+     public boolean isSymmetric(TreeNode root) {
+            Queue<TreeNode> q = new LinkedList<TreeNode>();
+            if(root == null) return true;
+            q.add(root.left);
+            q.add(root.right);
+            while(q.size() > 1){
+                TreeNode left = q.poll(),
+                         right = q.poll();
+                if(left== null&& right == null) continue;
+                if(left == null ^ right == null) return false;
+                if(left.val != right.val) return false;
+                q.add(left.left);
+                q.add(right.right);
+                q.add(left.right);
+                q.add(right.left);            
+            }
+            return true;
+        }
+
+----------------------------------------------------------------------------------------------------
+Recursively and iteratively solution in Python
+Basically, this question is recursively. Or we can say, the tree structure is recursively, so the recursively solution maybe easy to write:
+
+TC: O(b) SC: O(log n)
+
+    class Solution:
+      def isSymmetric(self, root):
+        if root is None:
+          return True
+        else:
+          return self.isMirror(root.left, root.right)
+
+      def isMirror(self, left, right):
+        if left is None and right is None:
+          return True
+        if left is None or right is None:
+          return False
+
+        if left.val == right.val:
+          outPair = self.isMirror(left.left, right.right)
+          inPiar = self.isMirror(left.right, right.left)
+          return outPair and inPiar
+        else:
+          return False
+
+The essence of recursively is Stack, so we can use our own stack to rewrite it into iteratively:
+
+     class Solution2:
+      def isSymmetric(self, root):
+        if root is None:
+          return True
+
+        stack = [[root.left, root.right]]
+
+        while len(stack) > 0:
+          pair = stack.pop(0)
+          left = pair[0]
+          right = pair[1]
+
+          if left is None and right is None:
+            continue
+          if left is None or right is None:
+            return False
+          if left.val == right.val:
+            stack.insert(0, [left.left, right.right])
+
+            stack.insert(0, [left.right, right.left])
+          else:
+            return False
+        return True
+
+
+
+----------------------------------------------------------------------------------------------------
+Slim Java solution
+The idea is:
+1. level traversal.
+2. push nodes onto stack, every 2 consecutive is a pair, and should either be both null or have equal value.
+repeat until stack is empty.
+
+    public boolean isSymmetric(TreeNode root) {
+        if (root == null)
+            return true;
+        Stack<TreeNode> stack = new Stack<TreeNode>();
+        stack.push(root.left);
+        stack.push(root.right);
+        while (!stack.isEmpty()) {
+            TreeNode node1 = stack.pop();
+            TreeNode node2 = stack.pop();
+            if (node1 == null && node2 == null)
+                continue;
+            if (node1 == null || node2 == null)
+                return false;
+            if (node1.val != node2.val)
+                return false;
+            stack.push(node1.left);
+            stack.push(node2.right);
+            stack.push(node1.right);
+            stack.push(node2.left);
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+6line AC python
+
+
+
+        def isSymmetric(self, root):
+            def isSym(L,R):
+                if not L and not R: return True
+                if L and R and L.val == R.val: 
+                    return isSym(L.left, R.right) and isSym(L.right, R.left)
+                return False
+            return isSym(root, root)
+
+----------------------------------------------------------------------------------------------------
+Easy and simple using one queue iterative in java
+    public class Solution {
+        public boolean isSymmetric(TreeNode root) {
+            if(root == null) return true;
+            Queue<TreeNode> queue = new LinkedList<TreeNode>();
+            queue.offer(root.left);
+            queue.offer(root.right);
+            while(!queue.isEmpty()){
+                TreeNode left = queue.poll();
+                TreeNode right = queue.poll();
+                if(left == null && right == null) continue;
+                if(left == null || right == null) return false;
+                if(left.val != right.val) return false;
+                queue.offer(left.left);
+                queue.offer(right.right);
+                queue.offer(left.right);
+                queue.offer(right.left);
+                
+            }
+            return true;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Beautiful Recursive and Iterative Solutions
+Very simple ideas. Notice how both look similar to each other.
+
+    /**
+     * Definition for binary tree
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    #include<queue>
+    using namespace std;
+    typedef pair<TreeNode*,TreeNode*> nodepair;
+    class Solution {
+    public:
+        bool isSymmetricRecursive(TreeNode*a,TreeNode*b){
+            if(a){
+                return b && a->val==b->val && 
+                    isSymmetricRecursive(a->left,b->right) &&
+                    isSymmetricRecursive(a->right,b->left);
+            }
+            return !b;
+        }
+        bool isSymmetricRecursive(TreeNode*root){
+            return !root || isSymmetricRecursive(root->left,root->right);
+        }
+        bool isSymmetric(TreeNode *root) {
+            // Level-order BFS.
+            queue<nodepair> q;
+            if(root)
+                q.push(make_pair(root->left,root->right));
+            while(q.size()){
+                nodepair p=q.front(); q.pop();
+                if(p.first){
+                    if(!p.second)return false;
+                    if(p.first->val != p.second->val) return false;
+                    // the order of children pushed to q is the key to the solution.
+                    q.push(make_pair(p.first->left,p.second->right));
+                    q.push(make_pair(p.first->right,p.second->left));
+                }
+                else if(p.second) return false;
+            }
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+2 lines Java solution use 1ms
+
+
+    public class Solution {
+        public boolean isSymmetric(TreeNode root) {
+            return isMirror(root,root);
+        }
+    
+        public boolean isMirror(TreeNode a,TreeNode b){
+            return a==null||b==null?a==b:a.val==b.val&&isMirror(a.left,b.right)&&isMirror(a.right,b.left);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean iterative solution in C++
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        bool isSymmetric(TreeNode* root) {
+            if(!root) return true;
+            stack<TreeNode*> sk;
+            sk.push(root->left);
+            sk.push(root->right);
+            
+            TreeNode* pA, *pB;
+            while(!sk.empty()) {
+                pA = sk.top();
+                sk.pop();
+                pB = sk.top();
+                sk.pop();
+                
+                if(!pA && !pB) continue;
+                if(!pA || !pB) return false;
+                if(pA->val != pB->val) return false;
+                
+                sk.push(pA->left);
+                sk.push(pB->right);
+                sk.push(pA->right);
+                sk.push(pB->left);
+            }
+            
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+*Java* iterative &amp; recursive solutions
+#Recursive#
+    public boolean isSymmetric(TreeNode root) {
+    	if(root==null) return true;
+    	return isSymmetric(root.left, root.right);
+    }
+    private boolean isSymmetric(TreeNode root1, TreeNode root2) {
+    	if(root1==null && root2==null) return true;
+    	if(root1==null || root2==null) return false;
+    	if(root1.val!=root2.val) return false;
+    	return isSymmetric(root1.left, root2.right) && isSymmetric(root1.right, root2.left);
+    }
+#Iterative#
+    public boolean isSymmetric(TreeNode root) {
+    	if(root==null) return true;
+    	Queue<TreeNode> q1=new LinkedList<>(), q2=new LinkedList<>();
+    	q1.add(root.left); 
+    	q2.add(root.right);
+    	while(!q1.isEmpty() && !q2.isEmpty()) {
+    		int size1=q1.size(), size2=q2.size();
+    		if(size1!=size2) return false;
+    		for(int i=0; i<size1; i++) {
+    			TreeNode current1=q1.remove(), current2=q2.remove();
+    			if(current1==null && current2==null) continue;
+    			if(current1==null || current2==null) return false; 
+    			if(current1.val!=current2.val) return false;
+    			q1.add(current1.left);
+    			q1.add(current1.right);
+    			q2.add(current2.right);
+    			q2.add(current2.left);
+    		}
+    	}
+    	return q1.isEmpty() && q2.isEmpty();
+    }
+
+----------------------------------------------------------------------------------------------------
+Recursive and iterative (DFS and BFS) in C++. Easy to understand.
+**Iterative in BFS**:
+
+    bool isSymmetric(TreeNode* root) {
+        if(!root) return true;
+        queue<nodepair> q;
+        q.push(make_pair(root->left, root->right));
+        while(!q.empty()){
+            nodepair p = q.front();
+            q.pop();
+            if(!p.first && !p.second) continue;
+            if(!p.first || !p.second) return false;
+            if(p.first->val != p.second->val) return false;
+            q.push(make_pair(p.first->left, p.second->right));
+            q.push(make_pair(p.first->right, p.second->left));
+        }
+        return true;
+    }
+
+**Iterative in DFS**:
+
+    bool isSymmetric(TreeNode* root) {
+        if(!root) return true;
+        stack<TreeNode*> sl, sr;
+        sl.push(root);
+        sr.push(root);
+        TreeNode * lp = root->left, *rp = root->right;
+        while(lp || ! sl.empty() || rp || !sl.empty()){
+            if((!lp && rp) || (lp && !rp)) return false;
+            if(lp && rp){
+                if(lp->val != rp->val) return false;
+                sl.push(lp);
+                sr.push(rp);
+                lp = lp->left;
+                rp = rp->right;
+            }else{
+                lp = sl.top()->right;
+                rp = sr.top()->left;
+                sl.pop();
+                sr.pop();
+            }
+        }
+        return true;
+    }
+
+**Recursive**:
+
+    bool isSymmetric(TreeNode* root) {
+        if(!root) return true;
+        return helper(root->left, root->right);
+    }
+    bool helper(TreeNode* left, TreeNode* right){
+        if(!left && !right) return true;
+        if(!left || !right) return false;
+        return (left->val == right->val) && helper(left->left, right->right) && helper(left->right, right->left);
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution #1ms 4 lines code #Recursive Easy To Understand
+	public static boolean isSymmetric(TreeNode root) {
+		return isSymmetric(root,root);
+	}
+	
+	public static boolean isSymmetric(TreeNode p, TreeNode q){
+		if(p==null && q==null) return true;
+		if(p==null || q==null) return false;
+		
+		return p.val ==q.val&&isSymmetric(p.left,q.right)&&isSymmetric(p.right,q.left);
+	}
+
+
+----------------------------------------------------------------------------------------------------
+My AC Code ,is there a better method ?
+     public boolean checkSymmetric(TreeNode lsubTree,TreeNode rsubTree){
+        if(lsubTree==null&&rsubTree==null) return true;
+        else if(lsubTree!=null&&rsubTree==null) return false;
+        else if(lsubTree==null&&rsubTree!=null) return false;
+        else if(lsubTree.val!=rsubTree.val) return false;
+        boolean lt=checkSymmetric(lsubTree.left,rsubTree.right);
+        boolean rt=checkSymmetric(lsubTree.right,rsubTree.left);
+        return lt&&rt;
+    }
+    public boolean isSymmetric(TreeNode root) {
+        if(root==null) return true;
+        return checkSymmetric(root.left,root.right);
+    }
+
+----------------------------------------------------------------------------------------------------
+Another passed Java solution
+    public class Solution {
+        public boolean isSymmetric(TreeNode root) {
+            if (root == null) 
+                return true;
+            
+            return isSymmetric(root.left, root.right);
+        }
+        
+        boolean isSymmetric(TreeNode left, TreeNode right) {
+            if (left == null && right == null) 
+                return true;
+
+            if (left == null || right == null) 
+                return false;
+
+            if (left.val != right.val) 
+                return false;
+
+            return isSymmetric(left.left, right.right) && isSymmetric(left.right, right.left);
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My 16ms C++ solution
+    
+    bool DFS(TreeNode *left,TreeNode *right)
+    {
+        if(left == NULL || right == NULL)
+            return left == right;
+        return (left->val == right->val)&DFS(left->right,right->left)&DFS(left->left,right->right);
+    }
+    bool isSymmetric(TreeNode *root) {
+        if(root == NULL)
+            return true;
+        return DFS(root->left,root->right);
+    }
+
+----------------------------------------------------------------------------------------------------
+Two Simple Accepted Java solutions. Recursion and Iteration.
+The idea is simple. Traverse both on left an right branches of the root symmetricaly and check if the values are equal.
+
+
+Recursion.
+
+    public boolean isSymmetric(TreeNode root) {
+        return root == null ? true : symmetric(root.left, root.right);
+    }
+	
+	public boolean symmetric(TreeNode left, TreeNode right) {
+        if (left == null && right == null) {
+        	return true;
+        } else if (left != null && right != null && left.val == right.val) {
+        	return symmetric(left.left, right.right) && symmetric(left.right, right.left);
+        } else {
+        	return false;
+        }
+    }
+
+
+
+Iteration.
+
+    public boolean isSymmetric(TreeNode root) {
+        if (root == null || (root.left == null && root.right == null)) return true;
+        Stack<TreeNode> L = new Stack<TreeNode>();
+        Stack<TreeNode> R = new Stack<TreeNode>();
+        L.push(root.left);
+        R.push(root.right);
+        
+        while(!L.isEmpty() && !R.isEmpty()) {
+        	TreeNode left = L.pop();
+        	TreeNode right = R.pop();
+        	if (left == null && right == null) continue;
+        	if (left != null && right != null && left.val == right.val) {
+        		L.push(left.left);
+        		R.push(right.right);
+        		L.push(left.right);
+        		R.push(right.left);
+        		continue;
+        	}
+        	return false;
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Tree versions in Java: recursion, optimized tail recursion and pre-order iteration
+The most simple version is normal recursion:
+
+    public class Solution {
+    	public boolean isSymmetric(TreeNode root) {
+    		return this.isMirror(root, root);
+    	}
+    
+    	private boolean isMirror(TreeNode t0, TreeNode t1) {
+		if (t0 == null || t1 == null) {
+			return t0 == t1;
+		}
+		return t0.val == t1.val
+				&& this.isMirror(t0.left, t1.right)
+				&& this.isMirror(t0.right, t1.left);
+    	}
+    }
+
+And the last recursive call in method isMirror() above can be optimized to loop, this will reduce the actual recursive calls:
+
+    public class Solution {
+    	public boolean isSymmetric(TreeNode root) {
+    		return this.isMirror(root, root);
+    	}
+    
+    	private boolean isMirror(TreeNode t0, TreeNode t1) {
+    		while (t0 != null && t1 != null) {
+    			if (t0.val != t1.val || !this.isMirror(t0.left, t1.right)) {
+    				return false;
+    			}
+    			t0 = t0.right;
+    			t1 = t1.left;
+    		}
+    		return t0 == t1;
+    	}
+    }
+There are two kinds of iteration at least. The BFS-like iteration, which is based on queue, has a space complexity of O(n). And the DFS-like iteration, which is based on stack, has a better space complexity of O(log n).
+
+Here is the DFS-like pre-order iteration:
+
+    public class Solution {
+    	public boolean isSymmetric(TreeNode root) {
+    		Deque<TreeNode[]> stack = new LinkedList<>();
+    		stack.push(new TreeNode[]{root, root});
+    		while (!stack.isEmpty()) {
+    			TreeNode[] pair = stack.pop();
+    			TreeNode t0 = pair[0], t1 = pair[1];
+    			if (t0 == null && t1 == null) {
+    				continue;
+    			}
+    			if (t0 == null || t1 == null || t0.val != t1.val) {
+    				return false;
+    			}
+    			stack.push(new TreeNode[]{t0.left, t1.right});
+    			stack.push(new TreeNode[]{t0.right, t1.left});
+    		}
+    		return true;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------

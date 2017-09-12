@@ -1,0 +1,848 @@
+Java PreOrder + Queue solution
+public class Codec {
+    private static final String SEP = ",";
+    private static final String NULL = "null";
+    // Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        StringBuilder sb = new StringBuilder();
+        if (root == null) return NULL;
+        //traverse it recursively if you want to, I am doing it iteratively here
+        Stack<TreeNode> st = new Stack<>();
+        st.push(root);
+        while (!st.empty()) {
+            root = st.pop();
+            sb.append(root.val).append(SEP);
+            if (root.right != null) st.push(root.right);
+            if (root.left != null) st.push(root.left);
+        }
+        return sb.toString();
+    }
+
+    // Decodes your encoded data to tree.
+    // pre-order traversal
+    public TreeNode deserialize(String data) {
+        if (data.equals(NULL)) return null;
+        String[] strs = data.split(SEP);
+        Queue<Integer> q = new LinkedList<>();
+        for (String e : strs) {
+            q.offer(Integer.parseInt(e));
+        }
+        return getNode(q);
+    }
+    
+    // some notes:
+    //   5
+    //  3 6
+    // 2   7
+    private TreeNode getNode(Queue<Integer> q) { //q: 5,3,2,6,7
+        if (q.isEmpty()) return null;
+        TreeNode root = new TreeNode(q.poll());//root (5)
+        Queue<Integer> samllerQueue = new LinkedList<>();
+        while (!q.isEmpty() && q.peek() < root.val) {
+            samllerQueue.offer(q.poll());
+        }
+        //smallerQueue : 3,2   storing elements smaller than 5 (root)
+        root.left = getNode(samllerQueue);
+        //q: 6,7   storing elements bigger than 5 (root)
+        root.right = getNode(q);
+        return root;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Deserialize from preorder and computed inorder, reusing old solution
+class Codec:
+
+    def serialize(self, root):
+        def preorder(node):
+            if node:
+                vals.append(str(node.val))
+                preorder(node.left)
+                preorder(node.right)
+        vals = []
+        preorder(root)
+        return ' '.join(vals)
+
+    def deserialize(self, data):
+        preorder = map(int, data.split())
+        inorder = sorted(preorder)
+        return self.buildTree(preorder, inorder)
+
+    def buildTree(self, preorder, inorder):
+        def build(stop):
+            if inorder and inorder[-1] != stop:
+                root = TreeNode(preorder.pop())
+                root.left = build(root.val)
+                inorder.pop()
+                root.right = build(stop)
+                return root
+        preorder.reverse()
+        inorder.reverse()
+        return build(None)
+
+
+----------------------------------------------------------------------------------------------------
+Using lower bound and upper bound to deserialize BST
+    // Encodes a tree to a single string.
+    void serialize(TreeNode* root, ostringstream& out )
+    {
+        if ( !root ) return;
+        out << root->val << ",";
+        serialize(root->left, out);
+        serialize(root->right, out);
+    }
+    
+    string serialize(TreeNode* root) {
+        ostringstream ss;
+        serialize(root, ss);
+        return ss.str();
+    }
+
+    TreeNode* deserialize(const string& s, int lower, int upper, int & pos )
+    {
+        // pos is a variable to record the end of decoded buffer 
+        if ( pos == s.size() ) return nullptr;
+        int cur_pos = pos;
+        int number = 0;
+        while( s[cur_pos] != ',')
+        {
+            number = number * 10 + s[cur_pos] - '0';
+            ++cur_pos;
+        }
+        ++cur_pos;
+        // The next number is not part of current subtree, should return nullptr
+        if ( number < lower || number > upper ) return nullptr;
+
+        TreeNode* root = new TreeNode( number );
+        pos = cur_pos; // update pos 
+        root->left =  deserialize( s, lower, root->val, pos );
+        root->right = deserialize( s, root->val, upper, pos );
+        return root;
+    }
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        int pos = 0;
+        return deserialize( data, INT_MIN, INT_MAX, pos );
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ 19ms solution beating 99.4%
+class Codec {
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        string order;
+        inorderDFS(root, order);
+        return order;
+    }
+    
+    inline void inorderDFS(TreeNode* root, string& order) {
+        if (!root) return;
+        char buf[4];
+        memcpy(buf, &(root->val), sizeof(int)); //burn the int into 4 chars
+        for (int i=0; i<4; i++) order.push_back(buf[i]);
+        inorderDFS(root->left, order);
+        inorderDFS(root->right, order);
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        int pos = 0;
+        return reconstruct(data, pos, INT_MIN, INT_MAX);
+    }
+    
+    inline TreeNode* reconstruct(const string& buffer, int& pos, int minValue, int maxValue) {
+        if (pos >= buffer.size()) return NULL; //using pos to check whether buffer ends is better than using char* directly.
+        
+        int value;
+        memcpy(&value, &buffer[pos], sizeof(int));
+        if (value < minValue || value > maxValue) return NULL;
+        
+        TreeNode* node = new TreeNode(value);
+        pos += sizeof(int);
+        node->left = reconstruct(buffer, pos, minValue, value);
+        node->right = reconstruct(buffer, pos, value, maxValue);
+        return node;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+what&#x27;s the difference between this and #297 ?
+<p>what&#39;s the difference between this and #297 ?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) recursive DFS without &quot;null&quot; Changed from Serialize and Deserialize BT
+// Encodes a tree to a single string.
+public String serialize(TreeNode root) { // preorder
+    StringBuilder sb = new StringBuilder();
+    serializedfs(root, sb);
+    return sb.toString();
+}
+
+private void serializedfs(TreeNode root, StringBuilder sb){
+    if(root == null) return; // no "null "
+    sb.append(root.val).append(" ");
+    serializedfs(root.left, sb);
+    serializedfs(root.right, sb);
+}
+
+// Decodes your encoded data to tree.
+public TreeNode deserialize(String data) {
+    if(data.length() == 0) return null;
+    String[] list = data.split(" ");
+    TreeNode dummy = new TreeNode(0);
+    deserializedfs(list, 0, dummy, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    return dummy.left;
+}
+
+private int deserializedfs(String[] list, int pos, TreeNode par, boolean isleft, 
+                                                    int lower, int upper){
+    if(pos >= list.length) return pos;
+
+    int val = Integer.valueOf(list[pos]);
+    if(val < lower || val > upper) return pos-1; // have not used this pos, so minus one
+    TreeNode cur = new TreeNode(val);
+    
+    if(isleft) par.left = cur;
+    else       par.right = cur;
+
+    pos = deserializedfs(list, ++pos, cur, true, lower, val);
+    pos = deserializedfs(list, ++pos, cur, false, val, upper);
+    return pos;
+}
+
+----------------------------------------------------------------------------------------------------
+pre or post order with only keeping one bound(beat 98% and 95%)
+// Encodes a tree to a single string.
+public String serialize(TreeNode root) {
+    if (root == null) {
+        return null;
+    }
+    StringBuilder sb = new StringBuilder();
+    serialize(root, sb);
+    return sb.toString();
+}
+
+private void serialize(TreeNode root, StringBuilder sb) {
+    if (root == null) {
+        return;
+    }
+    sb.append(root.val).append(" ");
+    serialize(root.left, sb);
+    serialize(root.right, sb);
+}
+
+// Decodes your encoded data to tree.
+public TreeNode deserialize(String data) {
+    if (data == null || data.length() == 0) {
+        return null;
+    }
+    String[] nodes = data.split(" ");
+    int[] index = new int[] {0};
+    return deserialize(nodes, index, Integer.MAX_VALUE);
+}
+
+private TreeNode deserialize(String[] nodes, int[] index, int max) {
+    if (index[0] >= nodes.length || Integer.valueOf(nodes[index[0]]) >= max) {
+        return null;
+    }
+    TreeNode root = new TreeNode(Integer.valueOf(nodes[index[0]++]));
+    root.left = deserialize(nodes, index, root.val);
+    root.right = deserialize(nodes, index, max);
+    return root;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 28ms soluton, Used the same encoding scheme Leetcode uses to serialize&#x2F;deserialize tree problem I&#x2F;O
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Codec {
+    string getNextNode(string const& data, int& offset) {
+        int end = data.find(',', offset);
+        if(end == string::npos) {
+            end = data.length();
+        }
+        string sNodeValue = data.substr(offset, end - offset);
+        offset = end + 1;
+        
+        return sNodeValue;
+    }
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        string result = "";
+        if(!root) return result;
+        queue <TreeNode*> Q;
+        Q.push(root);
+        result += to_string(root->val);
+        result += ',';
+        while(!Q.empty()) {
+            TreeNode* node = Q.front();
+            if(node->left) {
+                result += to_string(node->left->val);
+                result += ',';
+                Q.push(node->left);
+            } else {
+                result += "#,";
+            }
+            if(node->right) {
+                result += to_string(node->right->val);
+                result += ',';
+                Q.push(node->right);
+            } else {
+                result += "#,";
+            }
+            Q.pop();
+        }
+        // triming , and # from end
+        int i = result.size() - 1;
+        for(--i; i >= 0 and result[i] == '#'; i -= 2);
+        return result.substr(0, i + 1);
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        TreeNode* root = nullptr;
+        if(data.empty()) return root;
+        queue<TreeNode*> Q;
+        int offset = 0;
+        int nodeValue = stoi(getNextNode(data, offset));
+        root = new TreeNode(nodeValue);
+        Q.push(root);
+        while(!Q.empty()) {
+            TreeNode* node = Q.front();
+            if(offset < data.length()) {
+                string sValue = getNextNode(data, offset);
+                if(sValue != "#") {
+                    int leftNodeValue = stoi(sValue);
+                    node->left = new TreeNode(leftNodeValue);
+                    Q.push(node->left);  
+                }
+            }
+            if(offset < data.length()) {
+                string sValue = getNextNode(data, offset);
+                if(sValue != "#") {
+                    int rightNodeValue = stoi(sValue);
+                    node->right = new TreeNode(rightNodeValue);
+                    Q.push(node->right);  
+                }
+            }
+            Q.pop();
+        }
+        return root;
+    }
+};
+
+// Your Codec object will be instantiated and called as such:
+// Codec codec;
+// codec.deserialize(codec.serialize(root));
+
+
+----------------------------------------------------------------------------------------------------
+Python O( N ) solution. easy to understand
+class Codec:
+
+    def serialize(self, root):
+        vals = []
+
+        def preOrder(node):
+            if node:
+                vals.append(node.val)
+                preOrder(node.left)
+                preOrder(node.right)
+
+        preOrder(root)
+
+        return ' '.join(map(str, vals))
+
+    # O( N ) since each val run build once
+    def deserialize(self, data):
+        vals = collections.deque(int(val) for val in data.split())
+
+        def build(minVal, maxVal):
+            if vals and minVal < vals[0] < maxVal:
+                val = vals.popleft()
+                node = TreeNode(val)
+                node.left = build(minVal, val)
+                node.right = build(val, maxVal)
+                return node
+
+        return build(float('-infinity'), float('infinity'))
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(N) recursive solution
+// Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        if (root == null) {
+            return "*.";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(root.val);
+        if (root.left == null && root.right == null) {
+            sb.append("*.");
+            return sb.toString();
+        }
+        sb.append(".");
+        sb.append(serialize(root.left));
+        sb.append(serialize(root.right));
+        return sb.toString();
+    }
+
+    // Decodes your encoded data to tree.
+    public TreeNode deserialize(String data) {
+        int[] begin = {0};
+        return deserializeMethod(data, begin);
+    }
+
+    private TreeNode deserializeMethod(String data, int[] begin) {
+        int index = data.indexOf(".", begin[0]);
+        TreeNode node = null;
+        if (data.charAt(index - 1) == '*') {
+            String str = data.substring(begin[0], index - 1);
+            begin[0] = index + 1;
+            if (str.equals("")) {
+                return null;
+            }
+            node = new TreeNode(Integer.parseInt(str));
+        } else {
+            String str = data.substring(begin[0], index);
+            begin[0] = index + 1;
+            node = new TreeNode(Integer.parseInt(str));
+            node.left = deserializeMethod(data, begin);
+            node.right = deserializeMethod(data, begin);
+        }
+        return node;
+    }
+
+----------------------------------------------------------------------------------------------------
+Preorder serialize and recursive deserialize C++ 26ms
+class Codec {
+public:
+    //Encodes a tree to a single string.
+    void serialize(TreeNode* root, vector<int> &val)
+    {
+        if(root == NULL) return;
+        val.push_back(root->val);
+        serialize(root->left, val);
+        serialize(root->right, val);
+    }
+
+    string serialize(TreeNode* root) {
+        vector<int> val;
+        serialize(root, val);
+        char *p = (char*)val.data();
+        string str(p, val.size() * sizeof(int));
+        return str;
+    }
+    
+    // deserialize val[l .. r]
+    TreeNode* deserializeSubtree(int *val, int l, int r)
+    {
+        if(l > r) return NULL;
+        TreeNode *subRoot = new TreeNode(val[l]);
+        int i = l+1;
+        while(i <= r && val[i] < val[l]) ++i; 
+        subRoot->left = deserializeSubtree(val, l+1, i-1);
+        subRoot->right = deserializeSubtree(val, i, r);
+        return subRoot;
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        //preorder traversed string
+        int n = data.size() / sizeof(int);
+        TreeNode *root = deserializeSubtree((int*)data.data(), 0, n-1);
+        return root;
+    }
+    
+};
+
+----------------------------------------------------------------------------------------------------
+construct BST using preorder traversal.
+class Codec {
+public:
+
+	// Encodes a tree to a single string.
+	string serialize(TreeNode* root) {
+		// preorder traversal
+		string ret;
+		if(!root) return ret;
+		
+		stack<TreeNode*> stk;
+		stk.push(root);
+		while(!stk.empty()){
+			TreeNode *r = stk.top();
+			stk.pop();
+			ret += to_string(r->val) + ",";
+			if(r->right) stk.push(r->right);
+			if(r->left) stk.push(r->left);
+
+		}
+		return ret.substr(0, ret.size()-1);
+	}
+
+	// Decodes your encoded data to tre.
+	TreeNode* deserialize(string data) {
+	    if(data.size() == 0) return nullptr;
+	    
+		int id = 0;
+		// take root at first
+		int r = id;
+		while(isdigit(data[r])) r++;
+		int v = stoi(data.substr(id, r-id));
+		id = r+1;
+
+		TreeNode *root = new TreeNode(v);
+		stack<TreeNode*> stk;
+		stk.push(root);
+
+		while(id < (int) data.size()) {
+			int r = id;
+			while(isdigit(data[r]))	r++;
+			int v = stoi(data.substr(id, r - id));
+			id = r + 1;
+
+			TreeNode *node = nullptr;
+			while(!stk.empty() && v > stk.top()->val) {
+				node = stk.top();
+				stk.pop();
+			}
+			if(node) {
+				node->right = new TreeNode(v);
+				stk.push(node->right);
+			} else {
+				stk.top()->left = new TreeNode(v);
+				stk.push(stk.top()->left);
+			}
+		}
+
+		return root;
+	}
+	// for debug
+	void f(TreeNode *root) {
+		if(!root) return;
+		f(root->left);
+		cout << root->val << ", ";
+		f(root->right);
+	}
+};
+
+----------------------------------------------------------------------------------------------------
+C# - pre-order serialize - very compact, no commas, no null, no separators
+ 
+    public class Codec
+    {
+        // Encodes a tree to a single string.
+        public string serialize(TreeNode root)
+        {
+            StringBuilder sb = new StringBuilder();
+            BuildSerialize(root, sb);
+            return sb.ToString();
+        }
+
+        // Decodes your encoded data to tree.
+        public TreeNode deserialize(string data)
+        {
+            NodeIter nodeIter = new NodeIter(data);
+            TreeNode root = this.BuildDeserialize(nodeIter);
+            return root;
+        }
+
+        private void BuildSerialize(TreeNode node, StringBuilder sb)
+        {
+            // pre-order
+            if (node == null) return;
+            sb.Append(SerializeNode(node));
+            BuildSerialize(node.left, sb);
+            BuildSerialize(node.right, sb);
+        }
+
+        private string SerializeNode(TreeNode node)
+        {
+            if (node == null) return "";
+
+            char c = '$';
+            if (node.left != null && node.right != null) c = 'f'; // full - both left and right
+            else if (node.left != null) c = 'l'; // left only
+            else if (node.right != null) c = 'r'; // right only
+            else c = 'x'; // leaf
+
+            if (node.val < 0) c = Char.ToUpper(c); // negative value identified by upper case
+
+            return c.ToString() + Math.Abs(node.val).ToString();
+        }
+
+        private TreeNode BuildDeserialize(NodeIter nodeIter)
+        {
+            TreeNode node = nodeIter.Next();
+            if (node == null) return node;
+            if (node.left != null)
+            {
+                node.left = BuildDeserialize(nodeIter);
+            }
+            if (node.right != null)
+            {
+                node.right = BuildDeserialize(nodeIter);
+            }
+            return node;
+        }
+    }
+
+    public class NodeIter
+    {
+        private string str = null;
+        private int pos = 0;
+        public NodeIter(string s)
+        {
+            this.str = s == null ? "" : s;
+        }
+
+        public TreeNode Next()
+        {
+            TreeNode node = null;
+            if (this.pos < this.str.Length)
+            {
+                node = new TreeNode(1);
+                char c = this.str[this.pos];
+                if (Char.IsUpper(c)) node.val = -1;
+                switch (Char.ToLower(c))
+                {
+                    case 'x': break;
+                    case 'l': node.left = new TreeNode(0); break;
+                    case 'r': node.right = new TreeNode(0); break;
+                    case 'f': node.left = new TreeNode(0); node.right = new TreeNode(0); break;
+                    default: break;
+                }
+
+                this.pos++;
+                int val = 0;
+                while (this.pos < this.str.Length && Char.IsDigit(this.str[this.pos]))
+                {
+                    val = val * 10 + this.str[this.pos] - '0';
+                    this.pos++;
+                }
+                node.val *= val;
+            }
+            return node;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy To Understand C++ Solution Using PreOrder Traversal and iostringstream
+class Codec 
+{
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) 
+    {
+        ostringstream out;
+        mySerialize(root, out);
+        return out.str();
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) 
+    {
+        if(data == "") return NULL;
+        istringstream in(data);
+        return myDeserialize(in);
+    }
+private:
+	void mySerialize(TreeNode* root, ostringstream &out)
+	{
+		if(root == NULL) return;
+		out << root->val << " ";
+		mySerialize(root->left, out);
+		mySerialize(root->right, out);
+	}
+
+	TreeNode* myDeserialize(istringstream &in)
+	{
+		string val;
+		in >> val;
+		TreeNode *root = new TreeNode(stoi(val));
+		while(in >> val)
+			buildTree(root, stoi(val));
+		return root;
+	}
+
+	void buildTree(TreeNode* root, int n)
+	{
+		if(root->val > n)
+		{
+			if(root->left == NULL)
+				root->left = new TreeNode(n);
+			else
+				buildTree(root->left, n);
+		}
+		else
+		{
+			if(root->right == NULL)
+				root->right = new TreeNode(n);
+			else
+				buildTree(root->right, n);
+		}
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy To Understand O(N^2) Solution
+public class Codec {
+
+    public String serialize(TreeNode root) {
+        StringBuilder sb = new StringBuilder();
+        if (root == null) return sb.toString();
+        preorder(root, sb);
+        return sb.substring(0, sb.length() - 1);
+    }
+    private void preorder(TreeNode root, StringBuilder sb) {
+        if (root == null) return;
+        sb.append(root.val).append("#");
+        preorder(root.left, sb);
+        preorder(root.right, sb);
+    }
+
+    public TreeNode deserialize(String data) {
+        if (data.isEmpty()) return null;
+        String[]arr = data.split("#");
+        return buildTree(arr, 0, arr.length - 1);
+    }
+    private TreeNode buildTree(String[] arr, int l, int r) {
+        if (l > r) return null;
+        TreeNode root = new TreeNode(Integer.parseInt(arr[l]));
+        int splitIndex = findIndex(arr, Integer.parseInt(arr[l]), l + 1, r);
+        root.left = buildTree(arr, l + 1, splitIndex - 1);
+        root.right = buildTree(arr, splitIndex, r);
+        return root;
+    }
+    private int findIndex(String[] arr, int target, int l, int r) {
+        int i = l;
+        for (; i <= r; i++) {
+            if (Integer.parseInt(arr[i]) > target) break;
+        }
+        return i;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ recursive solution - preorder encoding. Using some C++ best practice
+class Codec {
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) 
+    {
+        if(root == NULL)
+        {
+            return "";
+        }
+        
+        ostringstream ss;
+        ss << root->val;
+        
+        return 
+            ss.str() + 
+           (root->left ? "," + serialize(root->left) : "") + 
+           (root->right ? "," + serialize(root->right) : "");
+    }
+    
+    template <typename Iter>
+    TreeNode *Deserialize(
+        Iter &Begin, 
+        Iter End,
+        int Max, 
+        int Min)
+    {
+        if(Begin == End)
+        {
+            return (NULL);
+        }
+        
+        istringstream ss(*Begin);
+        int N = 0;
+        ss >> N;
+        
+        if(N < Min || N > Max)
+        {
+            return (NULL);
+        }
+        
+        TreeNode *Root = new TreeNode(N);
+        
+        Begin = next(Begin);
+        Root->left = Deserialize(Begin,End,N,Min);
+        Root->right = Deserialize(Begin,End,Max,N);
+        
+        return Root;
+    }
+   
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) 
+    {
+        istringstream ss(data);
+        string Temp;
+        vector<string> Res;
+        
+        while(getline(ss,Temp,','))
+        {
+            Res.push_back(Temp);
+        }
+        
+        int i = 0;
+        auto Begin = Res.begin();
+        return Deserialize(Begin,Res.end(),INT_MAX,INT_MIN);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ solution
+class Codec {
+public:
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        if(!root) return " #";
+        string ans = " "+to_string(root->val);
+        return ans + serialize(root->left) + serialize(root->right); 
+    }
+
+    TreeNode* DFS(istringstream &is)
+    {
+        string str;
+        is >> str;
+        if(str == "#") return NULL;
+        TreeNode* root = new TreeNode(stoi(str));
+        root->left = DFS(is), root->right = DFS(is);
+        return root;
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        istringstream is(data);
+        return DFS(is);
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------

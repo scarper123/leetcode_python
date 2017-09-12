@@ -1,0 +1,359 @@
+C++ DP solution
+Use hp[i][j] to store the min hp needed at position (i, j), then do the calculation from right-bottom to left-up.
+
+Note: adding dummy row and column would make the code cleaner.
+
+    class Solution {
+    public:
+        int calculateMinimumHP(vector<vector<int> > &dungeon) {
+            int M = dungeon.size();
+            int N = dungeon[0].size();
+            // hp[i][j] represents the min hp needed at position (i, j)
+            // Add dummy row and column at bottom and right side
+            vector<vector<int> > hp(M + 1, vector<int>(N + 1, INT_MAX));
+            hp[M][N - 1] = 1;
+            hp[M - 1][N] = 1;
+            for (int i = M - 1; i >= 0; i--) {
+                for (int j = N - 1; j >= 0; j--) {
+                    int need = min(hp[i + 1][j], hp[i][j + 1]) - dungeon[i][j];
+                    hp[i][j] = need <= 0 ? 1 : need;
+                }
+            }
+            return hp[0][0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My AC Java Version, Suggestions are welcome
+    public int calculateMinimumHP(int[][] dungeon) {
+        if (dungeon == null || dungeon.length == 0 || dungeon[0].length == 0) return 0;
+        
+        int m = dungeon.length;
+        int n = dungeon[0].length;
+        
+        int[][] health = new int[m][n];
+
+        health[m - 1][n - 1] = Math.max(1 - dungeon[m - 1][n - 1], 1);
+
+        for (int i = m - 2; i >= 0; i--) {            
+            health[i][n - 1] = Math.max(health[i + 1][n - 1] - dungeon[i][n - 1], 1);
+        }
+
+        for (int j = n - 2; j >= 0; j--) {
+            health[m - 1][j] = Math.max(health[m - 1][j + 1] - dungeon[m - 1][j], 1);
+        }
+
+        for (int i = m - 2; i >= 0; i--) {
+            for (int j = n - 2; j >= 0; j--) {
+                int down = Math.max(health[i + 1][j] - dungeon[i][j], 1);
+                int right = Math.max(health[i][j + 1] - dungeon[i][j], 1);
+                health[i][j] = Math.min(right, down);
+            }
+        }
+
+        return health[0][0];
+    }
+
+----------------------------------------------------------------------------------------------------
+Best solution I have found with explanations
+
+
+http://leetcodesolution.blogspot.com/2015/01/leetcode-dungeon-game.html
+
+seems pretty simple... and easy to understand explanations...
+
+
+It is easy to know that at grid P, since " at any point his health point drops to 0 or below, he dies immediately", the remaining health value should be at least 1,  that is, initialHealth + dungeon >= 1, we have initialHealth = max(1, 1 - dungeon[i][j]).  (Notice, at any grid, the initial health should be at least 1 (for example,  test case [1,0,0] require initial health 1 even though it has positive remaining health at grid[0][1] and grid[0][2])
+Similarly, to satisfy the initial health of dungeon[i][j], the initial health of dungeon[i-1][j] (or dungeon[i][j-1]) should be at least initialHealth[i-1][j] + dungeon[i-1][j] = initialHealth[i][j], that is, initialHealth[i][j] = initialHealth[i][j] - dungeon[i-1][j]. 
+In addition, if grid[i][j] can go both grid[i+1][j] and grid[i][j+1] to P,  we should choose a path with less initial health between grid[i+1][j] and grid[i][j+1] since it require less initial health of grid[i][j].
+We can simply code the solution by having the dynamic programming equations. 
+
+
+         int calculateMinimumHP(vector &dungeon) {
+        int m = dungeon.size();
+        int n = dungeon[0].size();
+        vector minInitHealth(m, vector<int>(n,0));
+        for(int i=m-1; i>=0; i--)
+        {
+            for (int j=n-1; j>=0; j--)
+            {
+                if (i == m-1 && j == n-1)
+                {
+                    minInitHealth[i][j] = max(1, 1 - dungeon[i][j]);
+                }  
+                else if (i == m-1)
+                {
+                    minInitHealth[i][j] = max(1, minInitHealth[i][j+1] - dungeon[i][j]);
+                }  
+                else if (j == n-1)
+                {
+                    minInitHealth[i][j] = max(1, minInitHealth[i+1][j] - dungeon[i][j]);
+                }  
+                else
+                {
+                    minInitHealth[i][j] = max(1, min(minInitHealth[i+1][j],minInitHealth[i][j+1]) - dungeon[i][j]);
+                }  
+            }
+        }
+        
+        return  minInitHealth[0][0];
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing my solution with O(n) space, O(mn) runtime
+Here is my solution using dp and rolling array --Dungeon Game:
+
+    int calculateMinimumHP(vector<vector<int> > &dungeon) {
+        const int m = dungeon.size();
+        const int n = dungeon[0].size();
+        vector<int> dp(n + 1, INT_MAX);
+        dp[n - 1] = 1; 
+        for(int i = m - 1; i >= 0; --i)
+            for(int j = n - 1; j >= 0; --j)
+                dp[j] = getMin(min(dp[j], dp[j + 1]) - dungeon[i][j]);
+        return dp[0];
+    }
+    int getMin(int n){
+        return n <= 0 ? 1 : n;
+    }
+
+Note: Update from right to left and from bottom up.
+
+----------------------------------------------------------------------------------------------------
+My java solution with explanation in detail
+With a health array to store each grid's health, we should get the result at [0][0].
+
+Now the question become to how to create a health array using dungeon.
+
+dungeon
+
+    -2,-3,3
+    -5,-10,1
+    10,30,-5
+
+From the Dungeon grid, we can simply compute health for the [last row][last column].
+
+Now we get
+
+    ?,?,?
+    ?,?,?
+    ?,?,6
+
+Now because the knight can only move rightward or downward in each step, we can compute all the health value for last row from right to left using its rightward neighbor. we can also compute all the health value for last column from bottom to up using its downward neighbor.
+
+    ?,?,2
+    ?,?,5
+    1,1,6
+
+Now, we can compute all the health value using its downward neighbor and rightward neighbor(we use the min value of these 2 health value).
+
+    7,5,2
+    6,11,5
+    1,1,6
+
+Now we get the answer [0][0], which is 7.
+
+
+
+        public int calculateMinimumHP(int[][] dungeon) {
+
+            int row = dungeon.length;
+            int column = dungeon[0].length;
+
+            int[][] tem = new int[row][];
+            for (int i = 0; i < tem.length; i++) {
+                tem[i] = new int[column];
+            }
+
+            if (dungeon[row - 1][column - 1] >= 0) {
+                tem[row - 1][column - 1] = 1;
+            } else {
+                tem[row - 1][column - 1] = 1 - dungeon[row - 1][column - 1];
+            }
+
+            for (int i = row - 2; i >= 0; i--) {
+                tem[i][column - 1] = c(dungeon[i][column - 1],
+                        tem[i + 1][column - 1]);
+            }
+
+            for (int j = column - 2; j >= 0; j--) {
+                tem[row - 1][j] = c(dungeon[row - 1][j], tem[row - 1][j + 1]);
+            }
+
+            for (int i = row - 2; i >= 0; i--) {
+                for (int j = column - 2; j >= 0; j--) {
+                    tem[i][j] = Math.min(c(dungeon[i][j], tem[i + 1][j]),
+                            c(dungeon[i][j], tem[i][j + 1]));
+                }
+            }
+
+            return tem[0][0];
+        }
+
+        private int c(int value, int preResult) {
+            if (value == 0)
+                return preResult;
+
+            if (value > 0) {
+                if (value >= preResult)
+                    return 1;
+                return preResult - value;
+            }
+
+            return preResult - value;
+        }
+    }
+
+
+
+
+ 
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+6 lines, 16 ms,  C++, O(mn) Time, O(n) Space,
+    struct Solution {
+        int calculateMinimumHP(vector<vector<int>>& d) {
+            vector<int> dp(d.size() + 1, INT_MAX);
+            dp[d.size() - 1] = 1;
+            for (int i = d[0].size() - 1; i >= 0; --i)
+                for (int j = d.size() - 1; j >= 0; --j)
+                    dp[j] = max(1, min(dp[j + 1], dp[j]) - d[j][i]);
+            return dp[0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A 12 ms C++ solution, DP
+This problem is quite like #64 Minimum Path Sum.
+
+The trick is where is the Starting point. This problem ask us to find the least hp in top-left. So in the most optimistic situation, bottom-right value can be determined as 1. Then bottom-right is the starting point.
+
+    int calculateMinimumHP(vector<vector<int>>& dun) 
+    {
+    	if (!dun.size() || !dun[0].size())
+    		return 1;
+    	int nrow = dun.size();
+    	int ncol = dun[0].size();
+    	vector<int> row(ncol + 1, INT_MAX);
+    	row[ncol - 1] = 1;
+    	int i, j, t;
+    	for (i = nrow - 1; i >= 0; --i)
+    	{
+    		for (j = ncol - 1; j >= 0; --j)
+    		{
+    			t = min(row[j], row[j + 1]) - dun[i][j];
+    			row[j] = max(t, 1); //row[j]=smaller value from below and right, but no smaller than 1.
+    		}
+    	}
+    	return row[0];
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+6 lines Python, 8 lines Ruby
+Just some DP.
+
+---
+
+**Python**
+
+    def calculateMinimumHP(self, dungeon):
+        n = len(dungeon[0])
+        need = [2**31] * (n-1) + [1]
+        for row in dungeon[::-1]:
+            for j in range(n)[::-1]:
+                need[j] = max(min(need[j:j+2]) - row[j], 1)
+        return need[0]
+
+Got accepted in 52 ms, faster than all other recent Python submissions (best was 56 ms, achieved by 5.7692%).
+
+---
+
+**Ruby**
+
+    def calculate_minimum_hp(dungeon)
+        n = dungeon[0].size - 1
+        need = [1/0.0] * n + [1]
+        dungeon.reverse_each do |row|
+            n.downto(0) do |j|
+                need[j] = [need[j..j+1].min - row[j], 1].max
+            end
+        end
+        need[0]
+    end
+
+----------------------------------------------------------------------------------------------------
+A very clean and intuitive solution (with explanation)
+public class Solution {
+    public int calculateMinimumHP(int[][] dungeon) {
+		int m = dungeon.length;
+		int n = m == 0 ? 0 : dungeon[0].length;
+		int[][] minRequred = new int[m + 1][n + 1];
+
+		for (int i = 0; i < m + 1; i++) {
+			minRequred[i][n] = Integer.MAX_VALUE;
+		}
+		for (int j = 0; j < n + 1; j++) {
+			minRequred[m][j] = Integer.MAX_VALUE;
+		}
+		minRequred[m][n - 1] = 0;
+		minRequred[m - 1][n] = 0;
+		
+                for (int i = m - 1; i >= 0; i--) {
+			for (int j = n - 1; j >= 0; j--) {
+				minRequred[i][j] = Math.max(
+						Math.min(minRequred[i + 1][j], minRequred[i][j + 1]) - dungeon[i][j], 0);
+			}
+		}
+
+		return minRequred[0][0] + 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share  my c++ DP solution with explanation
+###dp[i][j] means start from point (i,j) end at point (n-1,m-1) need at least dp[i][j] health.###
+***dp[i][j] = min(  max( dp[i+1][j] - dungeon[i][j], 1),
+                       max( dp[i][j+1] - dungeon[i][j], 1) );***
+
+
+
+
+    class Solution { 
+    public:
+        int calculateMinimumHP(vector<vector<int> > &dungeon) {
+            int n = dungeon.size();
+            int m = dungeon[0].size();
+            int dp[n][m];
+            memset(dp,0,sizeof(dp));
+            for(int i=n-1;i>=0;--i){
+                for(int j=m-1; j>=0; --j){
+                    if(i+1==n && j+1 == m){
+                        dp[i][j] = max(1-dungeon[i][j],1);
+                        continue;
+                    }
+                    if(j+1<m){
+                        dp[i][j] = max(dp[i][j+1] - dungeon[i][j],1);
+                    }
+                    if(i+1<n){
+                        if(dp[i][j])
+                            dp[i][j] = min(dp[i][j],max(dp[i+1][j] - dungeon[i][j],1));
+                        else 
+                            dp[i][j] = max(dp[i+1][j]-dungeon[i][j],1);
+                    }
+                }
+            }
+    
+            return dp[0][0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,872 @@
+Here is a 10-line template that can solve most &#x27;substring&#x27; problems
+I will first give the solution then show you the magic template.
+
+**The code of solving this problem is below. It might be the shortest among all solutions provided in Discuss**.
+
+    string minWindow(string s, string t) {
+            vector<int> map(128,0);
+            for(auto c: t) map[c]++;
+            int counter=t.size(), begin=0, end=0, d=INT_MAX, head=0;
+            while(end<s.size()){
+                if(map[s[end++]]-->0) counter--; //in t
+                while(counter==0){ //valid
+                    if(end-begin<d)  d=end-(head=begin);
+                    if(map[s[begin++]]++==0) counter++;  //make it invalid
+                }  
+            }
+            return d==INT_MAX? "":s.substr(head, d);
+        }
+
+**Here comes the template.**
+
+For most substring problem, we are given a string and need to find a substring of it which satisfy some restrictions. A general way is to use a hashmap assisted with two pointers. The template is given below.
+ 
+
+    int findSubstring(string s){
+            vector<int> map(128,0);
+            int counter; // check whether the substring is valid
+            int begin=0, end=0; //two pointers, one point to tail and one  head
+            int d; //the length of substring
+
+            for() { /* initialize the hash map here */ }
+    
+            while(end<s.size()){
+
+                if(map[s[end++]]-- ?){  /* modify counter here */ }
+    
+                while(/* counter condition */){ 
+                     
+                     /* update d here if finding minimum*/
+
+                    //increase begin to make it invalid/valid again
+                    
+                    if(map[s[begin++]]++ ?){ /*modify counter here*/ }
+                }  
+  
+                /* update d here if finding maximum*/
+            }
+            return d;
+      }
+
+*One thing needs to be mentioned is that when asked to find maximum substring, we should update maximum after the inner while loop to guarantee that the substring is valid. On the other hand, when asked to find minimum substring, we should update minimum inside the inner while loop.*
+
+
+The code of solving **Longest Substring with At Most Two Distinct Characters** is below:
+
+    int lengthOfLongestSubstringTwoDistinct(string s) {
+            vector<int> map(128, 0);
+            int counter=0, begin=0, end=0, d=0; 
+            while(end<s.size()){
+                if(map[s[end++]]++==0) counter++;
+                while(counter>2) if(map[s[begin++]]--==1) counter--;
+                d=max(d, end-begin);
+            }
+            return d;
+        }
+
+The code of solving **Longest Substring Without Repeating Characters** is below:
+
+**Update 01.04.2016, thanks @weiyi3 for advise.**
+
+    int lengthOfLongestSubstring(string s) {
+            vector<int> map(128,0);
+            int counter=0, begin=0, end=0, d=0; 
+            while(end<s.size()){
+                if(map[s[end++]]++>0) counter++; 
+                while(counter>0) if(map[s[begin++]]-->1) counter--;
+                d=max(d, end-begin); //while valid, update d
+            }
+            return d;
+        }
+    
+I think this post deserves some upvotes! : )
+
+----------------------------------------------------------------------------------------------------
+Accepted O(n) solution
+    class Solution {
+    public:
+        string minWindow(string S, string T) {
+            if (S.empty() || T.empty())
+            {
+                return "";
+            }
+            int count = T.size();
+            int require[128] = {0};
+            bool chSet[128] = {false};
+            for (int i = 0; i < count; ++i)
+            {
+                require[T[i]]++;
+                chSet[T[i]] = true;
+            }
+            int i = -1;
+            int j = 0;
+            int minLen = INT_MAX;
+            int minIdx = 0;
+            while (i < (int)S.size() && j < (int)S.size())
+            {
+                if (count)
+                {
+                    i++;
+                    require[S[i]]--;
+                    if (chSet[S[i]] && require[S[i]] >= 0)
+                    {
+                        count--;
+                    }
+                }
+                else
+                {
+                    if (minLen > i - j + 1)
+                    {
+                        minLen = i - j + 1;
+                        minIdx = j;
+                    }
+                    require[S[j]]++;
+                    if (chSet[S[j]] && require[S[j]] > 0)
+                    {
+                        count++;
+                    }
+                    j++;
+                }
+            }
+            if (minLen == INT_MAX)
+            {
+                return "";
+            }
+            return S.substr(minIdx, minLen);
+        }
+    };
+
+Implementation of [mike3's idea][1]
+
+running time : 56ms.
+
+
+  [1]: https://oj.leetcode.com/discuss/5469/is-the-length-of-t-considered-constant-or-m
+
+----------------------------------------------------------------------------------------------------
+12 lines Python
+The current window is `s[i:j]` and the result window is `s[I:J]`. In `need[c]` I store how many times I need character `c` (can be negative) and `missing` tells how many characters are still missing. In the loop, first add the new character to the window. Then, if nothing is missing, remove as much as possible from the window start and then update the result.
+
+    def minWindow(self, s, t):
+        need, missing = collections.Counter(t), len(t)
+        i = I = J = 0
+        for j, c in enumerate(s, 1):
+            missing -= need[c] > 0
+            need[c] -= 1
+            if not missing:
+                while i < j and need[s[i]] < 0:
+                    need[s[i]] += 1
+                    i += 1
+                if not J or j - i <= J - I:
+                    I, J = i, j
+        return s[I:J]
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my straightforward O(n) solution with explanation
+    string minWindow(string S, string T) {
+        string result;
+        if(S.empty() || T.empty()){
+            return result;
+        }
+        unordered_map<char, int> map;
+        unordered_map<char, int> window;
+        for(int i = 0; i < T.length(); i++){
+            map[T[i]]++;
+        }
+        int minLength = INT_MAX;
+        int letterCounter = 0;
+        for(int slow = 0, fast = 0; fast < S.length(); fast++){
+            char c = S[fast];
+            if(map.find(c) != map.end()){
+                window[c]++;
+                if(window[c] <= map[c]){
+                    letterCounter++;
+                }
+            }
+            if(letterCounter >= T.length()){
+                while(map.find(S[slow]) == map.end() || window[S[slow]] > map[S[slow]]){
+                    window[S[slow]]--;
+                    slow++;
+                }
+                if(fast - slow + 1 < minLength){
+                    minLength = fast - slow + 1;
+                    result = S.substr(slow, minLength);
+                }
+            }
+        }
+        return result;
+    }
+
+There are three key variables in my solution: 
+
+    unordered_map <char, int> map; unordered_map<char, int> window; int letterCounter;
+
+variable "map" is used to indicate what characters and how many characters are in T.
+
+variable "window" is to indicate what characters and how many characters are between pointer "slow" and pointer "fast".
+
+Now let's start.
+
+The first For loop is used to construct variable "map".
+
+The second For loop is used to find the minimum window.
+
+The first thing we should do in the second For loop is to find a window which can cover T. I use "letterCounter" to be a monitor. If "letterCounter" is equal to T.length(), then we find this window. Before that, only the first If clause can be executed. However, after we find this window, the second If clause can also be executed. 
+
+In the second If clause, we move "slow" forward in order to shrink the window size. Every time finding a smaller window, I update the result. 
+
+At the end of program, I return result, which is the minimum window.
+
+
+----------------------------------------------------------------------------------------------------
+Can T have characters repeating ?
+Can the String T have repeating characters - for instance "AA"? In that case should the minimum window contain two A's or does it suffice for it have a single A. 
+
+----------------------------------------------------------------------------------------------------
+Share my neat java solution
+    public String minWindow(String S, String T) {
+        if(S==null||S.isEmpty()||T==null||T.isEmpty()) return "";
+        int i=0, j=0;
+        int[] Tmap=new int[256];
+        int[] Smap=new int[256];
+        for(int k=0; k< T.length(); k++){
+            Tmap[T.charAt(k)]++;
+        }
+        int found=0;
+        int length=Integer.MAX_VALUE;
+        String res="";
+        while(j<S.length()){
+            if(found<T.length()){
+                if(Tmap[S.charAt(j)]>0){
+                    Smap[S.charAt(j)]++;
+                    if(Smap[S.charAt(j)]<=Tmap[S.charAt(j)]){
+                        found++;
+                    }
+                }
+                j++;
+            }
+            while(found==T.length()){
+                if(j-i<length){
+                    length=j-i; res=S.substring(i,j);
+                }
+                if(Tmap[S.charAt(i)]>0){
+                    Smap[S.charAt(i)]--;
+                    if(Smap[S.charAt(i)]<Tmap[S.charAt(i)]){
+                        found--;
+                    }
+                }
+                i++;
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution. using two pointers + HashMap
+    public class Solution {
+    public String minWindow(String s, String t) {
+        if(s == null || s.length() < t.length() || s.length() == 0){
+            return "";
+        }
+        HashMap<Character,Integer> map = new HashMap<Character,Integer>();
+        for(char c : t.toCharArray()){
+            if(map.containsKey(c)){
+                map.put(c,map.get(c)+1);
+            }else{
+                map.put(c,1);
+            }
+        }
+        int left = 0;
+        int minLeft = 0;
+        int minLen = s.length()+1;
+        int count = 0;
+        for(int right = 0; right < s.length(); right++){
+            if(map.containsKey(s.charAt(right))){
+                map.put(s.charAt(right),map.get(s.charAt(right))-1);
+                if(map.get(s.charAt(right)) >= 0){
+                    count ++;
+                }
+                while(count == t.length()){
+                    if(right-left+1 < minLen){
+                        minLeft = left;
+                        minLen = right-left+1;
+                    }
+                    if(map.containsKey(s.charAt(left))){
+                        map.put(s.charAt(left),map.get(s.charAt(left))+1);
+                        if(map.get(s.charAt(left)) > 0){
+                            count --;
+                        }
+                    }
+                    left ++ ;
+                }
+            }
+        }
+        if(minLen>s.length())  
+        {  
+            return "";  
+        }  
+        
+        return s.substring(minLeft,minLeft+minLen);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+16ms simple and neat c++ solution only using a vector. Detailed explanation
+ 1. Initialize a vector called `remaining`, which contains the needed
+    matching numbers of each character in `s`. 
+ 2. If there are still
+        characters needed to be contained (increment `i` in this case),
+        decrease the matching number of that character and check if it is
+        still non-negative. If it is, then it is the character in `t`, so
+        decrease the total required number `required`.  
+ 3. If there is no more
+            characters required (increment `start` in this case),  record `min`
+            and `left` if a smaller length is found. Recover the number of this
+            character in the `remaining` and if it is a character in `t`
+            increase `required`.
+
+
+----------
+
+    class Solution {
+    public:
+        string minWindow(string s, string t) {
+            if (s.size() == 0 || t.size() == 0) return "";
+            vector<int> remaining(128, 0);
+            int required = t.size();
+            for (int i = 0; i < required; i++) remaining[t[i]]++;
+            // left is the start index of the min-length substring ever found
+            int min = INT_MAX, start = 0, left = 0, i = 0;
+            while(i <= s.size() && start < s.size()) {
+                if(required) {
+                    if (i == s.size()) break;
+                    remaining[s[i]]--;
+                    if (remaining[s[i]] >= 0) required--;
+                    i++;
+                } else {
+                    if (i - start < min) {
+                        min = i -start;
+                        left = start;
+                    }
+                    remaining[s[start]]++;
+                    if (remaining[s[start]] > 0) required++;
+                    start++;
+                }
+            }
+            return min == INT_MAX? "" : s.substr(left, min);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Three O(N) concise implemetation according to leetcode oj discuss
+    // according to http://leetcode.com/2010/11/finding-minimum-window-in-s-which.html
+    // finds the first window that satisfies the constraint
+    // then continue maintaining the constraint throughout
+    // time complexity O(2N)
+    string minWindow(string S, string T) {
+        int m = S.size(), n = T.size();
+        if (n <= 0 || m < n)
+            return "";
+        
+        int require[128] = {0}, found[128] = {0};
+        for (int k = 0; k < n; ++k) require[T[k]]++;
+        
+        int count = 0;
+        int minLen = INT_MAX, minIndex = 0;
+        for (int s = 0, e = 0; e < m; ++e) {
+            // skip characters not in T
+            if (require[S[e]] == 0) continue;
+            if (++found[S[e]] <= require[S[e]]) count++;
+            
+            // windows constrain is sastisfied
+            if (count == n) {
+                // advance begin index as far as possible
+                // stop when advancing breaks window constraint
+                while (require[S[s]] == 0 || found[S[s]] > require[S[s]]) {
+                    if (found[S[s]] > require[S[s]]) found[S[s]]--;
+                    ++s;
+                }
+                // update minmum window
+                if (e - s + 1 < minLen) {
+                    minLen = e - s + 1;
+                    minIndex = s;
+                }
+            }
+        }
+        
+        if (minLen == INT_MAX) return "";
+        return S.substr(minIndex, minLen); 
+    }
+    
+    string minWindow(string S, string T) {
+        int m = S.size(), n = T.size();
+        if (n <= 0 || m < n)
+            return "";
+        
+        int require[128] = {0}, chSet[128] = {0};
+        for (int k = 0; k < n; ++k) {
+            require[T[k]]++;
+            chSet[T[k]] = 1;
+        }
+        
+        int minLen = INT_MAX, minIndex = 0;
+        int i = -1, j = 0;
+        while (i < m && j < m) {
+            if (n) {
+                ++i;
+                require[S[i]]--;
+                if (chSet[S[i]] && require[S[i]] >= 0) n--;
+            }
+            else {
+                if (minLen > i - j + 1) {
+                    minLen = i - j + 1;
+                    minIndex = j;
+                }
+                require[S[j]]++;
+                if (chSet[S[j]] && require[S[j]] > 0) n++;
+                ++j;
+            }
+        }
+        
+        if (minLen == INT_MAX) return "";
+        return S.substr(minIndex, minLen);
+    }
+
+    // the most concise one
+    // maintain a window with two pointers (left side and right side)
+    string minWindow(string S, string T) {
+        int m = S.size(), n = T.size();
+        if (n <= 0 || m < n) return "";
+        
+        int require[128] = {0};
+        for (int i = 0; i < n; ++i) require[T[i]]++;
+        
+        int count = 0;
+        int minLen = INT_MAX, minIndex = 0;
+        for (int s = 0, e = 0; e < m; ++e) {
+            require[S[e]]--;
+            if (require[S[e]] >= 0) count++;
+            while (count == n) {
+                if (e - s + 1 < minLen) {
+                    minLen = e - s + 1;
+                    minIndex = s;
+                }
+                require[S[s]]++;
+                if (require[S[s]] > 0) count--;
+                s++;
+            }
+        }
+        
+        if (minLen == INT_MAX) return "";
+        return S.substr(minIndex, minLen); 
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 4ms bit 97.6%
+Basically, there are two pointers for windows sliding. One for exploiting new matched substring, other pointer for expiring previous substring.
+
+    public String minWindow(String s, String t) {
+            char[] s_array = s.toCharArray();
+            char[] t_array = t.toCharArray();
+            int[] map = new int[256];
+            int end = 0;
+            int start = 0;
+            int min_length = Integer.MAX_VALUE;
+            for(int i = 0; i < t_array.length; i++)
+                map[t_array[i]] ++;
+            int count = t_array.length;
+            int min_start = 0;
+            while(end < s_array.length)
+            {
+                if(map[s_array[end]] > 0)
+                {
+                    count--;
+                }
+                map[s_array[end]] --;
+                while(count == 0)
+                {
+                    if((end - start + 1) < min_length)
+                    {
+                        min_length = end - start + 1;
+                        min_start = start;
+                    }
+                    map[s_array[start]] ++;
+                    if(map[s_array[start]] > 0){
+                        count ++;
+                    }
+                    start++;
+                }
+                end ++;
+    
+            }
+            if( min_start+min_length > s_array.length)
+                return "";
+            return s.substring(min_start, min_start+min_length);
+        }
+
+----------------------------------------------------------------------------------------------------
+I think the description of this problem should be more explicit
+According to this case : 
+
+`Input:	"a", "aa"
+Output:	"a"
+Expected:	""`
+
+String T could contains duplicated characters, and the result shoud contain all of them duplicately,  but the description doesn't imply it at all. 
+Just adding another case to the description may save a lot of time. 
+
+I saw the first question about the problem is about this, ant there is an answer, but I think we don't check the discuss until we found something wrong, so make the description more clear please if it doesn't bother a lot ~ thank you ~~~~
+
+----------------------------------------------------------------------------------------------------
+Accepted Python solution using hashtable
+    class Solution:
+        # @return a string
+        def minWindow(self, S, T):
+            indices = {}
+            for char in T:
+                indices[char] = []
+            miss = list(T)
+            start = 0
+            end = len(S)
+            for i in range(len(S)):
+                if S[i] in T:
+                    if S[i] not in miss and indices[S[i]] != []:
+                        indices[S[i]].pop(0)
+                    elif S[i] in miss:
+                        miss.remove(S[i])
+                    indices[S[i]].append(i)
+                if miss == []:
+                    maximum = max([x[-1] for x in indices.values()])
+                    minimum = min([x[0] for x in indices.values()])
+                    if maximum-minimum+1 < end-start+1:
+                        start = minimum
+                        end = maximum
+            if miss != []:
+                return ""
+            else:
+                return S[start:end+1]
+
+Basically I kept a dictionary to record the index of each character of T. Each time I found a window, (when miss == []), I checked the length of this window by subtracting the maximum index and the minimum index of the characters. If this window is the smallest one so far, I record its beginning and ending index as "start" and "end."
+
+----------------------------------------------------------------------------------------------------
+My 12ms simple C++ code (O(1) space, O(N) time)
+Just used an array dict to count the occurence of the letters in t. To distinguish the letters that are not in t, we initialize dict with -slen and for those letters  that are not in t, their corresponding elements in dict will be -slen. For example, t="abc", then dict['a']= dict['b']=dict['c']=1, while the others, such as dict['d'] = -slen. so if dict[x] == -slen, we know x is not in t. Of course, you can use an  unordered_map to simplify the logic, but it is much slower.
+After building dict, we scan the string s, we use start to track the starting point of the current window and move i forward: we decrease dict[s[i]], if s[i] is a letter in t and in the current window we don't find all the occurence of s[i] (i.e. (--dict[s[i]]>=0) ), then s[i] will be counted as one letter of t. we decrease count by 1 and if count ==0 (i.e.  --count ==0),  it means we find all the letters of t in the current window. Then we move start to find the minium window, if s[start] is not in t (dict[s[start]]<= -slen ) or if we have more than enough such letters in the current window (i.e. (++dict[s[start]] <= 0,  for example, s= aaab, t= ab, say start = 0, i=3, then in that case dict[s[0]] = -1, so we can move start to 1 (so dict[s[0]] = 0), and stop at 2 (dict[s[0]] = 1)). After while, we find start of the minium window ending at i, then we compare such window with the one we found so far (with length minL and starts at minS). If it is shorter than minL, update minL and minS. At last, we increase start and count, and continue the search. 
+Since we have to move i and start through s, the complexity is O(N) 
+
+    class Solution {
+    public:
+        string minWindow(string s, string t) {
+            int slen = s.size(), tlen = t.size(), i, start=0, count, minL = INT_MAX, minS;
+            int dict[128];
+            fill_n(dict,128,-slen);
+            for(i=0;i<tlen;++i) dict[t[i]] = dict[t[i]]>0? (dict[t[i]]+1):1;
+            
+            for(i=0, count = tlen; i<slen;++i)
+            {
+                if( (--dict[s[i]]>=0) && (--count == 0) )
+                {
+                    while(dict[s[start]]<=-slen || (++dict[s[start]] <= 0) ) ++start;
+                    if(minL>i-start+1)
+                    {
+                        minL = i-start+1;
+                        minS = start; 
+                    }
+                    count=1;
+                    ++start;
+                }
+            }
+            return minL==INT_MAX? "":s.substr(minS, minL);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(n) 5ms Java Solution Beats 93.18%
+This solution adopts the idea described in this [LeetCode article][1]. It explains this O(n) solution very well. Because of that article, I kept the comments simple. I highly suggest you to read it before trying this code.
+
+    public class Solution {
+      public String minWindow(String s, String t) {
+        char[] needToFind = new char[256];
+        char[] hasFound = new char[256];
+        int sLen = s.length();
+        int tLen = t.length();
+        int count = 0;
+        int optLen = Integer.MAX_VALUE; // opt stands for optimal
+        int optBegin = 0;
+        int optEnd = 0;
+        for (int i = 0; i < tLen; i++) { // gives a counter for each character in t
+          needToFind[t.charAt(i)]++;
+        }
+        for (int begin = 0, end = 0; end < sLen; end++) {
+          if (needToFind[s.charAt(end)] == 0) { // skips irrelevant char
+            continue;
+          }
+          char currEnd = s.charAt(end); // the char at the end
+          hasFound[currEnd]++;
+          if (hasFound[currEnd] <= needToFind[currEnd]) {
+            count++;
+          }
+          if (count == tLen) { // pauses end, moves beginning to the right as much as possible
+            char currBegin = s.charAt(begin); // char at begin
+            while (hasFound[currBegin] > needToFind[currBegin] || needToFind[currBegin] == 0) {
+              if (hasFound[currBegin] > needToFind[currBegin]) {
+                hasFound[currBegin]--;
+              }
+              begin++;
+              currBegin = s.charAt(begin);
+            }
+            if (optLen > end - begin + 1) { // if current length is smaller, update our optimum solution
+              optLen = end - begin + 1;
+              optBegin = begin;
+              optEnd = end;
+            }
+          }
+        }
+        if (count != tLen) {
+          return "";
+        }
+        return s.substring(optBegin, optEnd + 1);
+      }
+    }
+
+  [1]: http://articles.leetcode.com/finding-minimum-window-in-s-which/
+
+----------------------------------------------------------------------------------------------------
+The case &quot;a&quot;, &quot;aa&quot;
+ 
+
+The Discription is " Given a string S and a string T, find the minimum window in S which will contain all the characters in T "
+
+ 
+
+suppose S is "a", T is "aa"
+
+ 
+
+I think the answer should be "a" , the character in T is just "a", and S contain it. but the test answer is "". 
+should the "a" character be twice in the window??
+
+
+----------------------------------------------------------------------------------------------------
+The fast 7ms O(N) Java solution use only one array without map
+    public String minWindow(String s, String t) {
+        if (t.length() <= 0 || s.length() < t.length()) return "";
+        int start = 0, end = 0, i = 0, j = 0, count = t.length(), min = s.length()+1;
+        int[] table = new int[256];
+        
+        for(int k = 0; k<count; k++){
+            char c = t.charAt(k);
+            table[c]++;
+        }
+        for(int k = 0; k<256; k++){
+            if(table[k]<1)
+                table[k]=Integer.MIN_VALUE;
+        }
+        while(end<s.length()){
+            while(end<s.length()&&count>0){
+                char c = s.charAt(end++);
+                if(table[c]!=Integer.MIN_VALUE){
+                    if(table[c]>0)
+                        count--;
+                   table[c]--;
+                }
+            }
+            if(count>0) break;
+            while(start<s.length()&&count<=0){
+                char c = s.charAt(start++);
+                if(table[c]!=Integer.MIN_VALUE){
+                    if(table[c]>=0)
+                        count++;
+                   table[c]++;
+                }
+            }
+            if(end-start+1<min){
+                min = end-start+1;
+                i = start-1;
+                j = end;
+            }
+        }
+        return min==s.length()+1 ? "" : s.substring(i,j);
+    }
+
+----------------------------------------------------------------------------------------------------
+O(N) JAVA Sliding Window solution with explanation
+**Sliding Window Solution:**
+
+    1) Spread the right pointer until it satisfies the requirement  
+    2) Shrink the left pointer to get the minimum range 
+    3) Keep the above steps.
+
+**Time complexity = O(2n) = O(n)**
+
+There're 2 loops: for loop of i, while loop of j. As j only steps forward, never steps backward. So time complexity = O(n) + O(n) = O(2n) = O(n)
+
+**JAVA Code:**  
+ 
+A little trick is using two arrays to count the characters in s and t, instead of HashMap, to avoid TLE.
+
+    boolean sContainsT(int mapS[], int mapT[]) {// Runtime = O(256) = O(1)
+        for (int i = 0; i < mapT.length; i++) {// s should cover all characters in t
+            if (mapT[i] > mapS[i])
+                return false; 
+        }           
+        return true;
+    }
+    
+    public String minWindow(String s, String t) {   
+        int mapS[] = new int[256];// Count characters in s
+        int mapT[] = new int[256];// Count characters in t      
+        for (char ch : t.toCharArray())
+            mapT[ch]++;
+    
+        String res = "";
+        int right = 0, min = Integer.MAX_VALUE;         
+        for (int i = 0; i < s.length(); i++) {// Two pointers of the sliding window: i(left), right
+            while (right < s.length() && !sContainsT(mapS, mapT)) {// Extend the right pointer of the sliding window
+                mapS[s.charAt(right)]++;
+                right++;
+            }
+            if (sContainsT(mapS, mapT) && min > right - i + 1) {
+                res = s.substring(i, right);
+                min = right - i + 1;
+            }
+            mapS[s.charAt(i)]--;// Shrink the left pointer from i to i + 1
+        }
+        return res;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution for your reference
+    public String minWindow(String S, String T) {
+        int[] result = new int[] {-1, S.length()};
+        int counter = 0;
+        Map<Character, Integer> expected = new HashMap<>();
+        Map<Character, Integer> window = new HashMap<>();
+        
+        for (int i = 0; i < T.length(); i++) {
+            if (!expected.containsKey(T.charAt(i))) expected.put(T.charAt(i), 0);
+            expected.put(T.charAt(i), expected.get(T.charAt(i)) + 1);
+        }
+        for (int i = 0, j = 0; j < S.length(); j++) {
+            char cur = S.charAt(j);
+            if (expected.containsKey(cur)) {
+                if (!window.containsKey(cur)) window.put(cur, 0);
+                window.put(cur, window.get(cur) + 1);
+                if (window.get(cur) <= expected.get(cur)) counter++;
+                if (counter == T.length()) {
+                    char remove = S.charAt(i);
+                    while (!expected.containsKey(remove) || window.get(remove) > expected.get(remove)){
+                        if (expected.containsKey(remove)) window.put(remove, window.get(remove) - 1);
+                        remove = S.charAt(++i);;
+                    }
+                    if (j - i < result[1] - result[0]) result = new int[]{i, j};
+                }
+            }
+        }
+        return result[1] - result[0] < S.length() ? S.substring(result[0], result[1] + 1) : "";
+    }
+
+Count the number of every character in T. Go through the S and maintain a window to store characters met before. Use a variable counter to keep track of the valid characters in T. If counter reaches T.length, shrink the window if necessary. 
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution, 12ms.
+
+
+    class Solution {
+    public:
+        string minWindow(string s, string t) {
+            
+            int hashmap[256] = {0};
+            int m = s.size(), n = t.size();
+            
+            for (int i = 0; i < n; ++ i) {
+                hashmap[t[i]] ++;
+            }
+            
+            int minLen = -1, len = 0, validLen = 0;
+            int start = 0, min_start;
+    
+            for (int i = 0; i < m; ++ i) {
+                
+                if (hashmap[s[i]] > 0) validLen ++;
+                hashmap[s[i]] --;
+                len ++;
+    
+                while (hashmap[s[start]] < 0) {
+                    hashmap[s[start]] ++;
+                    start ++;
+                    len --;
+                }
+                
+                if (validLen == n && (len < minLen || minLen == -1)) {
+                    minLen = len;
+                    min_start = start;
+                }
+            }
+            
+            if (validLen < n) return "";
+            
+            return s.substr(min_start, minLen);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python 20 lines AC O(n) solution
+Idea is pretty simple, keep two pointers left and right.
+
+ If s[left:right] has all chars in T, calculate distance and keep answer, then move left pointer.
+
+ If s[left:right] doesn't have all chars in T, move right pointer.
+
+
+    class Solution:
+    # @param {string} s
+    # @param {string} t
+    # @return {string}
+    # sliding window problem
+    # count all chars in string T
+    # left pointer point to string which has been processed
+    # right pointer point to string, which has not been processed
+    # 1.if all window from left to right contains all string T(counter values all less then or equal to 0)
+    #   calculate min window length, and keep answer
+    #   then move left pointer
+    # 2.else there are missing string in current answer
+    #   move right pointer
+    #   update counter
+    # repeat 1, 2 steps until right is equal to len(s), then break it
+    def minWindow(self, s, t):
+        left, right = 0, 0
+        # count T chars
+        counter = collections.defaultdict(int)
+        for a in t:
+            counter[a] += 1
+        
+        minwindow = len(s) + 1
+        answer = None
+        
+        while right <= len(s):
+            # check all chars in T are in the current answer
+            if all(map(lambda x: True if x<=0 else False, counter.values())):
+                if minwindow > right-left:
+                    minwindow = right-left
+                    answer = s[left:right]
+                char = s[left]
+                if char in counter:
+                    counter[char] += 1
+                left += 1
+            else:
+                if right == len(s):
+                    break
+                char = s[right]
+                if char in counter:
+                    counter[char] -= 1
+                right += 1
+                
+        return answer if answer else ''
+
+
+
+----------------------------------------------------------------------------------------------------

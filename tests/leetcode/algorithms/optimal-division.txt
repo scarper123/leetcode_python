@@ -1,0 +1,603 @@
+Python, Simple Explanation
+def subseq(w1, w2):
+    #True iff word1 is a subsequence of word2.
+    i = 0
+    for c in w2:
+        if i < len(w1) and w1[i] == c:
+            i += 1
+    return i == len(w1)
+    
+A.sort(key = len, reverse = True)
+for i, word1 in enumerate(A):
+    if all(not subseq(word1, word2) 
+            for j, word2 in enumerate(A) if i != j):
+        return len(word1)
+return -1
+
+
+----------------------------------------------------------------------------------------------------
+Java Hashing Solution
+public int findLUSlength(String[] strs) {
+    Map<String, Integer> subseqFreq = new HashMap<>();
+    for (String s : strs) 
+        for (String subSeq : getSubseqs(s))
+            subseqFreq.put(subSeq, subseqFreq.getOrDefault(subSeq, 0) + 1);
+    int longest = -1;
+    for (Map.Entry<String, Integer> entry : subseqFreq.entrySet()) 
+        if (entry.getValue() == 1) longest = Math.max(longest, entry.getKey().length());
+    return longest;
+}
+
+public static Set<String> getSubseqs(String s) {
+    Set<String> res = new HashSet<>();
+    if (s.length() == 0) {
+         res.add("");
+         return res;
+    }
+    Set<String> subRes = getSubseqs(s.substring(1));
+    res.addAll(subRes);
+    for (String seq : subRes) res.add(s.charAt(0) + seq);
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+hashmap + sort solution, c++
+bool cmp(pair<string,int> &a, pair<string,int> &b)
+{
+    return a.first.size() > b.first.size();
+}
+
+bool isS1subsOfS2(string &s1, string &s2){
+    int j = 0, i = 0;
+    for(; i < s1.size(); ++i){
+        while(j < s2.size() && s1[i] != s2[j]) ++j;
+        if(j == s2.size())
+           return false;
+        ++j;
+    }
+    return true;
+}
+class Solution {
+public:
+    int findLUSlength(vector<string>& strs) {
+        unordered_map<string,int> m;
+        for(int i = 0; i < strs.size(); ++i)
+          ++m[strs[i]];
+        vector<pair<string,int>> v;
+        for(auto it = m.begin(); it != m.end(); ++it)
+           v.push_back(*it);
+        sort(v.begin(),v.end(),cmp);
+        for(int i = 0; i < v.size(); ++i)
+        {
+           if(v[i].second == 1){
+               int j = 0;
+               for(; j < i; ++j)
+                 if(isS1subsOfS2(v[i].first,v[j].first))
+                     break;
+               if(j == i) return v[i].first.size();
+           }
+        }
+        return -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java(15ms) - Sort + check subsequence
+    public int findLUSlength(String[] strs) {
+        Arrays.sort(strs, new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o2.length() - o1.length();
+            }
+        });
+        
+        Set<String> duplicates = getDuplicates(strs);
+        for(int i = 0; i < strs.length; i++) {
+            if(!duplicates.contains(strs[i])) {
+                if(i == 0) return strs[0].length();
+                for(int j = 0; j < i; j++) {
+                    if(isSubsequence(strs[j], strs[i])) break;
+                    if(j == i-1) return strs[i].length();
+                }
+            }
+        }
+        return -1;
+    }
+    
+    public boolean isSubsequence(String a, String b) {
+        int i = 0, j = 0;
+        while(i < a.length() && j < b.length()) {
+            if(a.charAt(i) == b.charAt(j)) j++;
+            i++;
+        }
+        return j == b.length();
+    }
+    
+    private Set<String> getDuplicates(String[] strs) {
+        Set<String> set = new HashSet<String>();
+        Set<String> duplicates = new HashSet<String>();
+        for(String s : strs) {
+            if(set.contains(s)) duplicates.add(s);
+            set.add(s);
+        }
+        return duplicates;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ O(n^2) with Explanation
+class Solution {
+public:
+    //This is used to determine if a has common subsequence in b
+    bool hasCommon(string a,string b){
+        int remine = a.size();
+        int remine2 = b.size();
+        for(;remine>0&&remine2>0;){
+            int i = a.size()-remine;
+            int j = b.size()-remine2;
+            if(a.at(i) == b.at(j)){
+                remine--;remine2--;
+            }else{
+                remine2--;
+            }
+        }
+        return remine==0;
+    }
+    int findLUSlength(vector<string>& strs) {
+        int maxLen = -1;
+        for(int i = 0;i<strs.size();++i){
+            int currentLen = strs[i].length();
+            bool all = true;
+            for(int j = 0;j<strs.size();++j){
+                if(i!=j&&hasCommon(strs[i], strs[j])){
+                    all = false;
+                    break;
+                }
+            }
+            if(all){
+                maxLen = maxLen<currentLen?currentLen:maxLen;
+            }
+        }
+        return maxLen;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Question on particular test
+<p>One of the test case for the code is:<br/>
+&#91;&#34;aabbcc&#34;, &#34;aabbcc&#34;,&#34;cb&#34;,&#34;abc&#34;&#93;<br/>
+In this case the expected output is 2.</p>
+<p>Can someone explain why it is 2. From what i understand isn&#39;t the longest uncommon subsequence &#34;abc&#34;(length 3) since is is not common with any of the string.</p>
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class Solution {
+public:
+    int findLUSlength(vector<string>& strs) {
+        int n = strs.size();
+        int maxlen = -1;
+        for (int i = 0; i < n; i++) {
+            bool uniq = true;
+            for (int j = 0; j < n; j++) {
+                if (i != j && isSubsequence(strs[i], strs[j], 0, 0)) {
+                    uniq = false;
+                    break;
+                }
+            }
+            if (uniq) {
+                maxlen = max(maxlen, (int)strs[i].length());
+            }
+        }
+
+        return maxlen;
+    }
+private:
+    bool isSubsequence(string s, string t, size_t si, size_t ti) {
+        if (si == s.length()) {
+            return true;
+        }
+        if (ti == t.length()) {
+            return false;
+        }
+
+        return (s[si] == t[ti]) && isSubsequence(s, t, si + 1, ti + 1) || isSubsequence(s, t, si, ti + 1);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+public class Solution {
+    public int findLUSlength(String[] strs) {
+        if(isEqual(strs)) return -1;
+        
+        Arrays.sort(strs, (a, b) -> Integer.compare(b.length(), a.length()));
+        
+        for(int i = 0; i < strs.length; ++i) {
+            String first = strs[i];
+            boolean flag = true;
+            for(int j = 0; j < strs.length; ++j) {
+                if(j == i) continue;
+                String second = strs[j];
+                if(first.equals(second) || charMatch(first, second)) {
+                    flag = false;
+                    break;
+                }
+            }
+            if(flag) return first.length();
+        }
+        
+        return -1;
+    }
+    
+    private boolean charMatch(String first, String second) {
+        int index = -1;
+        for(int k = 0; k < first.length(); k++) {
+            char c = first.charAt(k);
+            index = second.indexOf(c, index + 1);
+            if(index == -1) return false;
+        }
+        return true;
+    }
+    
+    public boolean isEqual(String[] strs) {
+        for(int i = 1; i < strs.length; ++i) {
+            if(strs[i - 1].equals(strs[i])) continue;
+            return false;
+        }
+        return true;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python, silly one-liner
+return max([len(w1) for i, w1 in enumerate(A) 
+                   if all( not all(c in z2 for c in w1)
+                   for j, z2 in enumerate(map(iter, A)) 
+                   if i != j) ] or [-1]) 
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution by Stream API
+public int findLUSlength(String[] strs) {
+    return Arrays.stream(strs).sorted((s1, s2) -> Integer.compare(s2.length(), s1.length()))
+            .filter(s -> Arrays.stream(strs).filter(s2 -> s2 != s && s2.length() >= s.length()).noneMatch(s2 -> isSubseq(s, s2))) //
+            .findFirst().map(s -> s.length()).orElse(-1);
+}
+
+// Leetcode-392 Is Subsequence: O(M+N), binary search, DP...
+private boolean isSubseq(String s1, String s2) {
+    int i = 0, m = s1.length(), n = s2.length();
+    for (int j = 0; i < m && j < n; j++) {
+        if (s1.charAt(i) == s2.charAt(j)) i++;
+    }
+    return i == m;
+}
+
+
+----------------------------------------------------------------------------------------------------
+python - simple
+class Solution(object):
+    def subseq(self, w1, w2):
+        # Check if w1 is a subsequence of w2
+
+        if len(w1) == len(w2):
+            if w1 == w2:
+                return True
+            else:
+                return False
+
+        assert len(w2) > len(w1)
+        i = 0
+        for c in w2:
+            if i < len(w1) and w1[i] == c:
+                i += 1
+               
+        return i == len(w1)
+            
+    def findLUSlength(self, strs):
+        """
+        :type strs: List[str]
+        :rtype: int
+        """
+        
+        strs.sort(key = len, reverse = True)
+        for i, w1 in enumerate(strs):
+            if all(not self.subseq(w1, w2) for j, w2 in enumerate(strs) if i != j and len(w2) >= len(w1)):
+                return len(w1)
+                
+        return -1
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ Simple Solution, Concise Code, O(n^2 * m)
+DP
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+public class Solution {
+    public int findLUSlength(String[] strs) {
+
+        Arrays.sort(strs, (s1, s2) -> s2.length() - s1.length());
+
+        for (int i = 0; i < strs.length; i++) {
+            boolean found = false;
+            for (int j = 0; j < strs.length; j++) {
+                if (i != j && isSubsequence(strs[j],strs[i])) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return strs[i].length();
+            }
+        }
+        
+        return -1;
+    }
+
+    /**
+     *
+     * @return true if str2 is a subsequence of str1, false otherwise.
+     */
+    private boolean isSubsequence(String str1, String str2) {
+        if (str1.equals(str2)) {
+            return true;
+        }
+
+        if (str1.length() < str2.length()) {
+            return false;
+        }
+
+        int i = 0;
+        for (char ch : str1.toCharArray()) {
+            if (i < str2.length() && str2.charAt(i) == ch) {
+                i++;
+            }
+        }
+        return i == str2.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Took the idea from other solutions (Java) (Added a logical reasoning on why the LUS must be some String)
+public class Solution {
+    public int findLUSlength(String[] strs) {
+        Arrays.sort(strs, new Comparator < String > () {
+            public int compare(String s1, String s2) {
+                return s2.length() - s1.length();
+            }
+        });
+        
+        int maxLen = -1;
+        for (int i = 0; i < strs.length; i++) {
+            String curr = strs[i];
+            
+            boolean lus = true;
+            for (int j = 0; j < strs.length; j++) {
+                if (i == j) continue;
+                if (curr.length() > strs[i].length() || isSebseq(curr, strs[j])) {
+                    lus = false;
+                    break;
+                }
+            }
+            
+            if (lus) {
+                maxLen = curr.length();
+                break;
+            }
+        }
+        
+        return maxLen;
+    }
+    
+    private boolean isSebseq(String x, String y) {
+        int j = 0;
+        for(int i = 0; j < x.length() && i < y.length(); i++) {
+            if (x.charAt(j) == y.charAt(i)) j++;
+        }
+        
+        return j == x.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy solution. Sort
+class Solution {
+    public int findLUSlength(String[] strs) {
+   
+        Arrays.sort(strs, new Comparator<String>(){
+        	public int compare(String s1, String s2){
+        		return -(s1.length() - s2.length());
+        	}
+        });
+
+        for(int i = 0; i < strs.length; i++){
+            boolean flag = false;
+        	for(int j = 0; j < strs.length && strs[j].length() >= strs[i].length(); j++){
+                if(j == i) continue;
+        		if(helper(strs[j],strs[i])) {
+                    flag = true;
+                    break;
+                }
+        	}
+            if(!flag) return strs[i].length();
+        }
+
+        return -1;
+    }
+
+
+    public boolean helper(String s1, String s2){
+    	int index = 0;
+    	for(int i = 0; i < s1.length(); i++){
+    		if(s1.charAt(i) == s2.charAt(index)) index++;
+    		if(index == s2.length()) return true;
+    	}
+    	return false;
+    }
+}
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Test case 22, input &quot;aaa&quot;, &quot;acb&quot;, expected 3. why?
+<p>Test case 22, input &#34;aaa&#34;, &#34;acb&#34;, expected 3. why?</p>
+<p>Anyone can help to explain? Thanks</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ AC Solution using map
+class Solution {
+public:
+    struct cmpByStringLength {
+        bool operator()(const std::string& a, const std::string& b) const {
+            return a.length() == b.length() ? a > b : a.length() > b.length();
+        }
+    };
+
+    int findLUSlength(vector<string>& strs) {
+        map<string, int, cmpByStringLength> words;
+        for (auto s : strs) words[s]++;
+        int len = -1;
+        for (auto p : words) {
+            if (p.second == 1 && isNotSubstring(words, p.first)){
+                int l = p.first.length();
+                if (l > len) return l;
+            }
+        }
+        
+        return len;
+    }
+    
+    bool isNotSubstring (const map<string, int, cmpByStringLength>& words, const string& s) {
+        auto end = words.find(s);
+        for (auto it = words.begin(); it != end; it++) {
+            int i = 0, j = 0;
+            while (i < s.length() && j < it->first.length()) {
+                if (s[i] == it->first[j++]) i++;
+            }
+            if (i == s.length()) return false;
+        }
+        return true;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Checking subsequence without hashing
+public class Solution {
+    public boolean isSubsequence(String x, String y) {
+        int j = 0;
+        for (int i = 0; i < y.length() && j < x.length(); i++)
+            if (x.charAt(j) == y.charAt(i))
+                j++;
+        return j == x.length();
+    }
+    public int findLUSlength(String[] strs) {
+        int res = -1;
+        for (int i = 0, j; i < strs.length; i++) {
+            for (j = 0; j < strs.length; j++) {
+                if (j == i)
+                    continue;
+                if (isSubsequence(strs[i], strs[j]))
+                    break;
+            }
+            if (j == strs.length)
+                res = Math.max(res, strs[i].length());
+        }
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Clean Java Solution Bitmask
+public class Solution {
+    Map<String, Integer> freqMap;
+    public int findLUSlength(String[] strs) {
+        if(strs.length == 0) return -1;
+        freqMap = new HashMap<>();
+        collectStats(strs);
+        int res = 0;
+        for(String str:freqMap.keySet()){
+            int freq = freqMap.get(str);
+            if(freq == 1){
+                res = Math.max(res, str.length());
+            }
+        }
+        if(res == 0) return -1;
+        return res;
+    }
+    
+    private void collectStats(String [] strs){
+        for(String str:strs){
+            Set<String> subs = getSubs(str);
+            for(String sub:subs){
+                freqMap.put(sub, freqMap.getOrDefault(sub, 0)+1);
+            }
+        }
+    }
+    
+    private Set<String> getSubs(String str){
+        Set<String> res= new HashSet<>();
+        int n= str.length();
+        int max = (1<<n)-1;
+        StringBuilder build = new StringBuilder();
+        for(int i = 1;i<=max;i++){
+            for(int j= 0, p = 1;j<n;j++,p = p<<1){
+                if((p&i) != 0){
+                    build.append(str.charAt(j));            
+                }
+            }
+            res.add(build.toString());
+            build.setLength(0);
+        }
+        return res;
+    }
+    
+    
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;522. Longest Uncommon Subsequence II&#93; C++_sort + hash table
+class Solution {
+public:
+int findLUSlength(vector<string>& strs) {
+    sort(strs.begin(), strs.end(),[](string a, string b){
+        return a.size() > b.size() || (a.size() == b.size() && a < b);
+    });
+    unordered_map<string,int > mp;
+    for(int i = 0; i < strs.size(); ++i){mp[strs[i]]++;}
+    for(int i = 0; i < strs.size(); ++i){
+        if(mp[strs[i]] == 1){
+                int j = 0;
+                for(; j < i; ++j){
+                    if(isASubseqOfB(strs[i],strs[j])) break;
+                }
+                if(j == i) return strs[i].size();
+        }
+    }
+    return -1;
+}
+
+bool isASubseqOfB(string& a, string& b){
+    if(a.size() > b.size()) return false;
+    int i = 0, j = 0;
+    while(i < a.size() && j < b.size()){
+        if(a[i] == b[j]) i++;
+        j++;
+    }
+    return i == a.size();
+}
+};
+
+----------------------------------------------------------------------------------------------------

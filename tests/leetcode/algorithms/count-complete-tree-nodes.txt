@@ -1,0 +1,436 @@
+My code in Java
+    public class Solution {
+        public List<String> restoreIpAddresses(String s) {
+            List<String> res = new ArrayList<String>();
+            int len = s.length();
+            for(int i = 1; i<4 && i<len-2; i++){
+                for(int j = i+1; j<i+4 && j<len-1; j++){
+                    for(int k = j+1; k<j+4 && k<len; k++){
+                        String s1 = s.substring(0,i), s2 = s.substring(i,j), s3 = s.substring(j,k), s4 = s.substring(k,len);
+                        if(isValid(s1) && isValid(s2) && isValid(s3) && isValid(s4)){
+                            res.add(s1+"."+s2+"."+s3+"."+s4);
+                        }
+                    }
+                }
+            }
+            return res;
+        }
+        public boolean isValid(String s){
+            if(s.length()>3 || s.length()==0 || (s.charAt(0)=='0' && s.length()>1) || Integer.parseInt(s)>255)
+                return false;
+            return true;
+        }
+    }
+
+3-loop divides the string s into 4 substring: s1, s2, s3, s4. Check if each substring is valid.
+In isValid, strings whose length greater than 3 or equals to 0 is not valid; or if the string's length is longer than 1 and the first letter is '0' then it's invalid; or the string whose integer representation greater than 255 is invalid.
+
+----------------------------------------------------------------------------------------------------
+Very simple DFS solution
+    public List<String> restoreIpAddresses(String s) {
+        List<String> solutions = new ArrayList<String>();
+        restoreIp(s, solutions, 0, "", 0);
+        return solutions;
+    }
+    
+    private void restoreIp(String ip, List<String> solutions, int idx, String restored, int count) {
+        if (count > 4) return;
+        if (count == 4 && idx == ip.length()) solutions.add(restored);
+        
+        for (int i=1; i<4; i++) {
+            if (idx+i > ip.length()) break;
+            String s = ip.substring(idx,idx+i);
+            if ((s.startsWith("0") && s.length()>1) || (i==3 && Integer.parseInt(s) >= 256)) continue;
+            restoreIp(ip, solutions, idx+i, restored+s+(count==3?"" : "."), count+1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+WHO CAN BEAT THIS CODE ?
+
+        // c++  code
+        vector<string> restoreIpAddresses(string s) {
+            vector<string> ret;
+            string ans;
+            
+            for (int a=1; a<=3; a++)
+            for (int b=1; b<=3; b++)
+            for (int c=1; c<=3; c++)
+            for (int d=1; d<=3; d++)
+                if (a+b+c+d == s.length()) {
+                    int A = stoi(s.substr(0, a));
+                    int B = stoi(s.substr(a, b));
+                    int C = stoi(s.substr(a+b, c));
+                    int D = stoi(s.substr(a+b+c, d));
+                    if (A<=255 && B<=255 && C<=255 && D<=255)
+                        if ( (ans=to_string(A)+"."+to_string(B)+"."+to_string(C)+"."+to_string(D)).length() == s.length()+3)
+                            ret.push_back(ans);
+                }    
+            
+            return ret;
+        }
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+What is the definition of a valid IP address?
+Here we have
+
+Input: 	"010010"
+
+Output: 	["0.1.0.10","0.1.1.0","0.10.0.10","0.10.1.0","0.100.1.0","1.0.0.10","1.0.1.0","10.0.1.0"]
+
+Expected: 	["0.10.0.10","0.100.1.0"]
+
+
+May I know why "0.1.0.10" is not valid? From previous test cases, I know even '0.0.0.0' is counted as valid.
+Your input is highly appreciated.
+
+
+----------------------------------------------------------------------------------------------------
+My concise AC java code
+the basic idea is to make three cuts into the string, separating it into four parts, each part contains 1~3 digits and it must be <255. 
+
+    static List<String> restoreIpAddresses(String s) {
+    	List<String> ans = new ArrayList<String>();
+    	int len = s.length();
+    	for (int i = 1; i <=3; ++i){  // first cut
+    		if (len-i > 9) continue;    		
+    		for (int j = i+1; j<=i+3; ++j){  //second cut
+    			if (len-j > 6) continue;    			
+    			for (int k = j+1; k<=j+3 && k<len; ++k){  // third cut
+    				int a,b,c,d;                // the four int's seperated by "."
+    				a = Integer.parseInt(s.substring(0,i));  
+    				b = Integer.parseInt(s.substring(i,j)); // notice that "01" can be parsed into 1. Need to deal with that later.
+    				c = Integer.parseInt(s.substring(j,k));
+    				d = Integer.parseInt(s.substring(k));
+    				if (a>255 || b>255 || c>255 || d>255) continue; 
+    				String ip = a+"."+b+"."+c+"."+d;
+    				if (ip.length()<len+3) continue;  // this is to reject those int's parsed from "01" or "00"-like substrings
+    				ans.add(ip);
+    			}
+    		}
+    	}
+    	return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy Java code of backtracking within 16 lines
+        public List<String> restoreIpAddresses(String s) {
+            List<String> res = new ArrayList<>();
+            helper(s,"",res,0);
+            return res;
+        }
+        public void helper(String s, String tmp, List<String> res,int n){
+            if(n==4){
+                if(s.length()==0) res.add(tmp.substring(0,tmp.length()-1));
+                //substring here to get rid of last '.'
+                return;
+            }
+            for(int k=1;k<=3;k++){
+                if(s.length()<k) continue;
+                int val = Integer.parseInt(s.substring(0,k));
+                if(val>255 || k!=String.valueOf(val).length()) continue;
+                /*in the case 010 the parseInt will return len=2 where val=10, but k=3, skip this.*/
+                helper(s.substring(k),tmp+s.substring(0,k)+".",res,n+1);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Share 0ms neat and clear c++ solution using DFS
+    class Solution {
+    public:
+        vector<string> restoreIpAddresses(string s) {
+            vector<string> result;
+            string ip;
+            dfs(s,0,0,ip,result); //paras:string s,start index of s,step(from0-3),intermediate ip,final result
+            return result;
+        }
+        void dfs(string s,int start,int step,string ip,vector<string>& result){
+            if(start==s.size()&&step==4){
+                ip.erase(ip.end()-1); //remove the last '.' from the last decimal number
+                result.push_back(ip);
+                return;
+            }
+            if(s.size()-start>(4-step)*3) return;
+            if(s.size()-start<(4-step)) return;
+            int num=0;
+            for(int i=start;i<start+3;i++){
+                num=num*10+(s[i]-'0');
+                if(num<=255){
+                    ip+=s[i];
+                    dfs(s,i+1,step+1,ip+'.',result);
+                }
+                if(num==0) break;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+DFS in Python
+class Solution(object):
+    def restoreIpAddresses(self, s):
+        """
+        :type s: str
+        :rtype: List[str]
+        """
+        ans = []
+        self.helper(ans, s, 4, [])
+        return ['.'.join(x) for x in ans]
+        
+    def helper(self, ans, s, k, temp):
+        if len(s) > k*3:
+            return
+        if k == 0:
+            ans.append(temp[:])
+        else:
+            for i in range(min(3,len(s)-k+1)):
+                if i==2 and int(s[:3]) > 255 or i > 0 and s[0] == '0':
+                    continue
+                self.helper(ans, s[i+1:], k-1, temp+[s[:i+1]])
+
+----------------------------------------------------------------------------------------------------
+A more reasonable output than the answer
+preceding zeros are handled.
+
+Input:	"010010"
+
+Output:	["0.1.0.10","0.1.1.0","0.10.0.10","0.10.1.0","0.100.1.0","1.0.0.10","1.0.1.0","10.0.1.0"]
+
+Expected:	["0.10.0.10","0.100.1.0"]
+
+Though the Output can be easily transferred to Expected by comparing the length with original string, I feel the Output is more reasonable.
+
+----------------------------------------------------------------------------------------------------
+Beautiful C++ backtracking solution
+    class Solution {
+    public:
+        vector<string> result;
+        string solution;
+        
+        vector<string> restoreIpAddresses(string s) {
+            
+            backtracking(s, 0, 0);
+            
+            return result;
+        }
+        
+    private:
+        void backtracking(string s, int start, int part)
+        {
+            if(start == s.size() && part == 4)
+            {
+                result.push_back(solution);
+                return;
+            }
+            
+            for(int i = start; i < s.size(); i++)
+            {
+                if(part < 4 && i-start < 3 && validIP(s, start, i))
+                {
+                    solution.append(s.substr(start, i-start+1));
+                    part++;
+                    if(part < 4) solution.push_back('.');
+    
+                    backtracking(s, i+1, part);
+                    
+                    if(part < 4) solution.pop_back();
+                    part--;
+                    for(int j = 0; j < i-start+1; j++) solution.pop_back();
+                }
+            }
+        }
+        
+        bool validIP(string s, int start, int end)
+        {
+            string temp = s.substr(start, end-start+1);
+            int ip = stoll(temp);
+            
+            if(s[start] == '0' && start != end) return false;
+            else if(ip >= 0 && ip <= 255) return true;
+            
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java , recursive, backtracking, easy to read.
+    public List<String> restoreIpAddresses(String s) {
+        List<String> ret = new LinkedList<>();
+        int[] path = new int[4];
+        helper(ret, s, 0,  path, 0);
+        return ret;
+    }
+    
+    void helper(List<String> acc, String s, int idx, int[] path,  int segment){
+        if(segment == 4 && idx == s.length() ){
+            acc.add(path[0] + "." + path[1] + "."+ path[2] + "." + path[3]);
+            return ;
+        }else if(segment == 4 || idx == s.length() ){
+            return ;
+        }
+        
+        for(int len = 1; len <= 3 && idx + len <= s.length() ; len ++){
+            int val = Integer.parseInt(s.substring(idx, idx + len));
+            // range check, no leading 0.
+            if(val > 255 || len >= 2  && s.charAt(idx) == '0') 
+                break; 
+                
+            path[segment] = val;
+            helper(acc, s, idx + len, path, segment + 1);
+            path[segment] = -1; // for debug. 
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Adding a python solution, also requesting for improvement
+
+
+    class Solution:
+        # @param s, a string
+        # @return a list of strings
+             
+         def restoreIpAddresses(self,s):
+     
+             answer = []
+     
+             s_len = len(s)
+     
+             for i in [1,2,3]:
+                 for j in [i+1,i+2,i+3]:
+                     for k in [j+1,j+2,j+3]:
+                         if k >= s_len:
+                             continue
+                         s1 = s[:i]
+                         s2 = s[i:j]
+                         s3 = s[j:k]
+                         s4 = s[k:]
+                         if self.check_valid([s1,s2,s3,s4]):
+                             new_string = s1 + "." + s2 + "." + s3 + "." + s4
+                             answer.append(new_string)
+     
+             return answer
+     
+         def check_valid(self,str_list):
+     
+             for s in str_list:
+                 if s[0] == "0" and s != "0":
+                     return False
+                 if int(s) > 255:
+                     return False
+     
+             return True
+
+
+
+----------------------------------------------------------------------------------------------------
+My short C++ recursive version (4 ms) with explanation
+The idea is to have a recursive function buildIP to generate an IP string with "num" numbers using the substring [start, npos] of s. First it checks the substring has proper number of digits (>=num && <=3*num). Also it checks if the substring starts with '0' and has some extra digits. If so, it is not a valid case, so abandon it. Otherwise, if it is the last number, then check if it is no larger than 255 and if so, add to the resulting vector. If it is not the last number, recursively call itself to build the rest of the number sequence. For the current number, it can only be 1, 2, or 3 digits. Again, remember to check if it starts with '0' and is no larger than 255.
+ 
+
+       class Solution {
+        public:
+            void  buildIP(vector<string> &res, string &s, int start, int num, string cur)
+            {
+                int numDigits = s.size()-start;
+                if(numDigits<num || numDigits> 3*num) return;
+                if(num==1)
+                {
+                    if((numDigits==1) || ( s[start]!='0' && atoi(s.substr(start).c_str())<=255))
+                        res.push_back(cur + s.substr(start));
+                }
+                else
+                {
+                    buildIP(res, s, start+1, num-1, cur+ s.substr(start,1) + ".");
+                    if(s[start]!='0')
+                    {
+                        buildIP(res, s, start+2, num-1, cur+ s.substr(start,2) + ".");
+                        if(atoi(s.substr(start,3).c_str())<=255) buildIP(res, s, start+3, num-1, cur+ s.substr(start,3) + ".");
+                    }
+                }
+            }
+        
+            vector<string> restoreIpAddresses(string s) {
+               int len = s.size();
+               vector<string> res;
+               buildIP(res, s, 0, 4, "");
+               return res;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution Beating 100% of Java submissions
+    /*Description of variables
+    result - list of valid ip addr strings
+    digits -char array representation of s
+    len - length of s
+    currIpAddr - char array that contains the IP addr we are building using backtracking
+    remSegs - no. of segments remaining to be parsed. there 4 segments to an ip addr
+    start - start index in the digits array for the current ip addr segment
+    pos - next index to be populated in the currIpAddr array
+
+    */
+
+    public class Solution {
+    
+    private static final char DOT = '.';
+    
+    public List<String> restoreIpAddresses(String s) {
+        List<String> result = new ArrayList<String>();
+        
+        char[] digits = s.toCharArray();
+        int len = s.length();
+        char[] currIpAddr = new char[len+3];
+        int pos = 0;
+        generateIpAddresses(digits, 4, 0, len, currIpAddr, pos, result);
+        
+        return result;
+    }
+    
+    private void generateIpAddresses(char[] digits, int remSegs, int start, int len, 
+                                     char[] currIpAddr, int pos, List<String> result) {
+            if(start == len && remSegs == 0) {
+                result.add(String.valueOf(currIpAddr));
+                return;
+            }   
+        
+       //1. Checks for length of s too small
+       //2. Maximum Length of the remaining segments. Since a sgemnt can be upto 3 digits
+       // Length can not exceed 3x the remaining segments.
+       //3. Minimum Length of s. Each segment has to be atleast 1 digit
+        if((start > len) || ((len - start) > (3 * remSegs)) || ((len - start) < remSegs))
+            return;
+        
+        if(remSegs < 4)
+            currIpAddr[pos++] = DOT;
+        
+        int num = 0;
+        
+        for(int i = 0; i < Math.min(len-start, 3);i++) {
+            num = (10*num) + (int)(digits[start+i] - '0');
+            
+            if(i > 0 && num < 10)// leading 0 cases i = 1, then the number should be > 10.
+                return;
+            
+            ////"010010"
+            //Valid: ["0.10.0.10","0.100.1.0"]
+            //Invalid: ["0.1.0.010","0.1.00.10","0.1.001.0","0.10.0.10","0.10.01.0","0.100.1.0",
+            //"01.0.0.10","01.0.01.0","01.00.1.0","010.0.1.0"]
+            
+            if(num <= 255) {
+                currIpAddr[pos+i] = digits[start+i];
+                generateIpAddresses(digits, remSegs-1, start+i+1, len, currIpAddr, pos+i+1, result);
+            }
+        }
+      }    
+    }
+
+----------------------------------------------------------------------------------------------------
+Restore IP Addresses

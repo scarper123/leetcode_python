@@ -1,0 +1,543 @@
+My accepted Java code
+    public ListNode deleteDuplicates(ListNode head) {
+            if(head==null) return null;
+            ListNode FakeHead=new ListNode(0);
+            FakeHead.next=head;
+            ListNode pre=FakeHead;
+            ListNode cur=head;
+            while(cur!=null){
+                while(cur.next!=null&&cur.val==cur.next.val){
+                    cur=cur.next;
+                }
+                if(pre.next==cur){
+                    pre=pre.next;
+                }
+                else{
+                    pre.next=cur.next;
+                }
+                cur=cur.next;
+            }
+            return FakeHead.next;
+        }
+
+----------------------------------------------------------------------------------------------------
+My Recursive Java Solution
+    public ListNode deleteDuplicates(ListNode head) {
+        if (head == null) return null;
+        
+        if (head.next != null && head.val == head.next.val) {
+            while (head.next != null && head.val == head.next.val) {
+                head = head.next;
+            }
+            return deleteDuplicates(head.next);
+        } else {
+            head.next = deleteDuplicates(head.next);
+        }
+        return head;
+    }
+    
+
+
+if current node is not unique, return deleteDuplicates with head.next. 
+If current node is unique, link it to the result of next list made by recursive call. Any improvement?
+
+----------------------------------------------------------------------------------------------------
+Simple and clear c++ recursive solution
+
+
+    class Solution {
+    public:
+        ListNode* deleteDuplicates(ListNode* head) {
+            if (!head) return 0;
+            if (!head->next) return head;
+            
+            int val = head->val;
+            ListNode* p = head->next;
+            
+            if (p->val != val) {
+                head->next = deleteDuplicates(p);
+                return head;
+            } else {
+                while (p && p->val == val) p = p->next;
+                return deleteDuplicates(p);
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java simple and clean code with comment
+    public class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+    	//use two pointers, slow - track the node before the dup nodes, 
+    	// fast - to find the last node of dups.
+        ListNode dummy = new ListNode(0), fast = head, slow = dummy;
+        slow.next = fast;
+        while(fast != null) {
+        	while (fast.next != null && fast.val == fast.next.val) {
+         		fast = fast.next;    //while loop to find the last node of the dups.
+        	}
+        	if (slow.next != fast) { //duplicates detected.
+        		slow.next = fast.next; //remove the dups.
+        		fast = slow.next;     //reposition the fast pointer.
+        	} else { //no dup, move down both pointer.
+        		slow = slow.next;
+        		fast = fast.next;
+        	}
+        	
+        }
+        return dummy.next;
+    } }
+
+----------------------------------------------------------------------------------------------------
+Is this the best C++ solution?
+    class Solution {
+    public:
+        ListNode *deleteDuplicates(ListNode *head) {
+            ListNode **runner = &head;
+            
+            if(!head || !head->next)return head;
+            
+            while(*runner)
+            {
+                if((*runner)->next && (*runner)->next->val == (*runner)->val)
+                {
+                    ListNode *temp = *runner;
+                    while(temp && (*runner)->val == temp->val)
+                        temp = temp->next;
+                    
+                    *runner = temp;
+                }
+                else
+                    runner = &((*runner)->next);
+            }
+            
+            return head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python in-place solution with dummy head node.
+        
+    def deleteDuplicates(self, head):
+        dummy = pre = ListNode(0)
+        dummy.next = head
+        while head and head.next:
+            if head.val == head.next.val:
+                while head and head.next and head.val == head.next.val:
+                    head = head.next
+                head = head.next
+                pre.next = head
+            else:
+                pre = pre.next
+                head = head.next
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+A short and simple Java solution
+    public ListNode deleteDuplicates(ListNode head) {
+        ListNode dummy = new ListNode(0);
+        ListNode d = dummy;
+        while (head != null) {
+            if (head.next != null && head.val == head.next.val) {
+                while (head.next != null && head.val == head.next.val)
+                    head = head.next;
+            } else {
+                d.next = head;
+                d = d.next;
+            }
+            head = head.next;
+        }
+        d.next = null;
+        return dummy.next;
+    }
+
+1->1->1->2->2->3
+
+we skip all the 1's and start the loop from 2
+
+and also skip all the 2's, and now head.val == 3;
+
+ponit d.next to the tail, end the loop
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution, simple and easy to understand
+Simply check if the element is duplicate. If yes, record it and use a while loop to go to the next unique element.
+
+    class Solution {
+    public:
+        ListNode* deleteDuplicates(ListNode* head) {
+            ListNode* dummy = new ListNode(0);
+            dummy->next = head;
+            ListNode* cur = dummy;
+            int duplicate;
+            while (cur->next && cur->next->next) {
+                if (cur->next->val == cur->next->next->val) {
+                    duplicate = cur->next->val;
+                    while (cur->next && cur->next->val == duplicate) {
+                        cur->next = cur->next->next;
+                    }
+                }
+                else {
+                    cur = cur->next;
+                }
+            }
+            return dummy->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+8ms clean C++ code
+This is not a hard problem, but it is also not very easy to make the code clean and neat.
+
+    class Solution {
+        public:
+            ListNode* deleteDuplicates(ListNode* head) {
+                if( !head ) return NULL;
+                ListNode* p = new ListNode(head->val-1), *ptr = p, *pre = p;
+                while( head ) {
+                    if( pre->val != head->val && (!head->next || head->next->val != head->val )) {
+                        ptr->next = head;
+                        ptr = ptr->next;
+                    }
+                    pre = head;
+                    head = head->next;
+                }
+                ptr->next = NULL;
+                return p->next;
+            }
+    };
+
+----------------------------------------------------------------------------------------------------
+11 lines C++ solution with comments
+    	ListNode *deleteDuplicates(ListNode *head) {
+        if(!head||!head->next)return head;
+        ListNode *newhead=0,**phead=&newhead;//phead pointer to new head pointer
+        while(head)
+        {
+            if(head->next&&head->val==head->next->val)
+			{//skip all nodes has duplicate value
+				int dupval=head->val;
+				while(head&&head->val==dupval)head=head->next;
+				continue;
+			}//assign and advance phead
+			else {*phead=head; phead=&((*phead)->next);}
+			head=head->next;
+        }
+        *phead=0;// point the next of last node to NULL
+        return newhead;
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;C++ implementation with detailed explaination
+At the first glance, we can use the similar code of the simpler problem : which only delete the duplicate ones, So if we want to delete all the duplicate ones including the copy. We can use  the dummy node and the pre pointer to jump over all the duplicate nodes.
+The Trap is that you may ignore that when we meet the no-duplicate numbers, we should do different op based the previous states. Just like state-machine.
+At last but not least important, we should delete the duplicate number occurs at the end . 
+
+    class Solution {
+    public:
+        ListNode* deleteDuplicates(ListNode* head) {
+            if(!head)   return NULL;
+            ListNode* dummy=new ListNode(INT_MAX);
+            dummy->next=head;
+            ListNode* pre=dummy, *cur=head, *next=head->next;
+            bool flag=false;
+            while(next){
+                if(next->val==cur->val){
+                    flag=true;
+                    next=next->next;
+                }
+                else{
+                    if(flag) {
+                        pre->next=next;
+                        cur=next;
+                        next=next->next;
+                    }
+                    else{
+                        pre=pre->next;
+                        cur=cur->next;
+                        next=next->next;
+                    }
+                    flag=false;
+                }
+            }
+            //the corner cases : if the duplicate number locates at the end 
+            if(flag) pre->next=next;
+            return dummy->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A easy to understand python solution
+
+
+    def deleteDuplicates(self, head):
+        # Add a dummy node point to the current list
+        newhead = ListNode(0)
+        newhead.next = head
+        val_need_to_be_deleted = None
+        tail = newhead
+        
+        while head:
+            
+            # Triger delete mode if current has the same val as the next
+            if head and head.next and head.val == head.next.val:
+                val_need_to_be_deleted = head.val
+            
+            # Not a dup if delete mode is off or the current value doesn't match the value need to be deleted
+            if val_need_to_be_deleted == None or head.val != val_need_to_be_deleted:
+                # add it to the newlist
+                tail.next = head
+                tail = head
+                
+            head = head.next
+            
+        tail.next = None
+        return newhead.next
+
+
+
+----------------------------------------------------------------------------------------------------
+C++, 8ms, iterative, naive but easy to implement
+It is my first post ever... Did not saw similar ones so I would like to share a naive way to implement this.
+Idea is to set a flag, which indicates the current head should be added or not.
+
+    class Solution {
+    public:
+        ListNode* deleteDuplicates(ListNode* head) {
+            if(!head||!head->next) return head;
+            ListNode* dummy = new ListNode(0);
+            ListNode* tail = dummy;
+            int flag = true; // should the current head be added ?
+            while(head){
+                while(head&&head->next&&head->val==head->next->val)
+                {
+                    flag = false; // finds duplicate, set it to false
+                    head = head->next;
+                }
+                if(flag) // if should be added
+                {
+                    tail->next = head;
+                    tail = tail->next;
+                }
+                head = head->next;
+                flag = true; // time for a new head value, set flag back to true
+            }
+            tail->next = nullptr; // Don't forget this... I did..
+            return dummy->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share beat 100% python code
+    def deleteDuplicates(self, head):
+        """
+        :type head: ListNode
+        :rtype: ListNode
+        """
+        
+        dummy = ListNode(0)
+        pt = dummy
+        repeated = 0
+        while head and head.next:
+            if head.val != head.next.val:
+                if not repeated:
+                    pt.next = head
+                    pt = pt.next
+                repeated = 0
+            else:
+                repeated = 1
+            head = head.next
+            
+        pt.next = None if repeated else head
+        
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+Python 11 lines
+    class Solution(object):
+        def deleteDuplicates(self, head):
+            result = tail = ListNode(None)
+            while head:
+                while head.next and head.val == head.next.val:
+                    head = head.next
+                    if not head.next or head.val != head.next.val:
+                        break
+                else:
+                    tail.next, tail = head, head
+                head = head.next
+            tail.next = None
+            return result.next
+
+----------------------------------------------------------------------------------------------------
+Iterative way to solve this problem.
+deleteHeadDup() deletes the first N same nodes. 
+I first use it once to relocate the head node and then use it one by one node to delete each same part.
+It could be optimized better to make it more simple.
+
+    class Solution {
+    public:
+        ListNode *deleteDuplicates(ListNode *head) {
+            if (NULL == head || NULL == head->next) return head;
+            // detect first N same nodes
+            ListNode *lastHead = NULL;
+            while (head != NULL && head != lastHead) {
+                lastHead = head;
+                head = deleteHeadDup(lastHead);
+            }
+            // now linked list has no duplicates in head part
+            ListNode *p = head;
+            while (NULL != p) {
+                ListNode *lastHead = NULL;
+                while (p->next != lastHead) {
+                    lastHead = p->next;
+                    p->next = deleteHeadDup(lastHead);
+                }
+                p = p->next;
+            }
+            return head;
+        }
+    
+        ListNode *deleteHeadDup(ListNode *head) {
+            if (NULL == head || NULL == head->next) return head;
+            int headVal = head->val;
+            ListNode *ph = head->next;
+            while (NULL != ph && ph->val == headVal) {
+                ListNode *t = ph;
+                ph = ph->next;
+                free(t);
+            }
+            if (ph != head->next) {
+                free(head);
+                head = ph;
+            }
+            return head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My short C++ solution
+    class Solution {
+    public:
+        ListNode *deleteDuplicates(ListNode *head) {
+            ListNode** p = &head;
+            while(*p && (*p)->next) {
+                ListNode* p1 = *p, *p2 = p1->next;
+                while(p2 && p2->val == p1->val) {
+                    p2 = p2->next;
+                }
+                if(p2 != p1->next) {
+                    *p = p2;
+                } else {
+                    p = &(p1->next);
+                }
+            }
+            return head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+264ms  Java O(n) no extra space.
+public class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+        
+        if (head == null || head.next == null) return head; 
+        
+        ListNode returnVal = null;
+        
+        // walker pointer that goes ahead and will stop at the char that is different as the previous one or EOS.
+        ListNode walker = head.next; 
+        
+        // bool value indicates the current round of attempt detects a Dup. 
+        boolean isDup = false;
+        
+        // pointer stores the last known good (non-duplicate) char. 
+        ListNode lastNonDup = null;
+        
+        // assume the given list has no circles, will be nice to check that before comming into this loop. 
+        while (true){
+            
+            while (walker!= null && walker.val == head.val){
+                isDup = true;
+                walker = walker.next;
+            }
+            
+            // walker stopped, either found a different char or reached EOS. if there is no dup detected during the attempt. 
+            // set the returnVal and last known good pointer to proper value. 
+            if (!isDup){
+                    
+                    if (returnVal == null){
+                        returnVal = head; 
+                    }
+                    
+                    if (lastNonDup == null){
+                     lastNonDup = head;   
+                    }else
+                    {
+                        lastNonDup.next = head;
+                        lastNonDup = lastNonDup.next;
+                    }
+            }else
+            {
+                // coz the last attempt detected a dup so we don't know if there are "good" chars ahead, we need to short cut the lastNonDup
+                if (lastNonDup != null) lastNonDup.next = null;
+            }
+            
+            // we already at the EOS, there is no need to go any further. 
+            if (walker == null) break;
+            
+            
+            isDup = false; 
+            head = walker; 
+            walker =  walker.next; 
+        }
+        
+      return returnVal;  
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+15 lines of recursive simple c++ solution
+    class Solution {
+    public:
+        ListNode *deleteDuplicates(ListNode *head) {
+            if (!head) return NULL;
+            if (!head->next) return head;
+            ListNode* runner = head->next;
+            int count = 0;
+            while(runner && runner->val==head->val) {
+                runner = runner->next;
+                count++;
+            }
+            ListNode* post = deleteDuplicates(runner);
+            if (count > 0) return post;
+            head->next = post;
+            return head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Solution With Dummy Node (18 lines, O(n))
+    public ListNode deleteDuplicates(ListNode head) {
+        if(head == null) return head;
+        ListNode cur = head.next, prev = head, dummy = new ListNode(0);
+        dummy.next = head; head = dummy;
+        while(cur!=null) {
+            if(prev.val == cur.val) {
+                while(cur!=null && prev.val == cur.val) {
+                    cur = cur.next;
+                }
+                head.next = cur;
+            }else {
+                head = prev;
+            }
+            prev = cur;
+            if(cur!=null) cur = cur.next;
+        }
+        return dummy.next;
+     }
+    
+
+----------------------------------------------------------------------------------------------------

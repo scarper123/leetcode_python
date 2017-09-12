@@ -1,0 +1,986 @@
+Java solution using PriorityQueue
+
+public class Solution {
+
+    public class Cell {
+        int row;
+        int col;
+        int height;
+        public Cell(int row, int col, int height) {
+            this.row = row;
+            this.col = col;
+            this.height = height;
+        }
+    }
+
+    public int trapRainWater(int[][] heights) {
+        if (heights == null || heights.length == 0 || heights[0].length == 0)
+            return 0;
+
+        PriorityQueue<Cell> queue = new PriorityQueue<>(1, new Comparator<Cell>(){
+            public int compare(Cell a, Cell b) {
+                return a.height - b.height;
+            }
+        });
+        
+        int m = heights.length;
+        int n = heights[0].length;
+        boolean[][] visited = new boolean[m][n];
+
+        // Initially, add all the Cells which are on borders to the queue.
+        for (int i = 0; i < m; i++) {
+            visited[i][0] = true;
+            visited[i][n - 1] = true;
+            queue.offer(new Cell(i, 0, heights[i][0]));
+            queue.offer(new Cell(i, n - 1, heights[i][n - 1]));
+        }
+
+        for (int i = 0; i < n; i++) {
+            visited[0][i] = true;
+            visited[m - 1][i] = true;
+            queue.offer(new Cell(0, i, heights[0][i]));
+            queue.offer(new Cell(m - 1, i, heights[m - 1][i]));
+        }
+
+        // from the borders, pick the shortest cell visited and check its neighbors:
+        // if the neighbor is shorter, collect the water it can trap and update its height as its height plus the water trapped
+       // add all its neighbors to the queue.
+        int[][] dirs = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        int res = 0;
+        while (!queue.isEmpty()) {
+            Cell cell = queue.poll();
+            for (int[] dir : dirs) {
+                int row = cell.row + dir[0];
+                int col = cell.col + dir[1];
+                if (row >= 0 && row < m && col >= 0 && col < n && !visited[row][col]) {
+                    visited[row][col] = true;
+                    res += Math.max(0, cell.height - heights[row][col]);
+                    queue.offer(new Cell(row, col, Math.max(heights[row][col], cell.height)));
+                }
+            }
+        }
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Alternative approach using Dijkstra in O(rc max(log r, log c)) time
+public class Solution {
+
+    int[] dx = {0, 0, 1, -1};
+    int[] dy = {1, -1, 0, 0};
+
+    List<int[]>[] g;
+    int start;
+
+    private int[] dijkstra() {
+        int[] dist = new int[g.length];
+        Arrays.fill(dist, Integer.MAX_VALUE / 2);
+        dist[start] = 0;
+        TreeSet<int[]> tree = new TreeSet<>((u, v) -> u[1] == v[1] ? u[0] - v[0] : u[1] - v[1]);
+        tree.add(new int[]{start, 0});
+        while (!tree.isEmpty()) {
+            int u = tree.first()[0], d = tree.pollFirst()[1];
+            for (int[] e : g[u]) {
+                int v = e[0], w = e[1];
+                if (Math.max(d, w) < dist[v]) {
+                    tree.remove(new int[]{v, dist[v]});
+                    dist[v] = Math.max(d, w);
+                    tree.add(new int[]{v, dist[v]});
+                }
+            }
+        }
+        return dist;
+    }
+
+    public int trapRainWater(int[][] a) {
+        if (a == null || a.length == 0 || a[0].length == 0) return 0;
+        int r = a.length, c = a[0].length;
+
+        start = r * c;
+        g = new List[r * c + 1];
+        for (int i = 0; i < g.length; i++) g[i] = new ArrayList<>();
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < c; j++) {
+                if (i == 0 || i == r - 1 || j == 0 || j == c - 1) g[start].add(new int[]{i * c + j, 0});
+                for (int k = 0; k < 4; k++) {
+                    int x = i + dx[k], y = j + dy[k];
+                    if (x >= 0 && x < r && y >= 0 && y < c) g[i * c + j].add(new int[]{x * c + y, a[i][j]});
+                }
+            }
+
+        int ans = 0;
+        int[] dist = dijkstra();
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < c; j++) {
+                int cb = dist[i * c + j];
+                if (cb > a[i][j]) ans += cb - a[i][j];
+            }
+
+        return ans;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+concise C++ priority_queue solution
+class Solution {
+public:
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        if(heightMap.size()==0) return 0;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> que;
+        int row = heightMap.size(), col = heightMap[0].size();
+        vector<vector<int>> visited(row, vector<int>(col, 0));
+        int ans = 0, Max = INT_MIN;
+        for(int i = 0; i < row; i++)
+        {
+            for(int j = 0; j < col; j++)
+            {
+                if(!(i==0 || i==row-1 || j==0 || j==col-1)) continue;
+                que.push(make_pair(heightMap[i][j], i*col+j));
+                visited[i][j] = 1;
+            }
+        }
+        vector<vector<int>> dir{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while(!que.empty())
+        {
+            auto val = que.top(); que.pop();
+            int height = val.first, x = val.second/col, y = val.second%col;
+            Max = max(Max, height);
+            for(auto d: dir)
+            {
+                int x2 = x + d[0], y2 = y + d[1];
+                if(x2>=row || x2<0 || y2<0 || y2>=col || visited[x2][y2]) continue;
+                visited[x2][y2] = 1;
+                if(heightMap[x2][y2] < Max) ans += Max - heightMap[x2][y2];
+                que.push(make_pair(heightMap[x2][y2], x2*col+y2));
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+python solution with heap
+class Solution(object):
+    def trapRainWater(self, heightMap):
+        if not heightMap or not heightMap[0]:
+            return 0
+        
+        import heapq    
+        m, n = len(heightMap), len(heightMap[0])
+        heap = []
+        visited = [[0]*n for _ in xrange(m)]
+
+        # Push all the block on the border into heap
+        for i in xrange(m):
+            for j in xrange(n):
+                if i == 0 or j == 0 or i == m-1 or j == n-1:
+                    heapq.heappush(heap, (heightMap[i][j], i, j))
+                    visited[i][j] = 1
+        
+        result = 0
+        while heap:
+            height, i, j = heapq.heappop(heap)    
+            for x, y in ((i+1, j), (i-1, j), (i, j+1), (i, j-1)):
+                if 0 <= x < m and 0 <= y < n and not visited[x][y]:
+                    result += max(0, height-heightMap[x][y])
+                    heapq.heappush(heap, (max(heightMap[x][y], height), x, y))
+                    visited[x][y] = 1
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Visualization - No Code
+<p>A visualization of the most popular priority queue algorithm.<br/>
+<a href="https://www.youtube.com/watch?v=cJayBq38VYw" rel="nofollow">https://www.youtube.com/watch?v=cJayBq38VYw</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Why reinvent the wheel??&#93; An easy understood commented solution based on trapping rain 1
+/*
+Basic physics:
+Unlike bricks, water flows to wherever it could. 
+i.e we can't have the follwoing config made with water, but can do it with bricks
+000
+010
+000
+In the case above, if the "1" is built with water, that water can't stay. It needs to be spilled!
+
+2 steps Algorithm: 
+1. Since we know how to trap rain water in 1d, we can just transfor this 2D problem into 2 1D problems
+    we go row by row, to calculate each spot's water
+    we go column by column, to calculate each spot's water
+
+2. Then, here comes the meat,
+    For every spot that gets wet, from either row or column calculation, the water can possibly spill.
+    We need to check the water height aganist it's 4 neighbors. 
+        If the water height is taller than any one of its 4 neightbors, we need to spill the extra water.
+        If we spill any water from any slot, then its 4 neightbors needs to check themselves again.
+            For example, if we spill some water in the current slot b/c its bottm neighbor's height, current slot's top neighbor's height might need to be updated again.
+        we keep checking until there is no water to be spilled.
+*/
+
+
+public class Solution {
+    public int trapRainWater(int[][] heightMap) {
+        /*FIRST STEP*/
+        if(heightMap.length == 0) return 0;
+        int[][] wetMap = new int[heightMap.length][heightMap[0].length];
+        int sum = 0;
+        /*row by row*/
+        for(int i = 1; i < wetMap.length - 1; i++){
+            wetMap[i] = calculate(heightMap[i]);
+        }
+        /*column by column*/
+        for(int i = 1; i < heightMap[0].length - 1; i++){
+            int[] col = new int[heightMap.length];
+            for(int j = 0; j < heightMap.length; j++){
+                col[j] = heightMap[j][i];
+            }
+            int[] colResult = calculate(col);
+            /*update the wetMap to be the bigger value between row and col, later we can spill, don't worry*/
+            for(int j = 0; j < heightMap.length; j++){
+                wetMap[j][i] = Math.max(colResult[j], wetMap[j][i]);
+                sum += wetMap[j][i];
+            }
+        }
+        /*SECOND STEP*/
+        boolean spillWater = true;
+        int[] rowOffset = {-1,1,0,0};
+        int[] colOffset = {0,0,1,-1};
+        while(spillWater){
+            spillWater = false;
+            for(int i = 1; i < heightMap.length - 1; i++){
+                for(int j = 1; j < heightMap[0].length - 1; j++){
+                    /*If this slot has ever gotten wet, exammine its 4 neightbors*/
+                    if(wetMap[i][j] != 0){
+                        for(int m = 0; m < 4; m++){
+                            int neighborRow = i + rowOffset[m];
+                            int neighborCol = j + colOffset[m];
+                            int currentHeight = wetMap[i][j] + heightMap[i][j];
+                            int neighborHeight = wetMap[neighborRow][neighborCol] + 
+                                                              heightMap[neighborRow][neighborCol];
+                            if(currentHeight > neighborHeight){
+                                int spilledWater = currentHeight - Math.max(neighborHeight, heightMap[i][j]);
+                                wetMap[i][j] = Math.max(0, wetMap[i][j] - spilledWater);
+                                sum -= spilledWater;
+                                spillWater = true;
+                            }
+                        }    
+                    }    
+                }
+            }
+        }
+        return sum;
+    }
+    
+    /*Nothing interesting here, the same function for trapping water 1*/
+    private int[] calculate (int[] height){
+        int[] result = new int[height.length];
+        Stack<Integer> s = new Stack<Integer>();
+        int index = 0;
+        while(index < height.length){
+            if(s.isEmpty() || height[index] <= height[s.peek()]){
+                s.push(index++);
+            }else{
+                int bottom = s.pop();
+                if(s.size() != 0){
+                    for(int i = s.peek() + 1; i < index; i++){
+                        result[i] += (Math.min(height[s.peek()], height[index]) - height[bottom]);
+                    }    
+                }
+            }
+        }
+        return result;
+    }   
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ method with explanation
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        typedef pair<int,int> cell;
+        priority_queue<cell, vector<cell>, greater<cell>> q;
+        int m = heightMap.size();
+        if (m == 0) return 0;
+        int n = heightMap[0].size();
+        vector<int> visited(m*n, false);
+        
+        for (int i = 0; i < m; ++i)
+        for (int j = 0; j < n; ++j) {
+            if (i == 0 || i == m-1 || j == 0  || j == n-1) {
+                if (!visited[i*n+j])
+                    q.push(cell(heightMap[i][j], i*n+j));
+                visited[i*n+j] = true;
+            }
+        }
+        
+        int dir[4][2] = {{0,1}, {0, -1}, {1, 0}, {-1, 0}};
+        int ans = 0;
+        while(!q.empty()) {
+            cell c = q.top();
+            q.pop();
+            int i = c.second/n, j = c.second%n;
+            
+            for (int r = 0; r < 4; ++r) {
+                int ii = i+dir[r][0], jj = j+dir[r][1];
+                if (ii < 0 || ii >= m || jj < 0 || jj >= n || visited[ii*n+jj])
+                    continue;
+                ans += max(0, c.first - heightMap[ii][jj]);
+                q.push(cell(max(c.first, heightMap[ii][jj]), ii*n+jj));
+                visited[ii*n+jj] = true;
+            }
+        }
+        return ans;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution beating 100%
+public class Solution {
+    private static class Cell implements Comparable<Cell> {
+        private int row;
+        private int col;
+        private int value;
+        public Cell(int r, int c, int v) {
+            this.row = r;
+            this.col = c;
+            this.value = v;
+        }
+        @Override
+        public int compareTo(Cell other) {
+            return value - other.value;
+        }
+    }
+    private int water;
+    private boolean[][] visited1;
+    public int trapRainWater(int[][] heightMap) {
+        if (heightMap.length == 0) return 0;
+        PriorityQueue<Cell> walls = new PriorityQueue<Cell>();
+        water = 0;
+        visited1 = new boolean[heightMap.length][heightMap[0].length];
+        int rows = heightMap.length, cols = heightMap[0].length;
+        //build wall;
+        for (int c = 0; c < cols; c++) {
+        	walls.add(new Cell(0, c, heightMap[0][c]));
+        	walls.add(new Cell(rows - 1, c, heightMap[rows - 1][c]));
+        	visited1[0][c] = true;
+        	visited1[rows - 1][c] = true;
+        }
+        for (int r = 1; r < rows - 1; r++) {
+        	walls.add(new Cell(r, 0, heightMap[r][0]));
+        	walls.add(new Cell(r, cols - 1, heightMap[r][cols - 1]));
+        	visited1[r][0] = true;
+        	visited1[r][cols - 1] = true;
+        }
+        //end build wall;
+        while(walls.size() > 0) {
+            Cell min = walls.poll();
+            visit(heightMap, min, walls);
+        }
+        return water;
+    }
+    private void visit(int[][] height, Cell start, PriorityQueue<Cell> walls) {
+        fill(height, start.row + 1, start.col, walls, start.value);
+        fill(height, start.row - 1, start.col, walls, start.value);
+        fill(height, start.row, start.col + 1, walls, start.value);
+        fill(height, start.row, start.col - 1, walls, start.value);
+    }
+    private void fill(int[][] height, int row, int col, PriorityQueue<Cell> walls, int min) {
+        if (row < 0 || col < 0) return;
+        else if (row >= height.length || col >= height[0].length) return;
+        else if (visited1[row][col]) return;
+        else if (height[row][col] >= min) {
+            walls.add(new Cell(row, col, height[row][col]));
+            visited1[row][col] = true;
+            return;
+        } else {
+//        	System.out.println(row + ", " + col + " height = " + height[row][col] + ", bar = " + min);
+            water += min - height[row][col];
+            visited1[row][col] = true;
+            fill(height, row + 1, col, walls, min);
+            fill(height, row - 1, col, walls, min);
+            fill(height, row, col + 1, walls, min);
+            fill(height, row, col - 1, walls, min);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+How to get the solution to 2-D &quot;Trapping Rain Water&quot; problem from 1-D case
+int[][] dirs = new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    
+public int trapRainWater(int[][] heightMap) {
+    int m = heightMap.length;
+    int n = (m == 0 ? 0 : heightMap[0].length);
+    int res = 0;
+        
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[2] - b[2]);
+    boolean[][] visited = new boolean[m][n];
+        
+    for (int i = 0; i < m; i++) {
+        pq.offer(new int[] {i, 0, heightMap[i][0]});
+        pq.offer(new int[] {i, n - 1, heightMap[i][n - 1]});
+        visited[i][0] = visited[i][n - 1] = true;
+    }
+        
+    for (int j = 1; j < n - 1; j++) {
+        pq.offer(new int[] {0, j, heightMap[0][j]});
+        pq.offer(new int[] {m - 1, j, heightMap[m - 1][j]});
+        visited[0][j] = visited[m - 1][j] = true;
+    }
+        
+    while (!pq.isEmpty()) {
+        int[] cell = pq.poll();
+        	
+        for (int[] d : dirs) {
+            int i = cell[0] + d[0], j = cell[1] + d[1];
+            if (i < 0 || i >= m || j < 0 || j >= n || visited[i][j]) continue;
+            res += Math.max(0, cell[2] - heightMap[i][j]);
+            pq.offer(new int[] {i, j, Math.max(heightMap[i][j], cell[2])});
+            visited[i][j] = true;
+        }
+    }
+        
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+java version
+public class Solution {
+    public int trapRainWater(int[][] heightMap) {
+        class Cell{
+            int x;
+            int y;
+            int h;
+            Cell(int x, int y, int height){
+                this.x = x;
+                this.y = y;
+                h = height;
+            }
+        }
+         if (heightMap == null || heightMap.length == 0 || heightMap[0].length == 0) {
+            return 0;
+        }
+
+        int m = heightMap.length;
+        int n = heightMap[0].length;
+        PriorityQueue<Cell> pq = new PriorityQueue<>((v1,v2)->v1.h - v2.h);
+         boolean[][] visited = new boolean[m][n];
+        for(int i = 0; i < n; i++){
+            visited[0][i] = true;
+            visited[m-1][i] = true;
+            pq.offer( new Cell(0, i, heightMap[0][i]));
+            pq.offer(new Cell(m-1, i, heightMap[m-1][i]));
+        }
+        for(int i = 1; i < m-1; i++){
+            visited[i][0] = true;
+            visited[i][n-1] = true;
+            pq.offer(new Cell(i, 0, heightMap[i][0]));
+            pq.offer(new Cell(i, n-1, heightMap[i][n-1]));
+        }
+        int[] xs = {0,  0, 1, -1};
+        int[] ys = {1, -1, 0,  0};
+        int sum = 0;
+        while (!pq.isEmpty()) {
+            Cell cell = pq.poll();
+            for (int i = 0; i < 4; i++) {
+                int nx = cell.x + xs[i];
+                int ny = cell.y + ys[i];
+                if (nx >= 0 && nx < m && ny >= 0 && ny < n && !visited[nx][ny]) {
+                    visited[nx][ny] = true;
+                    sum += Math.max(0, cell.h - heightMap[nx][ny]);
+                    pq.offer(new Cell(nx, ny, Math.max(heightMap[nx][ny], cell.h)));
+                }
+            }
+        }
+        return sum;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Confusion about one test case
+<p>For this test:</p>
+<p>&#91;&#91;12,13,1,12&#93;,<br/>
+&#91;13,<strong>4</strong>,13,12&#93;,<br/>
+&#91;13,<strong>8</strong>,<strong>10</strong>,12&#93;,<br/>
+&#91;12,13,12,12&#93;,<br/>
+&#91;13,13,13,13&#93;&#93;</p>
+<p>I thought for 4,8,10, it can respectively store water 9,4,2, so it&#39;s 15 in total.</p>
+<p>Why is the answer 14?<br/>
+Could someone explain?</p>
+<p>Thank you!!</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ Floodfill solution with priority_queue
+class Solution {
+public:
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        int n = heightMap.size();
+        if(n == 0) return 0;
+        int m = heightMap[0].size();
+        if(m == 0) return 0;
+        int result = 0;
+        vector<vector<bool>> isVisit(n, vector<bool>(m, false));
+        priority_queue<pair<int, pair<int, int>>> myQueue;
+        
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < m; j++) {
+                if(i==0 || i == n-1 || j == 0 || j == m-1) {
+                    // we push all the boundary points into the priorrity_queue
+                    isVisit[i][j] = true;
+                    // push negative height as the priority_queue is a big heap
+                    myQueue.push(make_pair(-heightMap[i][j], make_pair(i, j)));
+                }
+            }
+        }
+        const int go_x[4] = {1, -1, 0, 0};
+        const int go_y[4] = {0, 0, 1, -1};
+        while(!myQueue.empty()) {
+            // We always extract the smallest block and try to extend it to its four neighbors.
+            auto temp_front = myQueue.top();
+            myQueue.pop();
+            int temp_height = -temp_front.first;
+            int fx = temp_front.second.first;
+            int fy = temp_front.second.second;
+            for(int d = 0; d < 4; d++) {
+                int tx = fx + go_x[d];
+                int ty = fy + go_y[d];
+                if(tx < 0 || tx >=n || ty < 0 || ty >= m || isVisit[tx][ty]) continue;
+                if(heightMap[tx][ty] < temp_height) {
+                    // if its neightbour's height is smallest than it, we fill water in it.
+                    result += (temp_height - heightMap[tx][ty]);
+                    heightMap[tx][ty] = temp_height;
+                }
+                isVisit[tx][ty] = true;
+                myQueue.push(make_pair(-heightMap[tx][ty], make_pair(tx, ty)));
+            }
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution using heap + dfs beats 99%
+from heapq import *
+class Solution(object):
+    def trapRainWater(self, heightMap):
+        """
+        :type heightMap: List[List[int]]
+        :rtype: int
+        """
+
+        if len(heightMap) < 3 or len(heightMap[0]) < 3: return 0
+        m, n, bd = len(heightMap), len(heightMap[0]), []
+        for x, y in zip([0]*n+[m-1]*n+range(1,m-1)*2, range(n)*2+[0]*(m-2)+[n-1]*(m-2)):
+		heappush(bd, [heightMap[x][y], x, y])
+		heightMap[x][y] = -1
+        res = 0
+        while bd:
+        	h, x, y = heappop(bd)
+        	res = self.dfs(h, x, y, bd, heightMap, m, n, res)
+    	return res
+
+    def dfs(self, h, x, y, bd, heightMap, m, n, res):
+    	for dx, dy in zip([-1,1,0,0], [0,0,-1,1]):
+    		if x+dx > 0 and x+dx < m - 1 and y+dy > 0 and y+dy < n - 1 and heightMap[x+dx][y+dy] >= 0:
+    			tmpH = heightMap[x+dx][y+dy]
+    			heightMap[x+dx][y+dy] = -1
+    			if tmpH <= h:
+    				res += h - tmpH
+    				res = self.dfs(h, x+dx, y+dy, bd, heightMap, m, n, res)
+    			else: heappush(bd, [tmpH, x+dx, y+dy])
+    	return res
+
+
+----------------------------------------------------------------------------------------------------
+Use layered approach from bottom to up to accumulate water
+    static class Point {
+        int x, y;
+        Point(int x, int y) {this.x = x; this.y = y;}
+        Point add(Point p) {return new Point(x + p.x, y + p.y);}
+        boolean inside(int width, int height) {
+            return x >= 0 && x <width && y >= 0 && y < height;
+        }
+        boolean isBorder(int width, int height) {
+            return x ==0 || x == width-1 || y == 0 || y == height -1;
+        }
+    }
+    
+    static Point[] directions = {new Point(-1,0), new Point(0, -1), new Point(1, 0), new Point(0, 1)};
+
+    class Area {
+        boolean interior;
+        List<Point> points = new ArrayList<>();
+        Area(boolean interior, Point p) {
+            this.interior = interior;
+            areas.add(this);
+            points.add(p);
+            point2AreaMap[p.y][p.x] = this;
+        }
+        void merge(Area a) {
+            interior = interior && a.interior;
+            points.addAll(a.points);
+            for(Point p : a.points)
+                point2AreaMap[p.y][p.x] = this;
+            areas.remove(a);
+        }
+    }
+
+    int width, height;
+    Set<Area> areas;
+    Area[][] point2AreaMap;
+    
+    public int trapRainWater(int[][] heightMap) {
+        height = heightMap.length;
+        if(height == 0)
+            return 0;
+        width = heightMap[0].length;
+        if(width == 0)
+            return 0;
+
+        areas = new HashSet<>();
+        point2AreaMap = new Area[height][width];
+        TreeMap<Integer, List<Point>> sortedPoints = buildSortedPoints(heightMap);
+        
+        int result = 0;
+        int previousHeight = 0;
+        int previousArea = 0;
+        for(Map.Entry<Integer, List<Point>> entry : sortedPoints.entrySet()) {
+            result += (entry.getKey() - previousHeight) * previousArea;
+            entry.getValue().forEach(p -> mergeAreas(p));
+            previousArea = getArea();
+            previousHeight = entry.getKey();
+        }
+        return result;
+    }
+    
+    int getArea() {        
+        int result = 0;
+        
+        for(Area a : areas) {
+            if(a.interior)
+                result += a.points.size();
+        }        
+        return result;
+    }
+    
+    void mergeAreas(Point p) {
+        Area area = new Area(!p.isBorder(width, height), p);
+        for(Point d : directions) {
+            Point pn = p.add(d);
+            if(!pn.inside(width, height))
+                continue;
+            Area nArea = point2AreaMap[pn.y][pn.x];
+            if(nArea == null || nArea == area)
+                continue;
+            
+            if(area.points.size() > nArea.points.size())
+                area.merge(nArea);
+            else { 
+                nArea.merge(area);
+                area = nArea;
+            }
+        }
+    }
+    
+    TreeMap<Integer, List<Point>> buildSortedPoints(int[][] heightMap) {
+        TreeMap<Integer, List<Point>> result = new TreeMap<>();
+        for(int y=0; y<height; y++)
+            for(int x=0; x<width; x++) {
+                int h = heightMap[y][x];
+                List<Point> points = result.get(h);
+                if(points == null) {
+                    points = new ArrayList<>();
+                    result.put(h, points);
+                }
+                points.add(new Point(x,y));
+            }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+share my fast C++ solution using std::map (99~100%, 40+ ms)
+class Solution {
+public:
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        int w = heightMap.size();
+        
+        //check the dimension...otherwise gotta do boundary checking in the next step anyway
+        if(w<=2)return 0;
+        int h = heightMap[0].size();
+        if(h <=2)return 0;
+        
+        map<int,vector<pair<int,int>>> m;
+        //initiate the map : push the posisions on the 4 edges except corners
+        //abuse the input :P
+        //setting heightMap[x][y] to 0 means the node is in the map or traversed
+        for(int i=1;i+1<w;++i) {
+            m[heightMap[i][0]].push_back({i,0});
+            m[heightMap[i][h-1]].push_back({i,h-1});
+            heightMap[i][0] = heightMap[i][h-1] = 0;
+        }
+        for(int i=1;i+1<h;++i) {
+            m[heightMap[0][i]].push_back({0,i});
+            m[heightMap[w-1][i]].push_back({w-1,i});
+            heightMap[0][i] = heightMap[w-1][i] = 0;
+        }
+        
+        //not wanna process the 4 corners, for they are irrelevant to the problem, right?
+        heightMap[0][0] = heightMap[0].back() = heightMap.back()[0] = heightMap.back().back() = 0;
+        
+        int ret = 0;
+#define X first
+#define Y second
+        while(!m.empty()) {
+            auto b = m.begin();
+            int height = b->first;
+            auto& v = b->second;
+            for(int i = 0;i<v.size();++i) {
+                auto p = v[i];
+                pair<int,int> nodes[4] = {p,p,p,p};
+                --nodes[0].X;
+                ++nodes[1].X;
+                --nodes[2].Y;
+                ++nodes[3].Y;
+                for(int i=0;i<4;++i) {
+                    p = nodes[i];
+                    if(p.X<0||p.Y<0||p.X>=w||p.Y>=h || !heightMap[p.X][p.Y]) continue;
+                    ret += max(0,height-heightMap[p.X][p.Y]);
+                    heightMap[p.X][p.Y] = max(heightMap[p.X][p.Y],height);
+                    //push to map
+                    //if the new height is the same, we can save some time on BST insertion
+                    if(heightMap[p.X][p.Y] == height)v.push_back(p);
+                    else m[heightMap[p.X][p.Y]].push_back(p);
+                    heightMap[p.X][p.Y] = 0; // mark it as traverse
+                }
+            }
+            m.erase(b);
+        }
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+12-liner C++ concise priority queue with global indexing, no self-defined struct (with explanation and comments)
+    typedef pair<int, int> PI;
+    int trapRainWater(vector<vector<int>>& h) {
+        int m, n, water = 0;
+        if(!(m=h.size()) || !(n=h[0].size())) return 0; // check map bounds
+        
+        vector<int> visited(m*n,0); // if cell(i) is visited
+        priority_queue<PI,vector<PI>,greater<PI>> q; // priority queue of (h,index) by min height
+        
+        for (int i = 0; i < m*n; ++i) // initialize queue with all boundary cells
+          if (i%n*((i+1)%n)*(i/n)*(i/n-m+1)==0) q.emplace(h[i/n][i%n],i), visited[i] = 1;
+
+        for(int i, maxh = INT_MIN; q.size(); ) { // BSF
+            auto cur = q.top(); q.pop(); maxh = max(maxh, cur.first);
+            for(int d : {n, -n, 1, -1})
+                if((i = cur.second+d)>=0 && i<m*n && !visited[i]) // a valid unvisited neighbor
+                  water += max(maxh-h[i/n][i%n], 0), q.emplace(h[i/n][i%n], i), visited[i] = 1;
+        }
+        return water;        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution with PriorityQueue
+public class Solution {
+    private class Point implements Comparable<Point>{
+        int x, y;
+        int h;
+        public Point(int x, int y, int h) {
+            this.x = x;
+            this.y = y;
+            this.h = h;
+        }
+        @Override
+        public int compareTo(Point b) {
+            return this.h - b.h;
+        }
+    }
+    public int trapRainWater(int[][] heightMap) {
+        if (heightMap == null || heightMap.length == 0) return 0;
+        int m = heightMap.length, n = heightMap[0].length;
+        Queue<Point> q = new PriorityQueue<>();
+        boolean[][] vis = new boolean[m][n];
+        for (int i = 0; i < m; ++i) {
+            q.offer(new Point(i, 0, heightMap[i][0]));
+            q.offer(new Point(i, n - 1, heightMap[i][n - 1]));
+            vis[i][0] = vis[i][n - 1] = true;
+        }
+        for (int j = 1; j < n - 1; ++j) {
+            q.offer(new Point(0, j, heightMap[0][j]));
+            q.offer(new Point(m - 1, j, heightMap[m - 1][j]));
+            vis[0][j] = vis[m - 1][j] = true;
+        }
+        int sum = 0;
+        int max = 0;
+        int[] dx = {-1, 1, 0, 0}, dy = {0, 0, -1, 1};
+        while (!q.isEmpty()) {
+            Point p = q.poll();
+            max = Math.max(max, p.h);
+            sum += max - heightMap[p.x][p.y];
+            for (int k = 0; k < dx.length; ++k) {
+                int x = p.x + dx[k], y = p.y + dy[k];
+                if (x >= 0 && x < m && y >= 0 && y < n && !vis[x][y]) {
+                    q.offer(new Point(x, y, Math.max(max, heightMap[x][y])));
+                    vis[x][y] = true;
+                }
+            }
+        }
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Need help. I am unable to understand why output is not matching...I have used very simple approach...Thanks in advance.
+        for (int i = 0; i < r; i++)
+        {
+            leftMap[i, 0] = heightMap[i, 0];
+            for (int j = 1; j < c; j++)
+            {
+                if (heightMap[i, j] < leftMap[i, j - 1]) leftMap[i, j] = leftMap[i, j - 1];
+                else leftMap[i, j] = heightMap[i, j];
+            }
+        }
+        for (int i = 0; i < r; i++)
+        {
+            rightMap[i, c - 1] = heightMap[i, c - 1];
+            for (int j = c - 2; j >= 0; j--)
+            {
+                if (heightMap[i, j] < rightMap[i, j + 1]) rightMap[i, j] = rightMap[i, j + 1];
+                else rightMap[i, j] = heightMap[i, j];
+            }
+        }
+
+        for (int j = 0; j < c; j++)
+        {
+            topMap[0, j] = heightMap[0, j];
+            for (int i = 1; i < r; i++)
+            {
+                if (heightMap[i, j] < topMap[i - 1, j]) topMap[i, j] = topMap[i - 1, j];
+                else topMap[i, j] = heightMap[i, j];
+            }
+        }
+
+        for (int j = 0; j < c; j++)
+        {
+            bottomMap[r - 1, j] = heightMap[r - 1, j];
+            for (int i = r - 2; i >= 0; i--)
+            {
+                if (heightMap[i, j] < bottomMap[i + 1, j]) bottomMap[i, j] = bottomMap[i + 1, j];
+                else bottomMap[i, j] = heightMap[i, j];
+            }
+        }
+
+        int totalAmount = 0;
+        for (int i = 1; i < r - 1; i++)
+        {
+            for (int j = 1; j < c - 1; j++)
+            {
+                int min = Math.Min(Math.Min(leftMap[i, j], rightMap[i, j]), Math.Min(topMap[i, j], bottomMap[i, j]));
+                if (min > heightMap[i, j])
+                    totalAmount += min - heightMap[i, j];
+            }
+        }
+        return totalAmount;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+(C++) The priority queue sol works for both trap water I &amp; II
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        const int n = height.size();
+        if(n==0) return 0;
+        
+        priority_queue<Cell> que;
+        vector<bool> visited(n, false);
+        //enque leftmost & rightmost cell
+        que.push(Cell(0,height[0]));
+        que.push(Cell(n-1,height[n-1]));
+        visited[0]=true;
+        visited[n-1]=true;
+        
+        int water = 0;
+        vector<int> xs({1,-1}); // right, left
+        while(!que.empty()) {
+            Cell cell = que.top(); 
+            que.pop();
+            for(int inc:xs) {
+                int xx = cell.x+inc;
+                if(xx<0 || xx>=n || visited[xx]) continue;
+                water+=max(0,cell.h-height[xx]);
+                que.push(Cell(xx,max(cell.h,height[xx])));
+                visited[xx]=true;
+            }
+        }
+        return water;    
+        
+    }
+private:
+    struct Cell {
+        int x, h;
+        Cell(int xx, int hh):x(xx), h(hh) {}
+        bool operator<(const Cell& rhs) const {
+            return this->h > rhs.h;
+        }
+    };
+};
+
+
+----------------------------------------------------------------------------------------------------
+python with Queue.PriorityQueue
+class Solution(object):
+    def trapRainWater(self, heightMap):
+        """
+        :type heightMap: List[List[int]]
+        :rtype: int
+        """
+        m = len(heightMap)
+        if m == 0:
+            return 0
+        n = len(heightMap[0])
+        if n == 0:
+            return 0
+        visited = [[False for i in range(n)] for j in range(m)]
+        from Queue import PriorityQueue
+        q = PriorityQueue()
+        for i in range(m):
+            visited[i][0] = True
+            q.put([heightMap[i][0],i,0])
+            visited[i][n-1] = True
+            q.put([heightMap[i][n-1],i,n-1])
+        for j in range(1, n-1):
+            visited[0][j] = True
+            q.put([heightMap[0][j],0,j])
+            visited[m-1][j] = True
+            q.put([heightMap[m-1][j],m-1,j])
+        S = 0
+        while not q.empty():
+            cell = q.get()
+            for (i, j) in [(1,0), (-1,0), (0,1), (0,-1)]:
+                x = cell[1] + i
+                y = cell[2] + j
+                if x in range(m) and y in range(n) and not visited[x][y]:
+                    S += max(0, cell[0] - heightMap[x][y])   # how much water at the cell
+                    q.put([max(heightMap[x][y],cell[0]),x,y])
+                    visited[x][y] = True
+        return S
+
+----------------------------------------------------------------------------------------------------

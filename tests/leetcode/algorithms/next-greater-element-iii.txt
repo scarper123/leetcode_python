@@ -1,0 +1,425 @@
+Easy Java O(n) Solution, PreSum + HashMap
+public class Solution {
+    public int findMaxLength(int[] nums) {
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == 0) nums[i] = -1;
+        }
+        
+        Map<Integer, Integer> sumToIndex = new HashMap<>();
+        sumToIndex.put(0, -1);
+        int sum = 0, max = 0;
+        
+        for (int i = 0; i < nums.length; i++) {
+            sum += nums[i];
+            if (sumToIndex.containsKey(sum)) {
+                max = Math.max(max, i - sumToIndex.get(sum));
+            }
+            else {
+                sumToIndex.put(sum, i);
+            }
+        }
+        
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) Solution with Visual Explanation
+class Solution(object):
+    def findMaxLength(self, nums):
+        count = 0
+        max_length=0
+        table = {0: 0}
+        for index, num in enumerate(nums, 1):
+            if num == 0:
+                count -= 1
+            else:
+                count += 1
+            
+            if count in table:
+                max_length = max(max_length, index - table[count])
+            else:
+                table[count] = index
+        
+        return max_length
+
+
+----------------------------------------------------------------------------------------------------
+One pass,use a HashMap to record 0-1 count difference
+public class Solution {
+    public int findMaxLength(int[] nums) {
+        HashMap<Integer,Integer> map=new HashMap<>();
+        map.put(0,-1);
+        
+        int zero=0;
+        int one=0;
+        int len=0;
+        for(int i=0;i<nums.length;i++){
+            if(nums[i]==0){
+                zero++;
+            }else{
+                one++;
+            }
+            
+            if(map.containsKey(zero-one)){
+                len=Math.max(len,i-map.get(zero-one));
+            }else{
+                map.put(zero-one,i);
+            }
+        }
+        
+        return len;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python and Java with little tricks (incl. a oneliner :-)
+        if (first != null && i - first > maxlen)
+            maxlen = i - first;
+
+----------------------------------------------------------------------------------------------------
+Share my DP&amp;Map solution, one pass
+public int findMaxLength(int[] nums) {
+	int n = nums.length, res = 0;
+	Map<Integer, Integer> map = new HashMap<>();
+	int[][] dp = new int[n+1][2];
+	for (int i = 1; i < dp.length; i++) {
+		if (nums[i-1] == 0) {
+			dp[i][0] = dp[i-1][0]+1;
+			dp[i][1] = dp[i-1][1];
+		}else {
+			dp[i][0] = dp[i-1][0];
+			dp[i][1] = dp[i-1][1]+1;
+		}
+		if (dp[i][0] == dp[i][1]) res = Math.max(res, dp[i][0]*2);
+		else {
+			int dif = dp[i][1]-dp[i][0];
+			if (map.containsKey(dif)) res = Math.max(res, 2*(dp[i][0]-dp[map.get(dif)][0]));
+			else map.put(dif, i);
+		}
+	}
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(N), array instead of unordered_map.
+int findMaxLength(vector<int>& nums) {
+    int size = nums.size(), ballance = size, max_len = 0;
+    int ballances[size * 2 + 1] = {};
+    for (auto i = 0; i < size; ++i) {
+        ballance += nums[i] == 0 ? -1 : 1;
+        if (ballance == size) max_len = i + 1;
+        else {
+            if (ballances[ballance] != 0) max_len = max(max_len, i - ballances[ballance] + 1);
+            else ballances[ballance] = i + 1;
+        }
+    }
+    return max_len;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java one pass O(n) solution with explanation
+public int findMaxLength(int[] nums) {
+    int res = 0;
+    int n = nums.length;
+    
+    int[] diff = new int[n + 1];
+    
+    Map<Integer, Integer> map = new HashMap<>();
+    map.put(0, 0);
+    
+    for (int i = 1; i <= n; i++) {
+        diff[i] = diff[i - 1] + (nums[i - 1] == 0 ? -1 : 1);
+
+        if (!map.containsKey(diff[i]))
+            map.put(diff[i], i);
+        else
+            res = Math.max(res, i - map.get(diff[i]));
+    }
+
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+Java Divide-and-conquer
+public int findMaxLength(int[] nums) {
+    return dfs(nums, 0, nums.length - 1);
+}
+
+private int dfs(int[] a, int l, int r) {
+    if (l >= r) return 0;
+    int mid = (l + r) / 2;
+
+    Map<Integer, Integer> map = new HashMap<>();
+    for (int i = mid, one = 0, zero = 0; i >= l; i--) {
+        if (a[i] == 0) zero++;
+        else one++;
+        map.put(zero - one, zero + one);
+    }
+    int max = 0;
+    for (int i = mid + 1, one = 0, zero = 0; i <= r; i++) {
+        if (a[i] == 0) zero++;
+        else one++;
+        if (map.containsKey(one - zero)) max = Math.max(max, map.get(one - zero) + zero + one);
+    }
+
+    return Math.max(max, Math.max(dfs(a, l, mid), dfs(a, mid + 1, r)));
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) fast C++ solution
+int findMaxLength(vector<int>& nums) {
+    map<int, int> myMap;
+    map<int, int>::iterator it;
+    int sum = 0;
+    int maxLen = 0;
+    myMap[0] = -1;
+    for (int i = 0; i < nums.size(); i++)
+    {
+        sum += (nums[i] == 0) ? -1 : 1;
+        it = myMap.find(sum); 
+        if (it != myMap.end())
+            maxLen = max(maxLen, i - it->second);
+        else
+            myMap[sum] = i;
+    }
+    return maxLen;
+}
+
+----------------------------------------------------------------------------------------------------
+Easy Java Solution, HashMap
+    Map<Integer, List<Integer>> map = new HashMap<>();
+    map.put(0, new ArrayList<>());
+    map.get(0).add(0);
+    int sum = 0;
+    
+    for(int i = 0; i < nums.length; i++) {
+        if(nums[i] == 0) {
+            sum--;
+        } else {
+            sum++;
+        }
+        
+        if(!map.containsKey(sum)) {
+            map.put(sum, new ArrayList<>());
+        }
+        
+        map.get(sum).add(i + 1);
+    }
+    
+    int maxLength = 0;
+    for(List<Integer> val : map.values()) {
+        maxLength = Math.max(maxLength, val.get(val.size() - 1) - val.get(0));
+    }
+    
+    return maxLength;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution O(n) one pass with HashMap with explanation
+public class Solution {
+    public int findMaxLength(int[] nums) {
+        Map<Integer, Integer> pos = new HashMap<>();
+        int count = 0, res = 0;
+        pos.put(0, -1);
+        for (int i = 0; i < nums.length; i ++) {
+            // small trick, avoid using condition
+            count += (nums[i] << 1) - 1;
+            if (pos.containsKey(count)) {
+                res = Math.max(res, i - pos.get(count));
+            } else {
+                pos.put(count, i);
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ O(n) solution with stack and DP
+<p>Well, I have seen quite a lot nice solution with <strong>Map and Presum</strong>, I will share another solution using stack.</p>
+<p>First, we consider max&#91;i&#93; = longest contiguous subarray ended at index i, consisted of equal 0s and 1s. Then, the problem is transferred to <strong>given the previous max continuous array, max&#91;0,i&#93;, how can we get the correct answer of max&#91;i&#93;</strong>? This feature has been utilized by most answers.</p>
+<p>However, the way I do DP is a bit different, in other solutions, they keep a map of current subarray sums to update the current longest subarray <a href="https://discuss.leetcode.com/topic/79928/explanation-of-prefixsum-hashmap-method">https://discuss.leetcode.com/topic/79928/explanation-of-prefixsum-hashmap-method</a>, while I believe we could match the 0 and 1 as previous as possible. For instance, if the last matched pair(0 and 1) is at last_match, then max&#91;i&#93; = i-last_match+1+max&#91;last_match&#93;.</p>
+<p>Third, is the question above familiar? OF COURSE, <a href="https://leetcode.com/problems/longest-valid-parentheses/" rel="nofollow">https://leetcode.com/problems/longest-valid-parentheses/</a>, we could also use stack to store the unmatched &#39;0&#39; and &#39;1&#39;, and update at current index instantly.</p>
+<p><img src="/uploads/files/1489217004395-screen-shot-2017-03-11-at-2.22.27-am.png" alt="0_1489217002488_Screen Shot 2017-03-11 at 2.22.27 AM.png" class="img-responsive img-markdown"/></p>
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code - Overflow Map
+public class Solution {
+    public int findMaxLength(int[] nums) {
+        int maxsize = 0;
+        int ones = 0;
+
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        map.put(0, -1);
+        for (int i = 0; i < nums.length; i++) {
+            ones += nums[i];
+            int overflow = ones - (i + 1 - ones);   // extra 1s than 0s
+            if (map.containsKey(overflow)) {
+                maxsize = Math.max(maxsize, i - map.get(overflow));
+            }
+            else {
+                map.put(overflow, i);
+            }
+        }
+
+        return maxsize;        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy java O(n) solution
+    public int findMaxLength(int[] nums) {
+        int i, n = nums.length;
+        
+        Map<Integer, Integer> map = new HashMap<>();
+        map.put(0, 0);
+        int maxLen = 0;
+        int diff = 0;
+        Integer first;
+        
+        for (i=0;i<n;i++) {
+            if (nums[i] == 0)
+                diff--;
+            else
+                diff++;
+            first = map.get(diff);
+            if (first == null) {
+                map.put(diff, i+1);
+            } else {
+                maxLen = Math.max(maxLen, i - first + 1);
+            }
+        }
+        return maxLen;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My C++ solution using map
+class Solution {
+public:
+    int findMaxLength(vector<int>& nums) {
+    	if (nums.empty()) return 0;
+        vector<int> res(nums.size(), 0);
+        unordered_map<int, int> map;
+        int result = 0;
+        res[0] = nums[0] == 1? 1: -1;
+        map[res[0]] = 0;
+
+        for (int i = 1; i < nums.size(); i++) {
+        	res[i] = res[i - 1] + (nums[i] == 1? 1: - 1);
+        	if (res[i] == 0) {
+        		result = max(result, i + 1);
+        	} else {
+        		if (map.find(res[i]) == map.end()) {
+        			map[res[i]] = i;
+        		} else {
+        			result = max(result, i - map[res[i]]);
+        		}
+        	}
+        }
+
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+10 lines C++ O(n)
+class Solution {
+public:
+    int findMaxLength(vector<int>& nums) {
+        for(auto& x: nums) if(!x) x = -1;
+        unordered_map<int, int>m;
+        m[0] = -1;
+        int sum = 0, maxlen = 0;
+        for(int i = 0; i < nums.size(); i++){
+            sum += nums[i];
+            if(m.count(sum)) maxlen = max(maxlen, i - m[sum]);
+            else m[sum] = i;
+        }
+        return maxlen;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) without HashMap
+class Solution {
+public:
+    int findMaxLength(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> Idx(2*n+1, -1);
+        vector<int> arr(n+1);
+        arr[0] = 0;//newhead
+        for(int i=1;i<=n;++i){
+            arr[i] = arr[i-1] + (nums[i-1]==0?-1:1);
+        }
+        
+        int res = 0;
+        for(int i=0;i<=n;++i){
+            int m = arr[i]+n;//keep m>=0 as index
+            if(Idx[m] == -1){
+                Idx[m] = i;
+            }
+            else{
+                int len = i - Idx[m];
+                res = max(res, len);
+            }
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Anyone want to discuss who hasn&#x27;t figured this one out yet?
+<p>Hey, first timer here, wondering if anyone would like to throw clues at me or put our heads together to try to figure this one out without looking at solutions.</p>
+<p>I realized quickly (after figuring out brute force) that this was some sort of dp problem. My solution that I came up with afaik works however was too slow, I timed out after the 22nd test. My dp is super rusty.</p>
+<p>I&#39;m going to try to explain my solution. The value I&#39;m hashing is &#34;balance&#34; which is 0 if there are equal number of 0s and 1s and incrementally negative or positive if there is 1, 2, 3, etc. more 1s than 0s or vice versa. My solution is essentially looping through and creating new &#34;balance&#34; values by looking into my hash. Each outer loop I increase my subarray length by 1. I&#39;m stuck here, I feel like I&#39;m missing a key part in structuring my loops such that the solution is much faster...</p>
+
+
+----------------------------------------------------------------------------------------------------
+Question on the judgement.
+class Solution {
+    public:
+        int dfs(int start , int end ,int dp[50005] , vector <int >nums){
+            if(end <= start) return 0;
+            if(end - start +1 == 2 * (dp[end] - dp[start-1]))
+                return end - start + 1;
+            else if(end - start +1 > 2 * (dp[end] - dp[start - 1])){
+                if(nums[start] == nums[end]){
+                    return max(dfs(start + 1, end , dp , nums) ,dfs(start , end -1 , dp ,nums));
+                }else if(nums[start] == 1){
+                    return dfs(start + 1, end, dp , nums);
+                }else
+                    return dfs(start , end - 1 , dp , nums);
+            }else{
+                if(nums[start] == nums[end]){
+                    return max(dfs(start + 1, end , dp , nums) ,dfs(start , end -1 , dp ,nums));
+                }else if(nums[start] == 0){
+                    return dfs(start + 1, end, dp , nums);
+                }else
+                    return dfs(start , end - 1 , dp , nums);
+            }
+        }
+        int findMaxLength(vector<int>& nums) {
+            int dp[50005];
+            dp[0] = 0;
+            for(int  i = 0 ; i < nums.size() ; i ++){
+                dp[i + 1] = dp[i] + nums[i];
+            }
+            
+            return dfs(1 , nums.size() , dp , nums);
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------

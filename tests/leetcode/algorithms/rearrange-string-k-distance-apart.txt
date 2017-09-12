@@ -1,0 +1,414 @@
+O(lgN) simple Java solution
+**The binary search code:**
+
+	public int firstBadVersion(int n) {
+	    int start = 1, end = n;
+	    while (start < end) {
+	        int mid = start + (end-start) / 2;
+	        if (!isBadVersion(mid)) start = mid + 1;
+	        else end = mid;            
+	    }        
+	    return start;
+	}
+
+----------------------------------------------------------------------------------------------------
+A good warning to me to use  start+(end-start)&#x2F;2 to avoid overflow
+Before this problem, I have always use
+
+      mid = (start+end)) / 2;
+
+To get the middle value, but this can caused OVERFLOW ! 
+
+when start and end are all about INT_MAX , then (start+end) of course will be overflow !
+
+To avoid the problem we can use
+       
+      mid =  start+(end-start)/2;
+
+Here is the AC implementation 
+
+// Forward declaration of isBadVersion API.
+bool isBadVersion(int version);
+
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int start=0, end=n;
+            cout<<end-start<<end;
+            while(end-start>1){
+                int mid=start+(end-start)/2;
+                /** mid = (start+end)) / 2; **/
+                if(isBadVersion(mid))  end=mid;
+                else  start=mid;
+            }
+            return end;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Time limit exceed
+Is there any difference between " ( low + high ) / 2 "  and  " low + ( high - low ) / 2 "?
+
+When I use the first one, it told me "time limit exceed" but if I use the second one, it worked!
+
+----------------------------------------------------------------------------------------------------
+Short C++ answer and minimize API calls
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int lower = 1, upper = n, mid;
+            while(lower < upper) {
+                mid = lower + (upper - lower) / 2;
+                if(!isBadVersion(mid)) lower = mid + 1;   /* Only one call to API */
+                else upper = mid;
+            }
+            return lower;   /* Because there will alway be a bad version, return lower here */
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1-liner in Ruby &#x2F; Python
+**Ruby**
+
+    def first_bad_version(n)
+      (1..n).bsearch { |i| is_bad_version(i) }
+    end
+
+Or:
+
+    def first_bad_version(n)
+      (1..n).bsearch(&method(:is_bad_version))
+    end
+
+---
+
+**Python**
+
+In Python I was only able to do it with a rather ugly wrapper:
+
+    def firstBadVersion(self, n):
+        return bisect.bisect(type('', (), {'__getitem__': lambda self, i: isBadVersion(i)})(), False, 0, n)
+
+Nicer, more readable version:
+
+    def firstBadVersion(self, n):
+        class Wrap:
+            def __getitem__(self, i):
+                return isBadVersion(i)
+        return bisect.bisect(Wrap(), False, 0, n)
+
+
+----------------------------------------------------------------------------------------------------
+What&#x27;s the difference between &quot;(left + right) &#x2F; 2&quot; and &quot;left + (right - left) &#x2F; 2&quot;?
+Below is my code, it got TLE. But I can't see the difference between my code and [this one][1] except for how I calculated mid. So is there any difference between "(left + right) / 2" and "left + (right - left) / 2"? 
+
+    bool isBadVersion(int version);
+    
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int left = 1;
+            int right = n;
+            int mid;
+            while(left < right) {
+                mid = (left + right) / 2;
+                if(isBadVersion(mid)) {
+                    right = mid - 1;
+                }
+                else {
+                    left = mid + 1;
+                }
+            }
+            return left;
+        }
+    };
+
+
+  [1]: https://leetcode.com/discuss/56550/short-c-answer-and-minimize-api-calls
+
+----------------------------------------------------------------------------------------------------
+Python, understand (easily from Binary search idea)
+    class Solution(object):
+    def firstBadVersion(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        r = n-1
+        l = 0
+        while(l<=r):
+            mid = l + (r-l)/2
+            if isBadVersion(mid)==False:
+                l = mid+1
+            else:
+                r = mid-1
+        return l
+
+----------------------------------------------------------------------------------------------------
+Java simple clean
+it looks very simple, but actually a little tricky. Have to pay attention to the detail.
+<br>
+Algo. 1 --
+
+      public int firstBadVersion(int n) {
+        int lo = 1, hi = n;
+        while (lo < hi) {
+        	int med = lo + (hi -  lo)/2;
+        	if (isBadVersion(med)) {
+        		hi = med;
+        	} else {
+        		lo = med + 1;
+        	}
+        }
+        return lo;
+    }
+
+Algo.2 --
+
+        public int firstBadVersion(int n) {
+        int lo = 1, hi = n;
+        while (lo <= hi) {
+        	int med = lo + (hi -  lo)/2;
+        	if (isBadVersion(med)) {
+        		if (med == 1 || !isBadVersion(med-1))
+        			return med;
+        		hi = med;
+        	} else {
+        		lo = med + 1;
+        	}
+        }
+        return -1; //no solution found.
+    }
+
+----------------------------------------------------------------------------------------------------
+Java binary search with recursive implement
+/* The isBadVersion API is defined in the parent class VersionControl.
+      boolean isBadVersion(int version); */
+
+public class Solution extends VersionControl {
+
+    public int firstBadVersion(int n) {
+        
+        if(n==0) {
+            return 0;
+        }
+    
+       return helper(n,1,n);
+    }
+    
+    
+    public int helper(int n, int start, int end) {
+        
+        if(start>=end) {
+            return start;
+        }
+        int middle = start+(end-start)/2;
+        
+        if(isBadVersion(middle)) {
+            return helper(n,start,middle);
+        } else {
+            return helper(n,middle+1,end);
+            
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My 0ms c++ solution with O(logn) time and O(1) space
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int from,to,mid;
+            from=1;to=n;
+            while(from!=to)
+            {
+                mid=((long long)from+to)/2;
+                if(isBadVersion(mid)==true)
+                {
+                    to=mid;
+                }
+                else
+                {
+                    from=mid+1;
+                }
+            }
+            return from;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C O(logN), 0 ms solution.
+Basically the problem is a variant of **upper_bound()** / **lower_bound()** problem.
+<BR>So we can follow the standard implementation to solve it.
+
+    int firstBadVersion(int n) {
+        int lo = 1, hi = n, mid;
+        while (lo < hi) {
+            mid = lo + ((hi - lo) >> 1);
+            isBadVersion(mid) ? (hi = mid) : (lo = mid + 1);
+        }
+        return hi;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share My JAVA solution which is easy to understand
+    public class Solution extends VersionControl {
+        public int firstBadVersion(int n) {
+            int lo = 1, hi = n;
+            int last = 0;
+            while(lo <= hi){
+                int mid = lo + (hi - lo)/2;
+                if(isBadVersion(mid)){
+                    hi = mid - 1;
+                    last = mid;
+                }else{
+                    lo = mid + 1;
+                }
+            }
+            return last;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+SImple binary search solution o(log n)
+    /* The isBadVersion API is defined in the parent class VersionControl.
+          boolean isBadVersion(int version); */
+    // Assuming version number starts with 1
+    public class Solution extends VersionControl {
+        public int firstBadVersion(int n) {
+            int start = 1;
+            int end = n;
+            while (start < end){
+                int mid = start + (end - start)/2;
+                if (isBadVersion(mid)){
+                    end = mid;
+                }
+                else {
+                    start = mid + 1;
+                }
+            }
+            return start;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ Easy Solution using binary search
+    // Remember to use INT64 to avoid overflow.
+    bool isBadVersion(int version);
+    
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int ans = n;
+            if(n < 2)
+                return n;
+            long long l = 1, r = n;
+            while(l <= r){
+                long long mid = (l + r)>>1;
+                if(isBadVersion(mid)){
+                    ans = (int)mid;
+                    r = mid - 1;
+                }else
+                    l = mid + 1;
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple binary search with iteration in Python
+    class Solution(object):
+    def firstBadVersion(self, n):
+		beg=1
+		while not beg==n:
+		   mid=(beg+n)/2
+		   if isBadVersion(mid):
+		       n=mid
+		   else:
+		       beg=mid+1
+		return beg
+
+----------------------------------------------------------------------------------------------------
+My solution in c++ with 0ms
+    bool isBadVersion(int version);
+    
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int begin = 1;
+            int end = n;
+            int mid;
+            int firstBad = n;
+            while(begin <= end)
+            {
+                    mid = begin + ( end - begin) / 2;
+                    if(isBadVersion(mid))
+                    {
+                            firstBad = mid;
+                            end = mid - 1;
+                    }
+                    else
+                    {
+                            begin = mid + 1;
+                    }
+            }
+    
+            return firstBad;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short C++ solution, 0ms
+    // Forward declaration of isBadVersion API.
+    bool isBadVersion(int version);
+    
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int step = (1<<30), j;
+            for(j=0;step;step>>=1)
+                if(j+step<=n && !isBadVersion(j+step)) j+=step;
+            return j+1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Binary search in c++
+search until you find the first bad version.
+
+    bool isBadVersion(int version);
+    
+    class Solution {
+    public:
+        int firstBadVersion(int n) {
+            int start = 1, end = n;
+            while (start < end) {
+                int mid = start + (end - start)/2;
+                if (isBadVersion(mid)) end = mid;
+                else start = mid + 1;
+            }
+            return end;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Solution with using (low+high)&#x2F;2 and not low+(high-low)&#x2F;2
+     int firstBadVersion(int n) {
+        long start=1,end=n;
+        int res=-1;
+        while(start<=end){
+            long mid = (start+end)/2;
+            if(isBadVersion(mid)){
+                res=mid;
+                end=mid-1;
+            }
+            else
+                start=mid+1;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Do large inputs really make sense?

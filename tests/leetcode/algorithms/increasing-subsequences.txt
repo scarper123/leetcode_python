@@ -1,0 +1,672 @@
+Recursive Easy to Understand Java Solution
+public TreeNode deleteNode(TreeNode root, int key) {
+    if(root == null){
+        return null;
+    }
+    if(key < root.val){
+        root.left = deleteNode(root.left, key);
+    }else if(key > root.val){
+        root.right = deleteNode(root.right, key);
+    }else{
+        if(root.left == null){
+            return root.right;
+        }else if(root.right == null){
+            return root.left;
+        }
+        
+        TreeNode minNode = findMin(root.right);
+        root.val = minNode.val;
+        root.right = deleteNode(root.right, root.val);
+    }
+    return root;
+}
+
+private TreeNode findMin(TreeNode node){
+    while(node.left != null){
+        node = node.left;
+    }
+    return node;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Iterative solution in Java, O(h) time and O(1) space
+    private TreeNode deleteRootNode(TreeNode root) {
+        if (root == null) {
+            return null;
+        }
+        if (root.left == null) {
+            return root.right;
+        }
+        if (root.right == null) {
+            return root.left;
+        }
+        TreeNode next = root.right;
+        TreeNode pre = null;
+        for(; next.left != null; pre = next, next = next.left);
+        next.left = root.left;
+        if(root.right != next) {
+            pre.left = next.right;
+            next.right = root.right;
+        }
+        return next;
+    }
+    
+    public TreeNode deleteNode(TreeNode root, int key) {
+        TreeNode cur = root;
+        TreeNode pre = null;
+        while(cur != null && cur.val != key) {
+            pre = cur;
+            if (key < cur.val) {
+                cur = cur.left;
+            } else if (key > cur.val) {
+                cur = cur.right;
+            }
+        }
+        if (pre == null) {
+            return deleteRootNode(cur);
+        }
+        if (pre.left == cur) {
+            pre.left = deleteRootNode(cur);
+        } else {
+            pre.right = deleteRootNode(cur);
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very Concise C++ Solution for General Binary Tree not only BST
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if (!root) return nullptr;
+        if (root->val == key) {
+            if (!root->right) {
+                TreeNode* left = root->left;
+                delete root;
+                return left;
+            }
+            else {
+                TreeNode* right = root->right;
+                while (right->left)
+                    right = right->left;
+                swap(root->val, right->val);    
+            }
+        }
+        root->left = deleteNode(root->left, key);
+        root->right = deleteNode(root->right, key);
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Error in Test Case? : Last executed input: &#91;&#93;
+<p>Something went wrong in test case with input only &#34;&#91;&#93;&#34;, should be both root and key.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy to Understand Solution
+    public TreeNode deleteNode(TreeNode root, int key) {
+        if (root == null) return root;
+        if (root.val > key) root.left = deleteNode(root.left, key);
+        else if (root.val < key) root.right = deleteNode(root.right, key);
+        else { // found node to be deleted
+            if (root.left == null) return root.right;
+            else if (root.right == null) return root.left;
+            // node with two children, replace with the inOrder successor(minVal) in the right subtree
+            root.val = getMin(root.right);
+            root.right = deleteNode(root.right, root.val);
+        }
+        return root;
+    }
+    private int getMin(TreeNode root) {
+        int min = root.val;
+        while (root.left != null) {
+            root = root.left;
+            min = root.val;
+        }
+        return min;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+An easy-understanding O(h) time, O(1) space Java solution.
+public class Solution {
+    public TreeNode deleteNode(TreeNode root, int key) {
+        if (root==null || root.val==key) return deleteRoot(root);
+        TreeNode p=root;
+        
+        while (true) { // search the node
+            if (key>p.val) {
+                if (p.right==null || p.right.val==key) {
+                    p.right=deleteRoot(p.right);
+                    break;
+                }
+                p=p.right;
+            }
+            else {
+                if (p.left==null || p.left.val==key) {
+                    p.left=deleteRoot(p.left);
+                    break;
+                }
+                p=p.left;
+            }
+        }
+        return root;
+    }
+
+    private TreeNode deleteRoot(TreeNode root) {
+        if (root==null) return null;
+        if (root.right==null) return root.left;
+        TreeNode x=root.right; // root.right should be the new root
+        while (x.left!=null) x=x.left; // find the left-most node
+        x.left=root.left;
+        return root.right;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Bottom-up Recursive Python Solution. O(log(n)) Time.
+class Solution(object):
+    def deleteNode(self, root, key):
+        """
+        :type root: TreeNode
+        :type key: int
+        :rtype: TreeNode
+        """
+        if not root: return None
+        
+        if root.val == key:
+            if root.left:
+                # Find the right most leaf of the left sub-tree
+                left_right_most = root.left
+                while left_right_most.right:
+                    left_right_most = left_right_most.right
+                # Attach right child to the right of that leaf
+                left_right_most.right = root.right
+                # Return left child instead of root, a.k.a delete root
+                return root.left
+            else:
+                return root.right
+        # If left or right child got deleted, the returned root is the child of the deleted node.
+        elif root.val > key:
+            root.left = self.deleteNode(root.left, key)
+        else:
+            root.right = self.deleteNode(root.right, key)
+            
+        return root
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution With Explanation
+   def deleteNode(root, key):
+	if not root: # if root doesn't exist, just return it
+		return root
+	if root.val > key: # if key value is less than root value, find the node in the left subtree
+		root.left = deleteNode(root.left, key)
+	elif root.val < key: # if key value is greater than root value, find the node in right subtree
+		root.right= deleteNode(root.right, key)
+	else: #if we found the node (root.value == key), start to delete it
+		if not root.right: # if it doesn't have right children, we delete the node then new root would be root.left
+			return root.left
+		if not root.left: # if it has no left children, we delete the node then new root would be root.right
+			return root.right
+               # if the node have both left and right children,  we replace its value with the minmimum value in the right subtree and then delete that minimum node in the right subtree
+		temp = root.right
+		mini = temp.val
+		while temp.left:
+			temp = temp.left
+			mini = temp.val
+		root.val = mini # replace value
+		root.right = deleteNode(root.right,root.val) # delete the minimum node in right subtree
+	return root
+
+
+
+----------------------------------------------------------------------------------------------------
+Simplify corner cases via a dummy parent of the root
+public TreeNode deleteNode(TreeNode root, int key) {
+    TreeNode dummyRoot = new TreeNode(0), x = root, p = dummyRoot;
+    dummyRoot.left = root;
+
+    while(x != null && x.val != key) {
+        p = x;
+        if (key < x.val) x = x.left;
+        else x = x.right;
+    }
+    if (x != null && x.val == key) {
+        if (x.left != null && x.right != null) {
+            p = x;
+            TreeNode y = x.right;
+            for(; y.left != null; p = y, y = y.left); // empty for-body
+            x.val = y.val;
+            x = y; // Instead of deleting x, we delete y.
+        }
+
+        // Now, at least one child of x must be null.
+        TreeNode child = x.left != null ? x.left : x.right;
+        if (p.left == x) p.left = child;
+        else p.right = child;
+    }
+    return dummyRoot.left;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise and Clear C++ Solution
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if (!root) return root;    
+        if (root->val > key)
+            root->left = deleteNode(root->left, key);
+        else if (root->val < key)
+            root->right = deleteNode(root->right, key);
+        else {
+            if (!root->left) {
+                TreeNode* right = root->right;
+                delete root;
+                return right;
+            }
+            else if (!root->right) {
+                TreeNode* left = root->left;
+                delete root;
+                return left;
+            }
+            else {
+                TreeNode* successor = findMinNode(root->right); // find the inorder successor (the minimal node in right subtree)
+                root->val = successor->val;
+                root->right = deleteNode(root->right, successor->val);
+            }
+        }
+        return root;
+    }
+private:
+    TreeNode* findMinNode(TreeNode* root) {
+        if (root->left) return findMinNode(root->left);
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+    public TreeNode deleteNode(TreeNode root, int key) {
+        if (root == null) {
+            return root;
+        }
+
+        if (root.val > key) {
+            root.left = deleteNode(root.left, key);
+        } else if (root.val < key) {
+            root.right = deleteNode(root.right, key);
+        } else { //Delete Case
+ 
+            // First condition where node is last node
+            if (root.left == null && root.right == null) {
+                root = null;
+            } 
+            
+            // 2nd case where it has either left node or right node
+            else if (root.right == null) {
+                root = root.left;
+            } else if (root.left == null) {
+                root = root.right;
+            } else {
+                //3rd case
+                TreeNode node = rightModeMinNode(root.right);
+                deleteNode(root, node.val);
+                root.val = node.val;
+
+            }
+        }
+        return root;
+    }
+    
+	TreeNode rightModeMinNode(TreeNode node) {
+		if (node == null) {
+			return null;
+		}
+
+		if (node.left == null) {
+			return node;
+		}
+
+		return rightModeMinNode(node.left);
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Python Recursive Solution
+def deleteNode(self, root, key):
+    """
+    :type root: TreeNode
+    :type key: int
+    :rtype: TreeNode
+    """
+    if root is None: return
+    if root.val == key:
+        if root.right and root.left:
+            right = root.right
+            while right is not None and right.left is not None: right = right.left
+            right.left = root.left
+            return root.right
+        else:
+            if root.left:
+                return root.left
+            elif root.right:
+                return root.right
+            else:
+                return None
+
+    elif key > root.val:
+        root.right = self.deleteNode(root.right, key)
+    else:
+        root.left = self.deleteNode(root.left, key)
+
+    return root
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Iterative Solution and Recursive Solution (With Explanations)
+TreeNode* deleteNode(TreeNode* root, int key) {
+        if(root == NULL) return NULL;
+        if(root->val > key) 
+            root->left = deleteNode(root->left, key);
+        else if(root->val < key)
+            root->right = deleteNode(root->right, key);
+        else {
+            if(!root->left || !root->right) root = (!root->left) ? root->right : root->left;
+            else {
+                auto run = root->right;
+                while(run->left) run = run->left;
+                root->val = run->val;
+                root->right = deleteNode(root->right, run->val);
+            }
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+I think OJ needs to be improved
+<p>There could be multiple ways to solve. Why OJ only check one possibility?<br/>
+e.g., 2,1,3 tree, delete 2, I can have 1,null,3,   &amp;&amp;   3,1<br/>
+Both solutions are valid.<br/>
+I think OJ needs to check the result is BST and doesn&#39;t have key to delete.</p>
+<p>One simple solution scheme is just to substitute the target node with the left child&#39;s right most node. But it cannot pass OJ</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java Recursive Solution
+public class Solution {
+    public TreeNode deleteNode(TreeNode root, int key) {
+        if(root == null) return root;
+        
+        if(key == root.val) {
+            if(root.left == null) return root.right;
+            else if(root.right == null) return root.left;
+            
+            TreeNode deleted = root;
+            root = min(root.right);
+            root.right = deleteMinHelper(deleted.right);
+            root.left = deleted.left;
+        } else if(key < root.val) {
+            root.left = deleteNode(root.left, key);
+        } else {
+            root.right = deleteNode(root.right, key);
+        }
+        return root;
+    }
+    
+    private TreeNode min(TreeNode root) {
+        while(root.left != null) root = root.left;    
+        return root;
+    }
+    
+    private TreeNode deleteMinHelper(TreeNode curr) {
+        if(curr.left == null) return curr.right;
+        curr.left = deleteMinHelper(curr.left);
+        return curr;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution 0(h) iterative approach
+public TreeNode deleteNode(TreeNode root, int key) {
+        TreeNode prevNode = null, cur = root;
+        boolean leftChild = false, nodeFound = false;
+        
+        while(cur != null){
+            if(cur.val == key){
+                nodeFound = true;
+                break;
+            }
+            
+            prevNode = cur;
+            if(cur.val > key){
+                leftChild = true;
+                cur = cur.left;
+            }
+            else{
+                leftChild = false;
+                cur = cur.right;
+            }
+        }
+        
+        if(!nodeFound){
+            return root;
+        }
+        
+        if(prevNode == null){
+            return deleteNode(cur);
+        }
+        
+        if(leftChild){
+            prevNode.left = deleteNode(cur);
+        }
+        else{
+            prevNode.right = deleteNode(cur);
+        }
+        
+        return root;
+    }
+    
+    private TreeNode deleteNode(TreeNode node){
+        if(node.left == null && node.right == null){
+            return null;
+        }
+        
+        if(node.left != null && node.right != null){
+            TreeNode minRightSubtreeNode = findAndDeleteMinRightSubtree(node);
+            node.val = minRightSubtreeNode.val;
+        }
+        else if(node.left != null){
+            node = node.left;
+        }
+        else{
+            node = node.right;
+        }
+        
+        return node;
+    }
+    
+    private TreeNode findAndDeleteMinRightSubtree(TreeNode node){
+        TreeNode prevNode = node;
+        node = node.right;
+        boolean rightChild = node.left == null;
+        
+        while(node.left != null){
+            prevNode = node;
+            node = node.left;
+        }
+        
+        if(rightChild){
+            prevNode.right = node.right;
+        }
+        else{
+            prevNode.left = node.right;
+        }
+        
+        node.right = null;
+        return node;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand C++ sol with explanation and beat 99%.
+public:
+    void Rotate(TreeNode* & root){
+        TreeNode* tmp = root->left; 
+        root->left = tmp ->right;
+        tmp->right = root;
+        root = tmp;
+    }
+    void Reshape(TreeNode* &root){
+        if( root ->left != 0)
+            Reshape(root->left);
+        else return;
+        Rotate(root);
+    }
+    TreeNode* joinLR(TreeNode* l, TreeNode* r){
+        if(r == 0) return l;
+        Reshape(r); r->left = l;
+        return r;
+    }
+    void DeleteNode(TreeNode* &root, int key){
+        if(root == nullptr) return;
+        int val = root->val;
+        if(val < key)  DeleteNode(root->right, key);
+        if(val > key)  DeleteNode(root->left, key);
+        if(val == key){
+            TreeNode* tmp = root;
+            root = joinLR(root->left, root->right);
+            delete tmp;
+        }
+    }
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if(root == nullptr) return root;
+        DeleteNode(root, key);
+        return root;
+    }
+};
+
+
+![alt text](https://www.dropbox.com/s/ts9dk4rjmc5u9m7/Screenshot%202017-01-28%2013.42.35.png?dl=0)
+
+----------------------------------------------------------------------------------------------------
+A very modularized c++ solution (beats 98%)
+TreeNode*& findNode(TreeNode*& root, int key) {
+    if ( !root or root->val == key ) return root;
+    else return ( root->val > key? findNode( root->left, key ) : findNode( root->right, key ) );
+}
+
+bool insertNode(TreeNode*& root, TreeNode* node) {
+    if ( !root ) {
+        root = node;
+        return true;
+    }
+    if ( !node ) return true;
+    if ( root->val < node->val ) return insertNode( root->right, node );
+    else if ( root->val > node->val ) return insertNode( root->left, node );
+    else return false;
+}
+
+TreeNode* deleteNode(TreeNode* root, int key) {
+    TreeNode*& node = findNode( root, key );
+    if ( !node ) return root;
+    TreeNode* left = node->left;
+    TreeNode* right = node->right;
+    node = NULL;
+    insertNode( root, left );
+    insertNode( root, right );
+    return root;
+}
+
+
+----------------------------------------------------------------------------------------------------
+30 lines C++, elegantly using TreeNode**, 35ms
+TreeNode* deleteNode(TreeNode* root, int key) {
+    TreeNode** now=&root;
+    while((*now)!=nullptr){
+        if(key > (*now)->val){
+            now=&((*now)->right);
+        }else if(key < (*now)->val){
+            now=&((*now)->left);
+        }else{
+            break;
+        }
+    }
+    if((*now)!=nullptr){
+        if((*now)->right==nullptr){
+            (*now)=(*now)->left;
+        }else if((*now)->left==nullptr ){
+            (*now)=(*now)->right;
+        }else{
+            TreeNode** leftMostPtr=&((*now)->right);
+            while((*leftMostPtr)->left!=nullptr){
+                leftMostPtr=&((*leftMostPtr)->left);
+            }
+            TreeNode* newNode=(*leftMostPtr);
+            
+            (*leftMostPtr)=(*leftMostPtr)->right;
+            newNode->left=(*now)->left;
+            newNode->right=(*now)->right;
+            (*now)=newNode;
+        }
+    }
+    return root;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution Not Change Value,easy to understand
+public class Solution {
+     public TreeNode deleteNode(TreeNode root, int key) {
+
+        if (root == null)
+            return null;
+        if (key > root.val)
+            root.right = deleteNode(root.right, key);
+        else if (key < root.val)
+            root.left = deleteNode(root.left, key);
+        else {
+
+            if (root.left == null)
+                return root.right;
+            if (root.right == null)
+                return root.left;
+            TreeNode cur = root;
+            root = min(root.right);
+            root.right = deleteMin(cur.right);
+            root.left = cur.left;
+
+        }
+        return root;
+
+    }
+
+    public TreeNode min(TreeNode root) {
+
+        if (root.left == null)
+            return root;
+        return min(root.left);
+
+    }
+
+    public TreeNode deleteMin(TreeNode root) {
+
+        if (root.left == null)
+            return root.right;
+
+        root.left = deleteMin(root.left);
+        return root;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

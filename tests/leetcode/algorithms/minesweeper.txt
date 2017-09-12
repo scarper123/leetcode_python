@@ -1,0 +1,532 @@
+Java 20 lines backtracking solution using set, beats 100%.
+public class Solution {
+
+     public List<List<Integer>> findSubsequences(int[] nums) {
+         Set<List<Integer>> res= new HashSet<List<Integer>>();
+         List<Integer> holder = new ArrayList<Integer>();
+         findSequence(res, holder, 0, nums);
+         List result = new ArrayList(res);
+         return result;
+     }
+
+    public void findSequence(Set<List<Integer>> res, List<Integer> holder, int index, int[] nums) {
+        if (holder.size() >= 2) {
+            res.add(new ArrayList(holder));
+        }
+        for (int i = index; i < nums.length; i++) {
+            if(holder.size() == 0 || holder.get(holder.size() - 1) <= nums[i]) {
+                holder.add(nums[i]);
+                findSequence(res, holder, i + 1, nums);
+                holder.remove(holder.size() - 1);
+            }
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution beats 100%
+public class Solution {
+    public List<List<Integer>> findSubsequences(int[] nums) {
+        List<List<Integer>> res = new LinkedList<>();
+        helper(new LinkedList<Integer>(), 0, nums, res);
+        return res; 
+    }
+    private void helper(LinkedList<Integer> list, int index, int[] nums, List<List<Integer>> res){
+        if(list.size()>1) res.add(new LinkedList<Integer>(list));
+        Set<Integer> used = new HashSet<>();
+        for(int i = index; i<nums.length; i++){
+            if(used.contains(nums[i])) continue;
+            if(list.size()==0 || nums[i]>=list.peekLast()){
+                used.add(nums[i]);
+                list.add(nums[i]); 
+                helper(list, i+1, nums, res);
+                list.remove(list.size()-1);
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean 20ms solution
+public List<List<Integer>> findSubsequences(int[] nums) {
+	List<List<Integer>> res = new ArrayList<>();
+	helper(res, new ArrayList<Integer>(), nums, 0);
+	return res;
+}
+	
+private void helper(List<List<Integer>> res, List<Integer> list, int[] nums, int id) {
+	if (list.size() > 1) res.add(new ArrayList<Integer>(list));
+	List<Integer> unique = new ArrayList<Integer>();
+	for (int i = id; i < nums.length; i++) {
+		if (id > 0 && nums[i] < nums[id-1]) continue; // skip non-increase
+		if (unique.contains(nums[i])) continue; // skip duplicate
+		unique.add(nums[i]);
+		list.add(nums[i]);
+		helper(res, list, nums, i+1);
+		list.remove(list.size()-1);
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ dfs solution using unordered_set
+class Solution {
+public:
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        vector<vector<int>> res;
+        vector<int> seq;
+        dfs(res, seq, nums, 0);
+        return res;
+    }
+    
+    void dfs(vector<vector<int>>& res, vector<int>& seq, vector<int>& nums, int pos) {
+        if(seq.size() > 1) res.push_back(seq);
+        unordered_set<int> hash;
+        for(int i = pos; i < nums.size(); ++i) {
+            if((seq.empty() || nums[i] >= seq.back()) && hash.find(nums[i]) == hash.end()) {
+                seq.push_back(nums[i]);
+                dfs(res, seq, nums, i + 1);
+                seq.pop_back();
+                hash.insert(nums[i]);
+            }
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python
+def findSubsequences(self, nums):
+    subs = {()}
+    for num in nums:
+        subs |= {sub + (num,)
+                 for sub in subs
+                 if not sub or sub[-1] <= num}
+    return [sub for sub in subs if len(sub) >= 2]
+
+----------------------------------------------------------------------------------------------------
+Python solution by easily checking all combinations
+  import itertools
+
+  def findSubsequences(self, nums):
+    ret = []
+    for i in range(2, len(nums) + 1):
+      ret.extend(set(itertools.combinations(nums, i)))
+    return [x for x in ret if self.isIncreasing(x)]
+
+  def isIncreasing(self, l):
+    for i in range(1, len(l)):
+      if l[i - 1] > l[i]:
+        return False
+    return True
+
+----------------------------------------------------------------------------------------------------
+Evolve from intuitive solution to optimal
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        vector<vector<int>> res;
+        vector<int> one;
+        find(0,nums,one,res);
+        return res;
+    }
+    void find(int p, vector<int>& nums, vector<int>& one, vector<vector<int>>& res) {
+        int n = nums.size();
+        if(one.size()>1) res.push_back(one);
+        unordered_set<int> ht;
+        for(int i=p;i<n;i++) {
+            if((!one.empty() && nums[i] < one.back()) || ht.count(nums[i])) continue;
+            ht.insert(nums[i]);
+            one.push_back(nums[i]);
+            find(i+1,nums,one,res);
+            one.pop_back();
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ Backtracking solution using Set of Vectors
+class Solution {
+private:
+    void findSubsequences(vector<int> &nums, vector<int> &subsequence,
+                        set<vector<int> > &result, int size, int index) {
+    if (size >= 2)
+        result.insert(subsequence);
+
+
+    for (int i = index; i < nums.size(); ++i) {
+        if (subsequence.size() == 0 || nums[i] >= subsequence[subsequence.size() - 1]) {
+            subsequence.push_back(nums[i]);
+            findSubsequences(nums, subsequence, result, size + 1, i + 1);
+            subsequence.pop_back();
+        }
+    }
+}
+
+public:
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        set<vector<int>> resultSet;
+        vector<int> subsequence;
+        findSubsequences(nums, subsequence, resultSet, 0, 0);
+
+        vector<vector<int>> result(resultSet.begin(), resultSet.end());
+        return result;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+DP solution: not as clean as other Python solutions, but beats 99% in speed
+def findSubsequences(self, nums):
+    """
+    :type nums: List[int]
+    :rtype: List[List[int]]
+    """
+    N = len(nums)
+    dp = [[] for _ in xrange(N)]
+    ans = []
+    
+    for i in xrange(N-2,-1,-1):
+        ni = nums[i]
+        seen = set()
+        for j in xrange(i+1, N):
+            nj = nums[j]
+            if ni <= nj and nj not in seen:
+                seen.add(nj)
+                dp[i].extend([
+                    [ni] + x for x in [[nj]] + dp[j] 
+                    ])
+                
+    seen = set()
+    for i in xrange(N):
+        if nums[i] not in seen:
+            seen.add(nums[i])
+            ans += dp[i]
+    return ans
+
+----------------------------------------------------------------------------------------------------
+C++ 222ms 30lines solution without recurse, beats 100%.
+class Solution {
+public:
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        vector<vector<int>> ans(0);
+        if(nums.size()<2) return ans;
+        int fst[nums.size()];       //first
+        bool rep[nums.size()];      //repeat
+        for(int i=0;i<nums.size();++i){
+            fst[i]=ans.size();
+            rep[i]=false;
+            for(int j=i-1;j>=0;--j){
+                if(nums[j]<=nums[i]){
+                    if(!rep[j]){
+                        ans.emplace_back(vector<int>(2,nums[i]));
+                        ans.back()[0]=nums[j];
+                    }
+                    for(int k=fst[j];k<fst[j+1];++k){
+                        ans.push_back(ans[k]);
+                        ans.back().emplace_back(nums[i]);
+                    }
+                    if(nums[j]==nums[i]){
+                        rep[i]=true;
+                        break;
+                    }
+                }
+            }
+        }
+        return ans;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - Iterative
+class Solution {
+public:
+    vector<vector<int>> findSubsequences(vector<int>& a) {
+        set<vector<int>> seqs = {vector<int>(0)};
+        for (int i = 0; i < a.size(); i++) {
+            vector<vector<int>> built(seqs.size());
+            std::copy(seqs.begin(), seqs.end(), built.begin());
+            for (auto seq : built) {
+                if (seq.empty() || a[i] >= seq.back()) {
+                    seq.push_back(a[i]);
+                    seqs.insert(seq);
+                }
+            }
+        }
+        
+        vector<vector<int>> res;
+        for (auto seq : seqs)
+            if (seq.size() > 1) res.push_back(seq);
+
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Can someone explain the question for me?
+whose length
+
+----------------------------------------------------------------------------------------------------
+Java Backtrack Solution
+public class Solution {
+    public List<List<Integer>> findSubsequences(int[] nums) {
+        List<List<Integer>> allSol = new ArrayList<>();
+        if (nums == null || nums.length <= 1) {
+            return allSol;
+        }
+        List<Integer> sol = new ArrayList<>();
+        Set<List<Integer>> allSolSet = new HashSet<>();
+        findSub(nums, 0, sol, allSolSet); 
+        for (List<Integer> list : allSolSet) {
+            allSol.add(list);
+        }
+        return allSol;
+    }
+    
+    public void findSub(int[] nums, int start, List<Integer> sol, Set<List<Integer>> allSol) {
+        if (sol.size() >= 2) {
+            allSol.add(new ArrayList<Integer>(sol));
+        }
+        if (start >= nums.length) {
+            return;
+        }
+        
+        for (int i = start; i < nums.length; i++) {
+            if (sol.size() == 0 || nums[i] >= sol.get(sol.size() - 1)) {
+                sol.add(nums[i]);
+                findSub(nums, i + 1, sol, allSol);
+                sol.remove(sol.size() - 1);
+            } else {
+                findSub(nums, i + 1, sol, allSol);
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Commented Solution with thinking process
+/*
+This is a backtracking problem. 
+Brutal force is that we try every possible sequence.
+
+Since we need to avoid the repeating sequence, key of the optimization is to 
+somehow tell whether we have already include a list of integers in our result.
+
+To do this, we can either check with all the valid list we have so far everytime we want to put a new list
+or
+we need to come up with a good hashing function to hash a list to a number, then we only need to compare the hashcode everytime
+
+The way I come up with the hash code function below is that:
+You need a big prime number as factor, also want to take the incoming number and list size to be consideration,
+also you want to add a constant to it to handle all 0 case.
+
+I guess the most foolproof implememtation is to actual compare the list when the hashcode are the same.
+*/
+
+public class Solution {
+    public List<List<Integer>> findSubsequences(int[] nums) {
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+        Set<Integer> hashCode = new HashSet<Integer>();
+        //The sequence can start from every element in the array
+        for(int i = 0; i < nums.length - 1; i++){
+            List<Integer> current = new ArrayList<Integer>();
+            helper(nums, current, result, i, hashCode, 0);
+        }
+        return result;
+    }
+    
+    //Backtracking functino takes 6 parameters: input array, list valid list we put into result, final result,
+    //index of the next number to try, hashcode of all the lists in the result, hashcode of last valid list.
+    private void helper(int[] nums, List<Integer> list, List<List<Integer>> result, int index, Set<Integer> hashCode, int currentCode){
+        if(index >= nums.length) return;
+        if(list.isEmpty()){
+            list.add(nums[index]);
+            helper(nums,list,result,index ,hashCode, nums[index]);
+        }else{
+            for(int i = index+1; i < nums.length; i++){
+                //This is the hashcode formular.
+                int newCode = currentCode * 89 + nums[i] * (list.size() + 1) + 1;
+                //If current number is bigger than the last one in current sequence, 
+                //and the list we are about to add to result is not there yet, add it,
+                //then try to build more sequence based on that.
+                if(nums[i] >= list.get(list.size() - 1) && !hashCode.contains(newCode)){
+                    List<Integer> element = new ArrayList<Integer>();
+                    element.addAll(list);
+                    element.add(nums[i]);
+                    result.add(element);
+                    hashCode.add(newCode);                
+                    helper(nums, element, result, i, hashCode, newCode);
+                }
+            }
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java Solution beats 100% so far (just so far)
+ public class Solution {
+    public List<List<Integer>> findSubsequences(int[] nums) {
+        int n = nums.length;
+        
+        TreeMap<Integer, List<List<Integer>>> map = new TreeMap<>();
+        for (int i = 0; i < n; i ++) {
+            
+            List<List<Integer>> cur = map.get(nums[i]); // the list of sequences ending with current number
+            if (cur == null) {
+                cur = new ArrayList<>();
+                map.put(nums[i], cur);
+            }
+            int size = cur.size();
+            // retrieve all subsequences ending with the number smaller or equal than current number
+            Map<Integer, List<List<Integer>>> submap = map.headMap(nums[i], true); 
+            final int id = i;
+            final List<List<Integer>> curList = cur;
+            submap.forEach((k, v) -> {
+                if (k == nums[id]) {
+                    for (int j = 0; j < size; j ++) {
+                        curList.get(j).add(nums[id]); // directly append the number in current subsequence
+                    }
+                } else {
+                    for (List<Integer> list : v) {
+                        List<Integer> nl = new ArrayList<>(list);
+                        nl.add(nums[id]);
+                        curList.add(nl);
+                    }
+                }
+            });
+            // Add current number as a list with single element for later use
+            List<Integer> single = new ArrayList<>();
+            single.add(nums[i]);
+            cur.add(single);
+        }
+        
+        List<List<Integer>> res = new ArrayList<>();
+        for (List<List<Integer>> list : map.values()) {
+            list.remove(list.size() - 1); // remove the list with single element
+            res.addAll(list);
+        }
+        return res;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+9-liner beat 98.8%, no set, vector hasher or helper function (detailed explanation)
+    vector<vector<int>> findSubsequences(vector<int>& a) {
+        if(a.size() < 2) return {};
+        vector<vector<int>> res; int s[a.size()], d[a.size()], j;
+        for(int i=0; i<a.size(); ++i)
+            for(j=i-1, s[i]=res.size(), d[i]=0; j>=0; --j)
+                if(a[j] <= a[i]) {
+                    if(!d[j]) res.push_back({a[j], a[i]});
+                    for(int k=s[j];k<s[j+1];++k) res.push_back(res[k]), res.back().push_back(a[i]);
+                    if(d[i] = a[j]==a[i]) break;
+                }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python DFS
+class Solution(object):
+    def findSubsequences(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[List[int]]
+        """
+        if not nums: return []
+        res = []
+        for i,n in enumerate(nums):
+            if i<>0 and any(n==x for x in nums[:i]): continue
+            self.increaseSequence(nums[i+1:], [n], res)
+        return res
+
+    def increaseSequence(self,nums,seed,res):
+        if not nums: return
+        for i,n in enumerate(nums):
+            if i<>0 and any(n==x for x in nums[:i]): continue
+            if n>=seed[-1]:
+                seed.append(n)
+                res.append(deepcopy(seed))
+                self.increaseSequence(nums[i+1:],seed,res)
+                seed.pop()
+
+
+----------------------------------------------------------------------------------------------------
+Clean solution, non-recursion, bit manipulation
+class Solution {
+public:
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        int len = nums.size();
+        int tot = 1 << len;
+        set<vector<int>> s;
+        for(int i = 1 ; i <= tot ; i++){
+            vector<int> v;
+            for(int j = 0 ; j < len ; j++){
+                if((i >> j) & 0x1 && (v.size() == 0 || v.back() <= nums[j]))v.push_back(nums[j]);
+            }
+            if(v.size() > 1)s.insert(v);
+        }
+        return vector<vector<int>>(s.begin(),s.end());
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+iterative simple python beats 97%
+class Solution(object):
+    def findSubsequences(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[List[int]]
+        """
+        stack = []
+        Set = set()
+        for i in range(len(nums)):
+            stack.append([])
+            for j in range(i-1, -1, -1):
+                if nums[j] <= nums[i]:
+                    stack[i].append([nums[j], nums[i]])
+                    Set.add((nums[j], nums[i]))
+                    for sequence in stack[j]:
+                        stack[i].append(sequence + [nums[i]])
+                        Set.add(tuple(stack[i][-1]))
+                if nums[j] == nums[i]:
+                    break
+        return list(Set)
+
+
+----------------------------------------------------------------------------------------------------
+Java 20 ms using HashSet and Backtracking
+List<List<Integer>> toRet;
+public List<List<Integer>> findSubsequences(int[] nums) 
+{
+    toRet = new ArrayList<List<Integer>>();
+    if(nums.length < 2)
+        return toRet;        
+    dfs(nums, -1, new ArrayList<Integer>());
+    return toRet;
+}
+void dfs(int[] nums, int ind, List<Integer> list)
+{
+    if(list.size() > 1)
+        toRet.add(new ArrayList<Integer>(list));        
+    if(ind == nums.length - 1)
+        return;
+    HashSet<Integer> hs = new HashSet<Integer>();
+    for(int i = ind + 1; i < nums.length; i++)
+    {
+        if(ind > -1 && nums[i] < nums[ind])
+            continue;
+        if(hs.contains(nums[i]))
+            continue;
+        hs.add(nums[i]);
+        if(i == nums.length) break;
+        list.add(nums[i]);
+        dfs(nums, i, list);
+        list.remove(list.size() - 1);
+    }
+}
+
+----------------------------------------------------------------------------------------------------

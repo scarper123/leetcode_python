@@ -1,0 +1,626 @@
+Sharing my simple c++ code: O(n) time, O(1) space
+    
+Here is my idea: instead of calculating area by height*width, we can think it in a cumulative way. In other words, sum water amount of each bin(width=1). 
+Search from left to right and maintain a max height of left and right separately, which is like a one-side wall of  partial container. Fix the higher one and flow water from the lower part. For example, if current height of left is lower, we fill water in the left bin. Until left meets right, we filled the whole container.
+
+    class Solution {
+    public:
+        int trap(int A[], int n) {
+            int left=0; int right=n-1;
+            int res=0;
+            int maxleft=0, maxright=0;
+            while(left<=right){
+                if(A[left]<=A[right]){
+                    if(A[left]>=maxleft) maxleft=A[left];
+                    else res+=maxleft-A[left];
+                    left++;
+                }
+                else{
+                    if(A[right]>=maxright) maxright= A[right];
+                    else res+=maxright-A[right];
+                    right--;
+                }
+            }
+            return res;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Share my short solution.
+Keep track of the maximum height from both forward directions backward directions, call them leftmax and rightmax. 
+
+----------
+
+    public int trap(int[] A){
+        int a=0;
+        int b=A.length-1;
+        int max=0;
+        int leftmax=0;
+        int rightmax=0;
+        while(a<=b){
+            leftmax=Math.max(leftmax,A[a]);
+            rightmax=Math.max(rightmax,A[b]);
+            if(leftmax<rightmax){
+                max+=(leftmax-A[a]);       // leftmax is smaller than rightmax, so the (leftmax-A[a]) water can be stored
+                a++;
+            }
+            else{
+                max+=(rightmax-A[b]);
+                b--;
+            }
+        }
+        return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+7 lines C &#x2F; C++
+Keep track of the already safe `level` and the total `water` so far. In each step, process and discard the `lower` one of the leftmost or rightmost elevation.
+
+---
+
+**C**
+
+Changing the given parameters to discard the lower border. I'm quite fond of this one.
+
+    int trap(int* height, int n) {
+        int level = 0, water = 0;
+        while (n--) {
+            int lower = *height < height[n] ? *height++ : height[n];
+            if (lower > level) level = lower;
+            water += level - lower;
+        }
+        return water;
+    }
+
+Slight variation with two pointers (left and right).
+
+    int trap(int* height, int n) {
+        int *L = height, *R = L+n-1, level = 0, water = 0;
+        while (L < R) {
+            int lower = *L < *R ? *L++ : *R--;
+            if (lower > level) level = lower;
+            water += level - lower;
+        }
+        return water;
+    }
+
+---
+
+**C++**
+
+With left and right index.
+
+    int trap(vector<int>& height) {
+        int l = 0, r = height.size()-1, level = 0, water = 0;
+        while (l < r) {
+            int lower = height[height[l] < height[r] ? l++ : r--];
+            level = max(level, lower);
+            water += level - lower;
+        }
+        return water;
+    }
+
+With left and right iterator.
+
+    int trap(vector<int>& height) {
+        auto l = height.begin(), r = height.end() - 1;
+        int level = 0, water = 0;
+        while (l != r + 1) {
+            int lower = *l < *r ? *l++ : *r--;
+            level = max(level, lower);
+            water += level - lower;
+        }
+        return water;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+A stack based solution for reference, inspired by Histogram
+Indeed this question can be solved in one pass and O(1) space, but it's probably hard to come up with in a short interview. If you have read the stack O(n) solution for Largest Rectangle in Histogram, you will find this solution is very very similar. 
+
+The main idea is : if we want to find out how much water on a bar(bot), we need to find out the left larger bar's index (il), and right larger bar's index(ir), so that the water is (min(A[il],A[ir])-A[bot])*(ir-il-1), use min since only the lower boundary can hold water, and we also need to handle the edge case that there is no il.
+
+To implement this we use a stack that store the indices with decreasing bar height, once we find a bar who's height is larger, then let the top of the stack be bot, the cur bar is ir, and the previous bar is il. 
+
+
+    public int trap(int[] A) {
+            if (A==null) return 0;
+            Stack<Integer> s = new Stack<Integer>();
+            int i = 0, maxWater = 0, maxBotWater = 0;
+            while (i < A.length){
+                if (s.isEmpty() || A[i]<=A[s.peek()]){
+                    s.push(i++);
+                }
+                else {
+                    int bot = s.pop();
+                    maxBotWater = s.isEmpty()? // empty means no il
+                    0:(Math.min(A[s.peek()],A[i])-A[bot])*(i-s.peek()-1);
+                    maxWater += maxBotWater;
+                }
+            }
+            return maxWater;
+        }
+
+----------------------------------------------------------------------------------------------------
+Sharing my Java code: O(n) time, O(1) space
+Traverse one pass with two pointers, from two sides to the middle.
+
+
+    public int trap(int[] A) {
+        if (A.length < 3) return 0;
+        
+        int ans = 0;
+        int l = 0, r = A.length - 1;
+        
+        // find the left and right edge which can hold water
+        while (l < r && A[l] <= A[l + 1]) l++;
+        while (l < r && A[r] <= A[r - 1]) r--;
+        
+        while (l < r) {
+            int left = A[l];
+            int right = A[r];
+            if (left <= right) {
+                // add volum until an edge larger than the left edge
+                while (l < r && left >= A[++l]) {
+                    ans += left - A[l];
+                }
+            } else {
+                // add volum until an edge larger than the right volum
+                while (l < r && A[--r] <= right) {
+                    ans += right - A[r];
+                }
+            }
+        }
+        return ans;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+JAVA 10 lines accepted code, O(n) time, O(1) space. Is there a better solution?
+Basically this solution runs two pointers from two sides to the middle, and the plank is used to record the height of the elevation within a certain range, **plank height can only increase (or remain the same) from two sides to the middle**. If the current pointer is pointing at a number that is less than the current plank height, the difference between plank height and the number would be the amount of water trapped. Otherwise, A[i] == plank, no water is trapped. 
+
+    public class Solution {
+        public int trap(int[] A) {
+            int i = 0, j = A.length - 1, result = 0, plank = 0;
+            while(i <= j){
+                plank = plank < Math.min(A[i], A[j]) ? Math.min(A[i], A[j]) : plank;
+                result = A[i] >= A[j] ? result + (plank - A[j--]) : result + (plank - A[i++]);
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very Concise Java Solution No Stack with Explanations
+The idea is very simple. Begin scan from beginning and end of array. Compare value of left and right pointer, hold the greater one and move the other to inner array. Compute passed area when pointer gets inner.
+
+    public int trap(int[] height) {
+		int secHight = 0;
+		int left = 0;
+		int right = height.length - 1;
+		int area = 0;
+		while (left < right) {
+			if (height[left] < height[right]) {
+				secHight = Math.max(height[left], secHight);
+				area += secHight - height[left];
+				left++;
+			} else {
+				secHight = Math.max(height[right], secHight);
+				area += secHight - height[right];
+				right--;
+			}
+		}
+		return area;
+	}
+
+----------------------------------------------------------------------------------------------------
+A different O(n) approach - easy to understand and simple code
+    class Solution {
+    public:
+        int trap(int a[], int n) {
+            int i, res = 0;
+            if(!n) return res;
+            vector<int> ltr(n, 0), rtl(n, 0);
+            for(i = 1, ltr[0] = a[0]; i < n; i++)
+                ltr[i] = max(ltr[i-1], a[i]);
+            for(i = n - 2, rtl[n-1] = a[n-1]; i >= 0; i--)
+                rtl[i] = max(rtl[i+1], a[i]);
+            for(i = 0; i < n; i++)
+                res += min(ltr[i], rtl[i]) - a[i];
+            return res;
+        }
+    };
+
+observation:
+
+scan A both from left to right and right to left, record the largest seen during the scan; then for each position the water level should be the min of the 2 large value.
+
+----------------------------------------------------------------------------------------------------
+My Accepted Java Solution
+    public class Solution {
+    public int trap(int[] height) {
+        if (height.length <= 2) return 0;
+        int max = Integer.MIN_VALUE;
+        int maxIndex = -1;
+        for (int i = 0; i < height.length; i++) {
+            if (height[i] > max) {
+                max = height[i];
+                maxIndex = i;
+            }
+        }
+        
+        int leftMax = height[0];
+        int water = 0;
+        for (int i = 1; i < maxIndex; i++) {
+            if (height[i] > leftMax) {
+                leftMax = height[i];
+            } else {
+                water += leftMax - height[i];
+            }
+        }
+        
+        int rightMax = height[height.length - 1];
+        for (int i = height.length - 2; i > maxIndex; i--) {
+            if (height[i] > rightMax) {
+                rightMax = height[i];
+            } else {
+                water += rightMax - height[i];
+            }
+        }
+        
+        return water;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My solution----inspired by 2 sum
+This code looks like O(n) algorithm of the question 2 sum:    
+
+    int trap(int A[], int n) {
+        if (n == 0) return 0;
+        int l = 0, r = n - 1;
+        int lv = A[l], rv = A[r];
+        int total = A[l] + A[r], rainTotal = total;
+        while (l != r)
+        {
+            if (A[l] < A[r])
+            {
+                l++;
+                total += A[l];
+                lv = max(lv, A[l]);
+                rainTotal += lv;
+            }
+            else
+            {
+                r--;
+                total += A[r];
+                rv = max(rv, A[r]);
+                rainTotal += rv;
+            }
+        }
+        return rainTotal - total;
+    }
+
+ 
+lv is A[0...l]'s max value, rv is A[r...n-1]'s max value.
+ rainTotal is the total volume after raining, total is Sigma(A[0...n-1])
+
+----------------------------------------------------------------------------------------------------
+Clear C++ Solution 11ms
+Count the rocks cell first, then the total cell.
+The key thing here is that if a cell has some rock on both left and right that higher than itself, it will either be water or rock.
+
+    class Solution {
+    public:
+        int trap(int A[], int n) {
+            int summap = 0;
+            int sumtot = 0;
+            
+            for(int i = 0; i < n; i++) summap += A[i];
+            
+            int left = 0, right = n - 1;
+            int leftbar = 0, rightbar = 0;
+            while(left <= right) {
+                leftbar = max(A[left], leftbar);
+                rightbar = max(A[right], rightbar);
+                
+                if(leftbar <= rightbar) {
+                    sumtot += leftbar;
+                    left++;
+                } else {
+                    sumtot += rightbar;
+                    right--;
+                }
+            }
+            
+            return sumtot - summap;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+8-lines C&#x2F;C++&#x2F;Java&#x2F;Python Solution
+**Note**: The following idea is in fact from the last answer in [this link][1], which leads to a clean code. I just reorganize it and add some explanations. I hope it is Ok.
+
+The following are four solutions in C/C++/Java/Python respectively. The basic idea is that we set two pointers `l` and `r` to the left and right end of `height`. Then we get the minimum height (`minHeight`) of these pointers (similar to Container with Most Water due to the Leaking Bucket Effect) since the level of the water cannot be higher than it. Then we move the two pointers towards the center. If the coming level is less than `minHeight`, then it will hold some water. Fill the water until we meet some "barrier" (with height larger than `minHeight`) and update `l` and `r` to repeat this process in a new interval. 
+  
+----------
+**C**
+ 
+    int trap(int* height, int heightSize) { 
+        int l = 0, r = heightSize - 1, water = 0, minHeight = 0;
+        while (l < r) { 
+            while (l < r && height[l] <= minHeight) 
+                water += minHeight - height[l++];
+            while (r > l && height[r] <= minHeight)
+                water += minHeight - height[r--];
+            minHeight = height[l] <= height[r] ? height[l] : height[r];
+        }
+        return water;
+    }
+
+----------
+**C++**
+
+    class Solution {
+    public:
+        int trap(vector<int>& height) {
+            int n = height.size(), l = 0, r = n - 1, water = 0, minHeight = 0;
+            while (l < r) {
+                while (l < r && height[l] <= minHeight)
+                    water += minHeight - height[l++];
+                while (r > l && height[r] <= minHeight) 
+                    water += minHeight - height[r--];
+                minHeight = min(height[l], height[r]);
+            }
+            return water;
+        }
+    };
+
+----------
+**Java**
+ 
+    public class Solution {
+        public int trap(int[] height) {
+            int n = height.length, l = 0, r = n - 1, water = 0, minHeight = 0;
+            while (l < r) {
+                while (l < r && height[l] <= minHeight)
+                    water += minHeight - height[l++];
+                while (r > l && height[r] <= minHeight)
+                    water += minHeight - height[r--];
+                minHeight = Math.min(height[l], height[r]);
+            }
+            return water;
+        }
+    }
+
+----------
+**Python**
+
+    class Solution:
+        # @param {integer[]} height
+        # @return {integer} 
+        def trap(self, height):
+            n = len(height)
+            l, r, water, minHeight = 0, n - 1, 0, 0
+            while l < r:
+                while l < r and height[l] <= minHeight:
+                    water += minHeight - height[l]
+                    l += 1
+                while r > l and height[r] <= minHeight:
+                    water += minHeight - height[r]
+                    r -= 1
+                minHeight = min(height[l], height[r])
+            return water
+
+
+  [1]: https://leetcode.com/discuss/16171/sharing-my-simple-c-code-o-n-time-o-1-space
+
+----------------------------------------------------------------------------------------------------
+Share my one pass Python solution with explaination
+For index i, the water volume of i: `vol_i = min(left_max_i, right_max_i) - bar_i`. 
+
+The left_max array from left to right is always non-descending,  the right_max is non-ascending.
+
+Having such observation, we can say:
+
+Given i < j, if left_max_i <= right_max_j: `vol_i = left_max_i - bar_i`, otherwise, `vol_j = right_max_j - bar_j` 
+because, if left_max_i <= right_max_j: `left_max_i <= right_max_j <= right_max_j-1 <= ... <= right_max_i`, then `min(left_max_i, right_max_i)` is always `left_max_i`
+
+Code is pasted.
+
+    def trap(self, bars):
+        if not bars or len(bars) < 3:
+            return 0
+        volume = 0
+        left, right = 0, len(bars) - 1
+        l_max, r_max = bars[left], bars[right]
+        while left < right:
+            l_max, r_max = max(bars[left], l_max), max(bars[right], r_max)
+            if l_max <= r_max:
+                volume += l_max - bars[left]
+                left += 1
+            else:
+                volume += r_max - bars[right]
+                right -= 1
+        return volume
+
+----------------------------------------------------------------------------------------------------
+O(n) Solution Based On Java
+    public int trap(int[] A) {
+
+        int left = 0, right = A.length-1;
+
+        int level = 0, result = 0;
+
+        while (left<right){
+
+            level = Math.max(Math.min(A[left], A[right]), level);
+
+            if (A[left]<=A[right]){
+                result += level-A[left];
+                left++;
+            }
+            else{
+                result += level-A[right];
+                right--;
+            }
+        }
+
+        return result;
+
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Explanatory and concise java implementation.
+Key idea is to keep a track of the highest walls on the left and the right and narrowing down from both sides. As we narrow down keeping adding to the result, the water trapped in unit width and smaller of each walls on each move.
+
+    public class Solution {
+        public int trap(int[] height) {
+            if(height == null || height.length == 0) return 0;
+            int leftMax = 0, rightMax = 0, waterTrapped = 0, left = 0, right = height.length-1;
+            while(left < right) {
+                leftMax = leftMax > height[left] ? leftMax : height[left];
+                rightMax = rightMax > height[right] ? rightMax : height[right];
+                waterTrapped += leftMax < rightMax ? leftMax - height[left++] : rightMax - height[right--];
+            }
+            return waterTrapped;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ time O(n), space O(1),  no stack, no two pointers
+    class Solution {
+    public:
+    int trap(vector<int>& height) {
+        int sz=height.size(), highest=0, water=0;
+        //from left to right, only consider the trap's left elevation
+        for(int i=0; i<sz; i++){
+            if(height[i]<highest) water+=highest-height[i];
+            highest=max(highest, height[i]);
+        }
+        
+        int prehighest=highest;
+        highest=0;
+        //from right to left, only consider the trap's right elevation, subtract the surplus water
+        for(int i=sz-1; i>=0; i--){
+            highest=max(height[i], highest);
+            if(highest<prehighest) water-=prehighest-highest;
+        }
+        return water;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java with Stack, following the approach similar to Largest Rectangle in Histogram
+    public class Solution {
+        public int trap(int[] height) {
+            int len = height.length;
+            int water = 0;
+            Stack<Integer> stack = new Stack<>();
+            for(int i = 0; i < len; i++) {
+                if (stack.isEmpty() || height[stack.peek()] >= height[i]) {
+                    stack.push(i);
+                } else {
+                    int tmp = stack.pop();
+                    if (!stack.isEmpty()) {
+                        water += (Math.min(height[stack.peek()],height[i])-height[tmp])*(i-stack.peek()-1);
+                    }
+                    i--;
+                }
+            }
+            return water;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple compact java solution - 10 lines!
+    public int trap(int[] height) {
+        if(height == null || height.length == 0) return 0;
+        int leftMax = 0, rightMax = 0, trapped = 0, left = 0, right = height.length - 1;
+        while(left < right) {
+            leftMax = leftMax > height[left] ? leftMax : height[left];
+            rightMax = rightMax > height[right] ? rightMax : height[right];
+            trapped += leftMax < rightMax ? leftMax - height[left++] : rightMax - height[right--];
+        }
+        return trapped;
+}
+
+----------------------------------------------------------------------------------------------------
+Here is my AC code. hope be helpful.
+i point to the left-most non-zero data and j point to the right-most non-zero data. if left is less than the right one, it means that if i go from left to right, if a data is less than A[i], of course it is less than the right one, so we can add the diff(current and the left one), if a data is greater than A[i], move the left one to i, and compare A[i] and A[j]again to find the less one. If A[j] is less, we can do in the similar way.
+ 
+
+    class Solution {
+        public:
+            int trap(int A[], int n) {
+                 int i = 0; 
+        		 int j = n - 1;
+        		 int count = 0;
+        		 while (A[i] == 0) ++i;
+        		 while (A[j] == 0) --j;
+        		 while (i < j)
+        		 {
+        			 if (A[i] < A[j])
+        			 {
+        				 int p = i;
+        				 ++i;
+        				 while (i < j && A[i] < A[p])
+        					 count += A[p] - A[i++];
+        			 }
+        			 else
+        			 {
+        				 int p = j;
+        				 --j;
+        				 while (i < j && A[j] < A[p])
+        					 count += A[p] - A[j--];
+        
+        			 }
+        		 }
+        		 return count;   
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Python solutions, O(n) space and O(1) space
+The water we trapped depends on the left side and right side which has the max height,
+
+We keep the left side and right side until we find a higher side
+
+    class Solution:
+    # @param A, a list of integers
+    # @return an integer
+    def trap(self, arr):
+        height, left, right, water = [], 0, 0, 0
+        for i in arr:
+            left = max(left, i)
+            height.append(left)
+        height.reverse()
+        for n, i in enumerate(reversed(arr)):
+            right = max(right, i)
+            water += min(height[n], right) - i
+        return water
+
+O(1)
+
+    class Solution:
+    # @param A, a list of integers
+    # @return an integer
+    def trap(self, arr):
+        left = right = water = 0
+        i, j = 0, len(arr)-1
+        while i <= j:
+            left, right = max(left, arr[i]), max(right, arr[j])
+            while i <= j and arr[i] <= left <= right:
+                water += left - arr[i]
+                i += 1
+            while i <= j and arr[j] <= right <= left:
+                water += right - arr[j]
+                j -= 1
+        return water
+
+
+
+----------------------------------------------------------------------------------------------------

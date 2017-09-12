@@ -1,0 +1,533 @@
+Clean and short, with comments, C++
+    bool increasingTriplet(vector<int>& nums) {
+        int c1 = INT_MAX, c2 = INT_MAX;
+        for (int x : nums) {
+            if (x <= c1) {
+                c1 = x;           // c1 is min seen so far (it's a candidate for 1st element)
+            } else if (x <= c2) { // here when x > c1, i.e. x might be either c2 or c3
+                c2 = x;           // x is better than the current c2, store it
+            } else {              // here when we have/had c1 < c2 already and x > c2
+                return true;      // the increasing subsequence of 3 elements exists
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise Java solution with comments.
+       public boolean increasingTriplet(int[] nums) {
+            // start with two largest values, as soon as we find a number bigger than both, while both have been updated, return true.
+            int small = Integer.MAX_VALUE, big = Integer.MAX_VALUE;
+            for (int n : nums) {
+                if (n <= small) { small = n; } // update small if n is smaller than both
+                else if (n <= big) { big = n; } // update big only if greater than small but smaller than big
+                else return true; // return if you find a number bigger than both
+            }
+            return false;
+        }
+
+----------------------------------------------------------------------------------------------------
+My accepted JAVA solution for this question, only 7-lines, clear and concise.
+The main idea is keep two values when check all elements in the array: the minimum value *min* until now and the second minimum value *secondMin* from the minimum value's position until now. Then if we can find the third one that larger than those two values at the same time, it must exists the triplet subsequence and return true.
+
+What need to be careful is: we need to include the condition that some value has the same value with minimum number, otherwise this condition will cause the secondMin change its value.
+
+    public class Solution {
+        public boolean increasingTriplet(int[] nums) {
+            int min = Integer.MAX_VALUE, secondMin = Integer.MAX_VALUE;
+            for(int num : nums){
+                if(num <= min) min = num;
+                else if(num < secondMin) secondMin = num;
+                else if(num > secondMin) return true;
+            }
+            return false;
+        }
+    }
+
+
+The running time complexity is O(n).
+
+----------------------------------------------------------------------------------------------------
+Python Easy O(n) Solution
+Start with the maximum numbers for the first and second element. Then:
+(1) Find the first smallest number in the 3 subsequence
+(2) Find the second one greater than the first element, reset the first one if it's smaller
+
+    def increasingTriplet(nums):
+        first = second = float('inf')
+        for n in nums:
+            if n <= first:
+                first = n
+            elif n <= second:
+                second = n
+            else:
+                return True
+        return False
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution...Easy to understand!!!!
+    public class Solution {
+        public boolean increasingTriplet(int[] nums) {
+            if (nums ==  null || nums.length < 3 ){
+                return false;
+            }
+            int min = Integer.MAX_VALUE;
+            int secondMin = Integer.MAX_VALUE;
+            
+            for (int i = 0; i < nums.length; i++){
+                if (nums[i] <= min){
+                    min = nums[i];
+                }
+                else if (nums[i] <= secondMin){
+                    secondMin = nums[i];
+                }
+                else {
+                    return true;
+                }
+            }
+            return false;
+        }
+    } 
+
+----------------------------------------------------------------------------------------------------
+*Java* 7 lines, O(n) time and O(1) space
+Key idea: use two variables to store the value with increasing subsequence of length 1 and length 2, respectively. Keep updating the two variables if we get to a smaller candidate ending up with the same length.
+
+    public boolean increasingTriplet(int[] nums) {
+        int length1EndHere = 0x7fffffff, length2EndHere = 0x7fffffff;
+        for(int i=0, N=nums.length; i<N; i++) {
+            if(nums[i] > length2EndHere) return true;
+            else if(nums[i] > length1EndHere) length2EndHere = Math.min(nums[i], length2EndHere);
+            else length1EndHere = nums[i];
+        }
+        return false;
+    }
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+Clean Java Solution with Clear Explanation
+Assume we found one number A and another number B that is larger than A. If we could find a third number C that is larger than B, we can return a true. So the problem becomes how to update A and B to make them ready for C to be discovered.
+
+Now the process becomes simple and clear, keep updating A to be the minimum value ever visited and keep B being the smallest value that is larger than A. Once C > B is encountered, return true;
+
+    public boolean increasingTriplet(int[] nums) {
+		int first = Integer.MAX_VALUE;
+		int second = Integer.MAX_VALUE;
+
+		for (int n : nums) {
+			if (n <= first) {
+				first = n;
+			} else if (n <= second) {
+				second = n;
+			} else {
+				return true;
+			}
+		}
+		return false;
+	}
+
+----------------------------------------------------------------------------------------------------
+My C++ O(n) solution
+  
+
+    class Solution {
+        public:
+            bool increasingTriplet(const vector<int>& nums) {
+                int min = INT_MAX;
+                int mid = INT_MAX;
+                for(auto n : nums)
+                {
+                    if(n < min)
+                    {
+                        min = n;
+                    }
+                    else if(n > min)
+                    {
+                        if(mid < n)
+                            return true;
+                        mid = n;
+                    }
+                }
+                return false;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Sharing a simple C solution, only 4 ms
+
+bool increasingTriplet(int* nums, int numsSize) {
+
+    if (numsSize < 3) return false;
+    int l = nums[0], m = 0x7fffffff;
+    for (int i = 1; i < numsSize; i++) {
+        int a = nums[i];
+        if (a <= l) l = a;
+        else if (a < m) m = a;
+        else if (a > m) return true;
+    }
+    return false;
+
+}
+
+----------------------------------------------------------------------------------------------------
+Generalization in Python
+Hardcoded for k=3:
+---
+
+Using [**EAFP**](https://docs.python.org/2/glossary.html#term-eafp) (easier to ask for forgiveness than permission):
+
+    def increasingTriplet(self, nums):
+        try:
+            inc = [float('inf')] * 2
+            for x in nums:
+                inc[bisect.bisect_left(inc, x)] = x
+            return False
+        except:
+            return True
+
+Using [**LBYL**](https://docs.python.org/2/glossary.html#term-lbyl) (look before you leap):
+
+    def increasingTriplet(self, nums):
+        inc = [float('inf')] * 2
+        for x in nums:
+            i = bisect.bisect_left(inc, x)
+            if i >= 2:
+                return True
+            inc[i] = x
+        return False
+
+---
+
+For any k >= 0:
+---
+
+Using [**EAFP**](https://docs.python.org/2/glossary.html#term-eafp) (easier to ask for forgiveness than permission):
+
+    def increasingSubsequence(self, nums, k):
+        try:
+            inc = [float('inf')] * (k - 1)
+            for x in nums:
+                inc[bisect.bisect_left(inc, x)] = x
+            return k == 0
+        except:
+            return True
+
+Using [**LBYL**](https://docs.python.org/2/glossary.html#term-lbyl) (look before you leap):
+
+    def increasingSubsequence(self, nums, k):
+        inc = [float('inf')] * (k - 1)
+        for x in nums:
+            i = bisect.bisect_left(inc, x)
+            if i >= k - 1:
+                return True
+            inc[i] = x
+        return k == 0
+
+----------------------------------------------------------------------------------------------------
+1ms Java solution with explanation
+----------------- Updated Solution (1ms) -----------------
+
+While I found a more concise way: initialize the two variables as `Integer.MAX_VALUE`, then no need to maintain the counter `c`.
+
+    public boolean increasingTriplet(int[] nums) {
+        if(nums.length<=2) return false;
+        int a=Integer.MAX_VALUE, b=a;
+        for(int x:nums){
+          if(x<a) a=x;
+          else if(x>a && x<b) b=x;
+          else if(x>a && x>b) return true;
+        }
+        return false;
+    }
+
+
+----------------- Initial Solution (2ms) ----------------------
+
+The main idea is to use  two variables `tmp[2]` to keep the most smallest two elements.
+
+When meeting a element:
+
+ If smaller than `tmp[0]`, update `tmp[0]`.
+
+ If larger than `tmp[0]` while smaller than `tmp[1]`, update `tmp[1]`.
+
+ If larger than `tmp[1]`, return `true`.
+
+ 
+
+    public class Solution {
+      public boolean increasingTriplet(int[] nums) {
+        if(nums.length<=2) return false;
+        int[] tmp = new int[2];
+        int c=0;
+        tmp[0]=nums[0];
+        for(int x:nums)
+          if(c==0){
+            if(x>tmp[c]) tmp[++c] = x;
+            else if(x<=tmp[c]) tmp[c] = x;
+          }
+          else{
+            if(x>tmp[c]) return true;
+            else{
+              if(x<=tmp[0]) tmp[0]=x;
+              else if(x<tmp[1]) tmp[1]=x;
+            }
+          }
+          return false;
+        }
+      }
+
+
+----------------------------------------------------------------------------------------------------
+Short Python O(n) solutions
+        if len(nums)<3:
+            return False
+
+        limit=sys.maxint
+        mins=nums[0]
+        i=1
+        while i<len(nums):
+            if nums[i]>limit:
+                return True
+            if nums[i]>mins:
+                limit=min(nums[i],limit)
+            mins=min(mins,nums[i])
+            i+=1
+        
+        return False
+
+----------------------------------------------------------------------------------------------------
+Java 1ms Clean solution
+     public boolean increasingTriplet(int[] nums) {
+            if(nums == null || nums.length < 3) return false;
+            int min = Integer.MAX_VALUE, max = Integer.MAX_VALUE;
+            int i = 0;
+    
+            while(i < nums.length) {
+               if(nums[i] > max) {
+                   return true;
+               } else if(nums[i] > min) {
+                   max = nums[i];
+               } else {
+                   min = nums[i];
+               }
+               i++;
+            }
+            return false;
+            
+        }
+
+----------------------------------------------------------------------------------------------------
+Just a simplified version of patient sort.
+    class Solution {
+    public:
+        bool increasingTriplet(vector<int>& nums) {
+            int first_pile = INT_MAX;
+            int second_pile = INT_MAX;
+            for (int num : nums) {
+                if (num <= first_pile) {
+                    first_pile = num;
+                } else if (num <= second_pile) {
+                    second_pile = num;
+                } else {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+See Also:
+
+1. https://leetcode.com/problems/longest-increasing-subsequence/
+2. https://www.stat.berkeley.edu/~aldous/Papers/me86.pdf
+3. http://wordaligned.org/articles/patience-sort
+
+----------------------------------------------------------------------------------------------------
+My way to approach such a problem. How to think about it? Explanation of my think flow.
+I initially solved this problem by "thinking hard", so I came up with a convoluted solution (though greatly simplified when coding): [https://leetcode.com/discuss/105584/space-time-elegant-short-clean-solution-detailed-explanation][1]
+
+Today, I revisited this problem. This time, I don't think about how to solve it, instead I want to think about "how to think about it".
+
+Ok, so I read the description again, then I realize, it is asking about some sort of "increasing subsequence" with size 3.
+
+Then I think about all the relevant algorithm I know, for example, the famous "Longest Increasing Subsequence" (LIS) problem.
+
+Then I instantly got a solution: Find the LIS of the input, and if it is greater than 3, return true;
+Looks like a working solution, what's its complexity then:
+
+There is a O(nlogk) solution to LIS (if you don't know it, just search this problem in Leetcode and see the discussions), where n is the array length and k is the length of LIS. Here, k is no larger than 2, so it is O(nlog2) = O(n). Very well, a O(n) solution is so easily obtained here:
+
+    class Solution {
+    public:
+        bool increasingTriplet(vector<int>& nums) {
+            vector<int> dp;
+            for (auto n : nums)
+            {
+                auto iter = lower_bound(begin(dp), end(dp), n);
+                if (iter == end(dp))
+                {
+                    dp.push_back(n);
+                    if (dp.size() == 3)
+                        return true;
+                    continue;
+                }
+                if (*iter > n)
+                    *iter = n;
+            }
+            return false;
+        }
+    };
+
+
+The only difference between LIS and this problem is the check "if (dp.size() == 3)"; For comparison, this is the code to return the LIS of the input nums: You can copy-paste it to the LIS problem and pass it actually.
+
+    vector<int> dp;
+    for (auto n : nums)
+    {
+        auto iter = lower_bound(begin(dp), end(dp), n);
+        if (iter == end(dp))
+        {
+            dp.push_back(n);
+            continue;
+        }
+        if (*iter > n)
+            *iter = n;
+    }
+    return dp.size();
+
+Apparently, as you may have already noticed, the "dp" here contains at most 2 elements, so one instant simplification here is to replace "lower_bound" call to a simple "if comparison else comparison". Then a much more simplified version is obtained:
+
+    class Solution {
+    public:
+        bool increasingTriplet(vector<int>& nums) {
+            int a = INT_MAX, b = INT_MAX;
+            for (auto n : nums)
+                if (n <= a)
+                    a = n;
+                else if (n <= b)
+                    b = n;
+                else
+                    return true;
+            return false;
+        }
+    };
+
+You may have seen 100 ways to explain why this "if .. else" works in other discussions. Here, it is so easy to understand: it is just a simple version of Binary Search for 2 elements -- the replacement of lower_bound in above solution.
+
+Following this think flow, I managed to come up with this elegant solution without any "hard thinking".
+
+
+  [1]: https://leetcode.com/discuss/105584/space-time-elegant-short-clean-solution-detailed-explanation
+
+----------------------------------------------------------------------------------------------------
+Missing testcase
+testcase:
+1 2 -10 -8 -7
+
+My code return false with this test case, but got accepted.
+
+----------------------------------------------------------------------------------------------------
+My java solution works for not just triplet
+    public boolean increasingTriplet(int[] nums) {
+        int k = 3;
+        int[] small = new int[k-1];
+        for (int i = 0; i < small.length; i++) {
+            small[i] = Integer.MAX_VALUE;
+        }
+        for (int num : nums) {
+            int i = 0;
+            while (i < small.length && small[i] < num) {
+                i++;
+            }
+            if (i < small.length) {
+                small[i] = num;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Solution was accepted. Found one case where it fails.
+My solution is the following:
+    
+    public class Solution {
+    
+        public boolean increasingTriplet(int[] nums) {
+            int len = nums.length;
+            int i = 0, min = Integer.MAX_VALUE, min2 = Integer.MAX_VALUE;
+        
+            if(len < 3){
+                return false;
+            }
+        
+            while(i < len-1){
+                if(nums[i] < min) min = nums[i];
+                if(nums[i+1] > min2) return true;
+                if(nums[i] < nums[i+1]){
+                    if(nums[i+1] < min2) min2 = nums[i+1];
+                    if(nums[i] > min) return true;
+                }
+                i++;
+            }
+            return false;
+        }
+    }
+
+The case where it fails is when the input is: [5,1,5,5,2,1,4]. So maybe add more test cases to this problem?
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution O(n)
+    public boolean increasingTriplet(int[] nums) {
+        if (nums.length < 3)    return false;
+        
+        int min = nums[0];
+        int min2 = Integer.MAX_VALUE;
+        for (int i = 1; i < nums.length; i++) {
+            if (nums[i] > min2) {
+                return true;
+            } else if (nums[i] < min2 && nums[i] > min) {
+                min2 = nums[i];
+            } else if (nums[i] < min) {
+                min = nums[i];
+            }
+        }
+        
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my O(n) Java solution (inspired by Longest Increasing Subsequece O(nlgn) solution)
+    /*
+        this is only a special case in "Longest Increasing Subsequence O(nlgn) solution"
+        where the length of "min ending here" sequence is at most 3.
+        
+        in other words, we only need to consider:
+        minimum ending of LIS whose length is 1, and
+        minimum ending of LIS whose length is 2
+    */
+    public class Solution {
+        public boolean increasingTriplet(int[] nums) {
+            int first = Integer.MAX_VALUE, second = Integer.MAX_VALUE;
+            for (int num: nums) {
+                if (num <= first) {  // update the minimum ending of LIS whose length is 1
+                    first = num;
+                } else if (num <= second) {  // update the minimum ending of LIS whose length is 2
+                    second = num;
+                } else {  // now first < second < num, num maybe the minimum ending of LIS whose length is 3
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

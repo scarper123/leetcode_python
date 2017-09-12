@@ -1,0 +1,809 @@
+Challenge me , thx
+    public int singleNumber(int[] A) {
+        int ones = 0, twos = 0;
+        for(int i = 0; i < A.length; i++){
+            ones = (ones ^ A[i]) & ~twos;
+            twos = (twos ^ A[i]) & ~ones;
+        }
+        return ones;
+    }
+
+----------------------------------------------------------------------------------------------------
+Detailed explanation and generalization of the bitwise operation method for single numbers
+Statement of our problem:  "Given an array of integers, every element appears k (k >1) times except for one, which appears p times(p>=1, p % k != 0). Find that single one." 
+
+As others pointed out, in order to apply the bitwise operations, we should rethink how integers are represented in computers -- by bits. To start, let's consider only one bit for now. Suppose we have an array of 1-bit numbers (which can only be 0 or 1), we'd like to count the number of '1's in the array such that whenever the counted number of '1' reaches a certain value, say k, the count returns to zero and starts over (In case you are curious, this k will be the same as the one in the problem statement above). To keep track of how many '1's we have encountered so far, we need a counter. Suppose the counter has m bits in binary form: xm, ..., x1 (from most significant bit to least significant bit). We can conclude at least the following four properties of the counter:
+
+1. There is an initial state of the counter, which for simplicity is zero;
+2. For each input from the array, if we hit a '0', the counter should remain unchanged;
+3. For each input from the array, if we hit a '1', the counter should increase by one;
+4. In order to cover k counts, we require 2^m >= k, which implies m >= logk.
+
+Here is the key part: how each bit in the counter (x1 to xm) changes as we are scanning the array. Note we are prompted to use bitwise operations. In order to satisfy the second property, recall what bitwise operations will not change the operand if the other operand is 0? Yes, you got it: x = x | 0 and x = x ^ 0. 
+
+Okay, we have an expression now: x = x | i  or  x = x ^ i, where i is the scanned element from the array. Which one is better?  We don't know yet. So, let's just do the actual counting:
+
+At the beginning, all bits of the counter is initialized to zero, i.e., xm = 0, ..., x1 = 0.  Since we are gonna choose bitwise operations that guarantee all bits of the counter remain unchanged if we hit '0's, the counter will be 0 until we hit the first '1' in the array. After we hit the first '1', we got:  xm = 0,  ...,x2 = 0, x1 = 1. Let's continue until we hit the second '1', after which we have:  xm = 0, ..., x2 = 1, x1 = 0. Note that x1 changes from 1 to 0. For x1 = x1 | i, after the second count, x1 will still be 1. So it's clear we should use x1 = x1 ^ i. What about x2, ..., xm? The idea is to find the condition under which x2, ..., xm will change their values. Take x2 as an example. If we hit a '1', and we need to change the value of x2, what must the value of x1 be before we do the change? The answer is: x1 must be 1 otherwise we shouldn't change x2 because changing x1 from 0 to 1 will do the job. So x2 will change only if x1 and i are both 1, or mathematically, x2 = x2 ^ (x1 & i).  Similarly xm will change only when xm-1, ..., x1 and i are all 1: xm = xm ^ (xm-1 & ... &  x1 & i); Bingo, we've found the bitwise operations! 
+
+However, you may notice that the bitwise operations found above will count from 0 until 2^m - 1, instead of k. If k < 2^m - 1, we need some "cutting" mechanism to reinitialize the counter to 0 when the count reaches k. To this end, we apply bitwise AND to xm,..., x1 with some variable called mask, i.e., xm = xm & mask,  ...,  x1 = x1 & mask. If we can make sure the mask will be 0 only when the count reaches k and be 1 for all other count cases, then we are done. How do we achieve that? Try to think what distinguishes the case with k count from all other count cases. Yes, it's the count of '1's! For each count, we have unique values for each bit of the counter, which can be regarded as its state. If we write k in its binary form: km,..., k1. we can construct the mask as follows:
+
+mask = ~(x1' & x2' & ... xm'),  where xj' = xj  if kj = 1 and  xj' = ~xj  if kj = 0 (j = 1 to m). 
+
+Let's do some examples:
+
+k = 3: k1 = 1, k2 = 1, mask = ~(x1 & x2);
+
+k = 5: k1 = 1, k2 = 0, k3 = 1, mask = ~(x1 & ~x2 & x3);
+
+In summary, our algorithm will go like this:
+
+for (int i : array) {
+
+xm ^= (xm-1 & ... & x1 & i);
+
+xm-1 ^= (xm-2 & ... & x1 & i);
+
+.....
+
+x1 ^= i;
+
+mask = ~(x1' & x2' & ... xm')  where xj' = xj  if kj = 1 and  xj' = ~xj  if kj = 0 (j = 1 to m).
+
+xm &= mask;
+
+......
+
+ x1 &= mask;
+
+}
+
+Now it's time to generalize our results from 1-bit number case to 32-bit integers. One straightforward way would be creating 32 counters for each bit in the integer. You've probably already seen this in other posted codes. But if we take advantage of bitwise operations, we may be able to manage all the 32 counters "collectively". By saying "collectively" we mean using m 32-bit integers instead of 32 m-bit counters, where m is the minimum integer that satisfies m >= logk. The reason is that bitwise operations apply only to each bit so operations on different bits are independent of each other(kind obvious, right?). This allows us to group the corresponding bits of the 32 counters into one 32-bit integer. Since each counter has m bits, we end up with m 32-bit integers. Therefore, in the algorithm developed above, we just need to regard x1 to xm as 32-bit integers instead of 1-bit numbers and we are done. Easy, hum? 
+
+The last thing is what value we should return, or equivalently which one of x1 to xm will equal the single element. To get the correct answer, we need to understand what the m 32-bit integers x1 to xm represent. Take x1 as an example. x1 has 32 bits and let's label them as r (r = 1 to 32), After we are done scanning the input array, the value for the r-th bit of x1 will be determined by the r-th bit of all the elements in the array (more specifically, suppose the total count of '1' for the r-th bit of all the elements in the array is q, q' = q % k and in its binary form: q'm,...,q'1, then by definition the r-th bit of x1 will equal q'1). Now you can ask yourself this question: what does it imply if the r-th bit of x1 is '1'?
+
+The answer is to find what can contribute to this '1'. Will an element that appears k times contribute?  No. Why? Because for an element to contribute, it has to satisfy at least two conditions at the same time: the r-th bit of this element is '1' and the number of appearance of this '1' is not an integer multiple of k. The first condition is trivial. The second comes from the fact that whenever the number of '1' hit is k, the counter will go back to zero, which means the corresponding bit in x1 will be set to 0. For an element that appears k times, it's impossible to meet these two conditions simultaneously so it won't contribute. At last, only the single element which appears p (p%k != 0) times will contribute. If p > k, then the first k*[p/k] (denotes the integer part of p/k) single elements won't contribute either. Then we can always set p' = p % k and say the single element appears effectively p' times.
+
+Let's write p' in its binary form: p'm, ..., p'1. (note that p' < k, so it will fit into m bits). Here I claim the condition for x1 to equal the single element is p'1 = 1. Quick proof: if the r-th bit of x1 is '1', we can safely say the r-th bit of the single element is also '1'. We are left to prove that if the r-th bit of x1 is '0', then the r-th bit of the single element can only be '0'. Just suppose in this case the r-th bit of the single element is '1', let's see what will happen. At the end of the scan, this '1' will be counted p' times. If we write p' in its binary form: p'm, ..., p'1, then by definition the r-th bit of x1 will equal p'1, which is '1'. This contradicts with the presumption that the r-th bit of x1 is '0'. Since this is true for all bits in x1, we can conclude x1 will equal the single element if  p'1 = 1. Similarly we can show xj will equal the single element if p'j = 1(j = 1 to m). Now it's clear what we should return. Just express p' = p % k in its binary form, and return any of the corresponding xj as long as p'j = 1.  
+
+In total, the algorithm will run in O(n*logk) time and O(logk) space.
+
+Hope this helps!
+
+----------------------------------------------------------------------------------------------------
+An General Way to Handle All this sort of questions.
+this kind of question the key idea is design a counter that record state. the problem can be every one occurs K times except one occurs M times. for this question, K =3 ,M = 1(or 2) .
+so to represent 3 state, we need two bit. let say it is a and b, and c is the incoming bit.
+then we can design a table to implement the state move.
+
+    current   incoming  next
+    a b            c    a b
+    0 0            0    0 0
+    0 1            0    0 1
+    1 0            0    1 0
+    0 0            1    0 1
+    0 1            1    1 0
+    1 0            1    0 0
+
+like circuit design, we can find out what the next state will be with the incoming bit.( we only need find the ones)
+then we have for a to be 1, we have 
+
+        current   incoming  next
+        a b            c    a b
+        1 0            0    1 0
+        0 1            1    1 0
+ and this is can be represented by 
+
+    a=a&~b&~c + ~a&b&c
+
+and b can do the same  we , and we find that 
+
+    b= ~a&b&~c+~a&~b&c
+and this is the final formula of a and b and just one of the result set, because for different state move table definition, we can generate different formulas, and this one is may not the most optimised. as you may see other's answer that have a much simple formula, and that formula also corresponding to specific state move table. (if you like ,you can reverse their formula to a state move table, just using the same way but reversely) 
+
+for this questions we need to find the except one 
+as the question don't say if the one appears one time or two time ,
+so for ab both 
+
+    01 10 => 1
+    00 => 0
+we should return a|b;
+this is the key idea , we can design any based counter and find the occurs any times except one .
+here is my code. with comment.
+
+    public class Solution {
+        
+        public int singleNumber(int[] nums) {
+            //we need to implement a tree-time counter(base 3) that if a bit appears three time ,it will be zero.
+            //#curent  income  ouput
+            //# ab      c/c       ab/ab
+            //# 00      1/0       01/00
+            //# 01      1/0       10/01
+            //# 10      1/0       00/10
+            // a=~abc+a~b~c;
+            // b=~a~bc+~ab~c;
+            int a=0;
+            int b=0;
+            for(int c:nums){
+                int ta=(~a&b&c)|(a&~b&~c);
+                b=(~a&~b&c)|(~a&b&~c);
+                a=ta;
+            }
+            //we need find the number that is 01,10 => 1, 00 => 0.
+            return a|b;
+            
+        }
+    }
+this is a general solution . and it comes from the Circuit Design on course digital logic.
+
+----------------------------------------------------------------------------------------------------
+Java O(n) easy to understand solution, easily extended to any times of occurance
+The usual bit manipulation code is bit hard to get and replicate.  I like to think about the number in 32 bits and just count how many 1s are there in each bit, and `sum %= 3` will clear it once it reaches 3.  After running for all the numbers for each bit, if we have a 1, then that 1 belongs to the single number, we can simply move it back to its spot by doing `ans |= sum << i;`  
+
+This has complexity of O(32n), which is essentially O(n) and very easy to think and implement.  Plus, you get a general solution for any times of occurrence.  Say all the numbers have 5 times, just do `sum %= 5`.
+
+
+    public int singleNumber(int[] nums) {
+        int ans = 0;
+        for(int i = 0; i < 32; i++) {
+            int sum = 0;
+            for(int j = 0; j < nums.length; j++) {
+                if(((nums[j] >> i) & 1) == 1) {
+                    sum++;
+                    sum %= 3;
+                }
+            }
+            if(sum != 0) {
+                ans |= sum << i;
+            }
+        }
+        return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted code with proper Explaination. Does anyone have a better idea?
+   
+ The code makes use of 2 variables. 
+
+ones - At any point of time, this variable holds XOR of all the elements which have 
+appeared "only" once. 
+twos - At any point of time, this variable holds XOR of all the elements which have 
+appeared "only" twice. 
+
+So if at any point time, 
+
+1. A new number appears - It gets XOR'd to the variable "ones". 
+2. A number gets repeated(appears twice) - It is removed from "ones" and XOR'd to the 
+variable "twos". 
+3. A number appears for the third time - It gets removed from both "ones" and "twos". 
+
+The final answer we want is the value present in "ones" - coz, it holds the unique element. 
+
+So if we explain how steps 1 to 3 happens in the code, we are done. 
+Before explaining above 3 steps, lets look at last three lines of the code, 
+
+common_bit_mask = ~(ones & twos) 
+
+ones & = common_bit_mask
+
+twos & = common_bit_mask 
+
+All it does is, common 1's between "ones" and "twos" are converted to zero. 
+
+For simplicity, in all the below explanations - consider we have got only 4 elements in the array (one unique element and 3 repeated elements - in any order). 
+
+Explanation for step 1 
+------------------------ 
+Lets say a new element(x) appears. 
+
+CURRENT SITUATION - Both variables - "ones" and "twos" has not recorded "x". 
+
+Observe the statement "twos| = ones & x". 
+Since bit representation of "x" is not present in "ones", AND condition yields nothing. So "twos" does not get bit representation of "x". 
+But, in next step "ones ^= x" - "ones" ends up adding bits of "x". Thus new element gets recorded in "ones" but not in "twos". 
+
+The last 3 lines of code as explained already, converts common 1's b/w "ones" and "twos" to zeros. 
+Since as of now, only "ones" has "x" and not "twos" - last 3 lines does nothing. 
+
+Explanation for step 2. 
+------------------------ 
+Lets say an element(x) appears twice. 
+
+CURRENT SITUATION - "ones" has recorded "x" but not "twos". 
+
+Now due to the statement, "twos| = ones & x" - "twos" ends up getting bits of x. 
+But due to the statement, "ones ^ = x" - "ones" removes "x" from its binary representation. 
+
+Again, last 3 lines of code does nothing. 
+So ultimately, "twos" ends up getting bits of "x" and "ones" ends up losing bits of "x". 
+
+Explanation for step 3. 
+------------------------- 
+Lets say an element(x) appears for the third time. 
+
+CURRENT SITUATION - "ones" does not have bit representation of "x" but "twos" has. 
+
+Though "ones & x" does not yield nothing .. "twos" by itself has bit representation of "x". So after this statement, "two" has bit representation of "x". 
+Due to "ones^=x", after this step, "one" also ends up getting bit representation of "x". 
+
+Now last 3 lines of code removes common 1's of "ones" and "twos" - which is the bit representation of "x".
+Thus both "ones" and "twos" ends up losing bit representation of "x".
+
+
+
+
+
+
+
+
+     class Solution {
+        public:
+        // Let us take the example of {3, 3, 2, 3} to understand this
+            int singleNumber(int A[], int n) {
+                int ones=0, twos =0;
+                int common_bit_mask;
+                for(int i=0; i<n;i++)
+                {
+                     /* The expression "one & arr[i]" gives the bits that are
+                   there in both 'ones' and new element from arr[].  We
+                   add these bits to 'twos' using bitwise OR
+         
+                   Value of 'twos' will be set as 0, 3, 3 and 1 after 1st,
+                   2nd, 3rd and 4th iterations respectively */
+                   
+                    twos= twos|(ones&A[i]);
+                    /* XOR the new bits with previous 'ones' to get all bits
+                   appearing odd number of times
+         
+                   Value of 'ones' will be set as 3, 0, 2 and 3 after 1st,
+                   2nd, 3rd and 4th iterations respectively */
+                    ones=ones^A[i];
+                     /* The common bits are those bits which appear third time
+                   So these bits should not be there in both 'ones' and 'twos'.
+                   common_bit_mask contains all these bits as 0, so that the bits can 
+                   be removed from 'ones' and 'twos'   
+         
+                   Value of 'common_bit_mask' will be set as 00, 00, 01 and 10
+                   after 1st, 2nd, 3rd and 4th iterations respectively */
+                    common_bit_mask= ~(ones&twos);
+                    /* Remove common bits (the bits that appear third time) from 'ones'
+                     
+                   Value of 'ones' will be set as 3, 0, 0 and 2 after 1st,
+                   2nd, 3rd and 4th iterations respectively */
+                    ones &=common_bit_mask;
+                    /* Remove common bits (the bits that appear third time) from 'twos'
+         
+                   Value of 'twos' will be set as 0, 3, 1 and 0 after 1st,
+                   2nd, 3rd and 4th itearations respectively */
+                    twos &=common_bit_mask;
+                }
+                return ones;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+A general C++ solution for these type problems
+There are so many brilliant solutions for this problem used "| & ^ ~", and I have learned a lot from these solutions. Here is a general solution for who not familiar with "| & ^ ~".
+
+Q: Most elements appeared k times, except one. Find this "one".
+
+  
+
+       int singleNumber(vector<int>& s) 
+        {
+        	vector<int> t(32);////Made a array contain 32 elements.
+        	int sz = s.size();
+        	int i, j, n;
+        	for (i = 0; i < sz; ++i)
+        	{
+        		n = s[i];
+        		for (j = 31; j >= 0; --j)
+        		{
+        			t[j] += n & 1;//Find the last digit.
+        			n >>= 1;
+        			if (!n)
+        				break;
+        	    }
+            }
+    	int res = 0;
+    	for (j = 31; j >= 0; --j)
+    	{
+    		n = t[j] % 3;//"3" represents k times. 
+    		if (n)
+    			res += 1 << (31 - j);
+    	}
+    	return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+My own explanation of bit manipulation method, might be easier to understand
+Consider the following fact:
+
+Write all numbers in binary form, then for any bit 1 that appeared 3*n times (n is an integer), the bit can only present in numbers that appeared 3 times
+
+e.g. 0010 0010 0010 1011 1011 1011 1000 (assuming 4-bit integers)
+2(0010) and 11(1011) appeared 3 times, and digit counts are:
+
+> **Digits**             3 2 1 0 
+> 
+> **Counts**           4 0 6 3
+> 
+> **Counts%3**     1 0 0 0
+
+Counts on 2,1,0 are all times of 3, the only digit index that has Counts % 3 != 0 is 3
+
+Therefore, to find the number that appeared only 1 or 2 times, we only need to extract all bits that has Counts %3 != 0
+
+Now consider how we could do this by bit manipulation
+
+since counts % 3 has only 3 states: 0(00),1(01),2(10)
+we could use a TWO BIT COUNTER (Two, One) to represent Counts % 3, now we could do a little research on state transitions, for each bit, let B be the input bit, we can enumerate the all possible state transitions, Two+, One+ is the new state of Two, One. (here we need to use some knowledge in Digital Logic Design)
+
+-----------------------
+
+> Two One B Two+ One+
+>
+> 0    0  0    0   0
+> 
+> 0    0  1    0   1
+> 
+> 0    1  0    0   1
+> 
+> 0    1  1    1   0
+> 
+> 1    0  0    1   0
+> 
+> 1    0  1    0   0
+> 
+> 1    1  0    X   X (X represents we don't care)
+> 
+> 1    1  1    X   X
+
+
+We could then draw the **Karnaugh map** to analyze the logic (https://en.wikipedia.org/wiki/Karnaugh_map), and then we get:
+
+> One+ = (One ^ B) & (~Two)
+> 
+> Two+ = (~One+) & (Two ^ B)
+
+Now for int_32, we need only 2 int_32 two represent Two and One for each bit and update Two and One using the rules derived above
+
+Code is here (C++):
+
+    class Solution {
+      public:
+        int singleNumber(vector<int>& nums) {
+            int counterOne = 0;
+            int counterTwo = 0;
+            
+            for (int i = 0; i < nums.size(); i++){
+                counterOne = (~counterTwo) & (counterOne ^ nums[i]);
+                counterTwo = (~counterOne) & (counterTwo ^ nums[i]);
+            }
+            return counterOne;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+The simplest solution ever with clear explanation
+The key to solve this problem is the count of 1s of each bit of all numbers.
+
+Take one bit number for example: nums = [1, 1, 1, 0, 0, 0, ..., x] . All numbers are 0 or 1.
+
+We know that every number appears three times except for just one number. So, if the count of 1s in nums is 0, 3, 6, ..., 3 * n, then the single number is 0. And if the count of 1s in nums is 1, 4, 7, ..., 3*n+1, then the single number is 1.
+
+So, for an array " nums " that contains only 0 or 1, the code to find the single number are:
+
+    count = 0
+    for num in nums:
+        count = (count + num) % 3
+    return count
+
+To make "count" less than 3, mod "count" with 3 in every loop.
+
+Below is the procedure for finding the single number in [1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]:
+
+    Table 1:
+    ++=======++===+===+===+===+===+===+===+===+===+===+===+===+===+====++
+    || num   ||   | 1 | 0 | 1 | 1 | 0 | 1 | 0 | 1 | 0 | 1 | 0 | 1 | 0  ||
+    ++-------++---+---+---+---+---+---+---+---+---+---+---+---+---+----++
+    || count || 0 | 1 | 1 | 2 | 0 | 0 | 1 | 1 | 2 | 2 | 0 | 0 | 1 | 1* ||
+    ++=======++===+===+===+===+===+===+===+===+===+===+===+===+===+====++
+
+So the single number is 1.
+
+We can write the calculate table for expression "count' = (count + num) % 3":
+
+    Table 2:
+    ++=======+=====+========++
+    || count | num | count' ||
+    ++-------+-----+--------++
+    ||   0   |  0  |   0    ||
+    ++-------+-----+--------++
+    ||   1   |  0  |   1    ||
+    ++-------+-----+--------++
+    ||   2   |  0  |   2    ||
+    ++-------+-----+--------++
+    ||   0   |  1  |   1    ||
+    ++-------+-----+--------++
+    ||   1   |  1  |   2    ||
+    ++-------+-----+--------++
+    ||   2   |  1  |   0    ||
+    ++-------+-----+--------++
+
+To extend this algorithm to 32bits number. We need to rewrite these code to bit operation expressions. 
+
+And the key is rewriting the expression " count' = (count + num) % 3 " to bit operation expressions.
+
+Write binary numbers of " count " and " count' " in "Table 2". And split their bits into two column:
+
+    Table 3:
+    ++=======+============+=====+============+========++
+    ||       |    count   | num |   count'   |        ||
+    || count |    (bin)   |     |   (bin)    | count' ||
+    || (dec) ++=====+=====+=====+=====+=====++ (dec)  ||
+    ||       || b1  | b0  | num | b1' | b0' ||        ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   0   ||  0  |  0  |  0  |  0  |  0  ||   0    ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   1   ||  0  |  1  |  0  |  0  |  1  ||   1    ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   2   ||  1  |  0  |  0  |  1  |  0  ||   2    ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   0   ||  0  |  0  |  1  |  0  |  1  ||   1    ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   1   ||  0  |  1  |  1  |  1  |  0  ||   2    ||
+    ++-------++-----+-----+-----+-----+-----++--------++
+    ||   2   ||  1  |  0  |  1  |  0  |  0  ||   0    ||
+    ++=======++===========+=====+===========++========++
+
+Here comes the hardest part of this solution. 
+
+"Table 3" is a truth table, we need to use it to find the formulas to calculate " b0' " and " b1' ":
+    
+    b0' = f(b1, b0, num)
+    b1' = g(b1, b0, num)
+
+With observations, guesses, experiments and even some luck. Finally I got two simple and elegant formulas:
+    
+    b0' = (b0 ^ num) & (~b1)
+    b1' = (b1 ^ num) & (~b0')
+
+The AC code:
+
+    class Solution:
+        # @param {integer[]} nums
+        # @return {integer}
+        def singleNumber(self, nums):
+            b1, b0 = 0, 0
+            for num in nums:
+                b0 = (b0 ^ num) & (~b1)
+                b1 = (b1 ^ num) & (~b0)
+            return b0
+
+
+----------------------------------------------------------------------------------------------------
+My C++ code (12ms, one iteration, 3 int variables (b0, b1, reset)) with algorithm description
+    /*
+    The basic idea is to implement a modulo-3 counter (to count how many times "1" occurs) for each bit position.
+    Such modulo-3 counter needs two bits (B1,B0) to represent. 
+    (B1,B0): 
+    (0, 0) : '1' occurs zero times after last resetting,
+    (0, 1) : '1' occurs one times after last resetting,
+    (1, 0) : '1' occurs two times after last resetting,
+    (1, 1) : '1' occurs three times after last resetting, then we need to reset the counter to (0,0)
+    So to implement such modulo-3 counters, we need three variables (b0, b1, reset)
+    The n-th bit of b0 is the B0 bit of the modulo-3 counter for the n-th bit (n=0..31 assuming int is 32 bit)
+    The n-th bit of b1 is the B1 bit of the modulo-3 counter for the n-th bit (n=0..31 assuming int is 32 bit)
+    The n-th bit of reset is the reset flag of the modulo-3 counter for the n-th bit (n=0..31 assuming int is 32 bit), 
+    
+    - b0: can be easily implemented with XOR bit operation,  as b0 = b0^ A[i]
+    - b1: B1 will only be set to 1, when B0 (of the n-th bit counter) =1 and the n-th bit of A[i] = 1, and stay '1' until it is reseted. So b1 |=  b0 & A[i]; 
+    - The reset flag is set when (B1, B0) = (1,1). So, reset = b0 & b1;
+    - The reset operation can be done by b0 = b0 ^ reset and b1 = b1 ^ reset;
+    
+    After updating the b0, b1, reset with all A[], the b0 will be the final result since if the n-th bit of the to-be-found element is 1, then the times of '1' occurs on the n-th bit is 3*x+1, which is 1 after the modulo 3 opertation.   
+    */
+    class Solution {
+    public:
+    
+        int singleNumber(int A[], int n) {
+            int b0=0, b1=0, reset=0;
+            int i;
+            
+            if(n>0)
+            {
+            for(i = 0; i<n; i++)
+            {
+                b1 |= (b0 & A[i]);
+                b0 = b0 ^ A[i];
+                reset = b1 & b0;
+                b1 = b1 ^ reset;
+                b0 = b0 ^ reset;
+            }
+            
+            return b0;
+            }
+        }
+    //------------------------------------------------------------------------------------------------------------
+    /*
+    //--  Another version with explicit modulo-3 counters implemented, just for reference-----//
+        const int int_bitwidth = 32;
+        int singleNumber(int A[], int n) {
+            int mod3Counter[int_bitwidth];
+            int i,j;
+            unsigned int temp = 0;
+            
+            if(n>0)
+            {
+                for(i=0; i<int_bitwidth; i++) mod3Counter[i] = 0;
+                
+                for(i=0; i<n; i++)
+                {
+                    temp = (unsigned int) A[i];
+                    for(j=0; j<int_bitwidth; j++)
+                    {
+                        if(temp & 0x1)
+                        {
+                            mod3Counter[j] = (mod3Counter[j] + 1) % 3;
+                        }
+                        temp = temp>>1;
+                    }
+                    
+                    temp =0;
+                    for(j=0; j<int_bitwidth; j++)
+                    {
+                        temp = temp << 1;
+                        if(mod3Counter[int_bitwidth - 1 -j]) 
+                        {
+                            temp = temp | 0x1;
+                        }
+                    }
+                }
+                return (int)temp;
+    
+            }
+        }
+    */
+        
+    };
+
+----------------------------------------------------------------------------------------------------
+Constant space solution
+Has anybody solved this problem by using constant space? My solution uses a map to keep track of the counts of each element in the array.
+
+----------------------------------------------------------------------------------------------------
+Java bit manipulation solution
+    public int singleNumber(int[] nums) {
+      int ones = 0, twos = 0, threes = 0;
+            
+      for (int i = 0; i < nums.length; i++) {
+        // twos holds the num that appears twice
+        twos |= ones & nums[i];
+        
+        // ones holds the num that appears once
+        ones ^= nums[i];
+     
+        // threes holds the num that appears three times
+        threes = ones & twos;
+                
+        // if num[i] appears three times
+        // doing this will clear ones and twos
+        ones &= ~threes;
+        twos &= ~threes;
+      }
+            
+      return ones;
+    }
+
+----------------------------------------------------------------------------------------------------
+12 ms C++ solution with only 1 int space
+    class Solution {
+    public:
+        int singleNumber(vector<int> nums) {
+            int tempNum = 0;
+            for (int i = 1; i < nums.size(); i++) {
+                tempNum = nums[0] & (tempNum ^ nums[i]);
+                nums[0] = tempNum | (nums[0] ^ nums[i]);
+            }
+            return nums[0];
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Just 6 lines accepted O(n) solution
+Image the numbers in A have just one bit,
+
+that is: A = [0, 0, 0, 1, 1, 1, x]
+
+We have three times "0", three times "1", and a different "x".
+
+So, if count of "1" in A is three's multiple, than x = 0,
+
+else, x = 1.
+
+Iterate all numbers in A. 
+
+When encount FIRST        "1", set "ec1 = 1";
+
+When encount SECOND   "1", set "ec2 = 1";
+
+When encount THIRD       "1", set "ec3 = 1, ec1 = 0, ec2 = 0", and move on...
+
+At last "ec1" is the different number.
+
+
+
+    class Solution:
+    # @param A, a list of integer
+    # @return an integer
+        def singleNumber(self, A):
+            ec1, ec2, ec3 = 0, 0, 0
+            for ai in A:
+                ec3 = ec2 & ai
+                ec2 = (ec2 | (ec1 & ai)) & (~ec3)
+                ec1 = (ec1 | ai) & (~ec3)        
+            return ec1
+
+----------------------------------------------------------------------------------------------------
+Python bitwise solution
+    class Solution:
+    # @param A, a list of integer
+    # @return an integer
+    def singleNumber(self, A):
+        ans = 0
+        for i in xrange(0,32):
+            count = 0
+            for a in A:
+                if ((a >> i) & 1):
+                    count+=1
+            ans |= ((count%3) << i)
+        return self.convert(ans)
+        
+    def convert(self,x):
+        if x >= 2**31:
+            x -= 2**32
+        return x
+
+----------------------------------------------------------------------------------------------------
+JAVA--------------Easy Version To UnderStand!!!!!!!!!!!!!!!!!!!
+    	public static int singleNumber(int[] nums) {
+		int len = nums.length, result = 0;
+		for (int i = 0; i < 32; i++) {
+			int sum = 0;
+			for (int j = 0; j < len; j++) {
+				sum += (nums[j] >> i) & 1;
+			}
+			result |= (sum % 3) << i;
+		}
+		return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+My simple python solution
+    class Solution:
+        # @param {integer[]} nums
+        # @return {integer}
+        def singleNumber(self, nums):
+            a= set(nums)
+            a = sum(a)*3 -sum(nums)
+            a = a/2
+            return a
+   
+
+----------------------------------------------------------------------------------------------------
+Short Java code with bit summation and modulo 3
+274ms, not quite fast, can be any faster?
+
+another question, the problem should clarify that the single number only appears once (not twice)
+
+
+    public class Solution {
+        public int singleNumber(int[] A) {
+            /*
+            element in A is 32bit,
+            sum corresponding bits from all elements and mod each by 3 then should left the single number
+            */
+            int[] sum=new int[32];
+            int res=0;
+            for(int i=0;i<32;i++)
+            {
+                for(int j=0;j<A.length;j++)
+                {
+                    sum[i]+=((A[j]>>>i)&1);//sum every bit of all numbers
+                }
+                sum[i]%=3;
+                res+=((sum[i]&1)<<i);// recover the single number
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A Simple Solution for All similar problems
+    public class Solution {
+     public int singleNumber(int[] nums) {
+        int[] digit = new int[32];
+        for(int i = 0; i < 32; i++){
+            // for each digit, we count the number of appearance in the array
+            for (int j = 0; j < nums.length; j++){
+                digit[i]+= (nums[j]>>i)&1; // get the value (0 or 1) at ith digit of nums[j]
+            }
+        }
+        int res = 0;
+        for (int i =0; i< 32; i++){
+            // (digit[i]%3) is mode of 3, if it is not zero, it means the single number has 1 on this digit.
+            int d = digit[i]%3 ==0 ? 0: 1;
+            res += (d)<<i;
+        }
+        return res;
+    }
+ }
+
+----------------------------------------------------------------------------------------------------
+Java O(N) time with O(1) space by bit manipulation
+    public int singleNumber(int[] nums) {
+        int[] digits = new int[32];
+        for(int i=0; i<nums.length; i++){
+            int mask = 1;
+            for(int j=31; j>=0; j--){
+                if((mask & nums[i])!=0)
+                    digits[j] ++;
+                mask <<= 1;
+            }
+        }
+        int res = 0;
+        for(int i=0; i<32; i++){
+            if(digits[i]%3==1)
+                res += 1;
+            if(i==31)
+                continue;
+            res <<= 1;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+General solution - Constant Space
+    class Solution {   
+    public:
+    int singleNumber(int A[], int n) {
+        int sum = 0;
+		int result = 0;
+		int x = 0;
+        int mod = 3;
+        for(int i = 0; i < 32 ; i++){
+			sum = 0;
+            x = (1 << i);
+            for(int j = 0; j < n; j++){
+            	if((A[j] & x)){
+            		sum++;
+            	}
+            }
+            if((sum % mod)){
+            	result |= x;
+            }
+        }
+        return result;
+      }
+    };
+
+We can sum the bits in same positions for all the numbers and take modulo 3. The bits for which sum is not multiple of 3, are the bits of number which does not occur 3 times.
+
+Example array {5, 5, 5, 8}.
+
+5 = 0101, 5 = 0101, 5 = 0101, 8 = 1000
+
+Sum of first bits%3 = (1 + 1 + 1 + 0)%3 = 0;
+
+Sum of second bits%3 = (0 + 0 + 0 + 0)%3 = 0;
+
+Sum of third bits%3 = (1 + 1 + 1 + 0)%3 = 0;
+
+Sum of fourth bits%3 = (1)%3 = 1;
+
+Hence number which appears once is 1000
+We can use that method for any number of occurrences. We just need to modify the mod from 3 to anything we want. 
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,1037 @@
+Share some thoughts
+**See [here for a better view](http://algobox.org/minimum-height-trees/)**
+
+First let's review some statement for tree in graph theory:
+
+> (1) A tree is an undirected graph in which any two vertices are
+> connected by exactly one path.
+> 
+> (2) Any connected graph who has `n` nodes with `n-1` edges is a tree.
+> 
+> (3) The degree of a vertex of a graph is the number of
+> edges incident to the vertex.
+> 
+> (4) A leaf is a vertex of degree 1. An internal vertex is a vertex of
+> degree at least 2.
+> 
+> (5) A path graph is a tree with two or more vertices that is not
+> branched at all.
+> 
+> (6) A tree is called a rooted tree if one vertex has been designated
+> the root.
+> 
+> (7) The height of a rooted tree is the number of edges on the longest
+> downward path between root and a leaf.
+
+OK. Let's stop here and look at our problem.
+
+Our problem want us to find the minimum height trees and return their root labels. First we can think about a simple case -- a path graph.
+
+For a path graph of `n` nodes, find the minimum height trees is trivial. Just designate the middle point(s) as roots.
+
+Despite its triviality, let design a algorithm to find them.
+
+Suppose we don't know `n`, nor do we have random access of the nodes. We have to traversal. It is very easy to get the idea of two pointers. One from each end and move at the same speed. When they meet or they are one step away, (depends on the parity of `n`), we have the roots we want.
+
+This gives us a lot of useful ideas to crack our real problem.
+
+For a tree we can do some thing similar. We start from every end, by end we mean vertex of degree 1 (aka leaves). We let the pointers move the same speed. When two pointers meet, we keep only one of them, until the last two pointers meet or one step away we then find the roots.
+
+It is easy to see that the last two pointers are from the two ends of the longest path in the graph.
+
+The actual implementation is similar to the BFS topological sort. Remove the leaves, update the degrees of inner vertexes. Then remove the new leaves. Doing so level by level until there are 2 or 1 nodes left. What's left is our answer!
+
+The time complexity and space complexity are both O(n). 
+
+Note that for a tree we always have `V = n`, `E = n-1`.
+
+
+**Java**
+
+    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+        if (n == 1) return Collections.singletonList(0);
+
+        List<Set<Integer>> adj = new ArrayList<>(n);
+        for (int i = 0; i < n; ++i) adj.add(new HashSet<>());
+        for (int[] edge : edges) {
+            adj.get(edge[0]).add(edge[1]);
+            adj.get(edge[1]).add(edge[0]);
+        }
+
+        List<Integer> leaves = new ArrayList<>();
+        for (int i = 0; i < n; ++i)
+            if (adj.get(i).size() == 1) leaves.add(i);
+
+        while (n > 2) {
+            n -= leaves.size();
+            List<Integer> newLeaves = new ArrayList<>();
+            for (int i : leaves) {
+                int j = adj.get(i).iterator().next();
+                adj.get(j).remove(i);
+                if (adj.get(j).size() == 1) newLeaves.add(j);
+            }
+            leaves = newLeaves;
+        }
+        return leaves;
+    }
+	
+    // Runtime: 53 ms
+
+**Python**
+
+    def findMinHeightTrees(self, n, edges):
+        if n == 1: return [0] 
+        adj = [set() for _ in xrange(n)]
+        for i, j in edges:
+            adj[i].add(j)
+            adj[j].add(i)
+
+        leaves = [i for i in xrange(n) if len(adj[i]) == 1]
+
+        while n > 2:
+            n -= len(leaves)
+            newLeaves = []
+            for i in leaves:
+                j = adj[i].pop()
+                adj[j].remove(i)
+                if len(adj[j]) == 1: newLeaves.append(j)
+            leaves = newLeaves
+        return leaves
+		
+    # Runtime : 104ms
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Two O(n) solutions
+I am sharing two of my solutions, one is based on the longest path, and the other is related to Tree DP.
+
+**Longest Path**
+
+It is easy to see that the root of an MHT has to be the middle point (or two middle points) of the longest path of the tree.
+Though multiple longest paths can appear in an unrooted tree, they must share the same middle point(s).
+
+Computing the longest path of a unrooted tree can be done, in O(n) time, by tree dp, or simply 2 tree traversals (dfs or bfs).
+The following is some thought of the latter.
+
+Randomly select a node x as the root, do a dfs/bfs to find the node y that has the longest distance from x.
+Then y must be one of the endpoints on some longest path.
+Let y the new root, and do another dfs/bfs. Find the node z that has the longest distance from y.
+
+Now, the path from y to z is the longest one, and thus its middle point(s) is the answer. [Java Solution][1]
+
+
+**Tree DP**
+
+Alternatively, one can solve this problem directly by tree dp.
+Let dp[i] be the height of the tree when the tree root is i.
+We compute dp[0] ... dp[n - 1] by tree dp in a dfs manner.
+
+Arbitrarily pick a node, say node 0, as the root, and do a dfs.
+When we reach a node u, and let T be the subtree by removing all u's descendant (see the right figure below).
+We maintain a variable acc that keeps track of the length of the longest path in T with one endpoint being u.
+Then dp[u] = max(height[u], acc)
+Note, acc is 0 for the root of the tree.
+
+                 |                 |
+                 .                 .
+                /|\               /|\
+               * u *             * u *
+                /|\
+               / | \
+              *  v  *
+
+. denotes a single node, and * denotes a subtree (possibly empty).
+
+Now it remains to calculate the new acc for any of u's child, v.
+It is easy to see that the new acc is the max of the following
+ 
+ 1. acc + 1 --- extend the previous path by edge uv;
+ 2. max(height[v'] + 2), where v != v' --- see below for an example.
+ 
+
+                 u
+                /|
+               / |
+              v' v
+              |
+              .
+              .
+              .
+              |
+              .
+
+In fact, the second case can be computed in O(1) time instead of spending a time proportional to the degree of u.
+Otherwise, the runtime can be quadratic when the degree of some node is Omega(n).
+The trick here is to maintain two heights of each node, the largest height (the conventional height), and the second largest height
+(the height of the node after removing the branch w.r.t. the largest height).
+
+Therefore, after the dfs, all dp[i]'s are computed, and the problem can be answered trivially.
+The total runtime is still O(n). [Java Solution][2]
+
+
+  [1]: https://github.com/lydxlx1/LeetCode/blob/master/src/_310.java
+  [2]: https://github.com/lydxlx1/LeetCode/blob/master/src/_310_1.java
+
+----------------------------------------------------------------------------------------------------
+C++ Solution. O(n)-Time, O(n)-Space
+The basic idea is **"keep deleting leaves layer-by-layer, until reach the root."**
+
+Specifically, first find all the leaves, then remove them. After removing, some nodes will become new leaves. So we can continue remove them. Eventually, there is only 1 or 2 nodes left.  If there is only one node left, it is the root. If there are 2 nodes, either of them could be a possible root.
+
+**Time Complexity**: Since each node will be removed at most once, the complexity is **O(n)**.
+
+Thanks for pointing out any mistakes.
+
+----
+*Updates:
+More precisely, if the number of nodes is V, and the number of edges is E. The space complexity is O(V+2E), for storing the whole tree. The time complexity is O(E), because we gradually remove all the neighboring information. As some friends pointing out,  for a tree, if V=n, then E=n-1. Thus both time complexity and space complexity become O(n).*
+
+        class Solution {
+        public:
+            
+            struct Node
+            {
+                unordered_set<int> neighbor;
+                bool isLeaf()const{return neighbor.size()==1;}
+            };
+            
+            vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+                
+                vector<int> buffer1;
+                vector<int> buffer2;
+                vector<int>* pB1 = &buffer1;
+                vector<int>* pB2 = &buffer2;
+                if(n==1)
+                {
+                    buffer1.push_back(0);
+                    return buffer1;
+                }
+                if(n==2)
+                {
+                    buffer1.push_back(0);
+                    buffer1.push_back(1);
+                    return buffer1;
+                }
+                
+                // build the graph
+                vector<Node> nodes(n);
+                for(auto p:edges)
+                {
+                    nodes[p.first].neighbor.insert(p.second);
+                    nodes[p.second].neighbor.insert(p.first);
+                }
+                
+                // find all leaves
+                for(int i=0; i<n; ++i)
+                {
+                    if(nodes[i].isLeaf()) pB1->push_back(i);
+                }
+    
+                // remove leaves layer-by-layer            
+                while(1)
+                {
+                    for(int i : *pB1)
+                    {
+                        for(auto n: nodes[i].neighbor)
+                        {
+                            nodes[n].neighbor.erase(i);
+                            if(nodes[n].isLeaf()) pB2->push_back(n);
+                        }
+                    }
+                    if(pB2->empty())
+                    {
+                        return *pB1;
+                    }
+                    pB1->clear();
+                    swap(pB1, pB2);
+                }
+                
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+C++ BFS short clean solution with explanation
+    class Solution {
+     public:
+      vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+        // Initialize the undirected graph
+        vector<unordered_set<int>> adj(n);
+        for (pair<int, int> p : edges) {
+          adj[p.first].insert(p.second);
+          adj[p.second].insert(p.first);
+        }
+        // Corner case
+        vector<int> current;
+        if (n == 1) {
+          current.push_back(0);
+          return current;
+        }
+        // Create first leaf layer
+        for (int i = 0; i < adj.size(); ++i) {
+          if (adj[i].size() == 1) {
+            current.push_back(i);
+          }
+        }
+        // BFS the graph
+        while (true) {
+          vector<int> next;
+          for (int node : current) {
+            for (int neighbor : adj[node]) {
+              adj[neighbor].erase(node);
+              if (adj[neighbor].size() == 1) next.push_back(neighbor);
+            }
+          }
+          if (next.empty()) return current;
+          current = next;
+        }
+      }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(n) super clean solution just iteratively deleting leaves
+    class Solution {
+    public: 
+        vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+            vector<unordered_set<int>> graph(n);
+            for(auto e: edges){
+                graph[e.first].insert(e.second);
+                graph[e.second].insert(e.first);
+            }
+            vector<int> degree(n, 0);  //degree
+            for(int i=0; i<n; i++) degree[i]=graph[i].size();
+            for(int remain=n, j; remain>2;){
+                vector<int> del; // nodes to delete
+                for(j=0; j<n; j++){
+                    if(degree[j]==1) { //find leaves
+                        remain--;
+                        del.push_back(j);
+                        degree[j]=-1;
+                    }
+                }
+                for(auto k: del){ //delete this node and its edges 
+                    for(auto neigh: graph[k]) degree[neigh]--;
+                }
+            }
+            vector<int> res;
+            for(int i=0; i<n; i++) if(degree[i]>=0) res.push_back(i);
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Accepted Solution - remove nodes from leave to root
+    public class Solution {
+        public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+            if (n == 0) return new ArrayList<>();
+            else if (n == 1) {
+                List<Integer> ret = new ArrayList<>();
+                ret.add(0);
+                return ret;
+            }
+            List<Integer>[] lists = new ArrayList[n];
+            for (int i = 0; i < n; i++) {
+                lists[i] = new ArrayList<>();
+            }
+            for (int i = 0; i < edges.length; i++) {
+                int v1 = edges[i][0];
+                int v2 = edges[i][1];
+                lists[v1].add(v2);
+                lists[v2].add(v1);
+            }
+            List<Integer> leaves = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                if (lists[i].size() == 1) {
+                    leaves.add(i);
+                }
+            }
+            int count = n;
+            while (count > 2) {
+                int size = leaves.size();
+                count -= size;
+                List<Integer> newLeaves = new ArrayList<>();
+                for (int i = 0; i < size; i++) {
+                    int leaf = leaves.get(i);
+                    for (int j = 0; j < lists[leaf].size(); j++) {
+                        int toRemove = lists[leaf].get(j);
+                        lists[toRemove].remove(Integer.valueOf(leaf));
+                        if (lists[toRemove].size() == 1)
+                            newLeaves.add(toRemove);
+                    }
+                }
+                leaves = newLeaves;
+            }
+            return leaves;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my BFS JAVA code using degree with explanation, which beats more than 95%
+Basically my code starts from the leaf nodes.
+
+For leaf nodes, their degree = 1, which means each of them is only connected to one node.
+
+In our loop, each time we delete the leaf nodes from our graph(just by putting their degrees to 0), and meanwhile we add the new leaf nodes after deleting them(just add their connected nodes with degree as 2) to the queue.
+
+So basically in the end, the nodes in the queue would be connected to no other nodes but each other. They should be the answer.
+
+
+   	List<List<Integer>> myGraph = new ArrayList<List<Integer>>();
+    	List<Integer> res = new ArrayList<Integer>();
+    	if (n==1) {
+    		res.add(0);
+    		return res;
+    	}
+        int[] degree = new int[n];
+        for(int i=0; i<n; i++) {
+        	myGraph.add(new ArrayList<Integer>());
+        }
+        for(int i=0; i<edges.length; i++) {
+        	myGraph.get(edges[i][0]).add(edges[i][1]);
+        	myGraph.get(edges[i][1]).add(edges[i][0]);
+        	degree[edges[i][0]]++;
+        	degree[edges[i][1]]++;
+        }
+        Queue<Integer> myQueue = new ArrayDeque<Integer>();
+        
+        for(int i=0; i<n; i++) 
+        	if (degree[i]==0) 
+        		return res;
+        	else if (degree[i]==1) {
+        		myQueue.offer(i);
+        	}
+        
+        while (!myQueue.isEmpty()) {
+        	res = new ArrayList<Integer>();
+        	int count = myQueue.size();
+        	
+        	for(int i=0; i<count; i++){
+        		int curr = myQueue.poll();
+        		res.add(curr);
+        		degree[curr]--;
+        		for(int k=0; k<myGraph.get(curr).size(); k++) {
+        			int next = myGraph.get(curr).get(k);
+        			if (degree[next]==0) continue;
+        			if (degree[next]==2) {
+        				myQueue.offer(next);
+        			}
+    				degree[next]--;
+        		}
+        	}      	
+        }
+        return res;
+
+----------------------------------------------------------------------------------------------------
+Share my Accepted BFS Python Code with O(n) Time
+The obvious method is to BFS for each node with the complexity of O(n^2) (and will get TLE).
+
+Here is one insight for this problem: the root of MHT is the middle point of the longest path in the tree; hence there are at most two MHT roots.   
+
+How to find them? We can BFS from the bottom (leaves) to the top until the last level with <=2 nodes. To build the current level from the previous level, we can monitor the degree of each node. If the node has degree of one, it will be added to the current level. Since it only check the edges once, the complexity is O(n).
+
+
+    def findMinHeightTrees(self, n, edges):
+        """
+        :type n: int
+        :type edges: List[List[int]]
+        :rtype: List[int]
+        """
+        if n == 1: return [0]
+        neighbors = collections.defaultdict(list)
+        degrees = collections.defaultdict(int)
+        for u, v in edges:
+            neighbors[u].append(v)
+            neighbors[v].append(u)
+            degrees[u] += 1
+            degrees[v] += 1
+        
+        # First find the leaves
+        preLevel, unvisited = [], set(range(n))
+        for i in range(n):
+            if degrees[i] == 1: preLevel.append(i)
+            
+        while len(unvisited) > 2:
+            thisLevel = []
+            for u in preLevel:
+                unvisited.remove(u)
+                for v in neighbors[u]:
+                    if v in unvisited: 
+                        degrees[v] -= 1
+                        if degrees[v] == 1: thisLevel += [v]
+            preLevel = thisLevel
+                    
+         return preLevel
+
+
+----------------------------------------------------------------------------------------------------
+Iterative remove leaves Python solution
+Because there're at most two nodes can be Minimum Height Trees. And all leaves are impossible because such nodes. So we can iterative remove leaves and related edges till we reach 1 or 2.
+
+        d = collections.defaultdict(set)
+        for u, v in edges:
+            d[u].add(v)
+            d[v].add(u)
+        s = set(range(n))
+        while len(s) > 2:
+            leaves = set(i for i in s if len(d[i]) == 1)
+            s -= leaves
+            for i in leaves:
+                for j in d[i]:
+                    d[j].remove(i)
+        return list(s)
+
+----------------------------------------------------------------------------------------------------
+35ms Concise Java Solution
+Here I share my **75ms** solution.
+
+First construct a adjacent graph; second, find leaves (labels with `size == 1`); lastly remove leaves level by level until `numLeaves <= 2`. Some ppl use a queue, some use both array and map. In fact, **one map** is enough, fast and concise.
+
+Hope it helps!
+
+	public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+	    List<Integer> leaves = new ArrayList<>();  
+	    if(n <= 1) {leaves.add(0); return leaves;}
+
+	    // Construct adjencent graph
+	    Map<Integer, Set<Integer>> graph = new HashMap<>();   
+	    for(int i = 0; i < n; i++) graph.put(i, new HashSet<Integer>());
+	    for(int[] e : edges) {
+	        graph.get(e[0]).add(e[1]);
+	        graph.get(e[1]).add(e[0]);
+	    }
+
+	    // Add leaves which have one leaf
+	    for(int i = 0; i < n; i++) {
+	        if(graph.get(i).size() == 1) leaves.add(i);
+	    }
+
+	    // Remove leaves level by level
+	    while(n > 2) {
+	        List<Integer> newLeaves = new ArrayList<>();
+	        for(int leaf : leaves) {
+	            for(int nb : graph.get(leaf)) {
+	                // Remove connection
+                    graph.get(leaf).remove(nb);
+                    graph.get(nb).remove(leaf);
+                    n--;
+                    if(graph.get(nb).size() == 1) {
+                        newLeaves.add(nb);
+                    }
+	            }
+	        }
+	        leaves = newLeaves;
+	    }
+	    return leaves;
+	}
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+My implementation just follows the idea that the-path-method inspired from 
+
+[http://algobox.org/minimum-height-trees/][1]    
+
+Just like topological sorting, we delete the in-degree-1-node level by level.
+
+Just we can ensure that the path of the longest length will be left.
+
+So the last 1 or last 2 node is the solution 
+
+
+    class Solution {
+        public:
+            vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+                vector<int> result;
+                if(n==1) { result.push_back(0); return result; }
+                vector<unordered_set<int>> graph(n, unordered_set<int>());
+                for(int i=0; i<edges.size(); i++){
+                    graph[edges[i].first].insert(edges[i].second);
+                    graph[edges[i].second].insert(edges[i].first);
+                }
+                vector<int> degree(n, 0);
+                for(int i=0; i<n; i++){
+                    degree[i]=graph[i].size();
+                    cout<<i<<":"<<degree[i]<<endl;
+                }
+                int count=n;
+                while(count>2){
+                    vector<int> record;
+                    for(int i=0; i<n; i++){
+                        if(degree[i]==1) {
+                            count--;
+                            degree[i]=-1;
+                            record.push_back(i);
+                        }
+                    }
+                    for(int i=0; i<record.size(); i++){
+                        for(auto it : graph[record[i]])  degree[it]--;
+                    }
+                }
+                for(int i=0; i<n; i++){
+                    if(degree[i]==1 || degree[i]==0)  result.push_back(i);
+                }
+                return result;
+            }
+        };
+
+  [1]: http://algobox.org/minimum-height-trees/
+
+
+----------------------------------------------------------------------------------------------------
+Cpp easy to understand solution using graph
+    vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+        //The principle is that in a path graph, the node at the middle is the root wiht MHTs. Use two pointers to achieve
+        //Like course schedule problem. First, construct the graph baesd on edges. Then construct the degree vector. Delete all the leaf nodes which the degree is 1. Then construct the next leaf node.Until only two odes are remaining and these two nodes are the two located on the longest path in the graph, which should be the result.
+        vector<int>result;
+        if (n == 1) {
+            result.push_back(0);
+            return result;
+        }
+        //Construct the graph
+        vector<vector<int>>graph(n, vector<int>());
+        vector<int>degree(n, 0);
+        for (int i = 0; i < edges.size(); i++) {
+            graph[edges[i].first].push_back(edges[i].second);
+            graph[edges[i].second].push_back(edges[i].first);
+            degree[edges[i].first]++;
+            degree[edges[i].second]++;
+        }
+        int count = n;
+        while (count > 2) {
+            vector<int>records;
+            for (int i = 0; i < n; i++) {
+                if (degree[i] == 1) {
+                    records.push_back(i);
+                    degree[i] = -1;
+                    count--;
+                }
+            }
+            for (int i = 0; i < records.size(); i++) {
+                for (auto it : graph[records[i]]) {
+                    degree[it]--;
+                }
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            if (degree[i] == 1 || degree[i] == 0) {
+                result.push_back(i);
+            }
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java layer by layer BFS
+The idea is to layer by layer BFS from the leaf nodes. The last one or two nodes would be the center
+
+    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+    	Set<Integer> []adj = (Set<Integer>[]) new HashSet[n];
+    	Set<Integer> ans = new HashSet<>();
+    	for (int i = 0; i < n; ++i) {
+    		ans.add(i);
+    	}
+    	for (int i = 0; i < n; i++) {
+    		adj[i] = new HashSet<>();
+    	}
+
+    	for (int i = 0; i < n - 1; i++) {
+    		int from = edges[i][0];
+    		int to = edges[i][1];
+    		adj[from].add(to);
+    		adj[to].add(from);
+    	}
+
+    	Set<Integer> leaves = new HashSet<>();
+    	while(ans.size() > 2) {
+    		for (int v : ans) {
+    			if (adj[v].size() == 1) {
+    				leaves.add(v);
+    			}
+    		}
+    		ans.removeAll(leaves);
+    		Set<Integer> nxtLeaves = new HashSet<>();
+    		for (int v : leaves) {
+    			int adjNode = adj[v].iterator().next();
+				adj[adjNode].remove(v);
+				if (adj[adjNode].size() == 1) {
+					nxtLeaves.add(adjNode);
+				}
+    		}
+    		leaves = nxtLeaves;
+    	}
+    	return new ArrayList<>(ans);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Solution Share: Midpoint of Longest Path
+Algorithm:
+
+1. G = <V[1..n], E[1..n-1]>, G is connected;
+1. Find a path P = V[p[1]], V[p[2]], ... V[p[l]] which is the longest path in G
+1. The Midpoint of the path  V[p[floor(l/2)]], or, V[p[ceil(l/2)]] is the answer
+
+
+Implementation:
+
+    class Solution(object):
+        # longest path from node i
+        def longestPath(self, n, e, i):
+            a, b = set([i]), [[i, 0]]
+            r = list(range(n))
+            while len(b):
+                t, d = b.pop(0)
+                for j in e[t]:
+                    if j in a: continue
+                    b.append([j, d + 1])
+                    a.add(j)
+                    r[j] = t
+            p = [t]
+            while p[0] != i:
+                p.insert(0, r[p[0]])
+            return p
+    
+        def findMinHeightTrees(self, n, edges):
+            e = [[] for i in range(n)]
+            for x, y in edges:
+                e[x].append(y)
+                e[y].append(x)
+            p = self.longestPath(n, e, 0)
+            q = self.longestPath(n, e, p[-1])
+            return list(sorted(q[(len(q)-1)//2:len(q)//2+1]))
+
+----------------------------------------------------------------------------------------------------
+Why C++ is much slower than Java?
+I solved this problem by C++ and Java, and the solutions used same algorithm. But the C++ solution is much slower than the Java one. Why? I thought that C++ should be much faster than Java. Here is my code:
+
+C++ version (1100+ms):
+
+    class Solution {
+    public:
+        vector<int> findMinHeightTrees(int n, vector<pair<int, int>> &edges) {
+    
+            if (n == 1)
+                return { 0 };
+    
+            unordered_set<int> adj[n];
+            for (auto &p : edges) {
+                adj[p.first].insert(p.second);
+                adj[p.second].insert(p.first);
+            }
+    
+            vector<int> cur, next;
+            for (int i = 0; i < n; i++)
+                if (adj[i].size() == 1)
+                    cur.push_back(i);
+    
+            while (n > 2) {
+                for (int &v : cur) {
+                    int w = *adj[v].begin();
+                    adj[w].erase(v);
+                    if (adj[w].size() == 1)
+                        next.push_back(w);
+                }
+                n -= cur.size();
+                cur.swap(next);
+                next.clear();
+            }
+            return cur;
+        }
+    };
+
+Java version (50ms):
+
+    class Solution {
+        public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+    
+            if (n == 1)
+                return Collections.singletonList(0);
+    
+            HashSet<Integer> adj[] = new HashSet[n];
+            for (int i = 0; i < n; i++)
+                adj[i] = new HashSet<>();
+    
+            for (int edge[] : edges) {
+                adj[edge[0]].add(edge[1]);
+                adj[edge[1]].add(edge[0]);
+            }
+    
+            List<Integer> cur = new ArrayList<>();
+    
+            for (int i = 0; i < n; i++)
+                if (adj[i].size() == 1)
+                    cur.add(i);
+    
+            while (n > 2) {
+                List<Integer> next = new ArrayList<>();
+                for (int v : cur) {
+                    int w = adj[v].iterator().next();
+                    adj[w].remove(v);
+                    if (adj[w].size() == 1)
+                        next.add(w);
+                }
+                n -= cur.size();
+                cur = next;
+            }
+            return cur;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing my C++ solution using the idea of topological sort
+    class Solution {
+    public:
+        vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+            if(n==1)
+                return vector<int>(1, 0);
+                
+            vector<unordered_set<int>> myConnections(n);
+            int N = edges.size(), i;
+            int first, second;
+            for(i=0; i<N; i++)
+            {
+                first = edges[i].first;
+                second = edges[i].second;
+                myConnections[first].insert(second);
+                myConnections[second].insert(first);
+            }
+            
+            vector<int> current;
+            for(i=0; i<n; i++)
+                if(myConnections[i].size()==1)
+                    current.push_back(i);
+                    
+            while(true)
+            {
+                vector<int> next;
+                for(int iCurrent : current)
+                    for(int iNext : myConnections[iCurrent])
+                    {
+                        if(myConnections[iNext].erase(iCurrent));
+                        if(myConnections[iNext].size()==1)
+                            next.push_back(iNext);
+                    }
+                    
+                if(next.size()==0)
+                    return current;
+                else
+                    current = next;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ 120 ms, topological sort
+    Based on https://leetcode.com/discuss/88737/sharing-my-c-solution-using-the-idea-of-topological-sort
+    vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+        vector<int> ans;
+        if(!n)
+           return ans;
+        if(n == 1)
+        {
+            ans.push_back(0);
+            return ans;
+        }
+        vector<unordered_set<int>> v(n);
+        for(int i = 0; i < edges.size();++i)
+        {
+           v[edges[i].first].insert(edges[i].second);
+           v[edges[i].second].insert(edges[i].first);
+        }
+        vector<int> leaves;
+        for(int i = 0; i < n; ++i)
+           if(v[i].size() == 1)
+              leaves.push_back(i);
+        while(true)
+        {
+            vector<int> newleaves;
+            for(int l : leaves)
+            {
+                 for(int i : v[l])
+                 {
+                     v[i].erase(l);
+                     if(v[i].size() == 1)
+                        newleaves.push_back(i);
+                 }
+            }
+            if(newleaves.size() == 0)
+               return leaves;
+            leaves = newleaves;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(n) space solution.
+The basic idea 
+
+1 Find the longest path in the tree, start from node T1 to node T2; (first bfs find T1 and the second bfs find T2 also remember the parent path and number of nodes in the longest path. O(n)) 
+
+2 Find the middle node/nodes from T2 to T1 (Get from parent path, need to take care of odd even cases, O(n))
+
+I do not believe this is the best solution. And it takes 1000ms + to finished.  Just for sharing!
+
+    class Solution {
+    public:
+        vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+            vector<int> res;
+            if (n==0) {
+                return res;
+            }
+            vector<vector<int>> G(n);
+            for (const pair<int,int> &edge: edges) {
+                G[edge.first].push_back(edge.second);
+                G[edge.second].push_back(edge.first);
+            }
+            queue<int> Q;
+            char *visited = new char[n];
+            memset(visited, 0, n*sizeof(char));
+            int cur = 0;
+            Q.push(0);
+            while (!Q.empty()) {
+                cur = Q.front();
+                Q.pop();
+                visited[cur] = true;
+                for (const int& next : G[cur]) {
+                    if (!visited[next]) {
+                        Q.push(next);
+                    }
+                }
+            }
+            int T1 = cur;
+            Q.push(cur);
+            memset(visited, 0, n*sizeof(char));
+            int *parent = new int[n];
+            memset(parent, 0, n*sizeof(int));
+            int h = 0;
+            while (!Q.empty()) {
+                h++;
+                int size = Q.size();
+                for (int j = 0; j<size; ++j) {
+                    cur = Q.front();
+                    Q.pop();
+                    visited[cur] = true;
+                    for (const int& next : G[cur]) {
+                        if (!visited[next]) {
+                            parent[next] = cur;
+                            Q.push(next);
+                        }
+                    }
+                }
+            }
+            int T2 = cur;
+            if (h&1) {
+                h/=2;
+                for (int i =0;i<h;++i) {
+                    T2 = parent[T2];
+                }
+                res.push_back(T2);
+            } else {
+                h = h/2 -1;
+                for (int i =0;i<h;++i) {
+                    T2 = parent[T2];
+                }
+                res.push_back(T2);
+                res.push_back(parent[T2]);
+            }
+            
+            delete[] visited;
+            delete[] parent;
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Compact Python solution using two BFS
+    class Solution(object):
+        def findMinHeightTrees(self, n, edges):
+            graph = [[] for i in range(n)]
+            for v1, v2 in edges:
+                graph[v1].append(v2)
+                graph[v2].append(v1)
+            
+            p1 = self.FindLongestPath(graph, 0)
+            p2 = self.FindLongestPath(graph, p1[-1])
+            
+            if len(p2) % 2: return [p2[len(p2)/2]]
+            else:           return [p2[len(p2)/2 - 1], p2[len(p2)/2]]
+        
+        def FindLongestPath(self, graph, root):
+            queue = collections.deque([[root]])
+            traversed = set([root])
+            while queue:
+                path = queue.pop()
+                for v in graph[path[-1]]:
+                    if v not in traversed:
+                        queue.appendleft(path + [v])
+                        traversed.add(v)
+            return path
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ BFS 84ms beats 90% (vector and queue only )
+class Solution {
+public:
+    vector<int> findMinHeightTrees(int n, vector<pair<int, int>>& edges) {
+        vector<int> roots;
+        if(n==1) 
+        {
+            roots.push_back(0);
+            return roots;
+        }
+        vector<vector<int>> graph(n);
+        vector<int> inDegree(n); //  indegree of a node is the number of edges leading to that node 
+        for(auto& e:edges)
+        {
+            graph[e.first].push_back(e.second);
+            graph[e.second].push_back(e.first);
+            inDegree[e.first]++;
+            inDegree[e.second]++;
+        }
+        
+        queue<int> q;
+        for(int i=0;i<n;i++)
+        {
+            if(inDegree[i]==1) // leaf node
+            {
+                q.push(i);
+            }
+        }
+        
+        while(!q.empty())
+        {
+            int size=q.size();
+            for(int i=0;i<size;i++)
+            {
+                int node = q.front();q.pop();
+                inDegree[node]--; // remove leaf
+                
+                if(n<=2) roots.push_back(node);
+                
+                for(int& neighbor:graph[node])
+                {
+                    inDegree[neighbor]--; // remove leaf
+                    if(inDegree[neighbor]==1) 
+                    {
+                        q.push(neighbor);
+                    }
+                }
+            }
+            n-=size; // remove leaves layer by layer
+        }
+        return roots;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

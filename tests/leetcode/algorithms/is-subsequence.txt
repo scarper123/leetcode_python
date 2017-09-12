@@ -1,0 +1,553 @@
+7 lines Easy Java Solution
+Some used stack. Some used the depth of a stack. Here I use a different perspective. In a binary tree, if we consider null as leaves, then
+
+* all non-null node provides 2 outdegree and 1 indegree (2 children and 1 parent), except root
+* all null node provides 0 outdegree and 1 indegree (0 child and 1 parent).
+
+Suppose we try to build this tree. During building, we record the difference between out degree and in degree `diff` = `outdegree - indegree`. When the next node comes, we then decrease `diff` by 1, because the node provides an in degree. If the node is not `null`, we increase diff by `2`, because it provides two out degrees. If a serialization is correct, diff should never be negative and diff will be zero when finished.
+
+
+    public boolean isValidSerialization(String preorder) {
+        String[] nodes = preorder.split(",");
+        int diff = 1;
+        for (String node: nodes) {
+            if (--diff < 0) return false;
+            if (!node.equals("#")) diff += 2;
+        }
+        return diff == 0;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java intuitive 22ms solution with stack
+See detailed comments below. Time complexity is O(n), space is also O(n) for the stack.
+
+    public class Solution {
+        public boolean isValidSerialization(String preorder) {
+            // using a stack, scan left to right
+            // case 1: we see a number, just push it to the stack
+            // case 2: we see #, check if the top of stack is also #
+            // if so, pop #, pop the number in a while loop, until top of stack is not #
+            // if not, push it to stack
+            // in the end, check if stack size is 1, and stack top is #
+            if (preorder == null) {
+                return false;
+            }
+            Stack<String> st = new Stack<>();
+            String[] strs = preorder.split(",");
+            for (int pos = 0; pos < strs.length; pos++) {
+                String curr = strs[pos];
+                while (curr.equals("#") && !st.isEmpty() && st.peek().equals(curr)) {
+                    st.pop();
+                    if (st.isEmpty()) {
+                        return false;
+                    }
+                    st.pop();
+                }
+                st.push(curr);
+            }
+            return st.size() == 1 && st.peek().equals("#");
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA, Counting Indegree and Outdegree, SIMPLE &amp; CLEAR!
+     public boolean isValidSerialization(String preorder) {
+        String[] strs = preorder.split(",");
+        int degree = -1;         // root has no indegree, for compensate init with -1
+        for (String str: strs) {
+            degree++;             // all nodes have 1 indegree (root compensated)
+            if (degree > 0) {     // total degree should never exceeds 0
+                return false;
+            }      
+            if (!str.equals("#")) {// only non-leaf node has 2 outdegree
+                degree -= 2;
+            }  
+        }
+        return degree == 0;
+    }
+
+----------------------------------------------------------------------------------------------------
+The simplest python solution with explanation (no stack, no recursion)
+We just need to remember how many empty slots we have during the process. 
+
+Initially we have one ( for the root ). 
+
+for each node we check if we still have empty slots to put it in. 
+
+ - a null node occupies one slot.
+ - a non-null node occupies one slot before he creates two more. the net gain is one. 
+
+----------
+    class Solution(object):
+        def isValidSerialization(self, preorder):
+            """
+            :type preorder: str
+            :rtype: bool
+            """
+            # remember how many empty slots we have
+            # non-null nodes occupy one slot but create two new slots
+            # null nodes occupy one slot
+            
+            p = preorder.split(',')
+            
+            #initially we have one empty slot to put the root in it
+            slot = 1
+            for node in p:
+                
+                # no empty slot to put the current node
+                if slot == 0:
+                    return False
+                    
+                # a null node?
+                if node == '#':
+                    # ocuppy slot
+                    slot -= 1
+                else:
+                    # create new slot
+                    slot += 1
+            
+            #we don't allow empty slots at the end
+            return slot==0
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution using stack. With Explanation.
+This is very simple problem if you use stacks. The key here is, when you see two consecutive "#" characters on stack, pop both of them and replace the topmost element on the stack with "#". For example,
+
+preorder = 1,2,3,#,#,#,#
+
+Pass 1:  stack = [1]
+
+Pass 2: stack = [1,2]
+
+Pass 3: stack = [1,2,3]
+
+Pass 4: stack = [1,2,3,#]
+
+Pass 5: stack = [1,2,3,#,#] -> two #s on top so pop them and replace top with #. -> stack = [1,2,#]
+
+Pass 6: stack = [1,2,#,#] -> two #s on top so pop them and replace top with #. -> stack = [1,#]
+
+Pass 7: stack = [1,#,#] -> two #s on top so pop them and replace top with #. -> stack = [#]
+
+If there is only one # on stack at the end of the string then return True else return False.
+
+Here is the code for that,
+
+    class Solution(object):
+    def isValidSerialization(self, preorder):
+        """
+        :type preorder: str
+        :rtype: bool
+        """
+        stack = []
+        top = -1
+        preorder = preorder.split(',')
+        for s in preorder:
+            stack.append(s)
+            top += 1
+            while(self.endsWithTwoHashes(stack,top)):
+                h = stack.pop()
+                top -= 1
+                h = stack.pop()
+                top -= 1
+                if top < 0:
+                    return False
+                h = stack.pop()
+                stack.append('#')
+            #print stack
+        if len(stack) == 1:
+            if stack[0] == '#':
+                return True
+        return False
+    
+    def endsWithTwoHashes(self,stack,top):
+        if top<1:
+            return False
+        if stack[top]=='#' and stack[top-1]=='#':
+            return True
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+C++ 4ms solution, O(1) space, O(n) time
+The capacity is the number of node that can be put in the tree. The initial value is 1, which means there can be a root.
+
+When adding a node, capacity--;
+
+When adding  a non-NULL node, it means we obtains two more leafs, then capacity +=2.
+
+The final capacity should be equal to 0
+
+
+    class Solution {
+    public:
+    bool isValidSerialization(string preorder) {
+        if (preorder.empty()) return false;
+        preorder+=',';
+        int sz=preorder.size(),idx=0;
+        int capacity=1;
+        for (idx=0;idx<sz;idx++){
+            if (preorder[idx]!=',') continue;
+            capacity--;
+            if (capacity<0) return false;
+            if (preorder[idx-1]!='#') capacity+=2;
+        }
+        return capacity==0;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Straight-forward C++ solution with explanation
+The idea is simple.
+
+Denote the number of null nodes as `nullCnt`, the number of actual nodes as `nodeCnt`.
+
+For a binary tree, the number of null nodes is always the number of actual nodes plus 1. `nullCnt==nodeCnt+1`;
+
+So,
+
+ 1. if `nullCnt>nodeCnt+1`, the tree is invalid.
+ 2. if `nullCnt<nodeCnt+1`, the tree is incomplete.
+ 3. if `nullCnt==nodeCnt+1`, the tree is complete and can't be extended.
+
+We just need to keep track of `nullCnt` and `nodeCnt` as we go through the sequence and check these conditions above.
+
+Actually, recording `nullCnt-nodeCnt` is enough, so you can further improve the code.
+
+    class Solution {
+    public:
+        bool isValidSerialization(string preorder) {
+            int nodeCnt=0,nullCnt=0;
+            vector<string> v=splitStr(preorder,',');
+            for(int i = 0; i<v.size(); i++){
+                if(v[i]=="#") ++nullCnt;
+                else ++nodeCnt;
+                if(nullCnt>=nodeCnt+1 && i!=v.size()-1) return false;
+            }
+            return nullCnt==nodeCnt+1;
+        }
+        
+        vector<string> splitStr(string str, char delimiter){
+        	vector<string> r;
+        	string tmpstr;
+        	while (!str.empty()){
+        		int ind = str.find_first_of(delimiter);
+        		if (ind == -1){
+        			r.push_back(str);
+        			str.clear();
+        		}
+        		else{
+        			r.push_back(str.substr(0, ind));
+        			str = str.substr(ind + 1, str.size() - ind - 1);
+        		}
+        	}
+        	return r;
+        }
+    };
+
+
+
+**Edit:**
+The algorithm scans the string **one node at a time from the beginning**, once it finds `nullCnt>nodeCnt+1`, it stops and return false. 
+
+If it finds `nullCnt==nodeCnt+1`, that means by now, the tree is valid(otherwise the algorithm would return false before this) and complete, if there are more nodes to come, it returns false; if it's the last node, the algorithm returns true. 
+
+If it finds `nullCnt<nodeCnt+1`, that means the tree is incomplete but not invalid(or the algorithm would return false before this) by now, if this is the last node and no more nodes comes after it, the tree is invalid.
+
+Example:
+
+` "#,1,#"`	1st node is `#`, `nullCnt==1`, `nodeCnt==0`, `nullCnt==nodeCnt+1`, the tree is complete by now, but there are more nodes after it, so it's invalid.
+
+` "1, #"`	1st node is `1`, `nullCnt==0`, `nodeCnt==1`, `nullCnt<nodeCnt+1`, the tree is incomplete, but there are more nodes after it, so we proceed, 2nd node is `#`, `nullCnt==1`, `nodeCnt==1`, `nullCnt<nodeCnt+1`, the tree is incomplete and there are no more nodes left, so it's invalid.
+
+**Edit2:**
+
+Why for a binary tree, `nullCnt==nodeCnt+1`?
+
+For an empty binary tree, `nullCnt=1`, `nodeCnt=0`, `nullCnt==nodeCnt+1`.
+
+Each time we add an actual node, we take the place of one null node and create two null nodes, so the net gain of null node is one, which is also the net gain of actual node. Thus, the actual nodes and null nodes will increase by the same amount, which means `nullCnt==nodeCnt+1` will always hold.
+
+----------------------------------------------------------------------------------------------------
+Simple O(n) Solution
+Use iterative preorder traversal, actually no need to use stack, just a integer to track the depth of the stack.
+
+    public class Solution {
+        public boolean isValidSerialization(String preorder) {
+            if (preorder == null || preorder.length() == 0) return false;
+            String[] strs = preorder.split(",");
+            int depth = 0;
+            int i = 0; 
+            while (i < strs.length - 1) {
+                if (strs[i++].equals("#")) {
+                    if (depth == 0) return false;
+                    else depth--;
+                }
+                else depth++;
+            }
+            if (depth != 0) return false;
+            return strs[strs.length - 1].equals("#");
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+2 lines Java using Regex
+Regex idea from [andrei3's solution](https://leetcode.com/discuss/83896/8-line-regex-solution-without-building-the-tree).
+
+    public boolean isValidSerialization(String preorder) {
+        String s = preorder.replaceAll("\\d+,#,#", "#");
+        return s.equals("#") || !s.equals(preorder) && isValidSerialization(s);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+6 lines Python, 7 lines Java
+**Python**
+
+    def isValidSerialization(self, preorder):
+        need = 1
+        for val in preorder.split(','):
+            if not need:
+                return False
+            need -= ' #'.find(val)
+        return not need
+
+**Java**
+
+    public boolean isValidSerialization(String preorder) {
+        int need = 1;
+        for (String val : preorder.split(",")) {
+            if (need == 0)
+                return false;
+            need -= " #".indexOf(val);
+        }
+        return need == 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+11 lines concise and easy understand c++ solution
+    class Solution {
+    public:
+        bool isValidSerialization(string preorder) {
+            istringstream iss(preorder);
+            int nullcnt = 0, nodecnt = 0;
+            string tmp;
+            vector<string> vec;
+            while(getline(iss, tmp, ',')) vec.push_back(tmp);
+            for(int i = 0; i < vec.size(); i++){
+                if(vec[i] != "#") nodecnt++;
+                else nullcnt++;
+                if(nullcnt == nodecnt + 1 && i != vec.size() - 1) return false;
+            }
+            return nullcnt == nodecnt + 1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear c++ solution
+	bool isValidSerialization(string preorder) {
+		int degree = 1;
+		string temp;
+		stringstream ss;
+		ss << preorder;
+		while (getline(ss, temp, ',')) {
+			degree--;
+			if (degree < 0)
+				return false;
+			if (temp[0] != '#')
+				degree += 2;
+		}
+		return degree == 0;
+	}
+
+----------------------------------------------------------------------------------------------------
+Java recursion solution
+Main idea is checking balance of nodes from bottom-up manner and bubble up failure condition.
+
+    public class Solution {
+    	public boolean isValidSerialization(String preorder) {
+    		String[] tree = preorder.split(",");
+    		return valid(tree, 0) == tree.length-1;
+    	}
+    
+    	private int valid(String[] tree, int current) {
+    		if(current >= tree.length) return -1;
+    		if("#".equals(tree[current])) return current;
+    
+    		// left
+    		int next = valid(tree, current + 1);
+    		if(next == -1) return -1;
+    
+    		// right
+    		next = valid(tree, next + 1);
+    		return next == -1 ? -1 : next;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution using stack without extra splitting function
+ At first glance, a leaf node's pattern should look like `number,#,#`, start from the beginning of array, once you see this pattern, convert it to a single "#", meaning the node with value `number` has already been fully explored(left subtree, right subtree), so we replace it with a "#". While iterating the array, we just keep doing this kind of absorbing/merging backward until we reach the end of array. Then we check if the root has been fully explored, which should eventually be a single `#`. During absorbing, if this pattern appears `#,#,#`, return false. It's known that it's a pain in C++ that there is no split function as Java does, but it won't matter here since split string is not necessary, we just need to know before `,` it's a `number` or `#`.
+
+"9,3,4,#,#,12,#,#,2,#,6,#,#"
+
+stack status
+
+    char   stack
+    '9':   '9'  
+    '3':   '3','9'
+    '4':   '4','3','9'
+    '#':   '#','4','3','9'
+    '#':   '#','3','9'
+    '12':  'n', '#', '3','9'
+    '#':   '#','1', '#', '3','9'
+    '#':   '#','3','9' -> '#','9'
+    '2':   '2', '#','9'
+    '#':   '#', '2', '#','9'
+    '6':   '6', '#', '2','#','9'
+    '#':   '#', '6', '#', '2','#','9'
+    '#':   '#', '2','#','9' -> '#','9' -> '#'
+
+Code:
+
+    class Solution {
+    public:
+        bool isValidSerialization(string preorder) {
+            stack<char> stk;
+            bool isNum = false;
+            preorder.push_back(','); // dummy tail
+            
+            for(auto c: preorder){
+                if(c == '#'){
+                    // absorb: search for pattern `#, number` backward
+                    while(!stk.empty() && stk.top() == '#'){ 
+                        stk.pop(); // pop `#`
+                        if(stk.empty() || stk.top() == '#') return false; // pattern `#,#,#`
+                        stk.pop(); // pop `number`
+                    }
+                    stk.push('#'); // replace `number` with `#` since it has been fully explored/validated
+                }else if(c == ','){
+                    if(isNum) stk.push('n'); // indicate this is a number instead of using the real number
+                    isNum = false;
+                }else{
+                    isNum = true;
+                }
+            }
+            
+            return stk.size() == 1 && stk.top() == '#';
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+8-line Python non-recursive solution using stack, replace (number, #, #) with #, very easy to understand
+    def isValidSerialization(self, preorder):
+        stack = []
+        for value in preorder.split(','):
+            if value == '#':
+                while len(stack) >= 2 and stack[-1] == '#' and stack[-2] != '#':
+                    stack.pop()
+                    stack.pop()
+            stack.append(value)
+        return stack == ['#']
+
+----------------------------------------------------------------------------------------------------
+Clean sample JAVA solution with explain
+    public boolean isValidSerialization(String preorder) {
+        String[] chars = preorder.split(",");
+        
+        int sentinel = 0;
+        int node = 0;
+        for (int i = chars.length - 1; i >= 0; i--)
+        {
+            if (chars[i].equals("#"))
+            {
+                sentinel++;
+            }
+            else
+            {
+                node++;
+            }
+            if (sentinel - node < 1)
+            {
+                return false;
+            }
+        }
+        return sentinel - node == 1;
+    }
+
+1. Total quantity of sentinel is always nodes' quantity plus one.
+2. Each time when adding a node to the tree, one more sentinel must be added some where after the node. (image a node replaced a sentinel, but it self has two sentinel)
+3. browse the string backward follow rule 1 and 2.
+
+----------------------------------------------------------------------------------------------------
+10 line easy c++ solution
+     bool isValidSerialization(string preorder) {
+            if(preorder.empty())return false;
+            int cnt=1,i=0;
+            while(i<preorder.size()){
+                if(preorder[i]=='#')cnt--;
+                else cnt++;
+                if(cnt==0)break;
+                while(i<preorder.size()&&preorder[i++]!=',');
+            }
+            return cnt==0&&i==preorder.size()-1;
+        }
+
+----------------------------------------------------------------------------------------------------
+*Java* concise 6 lines of code without using stack
+	public boolean isValidSerialization(String preorder) {
+		String[] strs = preorder.split(",");
+		int N = strs.length, count = 0, i = -1;
+		while(++i<N-1) {
+			if(!"#".equals(strs[i])) ++count;
+			else if(--count<0) return false;
+		}
+		return count==0 && "#".equals(strs[i]);
+    }
+
+Interesting fact: 
+ 
+ - number of sentinel nodes = number of non-sentinel nodes + 1
+
+Key idea:
+
+ - `count`: counter of non-sentinel nodes - sentinel nodes up to index `i`. So we increase counter if current value is not `#` (it is like `push` item into stack), otherwise decrease it (it is like `pop` item out of stack)
+ - if current value is `#` and counter is already 0, return false (it is like the case when stack is already `empty` and you cannot pop anymore)
+ - however, if counter is 0 and we already moved to the last location, return true because of the above interesting fact
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+Simple java sol without tree construction
+The main thought is to keep track of 'opens' which is number of leaves that this tree can have. To have a valid tree, one have to satisfy the follow two constrains.
+First constrain: during the process, opens must be positive.
+Second constrain: at the end, opens should be zero.
+
+    public class Solution {
+    public boolean isValidSerialization(String preorder) {
+        String[] strs = preorder.split(",");
+        int opens=1;
+        int i;
+        for(i = 0; i < strs.length && opens > 0; i++) {
+            if(strs[i].compareTo("#") == 0)
+                opens--;
+            else
+                opens++;
+        }
+        return (opens == 0 && i == strs.length);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+3 lines python solution by re
+    import re
+    class Solution(object):
+        def isValidSerialization(self, preorder):
+            while re.search('[0-9]+,#,#', preorder):
+                preorder = re.sub('[0-9]+,#,#', '#', preorder)
+            return preorder == '#'
+
+----------------------------------------------------------------------------------------------------

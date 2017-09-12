@@ -1,0 +1,346 @@
+Java solution, Sum of Sliding window
+public class Solution {
+    public double findMaxAverage(int[] nums, int k) {
+        long sum = 0;
+        for (int i = 0; i < k; i++) sum += nums[i];
+        long max = sum;
+        
+        for (int i = k; i < nums.length; i++) {
+            sum += nums[i] - nums[i - k];
+            max = Math.max(max, sum);
+        }
+        
+        return max / 1.0 / k;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def findMaxAverage(self, A, K):
+    su = 0
+    ma = float('-inf')
+    for i, x in enumerate(A):
+        su += x
+        if i >= K:
+            su -= A[i-K]
+        if i >= K - 1:
+            ma = max(ma, su)
+    return ma / float(K)
+
+
+----------------------------------------------------------------------------------------------------
+Java 8, 2 lines, using reduce w&#x2F; explanation
+public static double findMaxAverage(int[] nums, int k) {
+        int sum = IntStream.range(0, k).map(i -> nums[i]).sum();
+        return IntStream.range(k, nums.length).boxed().reduce(
+                new int[] {sum - nums[0], sum},
+                (arr, i) -> new int[] {arr[0] + nums[i] - nums[i-k+1], Math.max(arr[1], arr[0] + nums[i])},
+                (x, y) -> x)[1] / (double)k;
+
+    }
+
+
+----------------------------------------------------------------------------------------------------
+2 lines Python, 2 versions
+def findMaxAverage(self, nums, k):
+    sums = np.cumsum([0] + nums)
+    return int(max(sums[k:] - sums[:-k])) / k
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution - sliding window
+public class Solution {
+    public double findMaxAverage(int[] nums, int k) {
+        int sum = 0;
+        for(int i = 0; i < k; i++) {
+            sum += nums[i];
+        }
+        
+        int maxSum = sum;
+        for(int i = 0, j = k; j < nums.length; i++, j++) {
+            sum = sum - nums[i] + nums[j];
+            maxSum = Math.max(sum, maxSum);
+        }
+        
+        return ((double) maxSum) / ((double) k);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple sliding-window solution
+    double findMaxAverage(vector<int>& nums, int k) {
+        double sum=0, res=INT_MIN;
+        for(int i=0;i<nums.size();i++) {
+            if(i<k) sum+=nums[i];
+            else {
+                res=max(sum, res);
+                sum+=nums[i]-nums[i-k];
+            }
+        }
+        res=max(sum, res);
+        return res/k;
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class Solution {
+public:
+    double findMaxAverage(vector<int>& nums, int k) {
+        int maxsum = INT_MIN;
+        int sum = 0;
+        // k = min((size_t)k, nums.size());
+        for (int i = 0; i < nums.size(); i++) {
+            sum += nums[i];
+            if (i >= k) {
+                sum -= nums[i - k];
+            }
+            if (i >= k - 1) {
+                maxsum = max(maxsum, sum);            
+            }
+        }
+        return (double)maxsum / k;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Time O(1) Space
+public double findMaxAverage(int[] nums, int k) {
+    int maxSum = 0, n = nums.length;
+    for (int i=0;i<k;i++) maxSum += nums[i];
+    int curSum = maxSum;
+    for (int i=k;i<n;i++) {
+        curSum = curSum -  nums[i-k] + nums[i];
+        maxSum = Math.max(maxSum, curSum);
+    }
+    return ((double) maxSum)/((double) k);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforawrd Java O(N) solution with explanation...
+public double findMaxAverage(int[] nums, int k) {
+        if(k>nums.length) return (double)0;
+        double sum = 0;
+        for(int i = 0;i<k;i++){ // get the sum from 0 to k-1th num
+            sum += nums[i];
+        }
+        double pre = sum - nums[0];// the sum from 1th to k-1th num could be used in next time when we calculate the sum from 1 to kth num
+        double max = sum/k;
+        for(int i = 1;i+k-1<nums.length;i++){
+            sum = pre +nums[i + k -1];// use pre to plus the last num within these k nums
+            max = Math.max(max,sum/k);
+            pre = sum - nums[i];// update the pre which could be used in next caculation
+        }
+        return max;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Other Java Solution but TLE
+public static double findMaxAverage(int[] A, int k) {
+        double maxEndhere = sumOfKElement(A,0,k);
+        double maxSoFar = maxEndhere/k ;
+        for (int i=1;i<A.length-k+1;++i){
+            maxEndhere= Math.max(maxEndhere,sumOfKElement(A, i, k));
+            maxSoFar = Math.max(maxSoFar, maxEndhere/k);	
+        }
+        return maxSoFar;
+    }
+    public static double sumOfKElement (int[] A, int I, int k) {
+    	double sum =0;
+    	for(int i =I; i<Math.min(k+I , A.length); i++)
+			sum += A[i];
+		return sum;
+	}
+
+
+----------------------------------------------------------------------------------------------------
+AC Python
+def findMaxAverage(self, nums, k):
+    """
+    :type nums: List[int]
+    :type k: int
+    :rtype: float
+    """
+    
+    if len(nums) <= k:
+        return sum(nums) / k
+
+    i = 0
+    cs = sum(nums[i:i+k])   # current sum
+    ma = cs / k             # max average = current sum / k
+    
+    while True:
+        
+        i += 1
+        if (i > len(nums) - k):
+            break
+        
+        # drop last, add next instead of inoking sum() here
+        cs = cs - nums[i-1] + nums[i+k-1]  
+            
+        if cs / k > ma:
+            ma = cs / k # max average = current sum / k
+
+    return ma
+
+----------------------------------------------------------------------------------------------------
+Sliding window Solution- Java
+public double findMaxAverage(int[] nums, int k) {
+        if(nums==null || nums.length==0 || nums.length<k) return 0.0;
+        double max =  Integer.MIN_VALUE, sum=0,n=0;
+        int j=0;
+        for(int i=0; i<nums.length; i++){
+            n++;
+            sum += nums[i];
+                if(n==k) {
+                    max = Math.max(max, sum/n);
+                    sum-=nums[j];
+                    j++;
+                    n--;
+                }
+        }
+        return max;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Sliding window python
+class Solution(object):
+    def findMaxAverage(self, nums, k):
+        """
+        :type nums: List[int]
+        :type k: int
+        :rtype: float
+        """
+        begin = 0
+        end   = 0
+        n     = len(nums)
+        kavg  = 0
+        if k < len(nums):
+            ksum  = sum(nums[0:k])  # sum of first k items
+            kavg  = ksum / float(k) # avg of first k items
+            beg   = 0 # beginning of avg window
+            x     = k # end of avg window
+            
+            while x < n: # when end falls beyond n
+                ksum = ksum - nums[beg] + nums[x]      # get ksum
+                kavg = max( kavg , (ksum / float(k)) ) # set kavg to maximum of kavg and new kavg
+                beg += 1                               # begining of avg window increases
+                x   += 1                               # end of avg window increases
+        else:
+            kavg = sum(nums) / float(len(nums))        # kavg if items are lesser than k
+        return kavg
+
+----------------------------------------------------------------------------------------------------
+Swift solution - Prefix Sum + Two Pointers
+class Solution {
+    func findMaxAverage(_ nums: [Int], _ k: Int) -> Double {
+        var prefixSum = [Int](repeatElement(0, count: nums.count))
+        var result = Double(Int.min)
+        var left = 0
+        var right = k - 1
+        
+        prefixSum[0] = nums[0]
+        for i in 1..<nums.count {
+            prefixSum[i] = nums[i] + prefixSum[i - 1]
+        }
+        
+        while right < nums.count {
+            result = max(result, Double(prefixSum[right] - prefixSum[left] + nums[left]) / Double(k))
+            right += 1
+            left += 1
+        }
+        
+        return result
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Sliding Window solution O(N) time O(1) space
+public class Solution {
+    public double findMaxAverage(int[] nums, int k) {
+        int n = nums.length;
+        int sum = 0;
+        for (int i = 0; i < k; i++) sum += nums[i];
+        if (n <= k) return (double) sum / k;
+        int maxSum = sum;
+        for (int i = 1; i < n - k + 1; i++) {
+            sum += nums[i + k - 1] - nums[i - 1];
+            if (sum > maxSum) maxSum = sum;
+        }
+        return (double) maxSum / k;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+6-line JavaScript solution
+var findMaxAverage = function(nums, k) {
+    let max = -Infinity;
+    for (let i = 0, sum = 0; i < nums.length; i++) {
+        sum += nums[i] - (nums[i - k] || 0);
+        if (i >= k - 1) max = Math.max(max, sum);
+    }
+    return max / k;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short Python &amp; C++
+class Solution {
+public:
+    double findMaxAverage(vector<int>& nums, int k) {
+        double maxsum = 0, ksum = 0;
+        for ( int i = 0; i < k; ++i )
+            maxsum = ksum = ksum + nums[i];
+        for ( int i = k; i < nums.size(); ++i ) {
+            ksum += nums[i] - nums[i-k];
+            maxsum = max(maxsum, ksum);
+        }
+        return maxsum / k;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution Beats 100%
+public class Solution {
+    public double findMaxAverage(int[] nums, int k) {
+        int sum = 0;
+        for(int i = 0; i < k; i++) {
+            sum += nums[i];
+        }
+        int max = sum;
+        for(int i = k; i < nums.length; i++) {
+            sum = sum - nums[i - k] + nums[i];
+            if(sum > max) {
+                max = sum;
+            }
+        }
+        return ((double)max) / k;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Sliding window
+public double findMaxAverage(int[] nums, int k) {
+        double avg = Integer.MIN_VALUE;
+        double currSum = 0;
+        for(int i=0;i<k;i++) {
+            currSum += nums[i];
+        }
+        avg = Math.max(avg, (currSum/k));        
+        for(int j=k;j<nums.length;j++) {
+            currSum = currSum - nums[j-k] + nums[j];
+            avg = Math.max(avg, currSum/k);
+        }
+        return avg;
+    }
+
+
+----------------------------------------------------------------------------------------------------

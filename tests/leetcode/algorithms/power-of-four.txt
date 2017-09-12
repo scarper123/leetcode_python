@@ -1,0 +1,321 @@
+4 lines C++&#x2F;Java&#x2F;Python&#x2F;Ruby
+Same solution in several languages. It's recursive and expands the meaning of the function. If the current (sub)tree contains both p and q, then the function result is their LCA. If only one of them is in that subtree, then the result is that one of them. If neither are in that subtree, the result is null/None/nil.
+
+Update: I also wrote [two iterative solutions](https://leetcode.com/discuss/45603/iterative-solution) now, one of them being a version of the solution here. They're more complicated than this simple recursive solution, but I do find them interesting.
+
+---
+
+**C++**
+
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (!root || root == p || root == q) return root;
+        TreeNode* left = lowestCommonAncestor(root->left, p, q);
+        TreeNode* right = lowestCommonAncestor(root->right, p, q);
+        return !left ? right : !right ? left : root;
+    }
+
+---
+
+**Python**
+
+    def lowestCommonAncestor(self, root, p, q):
+        if root in (None, p, q): return root
+        left, right = (self.lowestCommonAncestor(kid, p, q)
+                       for kid in (root.left, root.right))
+        return root if left and right else left or right
+
+Or using that `None` is considered smaller than any node:
+
+    def lowestCommonAncestor(self, root, p, q):
+        if root in (None, p, q): return root
+        subs = [self.lowestCommonAncestor(kid, p, q)
+                for kid in (root.left, root.right)]
+        return root if all(subs) else max(subs)
+
+---
+
+**Ruby**
+
+    def lowest_common_ancestor(root, p, q)
+        return root if [nil, p, q].index root
+        left = lowest_common_ancestor(root.left, p, q)
+        right = lowest_common_ancestor(root.right, p, q)
+        left && right ? root : left || right
+    end
+
+---
+
+**Java**
+
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if (root == null || root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        return left == null ? right : right == null ? left : root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution which is easy to understand
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            if(root == null || root == p || root == q)  return root;
+            TreeNode left = lowestCommonAncestor(root.left, p, q);
+            TreeNode right = lowestCommonAncestor(root.right, p, q);
+            if(left != null && right != null)   return root;
+            return left != null ? left : right;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python iterative solution
+**Python**
+
+    def lowestCommonAncestor(self, root, p, q):
+        stack = [root]
+        parent = {root: None}
+        while p not in parent or q not in parent:
+            node = stack.pop()
+            if node.left:
+                parent[node.left] = node
+                stack.append(node.left)
+            if node.right:
+                parent[node.right] = node
+                stack.append(node.right)
+        ancestors = set()
+        while p:
+            ancestors.add(p)
+            p = parent[p]
+        while q not in ancestors:
+            q = parent[q]
+        return q
+
+    # 31 / 31 test cases passed.
+    # Status: Accepted
+    # Runtime: 108 ms
+    # 99.14%
+
+
+**Java**
+
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            Map<TreeNode, TreeNode> parent = new HashMap<>();
+            Deque<TreeNode> stack = new ArrayDeque<>();
+            parent.put(root, null);
+            stack.push(root);
+    
+            while (!parent.containsKey(p) || !parent.containsKey(q)) {
+                TreeNode node = stack.pop();
+                if (node.left != null) {
+                    parent.put(node.left, node);
+                    stack.push(node.left);
+                }
+                if (node.right != null) {
+                    parent.put(node.right, node);
+                    stack.push(node.right);
+                }
+            }
+            Set<TreeNode> ancestors = new HashSet<>();
+            while (p != null) {
+                ancestors.add(p);
+                p = parent.get(p);
+            }
+            while (!ancestors.contains(q))
+                q = parent.get(q);
+            return q;
+        }
+    }
+
+To find the lowest common ancestor, we need to find where is `p` and `q` and a way to track their ancestors. A `parent` pointer for each node found is good for the job. After we found both `p` and `q`, we create a set of `p`'s `ancestors`. Then we travel through `q`'s `ancestors`, the first one appears in `p`'s is our answer.
+
+
+----------------------------------------------------------------------------------------------------
+Iterative Solutions in Python&#x2F;C++
+**Solution 1**
+
+Same algorithm as [my recursive solution](https://leetcode.com/discuss/45386/4-lines-c-java-python-ruby) (look there if you want some explanation), but iterative. I do a post-order traversal with a stack. Each stack element at first is a [node, parent] pair, where parent is the stack element of the node's parent node. When the children of a parent get finished, their results are appended to their parent's stack element. So when a parent gets finished, we have the results of its children/subtrees available (its stack element at that point is [node, parent, resultForLeftSubtree, resultForRightSubtree]).
+
+    def lowestCommonAncestor(self, root, p, q):
+        answer = []
+        stack = [[root, answer]]
+        while stack:
+            top = stack.pop()
+            (node, parent), subs = top[:2], top[2:]
+            if node in (None, p, q):
+                parent += node,
+            elif not subs:
+                stack += top, [node.right, top], [node.left, top]
+            else:
+                parent += node if all(subs) else max(subs),
+        return answer[0]
+
+---
+
+**Solution 2**
+
+Here I find the paths to p and q and then find the last node where the paths match. I just came up with the path-building technique for this, and I find it quite neat and maybe it could be useful elsewhere.
+
+    def lowestCommonAncestor(self, root, p, q):
+        def path(root, goal):
+            path, stack = [], [root]
+            while True:
+                node = stack.pop()
+                if node:
+                    if node not in path[-1:]:
+                        path += node,
+                        if node == goal:
+                            return path
+                        stack += node, node.right, node.left
+                    else:
+                        path.pop()
+        return next(a for a, b in zip(path(root, p), path(root, q))[::-1] if a == b)
+
+---
+
+**C++ version of Solution 1**
+
+I don't use C++ much, so maybe there's room for improvement with stuff that I don't know.
+
+    class Solution {
+        struct Frame {
+            TreeNode* node;
+            Frame* parent;
+            vector<TreeNode*> subs;
+        };
+    public:
+        TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+            Frame answer;
+            stack<Frame> stack;
+            stack.push({root, &answer});
+            while (stack.size()) {
+                Frame *top = &stack.top(), *parent = top->parent;
+                TreeNode *node = top->node;
+                if (!node || node == p || node == q) {
+                    parent->subs.push_back(node);
+                    stack.pop();
+                } else if (top->subs.empty()) {
+                    stack.push({node->right, top});
+                    stack.push({node->left, top});
+                } else {
+                    TreeNode *left = top->subs[0], *right = top->subs[1];
+                    parent->subs.push_back(!left ? right : !right ? left : node);
+                    stack.pop();
+                }
+            }
+            return answer.subs[0];
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+5 lines Java solution
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null) return null;
+        if(root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        return left != null && right != null ? root : left == null ? right : left; 
+    }
+
+----------------------------------------------------------------------------------------------------
+Very simple dfs c++ solution , only 10 lines
+    TreeNode * dfsTraverse(TreeNode * root, TreeNode * p , TreeNode * q)
+    {
+        if( root == p || root == q || root == NULL)
+            return root;
+        TreeNode * parent1 = dfsTraverse(root->left, p, q);
+        TreeNode * parent2 = dfsTraverse(root->right, p, q);
+        if( parent1 && parent2)
+            return root;
+        else
+            return parent1 ? parent1:parent2;
+    }
+    TreeNode * lowestCommonAncestor(TreeNode * root, TreeNode * p, TreeNode * q)
+    {
+        return dfsTraverse(root, p, q);
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted 24ms DFS c++ solution, only 3 lines.
+    class Solution {
+    public:
+	    TreeNode *lowestCommonAncestor(TreeNode *root, TreeNode *p, TreeNode *q) {
+		    if (root == p || root == q || root == NULL) return root;
+		    TreeNode *left = lowestCommonAncestor(root->left, p, q), *right = lowestCommonAncestor(root->right, p, q);
+		    return left && right ? root : left ? left : right;
+	    }
+    };
+
+----------------------------------------------------------------------------------------------------
+10-line Java solution, solved in one traversal
+    public class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null){
+            return null;
+        }
+        
+        if(root == p || root == q){
+            return root;
+        }
+        
+        TreeNode l = lowestCommonAncestor(root.left,p,q);
+        TreeNode r = lowestCommonAncestor(root.right,p,q);
+        
+        if(l != null && r != null){
+            return root;
+        }
+        
+        return l != null ? l:r;
+ 
+    }
+}
+
+
+
+A modified version of pre-order traversal. The point to understand this is, once a sub-branch has a possible ancestor, all its super branches will have the same one. 
+
+----------------------------------------------------------------------------------------------------
+Short and clean C++ solution
+Want to share my solution.
+
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        
+        if (!root || !p || !q) {
+            return NULL;
+        }
+        
+        if (root == p || root == q) {
+            return root;
+        }
+        
+        TreeNode* l = lowestCommonAncestor(root->left, p, q);
+        TreeNode* r = lowestCommonAncestor(root->right, p, q);
+        
+        if (l && r) {
+            return root;
+        }
+        
+        return l? l : r;
+    }
+
+----------------------------------------------------------------------------------------------------
+IMPORTANT NOTE: the given two nodes is in the tree
+Note that the problem description said that " two given nodes in the tree." So the parameters `p` and `q` are node references in the tree. 
+
+Use 
+
+`if (root == p)` instead of  `if(root.val == p.val)`
+ 
+
+----------------------------------------------------------------------------------------------------
+My 4-lines Java solution
+Just blind try left and right. Then if we find in both left and right side return root, otherwise return the one we got.
+
+        if (root == p || root == q || root == null) { return root; }
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        return (left != null && right != null) ? root : (left != null ? left : right);
+
+----------------------------------------------------------------------------------------------------
+Share my 5-line Java code with brief explanation

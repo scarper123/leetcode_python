@@ -1,0 +1,1028 @@
+Java BFS &amp; DFS from Ocean
+public class Solution {
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> res = new LinkedList<>();
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0){
+            return res;
+        }
+        int n = matrix.length, m = matrix[0].length;
+        boolean[][]pacific = new boolean[n][m];
+        boolean[][]atlantic = new boolean[n][m];
+        for(int i=0; i<n; i++){
+            dfs(matrix, pacific, Integer.MIN_VALUE, i, 0);
+            dfs(matrix, atlantic, Integer.MIN_VALUE, i, m-1);
+        }
+        for(int i=0; i<m; i++){
+            dfs(matrix, pacific, Integer.MIN_VALUE, 0, i);
+            dfs(matrix, atlantic, Integer.MIN_VALUE, n-1, i);
+        }
+        for (int i = 0; i < n; i++) 
+            for (int j = 0; j < m; j++) 
+                if (pacific[i][j] && atlantic[i][j]) 
+                    res.add(new int[] {i, j});
+        return res;
+    }
+    
+    int[][]dir = new int[][]{{0,1},{0,-1},{1,0},{-1,0}};
+    
+    public void dfs(int[][]matrix, boolean[][]visited, int height, int x, int y){
+        int n = matrix.length, m = matrix[0].length;
+        if(x<0 || x>=n || y<0 || y>=m || visited[x][y] || matrix[x][y] < height)
+            return;
+        visited[x][y] = true;
+        for(int[]d:dir){
+            dfs(matrix, visited, matrix[x][y], x+d[0], y+d[1]);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very Concise C++ solution using DFS and bit mask
+class Solution {
+public:
+    vector<pair<int, int>> res;
+    vector<vector<int>> visited;
+    void dfs(vector<vector<int>>& matrix, int x, int y, int pre, int preval){
+        if (x < 0 || x >= matrix.size() || y < 0 || y >= matrix[0].size()  
+                || matrix[x][y] < pre || (visited[x][y] & preval) == preval) 
+            return;
+        visited[x][y] |= preval;
+        if (visited[x][y] == 3) res.push_back({x, y});
+        dfs(matrix, x + 1, y, matrix[x][y], visited[x][y]); dfs(matrix, x - 1, y, matrix[x][y], visited[x][y]);
+        dfs(matrix, x, y + 1, matrix[x][y], visited[x][y]); dfs(matrix, x, y - 1, matrix[x][y], visited[x][y]);
+    }
+
+    vector<pair<int, int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        if (matrix.empty()) return res;
+        int m = matrix.size(), n = matrix[0].size();
+        visited.resize(m, vector<int>(n, 0));
+        for (int i = 0; i < m; i++) {
+            dfs(matrix, i, 0, INT_MIN, 1);
+            dfs(matrix, i, n - 1, INT_MIN, 2);
+        }
+        for (int i = 0; i < n; i++) {
+            dfs(matrix, 0, i, INT_MIN, 1);
+            dfs(matrix, m - 1, i, INT_MIN, 2);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python DFS bests 85%. Tips for all DFS in matrix question.
+class Solution(object):
+    def longestIncreasingPath(self, matrix):
+        """
+        :type matrix: List[List[int]]
+        :rtype: int
+        """
+        if not matrix: return 0
+        self.directions = [(1,0),(-1,0),(0,1),(0,-1)]
+        m = len(matrix)
+        n = len(matrix[0])
+        cache = [[-1 for _ in range(n)] for _ in range(m)]
+        res = 0
+        for i in range(m):
+            for j in range(n):
+                cur_len = self.dfs(i, j, matrix, cache, m, n)
+                res = max(res, cur_len)
+        return res
+        
+    def dfs(self, i, j, matrix, cache, m, n):
+        if cache[i][j] != -1:
+            return cache[i][j]
+        res = 1
+        for direction in self.directions:
+            x, y = i + direction[0], j + direction[1]
+            if x < 0 or x >= m or y < 0 or y >= n or matrix[x][y] <= matrix[i][j]:
+                continue
+            length = 1 + self.dfs(x, y, matrix, cache, m, n)
+            res = max(length, res)
+        cache[i][j] = res
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Simple commented java solution with thinking progress O(n)
+/*
+1.Naive solution:
+    Standard dfs, which means for each point, we check if it can reach both pacific and atlantic, 
+    for each point, we can possibly check all the rest of points, O(m*n * m*n)
+
+2.A little improvement:
+    What about we 4 hash tables, they keep track of all the points we know so far that 
+        can reach atlantic
+        cannot reach atlantic
+        can reach pacific
+        cannot reach pacific
+    It's doable, still hit TLE, although I didn't hit TLE when not submitting the code, but running it using the provided testing environment
+
+3.On the other hand, we can consider the flip side
+    We can let the pacific and atlantic ocean "flow into" the matrix as much as possible,
+    using 2 boolean arrays, one for each ocean. 
+    The result are the points that are true in both boolean table
+*/
+
+
+public class Solution {
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> result = new ArrayList<int[]>();
+        if(matrix.length == 0 || matrix[0].length == 0) return result;   
+        boolean[][] pacific = new boolean[matrix.length][matrix[0].length];  // the pacific boolean table
+        boolean[][] atlantic = new boolean[matrix.length][matrix[0].length]; // the atlantic booean table
+        //initially, all the top and left cells are flooded with pacific water
+        //and all the right and bottom cells are flooded with atlantic water
+        for(int i = 0; i < matrix.length; i++){
+            pacific[i][0] = true;
+            atlantic[i][matrix[0].length-1] = true;
+        }
+        for(int i = 0; i < matrix[0].length; i++){
+            pacific[0][i] = true;
+            atlantic[matrix.length-1][i] = true; 
+        }
+        //we go around the matrix and try to flood the matrix from 4 side.
+        for(int i = 0; i < matrix.length; i++){
+            boolean[][] pacificVisited = new boolean[matrix.length][matrix[0].length];
+            boolean[][] atlanticVisited = new boolean[matrix.length][matrix[0].length];
+            water(pacific, pacificVisited, matrix, i,0);
+            water(atlantic, atlanticVisited, matrix, i, matrix[0].length - 1);            
+        }
+        for(int i = 0; i < matrix[0].length; i++){
+            boolean[][] pacificVisited = new boolean[matrix.length][matrix[0].length];
+            boolean[][] atlanticVisited = new boolean[matrix.length][matrix[0].length];
+            water(pacific, pacificVisited, matrix, 0,i);
+            water(atlantic, atlanticVisited, matrix, matrix.length - 1, i);            
+        }
+        //check the shared points among 2 tables
+        for(int i = 0; i < matrix.length; i++){
+            for(int j = 0; j < matrix[0].length; j++){
+                if(pacific[i][j] && atlantic[i][j]){
+                    int[] element = {i,j};
+                    result.add(element);
+                }
+            }
+        }
+        return result;
+    }
+    //the flood function
+    private void water(boolean[][] wet, boolean[][] visited, int[][] matrix, int i , int j){
+        wet[i][j] = true;
+        visited[i][j] = true;
+        int[] x = {0,0,1,-1};
+        int[] y = {1,-1,0,0};
+        for(int k = 0; k < 4; k++){
+            if(i+y[k] >= 0 && i+y[k] < matrix.length && j+x[k] >= 0 && j+x[k] < matrix[0].length 
+                && !visited[i+y[k]][j+x[k]] && matrix[i+y[k]][j+x[k]] >= matrix[i][j]){
+                water(wet, visited, matrix, i+y[k], j+x[k]);
+            }
+        }
+    }
+}````
+
+P.S Sometimes you choose an option just because the alternative is just worse.....
+
+----------------------------------------------------------------------------------------------------
+Not understanding the problem. Could someone please explain?
+Given the following 5x5 matrix:
+
+  Pacific ~   ~   ~   ~   ~ 
+       ~  1   2   2   3  (5) *
+       ~  3   2   3  (4) (4) *
+       ~  2   4  (5)  3   1  *
+       ~ (6) (7)  1   4   5  *
+       ~ (5)  1   1   2   4  *
+          *   *   *   *   * Atlantic
+
+Return:
+
+[[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]] (positions with parentheses in above matrix).```
+
+----------------------------------------------------------------------------------------------------
+JAVA 17ms Solution, Simple and Clear, similar to Number of Islands&#x27;s idea
+static int[] dx = {-1,0,0,1};
+static int[] dy = {0,1,-1,0};
+public List<int[]> pacificAtlantic(int[][] matrix) {
+    List<int[]> res = new ArrayList<>();
+    if (matrix == null || matrix.length == 0 || matrix[0].length == 0) return res;
+    boolean[][] pacific = new boolean[matrix.length][matrix[0].length];
+    boolean[][] atlantic = new boolean[matrix.length][matrix[0].length];
+    for (int i = 0; i < matrix.length; i++){
+        pacific[i][0] = true;
+        atlantic[i][matrix[0].length-1] = true;
+    }
+    for (int j = 0; j < matrix[0].length; j++){
+        pacific[0][j] = true;
+        atlantic[matrix.length-1][j] = true;
+    }
+    for (int i = 0; i < matrix.length; i++){
+        explore(pacific, matrix, i, 0);
+        explore(atlantic, matrix, i, matrix[0].length-1);
+    }
+    for (int j = 0; j < matrix[0].length; j++){
+        explore(pacific, matrix, 0, j);
+        explore(atlantic, matrix, matrix.length-1, j);
+    }
+    for (int i = 0; i < matrix.length; i++){
+        for (int j = 0; j < matrix[0].length; j++){
+            if (pacific[i][j] && atlantic[i][j] == true)
+                res.add(new int[]{i,j});
+        }
+    }
+    return res;
+    
+}
+private void explore(boolean[][] grid, int[][] matrix, int i, int j){
+    grid[i][j] = true;
+    for (int d = 0; d < dx.length; d++){
+        if (i+dy[d] < grid.length && i+dy[d] >= 0 && 
+            j + dx[d] < grid[0].length && j + dx[d] >= 0 && 
+            grid[i+dy[d]][j+dx[d]] == false && matrix[i+dy[d]][j+dx[d]] >= matrix[i][j])
+                explore(grid, matrix, i+dy[d], j+dx[d]);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java 28ms BFS solution using one queue
+public class Solution {
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> res = new ArrayList<>();
+        int m = matrix.length;
+        if (m == 0) return res;
+        int n = matrix[0].length;
+        int[][] state = new int[m][n];
+        Queue<int[]> q = new LinkedList<>();
+        for (int i = 0; i < m; i++) {
+            state[i][0] |= 1;
+            if (i == m - 1 || n == 1) state[i][0] |= 2;
+            if (state[i][0] == 3) res.add(new int[]{i, 0});
+            q.add(new int[]{i, 0});
+            if (n > 1) {
+                state[i][n - 1] |= 2;
+                if (i == 0) state[i][n - 1] |= 1;
+                if (state[i][n - 1] == 3) res.add(new int[]{i, n - 1});
+                q.add(new int[]{i, n - 1});
+            }
+        }
+        for (int j = 1; j < n - 1; j++) {
+            state[0][j] |= 1;
+            if (m == 1) state[0][j] |= 2;
+            if (state[0][j] == 3) res.add(new int[]{0, j});
+            q.add(new int[]{0, j});
+            if (m > 1) {
+                state[m - 1][j] |= 2;
+                if (state[m - 1][j] == 3) res.add(new int[]{m - 1, j});
+                q.add(new int[]{m - 1, j});
+            }
+        }
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        while (!q.isEmpty()) {
+            int[] cell = q.poll();
+            for (int[] dir : dirs) {
+                int row = cell[0] + dir[0];
+                int col = cell[1] + dir[1];
+                if (row < 0 || col < 0 || row == m || col == n || matrix[row][col] < matrix[cell[0]][cell[1]] || ((state[cell[0]][cell[1]] | state[row][col]) == state[row][col])) continue;
+                state[row][col] |= state[cell[0]][cell[1]];
+                if (state[row][col] == 3) res.add(new int[]{row, col});
+                q.add(new int[]{row, col});
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward efficient C++ solution using stack
+class Solution {
+public:
+    vector<pair<int, int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        vector<pair<int,int>> result;
+        int m=matrix.size();
+        if (m==0) return result;
+        int n=matrix[0].size();
+        int pacific[m][n];
+        int atlantic[m][n];
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                pacific[i][j]=0;
+                atlantic[i][j]=0;
+            }
+        }
+        stack<pair<int,int>> sp;
+        stack<pair<int,int>> sa;
+        for (int i=0;i<m;i++){
+            pacific[i][0]=1;
+            sp.push(make_pair(i,0));
+        }
+        for(int i=1;i<n;i++){
+            pacific[0][i]=1;
+            sp.push(make_pair(0,i));
+        }
+        while(!sp.empty()){
+            pair<int, int> index=sp.top();
+            int x=index.first;
+            int y=index.second;
+            sp.pop();
+            if (x-1>=0&&pacific[x-1][y]==0&&matrix[x-1][y]>=matrix[x][y]){
+                sp.push(make_pair(x-1,y));
+                pacific[x-1][y]=1;
+            }
+            if (x+1<m&&pacific[x+1][y]==0&&matrix[x+1][y]>=matrix[x][y]){
+                sp.push(make_pair(x+1,y));
+                pacific[x+1][y]=1;
+            }
+            if (y-1>=0&&pacific[x][y-1]==0&&matrix[x][y-1]>=matrix[x][y]){
+                sp.push(make_pair(x,y-1));
+                pacific[x][y-1]=1;
+            }
+            if (y+1<n&&pacific[x][y+1]==0&&matrix[x][y+1]>=matrix[x][y]){
+                sp.push(make_pair(x,y+1));
+                pacific[x][y+1]=1;
+            }
+        }
+        for (int i=0;i<m;i++){
+            atlantic[i][n-1]=1;
+            sa.push(make_pair(i,n-1));
+        }
+        for(int i=0;i<n-1;i++){
+            atlantic[m-1][i]=1;
+            sa.push(make_pair(m-1,i));
+        }
+        while(!sa.empty()){
+            pair<int, int> index=sa.top();
+            int x=index.first;
+            int y=index.second;
+            sa.pop();
+            if (x-1>=0&&atlantic[x-1][y]==0&&matrix[x-1][y]>=matrix[x][y]){
+                sa.push(make_pair(x-1,y));
+                atlantic[x-1][y]=1;
+            }
+            if (x+1<m&&atlantic[x+1][y]==0&&matrix[x+1][y]>=matrix[x][y]){
+                sa.push(make_pair(x+1,y));
+                atlantic[x+1][y]=1;
+            }
+            if (y-1>=0&&atlantic[x][y-1]==0&&matrix[x][y-1]>=matrix[x][y]){
+                sa.push(make_pair(x,y-1));
+                atlantic[x][y-1]=1;
+            }
+            if (y+1<n&&atlantic[x][y+1]==0&&matrix[x][y+1]>=matrix[x][y]){
+                sa.push(make_pair(x,y+1));
+                atlantic[x][y+1]=1;
+            }
+        }
+        for(int i=0; i<m;i++){
+            for(int j=0;j<n;j++){
+                if (atlantic[i][j]==1&&pacific[i][j]==1){
+                    result.push_back(make_pair(i,j));
+                }
+            }
+        }
+        return result;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple java dfs solution
+ private int[][] direction = new int[][]{{1, 0},{0, 1},{-1, 0},{0, -1}};
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> result = new ArrayList<>();
+        if (matrix.length == 0) return result;
+        Set<Integer> pacific = new HashSet<>();
+        Set<Integer> atlantic = new HashSet<>();
+        for (int i = 0; i < matrix[0].length; i++) {
+            dfs(matrix, 0, i, pacific);
+            dfs(matrix, matrix.length - 1, i, atlantic);
+        }
+        for (int i = 0; i < matrix.length; i++) {
+            dfs(matrix, i, 0, pacific);
+            dfs(matrix, i, matrix[0].length - 1, atlantic);
+        }
+        
+        for (int i: pacific) {
+            if (atlantic.contains(i)) {
+                result.add(decode(i, matrix));
+            }
+        }
+        return result;
+    }
+    
+    private void dfs(int[][] matrix, int i, int j, Set<Integer> result) {
+        if (!result.add(encode(i, j, matrix))) return;
+        for (int[] dir: direction) {
+            int x = dir[0] + i;
+            int y = dir[1] + j;
+            if (x >= 0 && x < matrix.length && y >= 0 && y < matrix[0].length && matrix[x][y] >= matrix[i][j]) {
+                dfs(matrix, x, y, result);
+            }
+        }
+    }
+    
+    private int[] decode(int i, int[][] matrix) {
+        return new int[]{i / matrix[0].length, i % matrix[0].length};
+    }
+    
+    private int encode(int i, int j, int[][] matrix) {
+        return i * matrix[0].length + j;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS solution
+public class Solutions{
+    private static class Coord {
+        int x;
+        int y;
+
+        public Coord(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        int[] toint() {
+            return new int[]{x, y};
+        }
+
+        @Override
+        public String toString() {
+            return x + "," + y;
+        }
+    }
+
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> list = new ArrayList<>();
+        if (matrix.length < 1) return list;
+        Queue<Coord> pacificOrigins = new LinkedList<>();
+        Queue<Coord> atlanticOrigins = new LinkedList<>();
+        for (int i = 0; i < matrix.length; i++) {
+            pacificOrigins.add(new Coord(i, 0));
+            atlanticOrigins.add(new Coord(i, matrix[0].length - 1));
+        }
+        for (int i = 0; i < matrix[0].length; i++) {
+            pacificOrigins.add(new Coord(0, i));
+            atlanticOrigins.add(new Coord(matrix.length - 1, i));
+        }
+        Map<String, Coord> pacific = reachables(matrix, pacificOrigins);
+        Map<String, Coord> atlantic = reachables(matrix, atlanticOrigins);
+        pacific.keySet().forEach(str -> {
+            if (atlantic.containsKey(str)) {
+                list.add(atlantic.get(str).toint());
+                System.out.println(str);
+            }
+        });
+        return list;
+    }
+
+    private Map<String, Coord> reachables(int[][] matrix, Queue<Coord> q) {
+        Map<String, Coord> visited = new HashMap<>();
+        q.forEach(origin -> visited.put(origin.toString(), origin));
+        while (!q.isEmpty()) {
+            Coord curr = q.poll();
+            List<Coord> nexts = next(curr, matrix);
+            for (Coord coord : nexts) {
+                if (!visited.containsKey(coord.toString())) {
+                    q.add(coord);
+                }
+                visited.put(coord.toString(), coord);
+            }
+        }
+        return visited;
+    }
+
+    private List<Coord> next(Coord coord, int[][] matrix) {
+        List<Coord> list = new ArrayList<>();
+        int x = (coord.x);
+        int y = (coord.y);
+        int h = matrix[x][y];
+        if (x > 0 && x < matrix.length && matrix[x - 1][y] >= h) {
+            list.add(new Coord(x - 1, y));
+        }
+        if (x >= 0 && x + 1 < matrix.length && matrix[x + 1][y] >= h) {
+            list.add(new Coord(x + 1, y));
+        }
+        if (y > 0 && y < matrix[0].length && matrix[x][y - 1] >= h) {
+            list.add(new Coord(x, y - 1));
+        }
+        if (y >= 0 && y + 1 < matrix[0].length && matrix[x][y + 1] >= h) {
+            list.add(new Coord(x, y + 1));
+        }
+        return list;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++  Backward Search using BFS
+struct Node
+{
+    int x, y;
+    Node(){}
+    Node(int xx, int yy): x(xx), y(yy){}
+};
+vector<int> dx = {-1, 0, 1, 0};
+vector<int> dy = {0, 1, 0, -1};
+
+class Solution {
+public:
+    int n, m;
+    bool bound(int x, int y)
+    {
+        return x >= 0 && x < n && y >= 0 && y < m;
+    }
+    void bfs(vector<vector<int>>& matrix, vector<vector<bool>> &vis, queue<Node> &q)
+    {
+        while(!q.empty())
+        {
+            Node now = q.front();
+            q.pop();
+            for(int k = 0; k < 4; k++)
+            {
+                int nx = now.x + dx[k], ny = now.y + dy[k];
+                if(bound(nx, ny) && !vis[nx][ny])
+                {
+                    if(matrix[nx][ny] >= matrix[now.x][now.y])
+                    {
+                        vis[nx][ny] = true;
+                        q.push(Node(nx, ny));
+                    }
+                }
+            }
+        }
+    }
+    vector<pair<int, int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        vector<pair<int, int>> ans;
+        n = matrix.size();
+        if(n == 0) return ans;
+        m = matrix[0].size();
+        
+        queue<Node> q;
+        
+        vector<vector<bool>> p(n, vector<bool>(m, 0));
+        for(int i = 0; i < n; i++) 
+        {
+            q.push(Node(i, 0));
+            p[i][0] = true;
+        }
+        for(int j = 0; j < m; j++) 
+        {
+            q.push(Node(0, j));
+            p[0][j] = true;
+        }
+        bfs(matrix, p, q);
+        
+        while(!q.empty()) q.pop();
+        
+        vector<vector<bool>> a(n, vector<bool>(m, 0));
+        for(int i = 0; i < n; i++) 
+        {
+            q.push(Node(i, m-1));
+            a[i][m-1] = true;
+        }
+        for(int j = 0; j < m; j++) 
+        {
+            q.push(Node(n-1, j));
+            a[n-1][j] = true;
+        }
+        bfs(matrix, a, q);
+        
+        for(int i = 0; i < n; i++)
+        {
+            for(int j = 0; j < m; j++)
+            {
+                if(p[i][j] && a[i][j]) 
+                    ans.push_back(make_pair(i, j));
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Expected Output for sample case
+<p>In the sample case,<br/>
+Pacific ~   ~   ~   ~   ~<br/>
+~  1   2   2   3  (5) *<br/>
+~  3   2   3  (4) (4) *<br/>
+~  2   4  (5)  3   1  *<br/>
+~ (6) (7)  1   <strong>4   5</strong>  *<br/>
+~ (5)  1   1   2   4  *<br/>
+*   *   *   *   * Atlantic</p>
+<p>Shouldn&#39;t (3,3) and (3,4) be included? (3,3) can be reached from top and bottom whereas, (3,4) can be reached from right and top.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Short and Concise Python Solution
+class Solution(object):
+	def pacificAtlantic(self, matrix):
+		def fill(ocean, stack):
+			while stack:
+				r,c = stack.pop()
+				if (r,c) in ocean: continue
+				ocean.add((r,c))
+				stack.extend([
+					[nr, nc] for nr, nc in [[r-1,c], [r+1,c], [r,c-1], [r,c+1]]
+					if 0 <= nr < m and 0 <= nc < n and matrix[r][c] <= matrix[nr][nc]])
+					
+		if not matrix or not matrix[0]:	return []
+		m, n = len(matrix), len(matrix[0])
+		pacific, atlantic = set(), set()
+		pstack = [[r,0] for r in xrange(m)] + [[0,c] for c in xrange(1,n)]
+		astack = [[r,n-1] for r in xrange(m)] + [[m-1,c] for c in xrange(n-1)]
+
+		fill(pacific, pstack)
+		fill(atlantic, astack)
+		
+		return [list(x) for x in pacific&atlantic]
+
+
+----------------------------------------------------------------------------------------------------
+46 ms C++ BFS Solution
+class Solution {
+public:
+    vector<pair<int, int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        vector<pair<int,int>> res;
+        int m = matrix.size();
+        if (m == 0) return res;
+        int n = matrix[0].size();
+        
+        vector<vector<int>> atop(m,vector<int>(n,0));
+        vector<vector<int>> ptoa(m,vector<int>(n,0));
+        
+        pathAP(atop, matrix);
+        pathPA(ptoa, matrix);
+        
+        checkpair(atop, ptoa, res);
+        return res;
+    }
+    
+    void checkpair(vector<vector<int>> &atop, vector<vector<int>> &ptoa, vector<pair<int,int>>& res) {
+        for (int i = 0; i < atop.size(); ++i) {
+            for (int j = 0; j < atop[0].size(); ++j) {
+                if (atop[i][j] == 1 && ptoa[i][j] == 1) {
+                    res.push_back(make_pair(i,j));
+                }
+            }
+        }
+    }
+    
+    void pathAP(vector<vector<int>> &atop, vector<vector<int>>& matrix) {
+        vector<vector<bool>> visited(matrix.size(),vector<bool>(matrix[0].size(),false));
+        for (int i = 0; i < matrix.size(); ++i) {
+            bfs(atop, matrix, visited, i, 0);
+        }
+        for (int j = 0; j < matrix[0].size(); ++j) {
+            bfs(atop, matrix, visited, 0, j);
+        }
+        updatePath(atop, visited);
+    }
+    
+    void pathPA(vector<vector<int>> &ptoa, vector<vector<int>>& matrix) {
+        vector<vector<bool>> visited(matrix.size(),vector<bool>(matrix[0].size(),false));
+        for (int i = 0; i < matrix.size(); ++i) {
+            bfs(ptoa, matrix, visited, i, matrix[0].size()-1);
+        }
+        
+        for (int j = 0; j < matrix[0].size(); ++j) {
+            bfs(ptoa, matrix, visited, matrix.size()-1, j);
+        }
+        
+        updatePath(ptoa, visited);
+        
+    }
+    
+    void bfs(vector<vector<int>> &ptoa, vector<vector<int>>& matrix, vector<vector<bool>>& visited, int row, int col) {
+        visited[row][col] = true;
+        
+        int curr = matrix[row][col];
+        if (row > 0 && !visited[row-1][col] && matrix[row-1][col] >= curr) bfs(ptoa, matrix, visited, row-1, col);
+        if (col > 0 && !visited[row][col-1]  && matrix[row][col-1] >= curr) bfs(ptoa, matrix, visited, row, col-1);
+        if (row < matrix.size() -1 && !visited[row+1][col] && matrix[row+1][col] >= curr) bfs(ptoa, matrix, visited, row+1, col);
+        if (col < matrix[0].size() -1 && !visited[row][col+1] && matrix[row][col+1] >= curr) bfs(ptoa, matrix, visited, row, col+1);
+    }
+
+    void updatePath(vector<vector<int>> &board, vector<vector<bool>>& visited) {
+        for (int i = 0; i < visited.size(); ++i) {
+            for (int j = 0; j < visited[0].size(); ++j) {
+                if (visited[i][j] && board[i][j] == 0) {
+                    board[i][j] = 1;
+                }
+            }
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Reverse flow technique: Clean Java solution using DFS and state machine
+public class Solution {
+    
+    int m;
+    int n;
+    
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        
+        List<int[]> res = new ArrayList<>();
+        m = matrix.length;
+        
+        if (m == 0) return res;
+        
+        n = matrix[0].length;
+        
+        if (n == 0) return res;
+        
+        // 0 not visited
+        // 1 pacific
+        // 2 atlantic
+        // 3 both
+        int[][] touchdown = new int[m][n];
+        
+        for (int i = 0; i < m; ++i) {
+            dfs(matrix, touchdown, i, 0, 1, res);
+            dfs(matrix, touchdown, i, n - 1, 2, res);
+        }
+        
+        for (int j = 0; j < n; ++j) {
+            dfs(matrix, touchdown, 0, j, 1, res);
+            dfs(matrix, touchdown, m - 1, j, 2, res);
+        }
+        
+        return res;
+    }
+    
+    private void dfs(int[][] matrix, int[][] touchdown, int i, int j, int toState, List<int[]> res) {
+        
+        if (i < 0 || j < 0 || i >= m || j >= n) return;
+        
+        if (!updateState(touchdown, i, j, toState, res)) {
+            return;
+        }
+        
+        if (i + 1 < m && matrix[i][j] <= matrix[i + 1][j]) {
+            dfs(matrix, touchdown, i + 1, j, toState, res);
+        }
+        if (j + 1 < n && matrix[i][j] <= matrix[i][j + 1]) {
+            dfs(matrix, touchdown, i, j + 1, toState, res);
+        }
+        if (i - 1 >= 0 && matrix[i][j] <= matrix[i - 1][j]) {
+            dfs(matrix, touchdown, i - 1, j, toState, res);
+        }
+        if (j - 1 >= 0 && matrix[i][j] <= matrix[i][j - 1]) {
+            dfs(matrix, touchdown, i, j - 1, toState, res);
+        }
+    }
+    
+    private boolean updateState(int[][] touchdown, int i, int j, int toState, List<int[]> res) {
+        int currState = touchdown[i][j];
+        if (currState == 3 || currState == toState) return false;
+        if (currState == 0) {
+            touchdown[i][j] = toState;
+        } else {
+            touchdown[i][j] = 3;
+            res.add(new int[]{i, j});
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Cleanest and Shortest answer with inline explanation. Upvote me!
+public List<int[]> pacificAtlantic(int[][] matrix) {
+    List<int[]> result=new ArrayList<int[]>();
+    if(matrix.length==0||matrix[0].length==0) return result;
+    int height=matrix.length,width=matrix[0].length;
+    boolean [][]Pacific=new boolean[height][width],Atlantic=new boolean[height][width];
+    for(int i=0;i<height;i++) {
+        recursiveMark(Pacific,matrix,i,0,0); //We start from left edge of Pacific
+        recursiveMark(Atlantic,matrix,i,width-1,0); //We start from right edge of Atlantic
+    }
+    for(int j=0;j<width;j++) {
+        recursiveMark(Pacific,matrix,0,j,0); //We start from top edge of Pacific
+        recursiveMark(Atlantic,matrix,height-1,j,0); //We start from bot edge of Atlantic
+    }
+    for(int i=0;i<height;i++)
+      for(int j=0;j<width;j++){
+          if(Pacific[i][j]&&Atlantic[i][j]) {
+              int []newOne={i,j};
+              result.add(newOne);
+          }
+      }
+    return result;
+}
+
+public void recursiveMark(boolean [][]map,int[][]matrix,int i,int j,int pre){ 
+    if(i<0||j<0||i>=map.length||j>=map[0].length) return;
+    if(map[i][j]==true) return; //When this is visited before, we quit.
+    int current=matrix[i][j];
+    if(current>=pre) map[i][j]=true;
+    else return;
+    recursiveMark(map,matrix,i-1,j,current);
+    recursiveMark(map,matrix,i+1,j,current);
+    recursiveMark(map,matrix,i,j-1,current);
+    recursiveMark(map,matrix,i,j+1,current);
+}
+
+----------------------------------------------------------------------------------------------------
+Java DFS Solution
+int[] dx = {-1,0,0,1};
+int[] dy = {0,-1,1,0};
+
+public List<int[]> pacificAtlantic(int[][] matrix) {
+	
+	List<int[]> flows = new ArrayList<>();
+	if(matrix==null || matrix.length==0 || matrix[0].length==0) return flows;
+	boolean[][] visitedAtlantic = new boolean[matrix.length][matrix[0].length];
+	boolean[][] visitedPacific = new boolean[matrix.length][matrix[0].length];
+	
+	for(int i=0;i<matrix.length;i++) {
+		canFlow(matrix,visitedPacific,0,i,0);
+		canFlow(matrix,visitedAtlantic,0,i,matrix[i].length-1);
+	}
+	
+	for(int j=0;j<matrix[0].length;j++) {
+		canFlow(matrix,visitedPacific,0,0,j);
+		canFlow(matrix,visitedAtlantic,0,matrix.length-1,j);
+	}
+		
+	for(int i=0;i<matrix.length;i++) {
+		for(int j=0;j<matrix[i].length;j++) {
+			if(visitedAtlantic[i][j] && visitedPacific[i][j]) 
+				flows.add(new int[]{i,j});
+		}
+	}
+	return flows;
+	
+}
+	
+public void canFlow(int[][] m, boolean[][] visited, int height, int i, int j) {
+	if(i<0 || i>=m.length || j<0 || j>=m[i].length || visited[i][j] || m[i][j]<height)
+		return;
+	visited[i][j]=true;
+	for(int d=0;d<dx.length;d++) {
+		canFlow(m, visited, m[i][j], i+dy[d], j+dx[d]);
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java beat 90% solution
+public class Solution {
+    static final int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> result = new ArrayList<int[]>();
+        if(matrix.length == 0) return result;
+        boolean[][] visited = new boolean[matrix.length][matrix[0].length];
+        int[][] waterFlowCount = new int[matrix.length][matrix[0].length];
+        for(int i = 0; i < matrix[0].length; i++){ // from top row
+            dfs(matrix,0,i,visited, waterFlowCount);
+        }
+        for(int i = 0; i < matrix.length; i++){ // from left
+            dfs(matrix,i,0,visited, waterFlowCount);
+        }
+
+        visited = new boolean[matrix.length][matrix[0].length];
+        for(int i = 0; i < matrix[0].length; i++){ // from bottom
+            dfs(matrix,matrix.length-1,i,visited, waterFlowCount);
+        }
+        for(int i = 0; i < matrix.length; i++){ // from right
+            dfs(matrix,i,matrix[0].length-1,visited, waterFlowCount);
+        }
+
+        for(int i = 0; i < waterFlowCount.length; i++){
+            for(int j = 0; j < waterFlowCount[0].length; j++){
+                if(waterFlowCount[i][j] == 2)
+                    result.add(new int[]{i,j});
+            }
+        }
+
+        return result;
+    }
+
+    public void dfs(int[][] matrix, int i, int j, boolean[][] visited, int[][] waterFlowCount){
+        if(i >= matrix.length || i < 0 || j >= matrix[0].length || j < 0 || visited[i][j]) {
+            return;
+        }
+        visited[i][j] = true;
+        waterFlowCount[i][j]++;
+        for(int[] dir : dirs){
+            int nexti = i + dir[0];
+            int nextj = j + dir[1];
+            if(nexti >= 0 && nexti < matrix.length && nextj >= 0 && nextj < matrix[0].length && !visited[nexti][nextj] ) {
+               if(matrix[nexti][nextj] >= matrix[i][j]) dfs(matrix,nexti,nextj,visited,waterFlowCount); // has to be higher than the height of itself so when water poured on this cell can reach the ocean
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ BFS
+class Solution {
+public:
+    void flow(int i, int j, vector<vector<int>>& map, vector<vector<int>>& visit) {
+        if(visit[i][j]==1) return;
+        queue<pair<int,int>> q;
+        q.push({i,j});
+        int m = map.size();
+        int n = map[0].size();
+        while(!q.empty()) {
+            auto p = q.front();
+            q.pop();
+            int x = p.first;
+            int y = p.second;
+            if(visit[x][y] == 1) continue;
+            visit[x][y] = 1;
+            if(x>0 && map[x-1][y]>=map[x][y]) q.push({x-1,y});
+            if(y>0 && map[x][y-1]>=map[x][y]) q.push({x,y-1});
+            if(x<m-1 && map[x+1][y]>=map[x][y]) q.push({x+1,y});
+            if(y<n-1 && map[x][y+1]>=map[x][y]) q.push({x,y+1});
+        }
+    }
+    vector<pair<int, int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        if(m==0) return {};
+        int n = matrix[0].size();
+        if(n==0) return {};
+        vector<vector<int>> pac(m,vector<int>(n,0));
+        vector<vector<int>> atl(m,vector<int>(n,0));
+        vector<pair<int,int>> ans;
+        
+        for(int i=0;i<m;i++) {
+            flow(i,0,matrix,pac);
+            flow(i,n-1,matrix,atl);
+        }
+        
+        for(int i=0;i<n;i++) {
+            flow(0,i,matrix,pac);
+            flow(m-1,i,matrix,atl);
+        }
+        
+        for(int i=0;i<m;i++) {
+            for(int j=0;j<n;j++) {
+                if(pac[i][j]==1 && atl[i][j]==1) ans.push_back({i,j});
+            }
+        }
+
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS beats 93%
+public List<int[]> pacificAtlantic(int[][] matrix) {
+        List<int[]> result = new ArrayList<>();
+        
+        int m = matrix.length;
+        
+        if(m == 0) return result;
+        
+        int n = matrix[0].length;
+        
+        boolean[][] pacific = new boolean[m][n];
+        
+        for(int i = 0; i < m; i++){
+            markAllValidNeighbors(matrix, pacific, i, 0);
+        }
+        
+        for(int i = 1; i < n; i++){
+            markAllValidNeighbors(matrix, pacific, 0, i);
+        }
+        
+        boolean[][] atlantic = new boolean[m][n];
+        
+        for(int i = 0; i < m; i++){
+            markAllValidNeighbors(matrix, atlantic, i, n-1);
+        }
+        
+        for(int i = 0; i < n-1; i++){
+            markAllValidNeighbors(matrix, atlantic, m-1, i);
+        }
+        
+        for(int i = 0; i < m; i++){
+            for(int j = 0; j < n; j++){
+                if(pacific[i][j] && atlantic[i][j]){
+                    result.add(new int[]{i, j});
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    private void markAllValidNeighbors(int[][] matrix, boolean[][] canReach, int i, int j){
+        if(i < 0 || i >= canReach.length || j < 0 || j >= canReach[0].length || canReach[i][j]) return;
+        
+        canReach[i][j] = true;
+        if(i-1 >= 0 && matrix[i-1][j] >= matrix[i][j]) markAllValidNeighbors(matrix, canReach, i-1, j);
+        if(i+1 < canReach.length && matrix[i+1][j] >= matrix[i][j]) markAllValidNeighbors(matrix, canReach, i+1, j);
+        if(j-1 >= 0 && matrix[i][j-1] >= matrix[i][j]) markAllValidNeighbors(matrix, canReach, i, j-1);
+        if(j+1 < canReach[0].length && matrix[i][j+1] >= matrix[i][j]) markAllValidNeighbors(matrix, canReach, i, j+1);
+    }
+
+
+----------------------------------------------------------------------------------------------------

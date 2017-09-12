@@ -1,0 +1,657 @@
+A general approach to backtracking questions in Java (Subsets, Permutations, Combination Sum, Palindrome Partitioning)
+This structure might apply to many other backtracking questions, but here I am just going to demonstrate Subsets, Permutations, and Combination Sum.
+
+Subsets : [https://leetcode.com/problems/subsets/][1]
+
+    public List<List<Integer>> subsets(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list , List<Integer> tempList, int [] nums, int start){
+        list.add(new ArrayList<>(tempList));
+        for(int i = start; i < nums.length; i++){
+            tempList.add(nums[i]);
+            backtrack(list, tempList, nums, i + 1);
+            tempList.remove(tempList.size() - 1);
+        }
+    }
+
+
+Subsets II (contains duplicates) : [https://leetcode.com/problems/subsets-ii/][2]
+
+    public List<List<Integer>> subsetsWithDup(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int start){
+        list.add(new ArrayList<>(tempList));
+        for(int i = start; i < nums.length; i++){
+            if(i > start && nums[i] == nums[i-1]) continue; // skip duplicates
+            tempList.add(nums[i]);
+            backtrack(list, tempList, nums, i + 1);
+            tempList.remove(tempList.size() - 1);
+        }
+    } 
+
+
+----------
+
+Permutations : [https://leetcode.com/problems/permutations/][3]
+
+    public List<List<Integer>> permute(int[] nums) {
+       List<List<Integer>> list = new ArrayList<>();
+       // Arrays.sort(nums); // not necessary
+       backtrack(list, new ArrayList<>(), nums);
+       return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums){
+       if(tempList.size() == nums.length){
+          list.add(new ArrayList<>(tempList));
+       } else{
+          for(int i = 0; i < nums.length; i++){ 
+             if(tempList.contains(nums[i])) continue; // element already exists, skip
+             tempList.add(nums[i]);
+             backtrack(list, tempList, nums);
+             tempList.remove(tempList.size() - 1);
+          }
+       }
+    } 
+
+Permutations II (contains duplicates) : [https://leetcode.com/problems/permutations-ii/][4]
+
+    public List<List<Integer>> permuteUnique(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, new boolean[nums.length]);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, boolean [] used){
+        if(tempList.size() == nums.length){
+            list.add(new ArrayList<>(tempList));
+        } else{
+            for(int i = 0; i < nums.length; i++){
+                if(used[i] || i > 0 && nums[i] == nums[i-1] && !used[i - 1]) continue;
+                used[i] = true; 
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, used);
+                used[i] = false; 
+                tempList.remove(tempList.size() - 1);
+            }
+        }
+    }
+
+
+----------
+
+Combination Sum : [https://leetcode.com/problems/combination-sum/][5]
+
+    public List<List<Integer>> combinationSum(int[] nums, int target) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, target, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int remain, int start){
+        if(remain < 0) return;
+        else if(remain == 0) list.add(new ArrayList<>(tempList));
+        else{ 
+            for(int i = start; i < nums.length; i++){
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, remain - nums[i], i); // not i + 1 because we can reuse same elements
+                tempList.remove(tempList.size() - 1);
+            }
+        }
+    }
+
+Combination Sum II (can't reuse same element) : [https://leetcode.com/problems/combination-sum-ii/][6]
+
+    public List<List<Integer>> combinationSum2(int[] nums, int target) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, target, 0);
+        return list;
+        
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int remain, int start){
+        if(remain < 0) return;
+        else if(remain == 0) list.add(new ArrayList<>(tempList));
+        else{
+            for(int i = start; i < nums.length; i++){
+                if(i > start && nums[i] == nums[i-1]) continue; // skip duplicates
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, remain - nums[i], i + 1);
+                tempList.remove(tempList.size() - 1); 
+            }
+        }
+    } 
+
+
+Palindrome Partitioning : [https://leetcode.com/problems/palindrome-partitioning/][7]
+
+    public List<List<String>> partition(String s) {
+       List<List<String>> list = new ArrayList<>();
+       backtrack(list, new ArrayList<>(), s, 0);
+       return list;
+    }
+    
+    public void backtrack(List<List<String>> list, List<String> tempList, String s, int start){
+       if(start == s.length())
+          list.add(new ArrayList<>(tempList));
+       else{
+          for(int i = start; i < s.length(); i++){
+             if(isPalindrome(s, start, i)){
+                tempList.add(s.substring(start, i + 1));
+                backtrack(list, tempList, s, i + 1);
+                tempList.remove(tempList.size() - 1);
+             }
+          }
+       }
+    }
+    
+    public boolean isPalindrome(String s, int low, int high){
+       while(low < high)
+          if(s.charAt(low++) != s.charAt(high--)) return false;
+       return true;
+    } 
+ 
+
+
+  [1]: https://leetcode.com/problems/subsets/
+  [2]: https://leetcode.com/problems/subsets-ii/
+  [3]: https://leetcode.com/problems/permutations/
+  [4]: https://leetcode.com/problems/permutations-ii/
+  [5]: https://leetcode.com/problems/combination-sum/
+  [6]: https://leetcode.com/problems/combination-sum-ii/
+  [7]: https://leetcode.com/problems/palindrome-partitioning/
+
+----------------------------------------------------------------------------------------------------
+Accepted 16ms c++ solution use backtracking, easy understand.
+Accepted 16ms c++ solution use backtracking for [Combination Sum][1]:
+
+    class Solution {
+    public:
+        std::vector<std::vector<int> > combinationSum(std::vector<int> &candidates, int target) {
+    		std::sort(candidates.begin(), candidates.end());
+            std::vector<std::vector<int> > res;
+            std::vector<int> combination;
+            combinationSum(candidates, target, res, combination, 0);
+            return res;
+        }
+    private:
+        void combinationSum(std::vector<int> &candidates, int target, std::vector<std::vector<int> > &res, std::vector<int> &combination, int begin) {
+    		if  (!target) {
+    			res.push_back(combination);
+    			return;
+    		}
+            for (int i = begin; i != candidates.size() && target >= candidates[i]; ++i) {
+                combination.push_back(candidates[i]);
+                combinationSum(candidates, target - candidates[i], res, combination, i);
+                combination.pop_back();
+            }
+        }
+    };
+
+Accepted 12ms c++ solution use backtracking for [Combination Sum II][2]:
+
+    class Solution {
+    public:
+        std::vector<std::vector<int> > combinationSum2(std::vector<int> &candidates, int target) {
+    		std::sort(candidates.begin(), candidates.end());
+            std::vector<std::vector<int> > res;
+            std::vector<int> combination;
+            combinationSum2(candidates, target, res, combination, 0);
+            return res;
+        }
+    private:
+        void combinationSum2(std::vector<int> &candidates, int target, std::vector<std::vector<int> > &res, std::vector<int> &combination, int begin) {
+    		if  (!target) {
+    			res.push_back(combination);
+    			return;
+    		}
+            for (int i = begin; i != candidates.size() && target >= candidates[i]; ++i)
+                if (i == begin || candidates[i] != candidates[i - 1]) {
+                    combination.push_back(candidates[i]);
+                    combinationSum2(candidates, target - candidates[i], res, combination, i + 1);
+                    combination.pop_back();
+                }
+        }
+    };
+
+Accepted 0ms c++ solution use backtracking for [Combination Sum III][3]:
+
+    class Solution {
+    public:
+        std::vector<std::vector<int> > combinationSum3(int k, int n) {
+            std::vector<std::vector<int> > res;
+            std::vector<int> combination;
+            combinationSum3(n, res, combination, 1, k);
+            return res;
+        }
+    private:
+        void combinationSum3(int target, std::vector<std::vector<int> > &res, std::vector<int> &combination, int begin, int need) {
+    		if (!target) {
+    			res.push_back(combination);
+    			return;
+    		}
+    		else if (!need)
+    			return;
+            for (int i = begin; i != 10 && target >= i * need + need * (need - 1) / 2; ++i) {
+    			combination.push_back(i);
+    			combinationSum3(target - i, res, combination, i + 1, need - 1);
+    			combination.pop_back();
+            }
+        }
+    };
+
+
+  [1]: https://leetcode.com/problems/combination-sum/
+  [2]: https://leetcode.com/problems/combination-sum-ii/
+  [3]: https://leetcode.com/problems/combination-sum-iii/
+
+----------------------------------------------------------------------------------------------------
+Java solution using recursive
+    public class Solution {
+        public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        	Arrays.sort(candidates);
+            List<List<Integer>> result = new ArrayList<List<Integer>>();
+            getResult(result, new ArrayList<Integer>(), candidates, target, 0);
+            
+            return result;
+        }
+        
+        private void getResult(List<List<Integer>> result, List<Integer> cur, int candidates[], int target, int start){
+        	if(target > 0){
+        		for(int i = start; i < candidates.length && target >= candidates[i]; i++){
+        			cur.add(candidates[i]);
+        			getResult(result, cur, candidates, target - candidates[i], i);
+        			cur.remove(cur.size() - 1);
+        		}//for
+        	}//if
+        	else if(target == 0 ){
+        		result.add(new ArrayList<Integer>(cur));
+        	}//else if
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python dfs solution.
+        
+    def combinationSum(self, candidates, target):
+        res = []
+        candidates.sort()
+        self.dfs(candidates, target, 0, [], res)
+        return res
+        
+    def dfs(self, nums, target, index, path, res):
+        if target < 0:
+            return  # backtracking
+        if target == 0:
+            res.append(path)
+            return 
+        for i in xrange(index, len(nums)):
+            self.dfs(nums, target-nums[i], i, path+[nums[i]], res)
+
+----------------------------------------------------------------------------------------------------
+Iterative Java DP solution
+Hi guys!
+
+The main idea reminds an approach for solving coins/knapsack problem - to store the result for all i < target and create the solution from them. For that for each t from 1 to our target we try every candidate which is less or equal to t in ascending order. For each candidate "c" we run through all combinations for target t-c starting with the value greater or equal than c to avoid duplicates and store only ordered combinations. 
+
+    public class Solution {
+        public List<List<Integer>> combinationSum(int[] cands, int t) {
+            Arrays.sort(cands); // sort candidates to try them in asc order
+            List<List<List<Integer>>> dp = new ArrayList<>();
+            for (int i = 1; i <= t; i++) { // run through all targets from 1 to t
+                List<List<Integer>> newList = new ArrayList(); // combs for curr i
+                // run through all candidates <= i
+                for (int j = 0; j < cands.length && cands[j] <= i; j++) {
+                    // special case when curr target is equal to curr candidate
+                    if (i == cands[j]) newList.add(Arrays.asList(cands[j]));
+                    // if current candidate is less than the target use prev results
+                    else for (List<Integer> l : dp.get(i-cands[j]-1)) {
+                        if (cands[j] <= l.get(0)) {
+                            List cl = new ArrayList<>();
+                            cl.add(cands[j]); cl.addAll(l);
+                            newList.add(cl);
+                        }
+                    }
+                }
+                dp.add(newList);
+            }
+            return dp.get(t-1);
+        }
+    }
+
+Hope it helps!
+
+----------------------------------------------------------------------------------------------------
+A solution avoid using set
+Sort the candidates and we choose from small to large recursively, every time we add a candidate to our possible sub result, we subtract the target to a new smaller one.
+
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        List<List<Integer>> ret = new LinkedList<List<Integer>>();
+        Arrays.sort(candidates); // sort the candidates
+        // collect possible candidates from small to large to eliminate duplicates,
+        recurse(new ArrayList<Integer>(), target, candidates, 0, ret);
+        return ret;
+    }
+    
+    // the index here means we are allowed to choose candidates from that index
+    private void recurse(List<Integer> list, int target, int[] candidates, int index, List<List<Integer>> ret) {
+        if (target == 0) {
+            ret.add(list);
+            return;
+        }
+        for (int i = index; i < candidates.length; i++) {
+            int newTarget = target - candidates[i];
+            if (newTarget >= 0) {
+                List<Integer> copy = new ArrayList<Integer>(list);
+                copy.add(candidates[i]);
+                recurse(copy, newTarget, candidates, i, ret);
+            } else {
+                break;
+            }
+        }
+    } 
+
+----------------------------------------------------------------------------------------------------
+Concise Backtracking Solution
+We backtrack from successful searches as well because they are saved at the leafs of recursion tree
+
+    class Solution {
+    public:
+    
+        void search(vector<int>& num, int next, vector<int>& pSol, int target, vector<vector<int> >& result)
+        {
+            if(target == 0)
+            {
+                result.push_back(pSol);
+                return;
+            }
+            
+            if(next == num.size() || target - num[next] < 0)
+                return;
+                
+            pSol.push_back(num[next]);
+            search(num, next, pSol, target - num[next], result);
+            pSol.pop_back();
+            
+            search(num, next + 1, pSol, target, result);
+        }
+    
+        
+        vector<vector<int> > combinationSum(vector<int> &num, int target) 
+        {
+            vector<vector<int> > result;
+            sort(num.begin(), num.end());
+            vector<int> pSol;
+            search(num, 0, pSol, target, result);
+            return result;    
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Dynamic Programming Solution
+It adapts the DP solution of coin change problem
+
+    class Solution {
+    public:
+    	vector<vector<int> > combinationSum(vector<int> &candidates, int target) {
+    		vector< vector< vector<int> > > combinations(target + 1, vector<vector<int>>());
+    		combinations[0].push_back(vector<int>());
+    		for (auto& score : candidates)
+    			for (int j = score; j <= target; j++)
+    				if (combinations[j - score].size() > 0)	{
+    					auto tmp = combinations[j - score];
+    					for (auto& s : tmp)
+    						s.push_back(score);
+    					combinations[j].insert(combinations[j].end(), tmp.begin(), tmp.end());
+    				}
+    		auto ret = combinations[target];
+    		for (int i = 0; i < ret.size(); i++)
+    			sort(ret[i].begin(), ret[i].end());
+    		return ret;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Share My Python Solution beating 98.17%
+    class Solution(object):
+    def combinationSum(self, candidates, target):
+        result = []
+        candidates = sorted(candidates)
+        def dfs(remain, stack):
+            if remain == 0:
+                result.append(stack)
+                return 
+
+            for item in candidates:
+                if item > remain: break
+                if stack and item < stack[-1]: continue
+                else:
+                    dfs(remain - item, stack + [item])
+        
+        dfs(target, [])
+        return result
+
+----------------------------------------------------------------------------------------------------
+Non-Recursive JAVA solution
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        Arrays.sort(candidates);
+        int i=0, size = candidates.length, sum=0;
+        Stack<Integer> combi = new Stack<>(), indices = new Stack<>();
+        List<List<Integer>> result = new ArrayList<>();
+        while (i < size) {
+        	if (sum + candidates[i]>= target) {
+        		if (sum + candidates[i] == target) {
+        			combi.push(candidates[i]);
+        			result.add(new ArrayList<>(combi));
+        			combi.pop();
+        		}
+        		// indices stack and combination stack should have the same size all the time
+        		if (!indices.empty()){
+        			sum -= combi.pop();
+        			i = indices.pop();
+        			while (i == size-1 && !indices.empty()) {
+        				i = indices.pop();
+        				sum -= combi.pop();
+        				
+        			}
+        		}
+        		i++;
+        	} else {
+        		combi.push(candidates[i]);
+        		sum +=candidates[i];
+        		indices.push(i);
+        	}
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution (backtracking)
+    public class Solution {
+     
+    	private List<List<Integer>> solution;
+    
+    	private List<Integer> curSolution;
+    
+    	public List<List<Integer>> combinationSum(int[] candidates, int target) {
+    		solution = new ArrayList<List<Integer>>();
+    		curSolution = new ArrayList<Integer>();
+    		Arrays.sort(candidates);
+    		backTrack(candidates, target, 0); 
+    		return solution;
+    	}
+    
+    	private void backTrack(int[] candidates, int target, int lastIdx) {
+    		if (target == 0) {
+    			solution.add(new ArrayList<>(curSolution));
+    		}
+    		else if (target < 0) {
+    			return;
+    		}
+    		else {
+    			int i = lastIdx;
+    			while (i < candidates.length) {
+    				int candidate = candidates[i];
+    				curSolution.add(candidate);
+    				backTrack(candidates, target - candidate, i);
+    				curSolution.remove(curSolution.size() - 1);
+    				while (i < candidates.length && candidates[i] == candidate) {
+    					i++;
+    				}
+    			}
+    		}
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+8-line Python solution, dynamic programming, beats 86.77%
+    def combinationSum(self, candidates, target):
+        candidates.sort()
+        dp = [[[]]] + [[] for i in xrange(target)]
+        for i in xrange(1, target + 1):
+            for number in candidates:
+                if number > i: break
+                for L in dp[i - number]:
+                    if not L or number >= L[-1]: dp[i] += L + [number],
+        return dp[target]
+
+----------------------------------------------------------------------------------------------------
+Recursive java solution
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        Arrays.sort(candidates); // sort the array, so the result could be increasing order
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+        
+        for(int i = 0; i < candidates.length; i++){
+            // target smaller than current number, jump the current and rest of numbers
+            if(target < candidates[i]) continue;
+
+            // if target is equal to the current number,add it to a new list and add that list to result          
+            else if(target == candidates[i]){
+                List<Integer> set = new ArrayList<Integer>();
+                set.add(candidates[i]);
+                result.add(set);
+            }
+
+            // if the target is smaller the current number,call this function again
+            else{
+                // use modified array which not includes those numbers that before i to eliminate the duplicates
+                int[] array = Arrays.copyOfRange(candidates,i,candidates.length);
+
+                // call this function. pass the new target and modified array.
+                List<List<Integer>> temp = combinationSum(array, target - candidates[i]);
+
+                // for each list in the return list, add current number in the front of list, then add it to result
+                // attention that if return list is null, this enhanced for loop will not perform. 
+                for(List<Integer> list:temp){
+                    list.add(0,candidates[i]);
+                    result.add(list);
+                } 
+            }
+        }
+        
+        return result;
+    }
+
+They key point is passing new target and modified array. Pass the modified array to make sure no duplicates set. If the new target could not find a match number, the return list will be null, thus this null list will not be added to the result list.
+
+----------------------------------------------------------------------------------------------------
+If asked to discuss the time complexity of your solution, what would you say?
+In order to express a correct asymptotic time complexity in Big-Oh notation for the average case for the Combination Sum problem, we would need to make arguments on how the average set of candidates looks like and how it relates to the target.
+
+Of course, this is not easy to do. If you have ever looked at analysis for sorting algorithms, you know that it is not easy (and the input for sorting algorithms is just a set of numbers, here we also have a target).
+
+However, if asked to discuss the time complexity, what would you do?
+
+Would you take a particular case and pretend that that is the average case, without providing any proof?
+
+If you are in front of two solutions for this problem, how would you decide which one has the lowest time complexity?
+
+----------------------------------------------------------------------------------------------------
+Share my 15-line DFS Java code
+    public class Solution {
+        public List<List<Integer>> combinationSum(int[] candidates, int target) {
+            List<List<Integer>> ans = new ArrayList<>();
+            Arrays.sort(candidates);
+            dfs(ans, new ArrayList<Integer>(), candidates, target, 0);
+            return ans;
+        }
+        
+        private void dfs(List<List<Integer>> ans, List<Integer> list, int[] cand, int remain, int from) {
+            if (remain < 0) { return; }
+            if (remain == 0) { ans.add(new ArrayList<Integer>(list)); return; }
+            for (int i=from; i<cand.length; ++i) {  //cand[] sorted; from is the starting point of picking elements at this level
+                list.add(cand[i]);
+                dfs(ans, list, cand, remain-cand[i], i);
+                list.remove(list.size()-1);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand 96% performance Java solution
+    public class Solution {
+        public List<List<Integer>> combinationSum(int[] candidates, int target) {
+            return combinationSum(candidates, target, 0);
+        }
+        
+        public List<List<Integer>> combinationSum(int[] candidates, int target, int start) {
+            
+            List<List<Integer>> res = new ArrayList<List<Integer>>();
+            Arrays.sort(candidates);
+            for (int i = start; i < candidates.length; i++) {
+                if (candidates[i] <target) {
+                    for (List<Integer> ar : combinationSum(candidates, target - candidates[i], i)) {
+                        ar.add(0, candidates[i]);
+                        res.add(ar);
+                    }
+                } else if (candidates[i] == target) {
+                    List<Integer> lst = new ArrayList<>();
+                    lst.add(candidates[i]);
+                    res.add(lst);
+                } else
+                    break;
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My easy understanding DP solution (C++)
+Hi, here is my dp solution.  The idea is pretty similar with the dp solution of subset. :)
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<vector<int>> result;
+        int size = candidates.size();
+        if (size == 0) return result;
+        sort(candidates.begin(), candidates.end());
+        vector<vector<vector<int>>> dp(target + 1, vector<vector<int>>());
+        dp[0].push_back(vector<int>());
+        
+        for (int i = 1; i <= target; ++i) {
+            for (int j = 0; j < size && candidates[j] <= i; ++j) {
+                for (int k = 0; k < dp[i - candidates[j]].size(); ++k) {
+                    vector<int> temp = dp[i - candidates[j]][k];
+                    if (temp.size() && (temp[temp.size() - 1] > candidates[j])) continue;
+                    temp.push_back(candidates[j]);
+                    dp[i].push_back(temp);
+                }
+            }
+        }
+        return dp[target];
+    }
+
+----------------------------------------------------------------------------------------------------
+A recursive yet efficient Java solution with explanation

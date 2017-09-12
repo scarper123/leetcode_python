@@ -1,0 +1,789 @@
+Easy DP solution in C++ with detailed explanations (8ms, O(n^2) time and O(n) space)
+Well, this problem desires for the use of dynamic programming. They key to any DP problem is to come up with the state equation. In this problem, we define the state to be **the maximal size of the square that can be achieved at point `(i, j)`**, denoted as `P[i][j]`. Remember that we use **size** instead of square as the state (`square = size^2`).
+
+Now let's try to come up with the formula for `P[i][j]`.
+
+First, it is obvious that for the topmost row (`i = 0`) and the leftmost column (`j = 0`), `P[i][j] = matrix[i][j]`. This is easily understood. Let's suppose that the topmost row of `matrix` is like `[1, 0, 0, 1]`. Then we can immediately know that the first and last point can be a square of size `1` while the two middle points cannot make any square, giving a size of `0`. Thus, `P = [1, 0, 0, 1]`, which is the same as `matrix`. The case is similar for the leftmost column. Till now, the boundary conditions of this DP problem are solved.
+
+Let's move to the more general case for `P[i][j]` in which `i > 0` and `j > 0`. First of all, let's see another simple case in which `matrix[i][j] = 0`. It is obvious that `P[i][j] = 0` too. Why? Well, since `matrix[i][j] = 0`, no square will contain `matrix[i][j]`. According to our definition of `P[i][j]`, `P[i][j]` is also `0`.
+
+Now we are almost done. The only unsolved case is `matrix[i][j] = 1`. Let's see an example.
+
+Suppose `matrix = [[0, 1], [1, 1]]`, it is obvious that `P[0][0] = 0, P[0][1] = P[1][0] = 1`, what about `P[1][1]`? Well, to give a square of size larger than `1` in `P[1][1]`, all of its three neighbors (left, up, left-up) should be non-zero, right? In this case, the left-up neighbor `P[0][0] = 0`, so `P[1][1]` can only be 1, which means that it contains the square of itself.
+
+Now you are near the solution. In fact, `P[i][j] = min(P[i - 1][j], P[i][j - 1], P[i - 1][j - 1]) + 1` in this case.
+
+Taking all these together, we have the following state equations.
+
+ 1. `P[0][j] = matrix[0][j]` (topmost row);
+ 2. `P[i][0] = matrix[i][0]` (leftmost column);
+ 3. For `i > 0` and `j > 0`: if `matrix[i][j] = 0`, `P[i][j] = 0`; if `matrix[i][j] = 1`, `P[i][j] = min(P[i - 1][j], P[i][j - 1], P[i - 1][j - 1]) + 1`.
+
+Putting them into codes, and maintain a variable `maxsize` to record the maximum size of the square we have seen, we have the following (unoptimized) solution.
+
+    int maximalSquare(vector<vector<char>>& matrix) {
+        int m = matrix.size();
+        if (!m) return 0;
+        int n = matrix[0].size();
+        vector<vector<int> > size(m, vector<int>(n, 0));
+        int maxsize = 0;
+        for (int j = 0; j < n; j++) {
+            size[0][j] = matrix[0][j] - '0';
+            maxsize = max(maxsize, size[0][j]);
+        }
+        for (int i = 1; i < m; i++) {
+            size[i][0] = matrix[i][0] - '0';
+            maxsize = max(maxsize, size[i][0]);
+        }
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][j] == '1') {
+                    size[i][j] = min(size[i - 1][j - 1], min(size[i - 1][j], size[i][j - 1])) + 1;
+                    maxsize = max(maxsize, size[i][j]);
+                }
+            }
+        }
+        return maxsize * maxsize;
+    }
+
+Now let's try to optimize the above solution. As can be seen, each time when we update `size[i][j]`, we only need `size[i][j - 1], size[i - 1][j - 1]` (at the previous left column) and `size[i - 1][j]` (at the current column). So we do not need to maintain the full `m*n` matrix. In fact, keeping two columns is enough. Now we have the following optimized solution.
+    
+    int maximalSquare(vector<vector<char>>& matrix) {
+    	int m = matrix.size();
+    	if (!m) return 0;
+    	int n = matrix[0].size();
+    	vector<int> pre(m, 0);
+    	vector<int> cur(m, 0);
+    	int maxsize = 0;
+    	for (int i = 0; i < m; i++) {
+    		pre[i] = matrix[i][0] - '0';
+    		maxsize = max(maxsize, pre[i]);
+    	}
+    	for (int j = 1; j < n; j++) {
+    		cur[0] = matrix[0][j] - '0';
+    		maxsize = max(maxsize, cur[0]);
+    		for (int i = 1; i < m; i++) {
+    			if (matrix[i][j] == '1') {
+    				cur[i] = min(cur[i - 1], min(pre[i - 1], pre[i])) + 1;
+    				maxsize = max(maxsize, cur[i]);
+    			}
+    		}
+    		swap(pre, cur);
+    		fill(cur.begin(), cur.end(), 0);
+    	}
+    	return maxsize * maxsize;
+    }
+
+Now you see the solution is finished? In fact, it can still be optimized! In fact, we need not maintain two vectors and one is enough. If you want to explore this idea, please refer to the answers provided by @stellari below. Moreover, in the code above, we distinguish between the `0`-th row and other rows since the `0`-th row has no row above it. In fact, we can make all the `m` rows the same by padding a `0` row on the top (in the following code, we pad a `0` on top of `dp`). Finally, we will have the following short code :) If you find it hard to understand, try to run it using your pen and paper and notice how it realizes what the two-vector solution does using only one vector.
+
+    int maximalSquare(vector<vector<char>>& matrix) {
+        if (matrix.empty()) return 0;
+        int m = matrix.size(), n = matrix[0].size();
+        vector<int> dp(m + 1, 0);
+        int maxsize = 0, pre = 0;
+        for (int j = 0; j < n; j++) {
+            for (int i = 1; i <= m; i++) {
+                int temp = dp[i];
+                if (matrix[i - 1][j] == '1') {
+                    dp[i] = min(dp[i], min(dp[i - 1], pre)) + 1;
+                    maxsize = max(maxsize, dp[i]);
+                }
+                else dp[i] = 0; 
+                pre = temp;
+            }
+        }
+        return maxsize * maxsize;
+    }
+
+
+----------
+This solution, since posted, has been suggested various improvements by kind people. For a more comprehensive collection of the solutions, please visit [my technical blog][1].
+
+
+  [1]: http://www.cnblogs.com/jcliBlogger/p/4548751.html
+
+----------------------------------------------------------------------------------------------------
+Extremely Simple Java Solution :)
+    public int maximalSquare(char[][] a) {
+        if(a.length == 0) return 0;
+        int m = a.length, n = a[0].length, result = 0;
+        int[][] b = new int[m+1][n+1];
+        for (int i = 1 ; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if(a[i-1][j-1] == '1') {
+                    b[i][j] = Math.min(Math.min(b[i][j-1] , b[i-1][j-1]), b[i-1][j]) + 1;
+                    result = Math.max(b[i][j], result); // update result
+                }
+            }
+        }
+        return result*result;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted clean Java DP solution
+    public int maximalSquare(char[][] a) {
+      if (a == null || a.length == 0 || a[0].length == 0)
+        return 0;
+          
+      int max = 0, n = a.length, m = a[0].length;
+      
+      // dp(i, j) represents the length of the square 
+      // whose lower-right corner is located at (i, j)
+      // dp(i, j) = min{ dp(i-1, j-1), dp(i-1, j), dp(i, j-1) }
+      int[][] dp = new int[n + 1][m + 1];
+      
+      for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+          if (a[i - 1][j - 1] == '1') {
+            dp[i][j] = Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1])) + 1;
+            max = Math.max(max, dp[i][j]);
+          }
+        }
+      }
+      
+      // return the area
+      return max * max;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Clear C++ solution, no extra space, 12 ms.
+A square with '1' means any '0' will interrupt counting of it's right/down/right-down, and '1' will 'inherit' the existing counting result. 
+
+Sine the target is a square, we shall take the smallest counting result from up/left/up-left.
+
+So for each element '0', it doesn't inherit previous accumulated counting;<br>
+And for each element '1', it takes the smallest number from left/up/left-up and add 1 to it 
+
+    int maximalSquare(vector<vector<char>>& matrix) {
+        int rst = 0;
+        for(int ii=0; ii<matrix.size(); ++ii)
+        {
+            for(int jj=0; jj<matrix[0].size(); ++jj)
+            {
+                int a = (ii&&jj) ? matrix[ii-1][jj-1] : 0;
+                int b = (ii) ? matrix[ii-1][jj] : 0;
+                int c = (jj) ? matrix[ii][jj-1] : 0;
+
+                matrix[ii][jj] = (matrix[ii][jj]>'0') ? (min(a, min(b, c))+1) : 0;
+                
+                rst = max(rst, matrix[ii][jj]*matrix[ii][jj]);
+            }
+        }
+        return rst;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java DP AC solution simple and easy to understand with explanation
+It's actually to keep recording the max n*n window at each cell of the matrix. 
+At each cell, we define that the dynamic programming status at that cell is - if I am the most right-bottom guy of a square, how big the square I can build.  With this definition, this status will be transferrable to the guys, right, below, and right below me. 
+       
+     public class Solution {
+            public int maximalSquare(char[][] matrix) {
+                
+                //illegal check - no square can be formed
+                if(matrix == null || matrix.length == 0) return 0;
+                
+                int result = 0;
+                int[][] count = new int[matrix.length][matrix[0].length];
+                
+                //initialize first row and first column
+                for(int i = 0; i < matrix.length; i ++) {
+                    count[i][0] = matrix[i][0] == '0' ? 0 : 1;
+                    result = Math.max(result, count[i][0]);
+                }
+                
+                for(int i = 0; i < matrix[0].length; i ++) {
+                    count[0][i] = matrix[0][i] == '0' ? 0 : 1;
+                    result = Math.max(result, count[0][i]);
+                }
+                
+                //start to transfer status to iterate each cell from (1, 1) to (m, n)
+                //if i am a 0, the square stops, reset
+                for(int i = 1; i < matrix.length; i++) {
+                    for(int j = 1; j < matrix[0].length; j++) {
+                        
+                        //I break the square reset myself to zero
+                        if(matrix[i][j] == '0') {
+                            count[i][j] = 0;
+                            continue;
+                        }
+                        
+                        //if I am 1, it depends if I can grow the size of the square, if I have a 0 guy around me, 
+                        //I can only be a top left guy
+                        if(count[i - 1][j - 1] == 0 || count[i - 1][j] == 0 || count[i][j - 1] == 0) {
+                            count[i][j] = 1;
+                        }
+                        //if guys around are the same size, I can be the right-bottom guy of a bigger square
+                        else if(count[i - 1][j - 1] == count[i - 1][j] && count[i - 1][j] == count[i][j - 1]) {
+                            count[i][j] = count[i - 1][j - 1] + 1;
+                        }
+                        //guys around me not the same, I can only be the right-bottom guy of a least square
+                        else {
+                            count[i][j] = Math.min(Math.min(count[i - 1][j - 1], count[i - 1][j]), 
+                                                                                  count[i][j - 1]) + 1;
+                        }
+                        result = Math.max(result, count[i][j]);
+                    }
+                }
+                return result * result;
+            }
+        }
+
+Of course, the last three if-else condition can be entirely removed by this line of code:
+Math.min(Math.min(count[i - 1][j - 1], count[i - 1][j]), count[i][j - 1])  + 1, because it covers all situations we can think of. 
+
+    public class Solution {
+        public int maximalSquare(char[][] matrix) {
+            
+            if(matrix == null || matrix.length == 0) return 0;
+            
+            int result = 0;
+            int[][] count = new int[matrix.length][matrix[0].length];
+            
+            for(int i = 0; i < matrix.length; i ++) {
+                count[i][0] = matrix[i][0] == '0' ? 0 : 1;
+                result = Math.max(result, count[i][0]);
+            }
+            
+            for(int i = 0; i < matrix[0].length; i ++) {
+                count[0][i] = matrix[0][i] == '0' ? 0 : 1;
+                result = Math.max(result, count[0][i]);
+            }
+            
+            
+            for(int i = 1; i < matrix.length; i++) {
+                for(int j = 1; j < matrix[0].length; j++) {
+                    
+                    if(matrix[i][j] == '0') {
+                        count[i][j] = 0;
+                        continue;
+                    }
+                    
+                    count[i][j] = Math.min(Math.min(count[i - 1][j - 1], count[i - 1][j]), 
+                                                                          count[i][j - 1]) + 1;
+                    result = Math.max(result, count[i][j]);
+                }
+            }
+            return result * result;
+        }
+    }
+
+But by breaking into the situation into sub pieces will help my think cautiously. 
+
+In addition, the space O(n^2) can be possibly downgraded to O(n)  or even O(1) with 3 pointers to the current value of guys to my left, left-above, and above, if needed.
+
+
+
+----------------------------------------------------------------------------------------------------
+20 lines C++ solution using dynamic programming
+class Solution {
+
+public:
+
+    int maximalSquare(vector<vector<char>>& matrix) {
+        if(matrix.size()==0) return 0;
+        int maxSq=0;
+        int nRow=matrix.size();
+        int nCol=matrix[0].size();
+        vector<vector<int>> dp(nRow+1,vector<int>(nCol+1,0));
+        //dp[i][j] represents max square ending at position (i-1, j-1)
+        for(int i=1;i<=nRow;++i){
+            for(int j=1;j<=nCol;++j){
+                if(matrix[i-1][j-1]=='1'){
+                    dp[i][j]=min(min(dp[i-1][j-1],dp[i-1][j]),dp[i][j-1])+1;
+                    maxSq=max(maxSq,dp[i][j]);
+                }
+            }
+        }
+        return maxSq*maxSq;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+6 lines, Visual Explanation, O(mn)
+**Explanation**
+
+What's the largest (full-of-ones-)square ending at (i,j), meaning lower right corner in row i, column j? Imagine there are 4x4 squares above, above-left and left of it:
+
+    above  above-left  left
+    
+     1111     1111
+     1111     1111     1111
+     1111     1111     1111
+     1111     1111     1111
+        *         *    1111*
+
+Clearly, if cell (i,j) itself is 1 as well, then there's a 5x5 square ending at (i,j). And if there were 5x5 squares above, above-left and left of it, then we'd have a 6x6. So to find the largest square ending at (i,j), we just take the minimum size of squares ending at (i-1,j), (i-1,j-1) and (i,j-1), and add 1.
+
+---
+
+**Implementation** - 164 ms
+
+I write the maximum sizes directly into the input matrix `A`. Cell `A[i][j]` will tell the side length of the largest square ending at (i,j). I go top to bottom and left to right, so (i-1,j), (i-1,j-1) and (i,j-1) have all been handled already. First thing I do for each cell is turn it into an integer, and then if it's 1 and it's not on the top or left border of the matrix, I determine its largest-square size as explained above. In the end, I return 0 for the empty matrix and otherwise the area of the largest square ending anywhere.
+
+    class Solution:
+        def maximalSquare(self, A):
+            for i in range(len(A)):
+                for j in range(len(A[i])):
+                    A[i][j] = int(A[i][j])
+                    if A[i][j] and i and j:
+                        A[i][j] = min(A[i-1][j], A[i-1][j-1], A[i][j-1]) + 1
+            return len(A) and max(map(max, A)) ** 2
+
+---
+
+**Smaller Version** - 132 ms
+
+This version is a bit smaller and faster due to using more of Python and some "tricks":
+
+    class Solution:
+        def maximalSquare(self, A):
+            for i, r in enumerate(A):
+                r = A[i] = map(int, r)
+                for j, c in enumerate(r):
+                    if i * j * c:
+                        r[j] = min(A[i-1][j], r[j-1], A[i-1][j-1]) + 1
+            return max(map(max, A + [[0]])) ** 2
+
+---
+
+**O(n) Extra Space** - 128 ms
+
+Here's a version that doesn't overwrite the input matrix but uses two integer lists: `s` tells the sizes of the squares ending it the current row and `p` does the same for the previous row.
+
+    class Solution:
+        def maximalSquare(self, A):
+            area = 0
+            if A:
+                p = [0] * len(A[0])
+                for row in A:
+                    s = map(int, row)
+                    for j, c in enumerate(s[1:], 1):
+                        s[j] *= min(p[j-1], p[j], s[j-1]) + 1
+                    area = max(area, max(s) ** 2)
+                    p = s
+            return area
+
+Note that in Python with its integer and string objects, I'm not sure this actually saves space. But in other languages, overwriting the input array might not even be possible, and if it's possible, it might take more space than a "O(n) Extra Space" variant.
+
+
+----------------------------------------------------------------------------------------------------
+My C++ code, 8ms (DP, O(n^2)time, O(n) space)
+The basic idea is to do DP: scan the matrix row by row (top down) and colume by colume (left to right) and for the position [i][j], the maximum square with the bottom-right corner sitting at [i][j] will have the edge length of 
+
+    area[i][j]  = 0 if matrix[i][j] = '0'
+                   = min(area[i-1][j-1], area[i][j-1], area[i-1][j]) + 1 if matrix[i][j] = '1'
+
+For the case that  matrix[i][j] = '1', the algorithm tries to grow the  square sitting at [i-1][j-1], area[i-1][j-1] by 1. However, it is also limitted by the bottom edge at row i and right edge at col j, which was represented by area[i][j-1] and area[i-1][j] repectively. We have to choose the min of those three values.
+
+The DP table works on a ping-pong mode to save memory since the area recursive equation only relys on i and i-1 rows.
+
+    class Solution {
+    public:
+        int maximalSquare(vector<vector<char>>& matrix) {
+            int maxA = 0;
+            const int m = matrix.size();
+            if(!m) return maxA;
+            const int n = matrix[0].size();
+            if(!n) return maxA;
+            int area[2][n]; // DP table to save the maximum square (with bottom-right corner at [i][j]) edge length 
+            int cur = 0, next =1; // ping-pog switch index
+            fill_n(area[0],n,0);
+    
+            int i, j;
+            
+            for(i=0;i<m;i++)
+            {
+                area[next][0] = matrix[i][0] == '1'; // the first colume
+                for(j=1; j<n; j++)
+                    area[next][j] = matrix[i][j]=='1'? (min(area[cur][j-1],min(area[next][j-1],area[cur][j])) + 1):0; //DP update
+                for(j=0; j<n && maxA<=i; j++) if(maxA<area[next][j]) maxA = area[next][j]; // find the maximum square for the current row
+                cur = next;
+                next = 1-cur;
+            }
+            return maxA * maxA;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Share my concise python solution
+    class Solution:
+    # @param {character[][]} matrix
+    # @return {integer}
+    def maximalSquare(self, matrix):
+        if not matrix: return 0
+        m , n = len(matrix),len(matrix[0])
+        dp = [[0 if matrix[i][j]=='0' else 1for j in xrange(n)]for i in xrange(m)]
+        
+        for i in xrange(1,m):
+            for j in xrange(1,n):
+                if matrix[i][j] =='1': dp[i][j] = min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1])+1
+                else: dp[i][j] = 0
+        
+        ans = max([max(i) for i in dp])
+        return ans ** 2 
+
+----------------------------------------------------------------------------------------------------
+Simple and efficient implementation using DP in C++
+Where *n* is the number of rows and *m* is the number of column,This solution runs in O(*nm*) complexity and O(*nm*) space. If the space really matters to you, you can reduce the space complexity to O(*n*) by reusing the last raw per each iteration but the code could be slightly more complex.
+
+
+    int maximalSquare(vector<vector<char>>& matrix) {
+        if(matrix.empty() || matrix[0].empty()) return 0;
+        int maxSize = 0;        
+        vector<vector<int>> m(matrix.size(), vector<int>(matrix[0].size(), 0));
+        for(int r = 0 ; r < m.size() ; ++r) {
+            for(int c = 0 ; c < m[0].size() ; ++c) {
+                m[r][c] = matrix[r][c]-'0';
+                if(r > 0 && c > 0 && m[r][c] == 1) {
+                    m[r][c] += min(m[r-1][c], min(m[r][c-1], m[r-1][c-1]));
+                }
+                maxSize = max(maxSize, m[r][c]);
+            }
+        }
+        return maxSize*maxSize;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple and easy understood java dp solution, O(m,n) and 99.59%
+public class Solution {
+
+    public int maximalSquare(char[][] matrix) {
+        int m = matrix.length;
+        if(m <= 0)return 0;
+        int n = matrix[0].length;
+        int[][] dp = new int[m][n];
+        for(int i = 0; i < m; ++i)
+            dp[i][0] = matrix[i][0] - '0';
+        for(int j = 0; j < n; ++j)
+            dp[0][j] = matrix[0][j] - '0';
+        for(int i = 1; i < m; ++i)
+            for(int j = 1; j < n; ++j){
+                if(matrix[i][j] == '0'){
+                    dp[i][j] = 0;
+                }else{
+                    int L1 = dp[i][j - 1];
+                    int L2 = dp[i - 1][j];
+                    if(L1 != L2)
+                        dp[i][j] = Math.min(L1, L2) + 1;
+                    else
+                        dp[i][j] = (matrix[i-L1][j-L1] == '1') ? L1 + 1 : L1;            
+                }
+            }
+        int max = 0;
+        for(int[] row : dp)
+            for(int col : row)
+                max = Math.max(max, col);
+        return max * max;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java DP simple solution
+    public class Solution {
+        public int maximalSquare(char[][] matrix) {
+            if (matrix == null || matrix.length == 0) return 0;
+            
+            int row = matrix.length;
+            int col = matrix[0].length;
+            int max = 0;
+            
+            // matrix to  keep track the size of a square which its bottom right corner is i,j
+            int S[][] = new int[row][col];
+            for (int i = 0; i < row; i++){
+                for (int j = 0; j < col; j++){
+                    if (i == 0 || j == 0) S[i][j] = matrix[i][j] - '0';
+                    else if (matrix[i][j] == '0') S[i][j] = 0;
+                    else {
+                        S[i][j] = Math.min(S[i][j-1], Math.min(S[i-1][j], S[i-1][j-1])) + 1;
+                    }
+                    
+                    //replace the largest square if necessary
+                    if (max < S[i][j]) max = S[i][j];
+                }
+            }
+            return max*max;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+9-lines Python DP solution with explaination
+    def maximalSquare(self, matrix):
+        dp, maxArea = [[0 for _1_ in range(len(matrix[0]))] for ___ in range(len(matrix))], 0
+        for i in xrange(0, len(matrix)):
+            for j in xrange(0, len(matrix[0])):
+                if i == 0 or j == 0:
+                    dp[i][j] = int(matrix[i][j])
+                elif int(matrix[i][j]) == 1:
+                    dp[i][j] = min(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]) + 1
+                maxArea = max(maxArea, dp[i][j])
+        return maxArea*maxArea
+
+
+We define dp[i][j] the maximal ending at position (i, j). Thus, current state (`dp[i][j]`)depends on left (`dp[i][j - 1]`), up (`dp[i - 1][j]`), and left-up's (`dp[i - 1][j - 1]`) states. The current state equals to the minimum of these three states plus `matrix[i][j]` because any smaller value will lead to a smaller square (holes in somewhere). I use `maxArea` to track the maximal square. When `matrix[i][j] == '0'`, the maximal square ending at position (i, j) is obviously 0.
+
+Recurrence relation: 
+
+For `matrix[i][j] == 1`, `dp[i][j] = min(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]) + int(matrix[i][j])`.
+
+For `matrix[i][j] == 0`, `dp[i][j] = 0`
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to dp
+    int maximalSquare(vector<vector<char>>& matrix) {
+        int r = matrix.size();
+        if(!r) return 0;
+        int c = matrix[0].size(), s = 0;
+        vector<int> dp(c+1);
+        for(int i=0;i<r;i++) {
+            int temp = 0;
+            for(int j=1;j<=c;j++) {
+                int pre = dp[j];
+                if(matrix[i][j-1]=='1') s = max(s, dp[j] = 1 + min(dp[j],min(temp,dp[j-1])));
+                else dp[j] = 0;
+                temp = pre;
+            }
+        }
+        return s*s;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution O(mn)
+Basic idea is to iterate over all columns and rows of a matrix (starting with i=j=1).  If value in a cell>0 and cells to the north, west, and north-west are >0, pick smallest value of those 3 cells, take it's square root, add 1, and assign square of new value to current cell. For example given matrix
+
+    1   1   1   1   1   1
+    1   1   1   0   1   1
+    1   1   1   1   1   1
+    1   1   1   1   1   1
+    1   1   1   1   1   1
+    1   1   1   1   0   1
+    
+    We get:
+    
+    1   1   1   1   1   1
+    1   4   4   0   1   4
+    1   4   9   1   1   4
+    1   4   9   4   4   4
+    1   4   9   9   9   9
+    1   4   9  16   0   1
+
+Our answer is the largest value in new matrix: 16
+
+    public class Solution {
+        static int[] squares = new int[1001];
+        static{
+            for (int i=0;i<=1000;i++){
+                squares[i] = i*i;
+            }
+        } 
+            
+        public int maximalSquare(char[][] matrix) {
+            if (matrix == null || matrix.length == 0){
+                return 0;
+            }
+            int result = 0;
+            
+            int[][] intMatrix = new int[matrix.length][matrix[0].length];
+        	for (int i=0;i<matrix.length;i++){
+        		for (int j=0;j<matrix[0].length;j++){
+        		    int val = matrix[i][j]-'0';
+        		    if (val == 1){
+        		        result = 1;
+        		    }
+        			intMatrix[i][j] = val;
+        		}
+        	}
+            
+            for (int i = 1; i<intMatrix.length;i++){
+                for (int j=1; j<intMatrix[0].length;j++){
+                    if (intMatrix[i][j]!=0){
+                        int val1 = intMatrix[i][j-1];
+                        int val2 = intMatrix[i-1][j];
+                        int val3 = intMatrix[i-1][j-1];
+                        int min1 = Math.min(val1, val2);
+                        int min = Math.min(min1, val3);
+                        if (min!=0){
+                            int index = (int)Math.sqrt(min);
+                            intMatrix[i][j] = (int)squares[index+1];
+                            if (intMatrix[i][j]>result){
+                                result = intMatrix[i][j];
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Integral image solution, 156ms. I know I know, it&#x27;s slow, just want to throw it out here
+Just want to throw a solution using integral image. Clearly it's not as fast as DP solution, but it's fun
+
+    class Solution {
+    public:
+        int maximalSquare(vector<vector<char>>& matrix) {
+            int rows = matrix.size();
+            if (rows == 0) return 0;
+            int cols = matrix[0].size();
+            if (cols == 0) return 0;
+            int val;
+            vector<vector<int> > image(rows+1, vector<int>(cols+1, 0)); // Integral image
+            for (int r = 1; r <= rows; r++){
+                for (int c = 1; c <= cols; c++){
+                    val = (matrix[r-1][c-1] == '0' ? 0 : 1);
+                    image[r][c] = val + image[r][c-1] + image[r-1][c] - image[r-1][c-1];
+                }
+            }
+            if (image[rows][cols] == 0) return 0;
+            int maxSize = 1;
+            for (int r = 0; r <= rows; r++){
+                for (int c = 0; c <= cols; c++){
+                    for (int s = min(rows-r, cols-c); s >= maxSize; s--){
+                        if (image[r+s][c+s] + image[r][c] - image[r][c+s] - image[r+s][c] == s * s) {
+                            maxSize = s;
+                            break;
+                        }
+                    }
+                }
+            }
+            return maxSize * maxSize;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My Accepted Java solution Time O(mn) Space O(min(m,n))
+We assume here that columns are less than rows, otherwise we can put the row loop inside of column loop to archive the O(min(m,n)), tmp is to be used for remember the left-up conner value.
+
+Note: we have to set the tmp1 to 0 before inside loop, otherwise the left-up value might not be zero for calculating the first point of each row, because the tmp1 has the carry-over value from previous row.
+ 
+       public int maximalSquare(char[][] matrix) {
+        if(matrix == null || matrix.length ==0|| matrix[0].length == 0) return  0;
+        
+        int[] dp = new int[matrix[0].length +1];
+        int max = 0;
+        int tmp1 = 0;
+        int tmp2 = 0;
+        
+        for(int i=0; i< matrix.length; i++)
+        {
+            tmp1 = 0;
+            for(int j=0; j< matrix[0].length; j++)
+            {
+                tmp2 = dp[j+1];
+                                    
+                if(matrix[i][j] == '1')
+                {
+                    dp[j+1] = Math.min(tmp1, Math.min(dp[j], dp[j+1])) + 1;
+                    max = Math.max(max, dp[j+1]);
+                }
+                else
+                {
+                    dp[j+1] = 0;
+                }
+                
+                tmp1 = tmp2;
+            }
+        }
+        
+        return max*max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python 80ms DP solution beats 100% O(mn) time one pass
+    class Solution(object):
+        def maximalSquare(self, matrix):
+            if (not matrix) or (not matrix[0]):
+                return 0
+            n = len(matrix)
+            m = len(matrix[0])
+            widths = [0] * n
+            k = 0
+            for j in xrange(0, m):
+                max_continous_k = 0
+                continous_k = 0
+                for i in xrange(0, n):
+                    if matrix[i][j] == '1':
+                        widths[i] += 1
+                    else:
+                        widths[i] = 0
+                    if widths[i] > k:
+                        continous_k += 1
+                        max_continous_k = max(continous_k, max_continous_k)
+                    else:
+                        continous_k = 0
+                if max_continous_k > k:
+                    k += 1
+            return k * k
+            
+            
+    # 67 / 67 test cases passed.
+    # Status: Accepted
+    # Runtime: 80 ms
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ DP solution
+We can derive the formula of side length of the square: dp[i][j] = matrix[i][j] == '0' ? 0 : min{dp[i-1][j], dp[i][j-1], dp[i-1][j-1]}+1.
+
+    class Solution {
+    public:
+    int maximalSquare(vector<vector<char>>& matrix) {
+        int m = matrix.size();
+        if(m==0) return 0;
+        int n = matrix[0].size();
+        
+        vector<vector<int>> dp(m+1, vector<int>(n+1, 0));
+        
+        int ret = 0;
+        for(int i = 1; i <= m; i ++){
+            for(int j = 1; j <= n; j ++){
+                if(matrix[i-1][j-1] == '0'){
+                    dp[i][j] = 0;
+                }else{
+                    dp[i][j] = 1 + min(dp[i-1][j], min(dp[i][j-1], dp[i-1][j-1]));
+                }
+                ret = max(ret, dp[i][j]);
+            }
+        }
+        return ret*ret;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Simple clean DP solution 8ms best submission in C++
+    class Solution {
+    public:
+        int maximalSquare(vector<vector<char>>& matrix) 
+        {
+            int rowSize = matrix.size();
+            if(!rowSize) return 0;
+            int colSize = matrix[0].size();
+            if(!colSize) return 0;
+            int square[rowSize+1][colSize+1];
+            memset(square, 0, sizeof(int)*(rowSize+1)*(colSize+1));
+            int maxWidth = 0;
+            for(int r = 1; r <= rowSize; ++r)
+            {
+                for(int c = 1; c <= colSize; ++c)
+                {
+                    if(matrix[r-1][c-1] == '1')
+                        square[r][c] = min(min(square[r-1][c], square[r][c-1]), square[r-1][c-1]) + 1;
+                    maxWidth = max(maxWidth, square[r][c]);
+                }
+            }
+            return maxWidth*maxWidth;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

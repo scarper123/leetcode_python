@@ -1,0 +1,931 @@
+Java Simple Solution
+public String validIPAddress(String IP) {
+	if(isValidIPv4(IP)) return "IPv4";
+	else if(isValidIPv6(IP)) return "IPv6";
+	else return "Neither";
+}
+
+public boolean isValidIPv4(String ip) {
+	if(ip.length()<7) return false;
+	if(ip.charAt(0)=='.') return false;
+	if(ip.charAt(ip.length()-1)=='.') return false;
+	String[] tokens = ip.split("\\.");
+	if(tokens.length!=4) return false;
+	for(String token:tokens) {
+		if(!isValidIPv4Token(token)) return false;
+	}
+	return true;
+}
+public boolean isValidIPv4Token(String token) {
+	if(token.startsWith("0") && token.length()>1) return false;
+	try {
+		int parsedInt = Integer.parseInt(token);
+		if(parsedInt<0 || parsedInt>255) return false;
+		if(parsedInt==0 && token.charAt(0)!='0') return false;
+	} catch(NumberFormatException nfe) {
+		return false;
+	}
+	return true;
+}
+	
+public boolean isValidIPv6(String ip) {
+	if(ip.length()<15) return false;
+	if(ip.charAt(0)==':') return false;
+	if(ip.charAt(ip.length()-1)==':') return false;
+	String[] tokens = ip.split(":");
+	if(tokens.length!=8) return false;
+	for(String token: tokens) {
+		if(!isValidIPv6Token(token)) return false;
+	}
+	return true;
+}
+public boolean isValidIPv6Token(String token) {
+	if(token.length()>4 || token.length()==0) return false;
+	char[] chars = token.toCharArray();
+	for(char c:chars) {
+		boolean isDigit = c>=48 && c<=57;
+		boolean isUppercaseAF = c>=65 && c<=70;
+		boolean isLowerCaseAF = c>=97 && c<=102;
+		if(!(isDigit || isUppercaseAF || isLowerCaseAF)) 
+			return false;
+	}
+	return true;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution
+class Solution(object):
+    def validIPAddress(self, IP):
+        def is_hex(s):
+            hex_digits = set("0123456789abcdefABCDEF")
+            for char in s:
+                if not (char in hex_digits):
+                    return False
+            return True
+        ary = IP.split('.')
+        if len(ary) == 4:
+            for i in xrange(len(ary)):
+                if not ary[i].isdigit() or not 0 <= int(ary[i]) < 256 or (ary[i][0] == '0' and len(ary[i]) > 1):
+                    return "Neither"
+            return "IPv4"
+        ary = IP.split(':')
+        if len(ary) == 8:
+            for i in xrange(len(ary)):
+                tmp = ary[i]
+                if len(tmp) == 0 or not len(tmp) <= 4 or not is_hex(tmp):    
+                    return "Neither"
+            return "IPv6"
+        return "Neither"
+
+
+----------------------------------------------------------------------------------------------------
+Short RegExp solution
+const ip4 = /^([1-9]\d{0,2}|0)(?:\.([1-9]\d{0,2}|0)){3}$/;
+const ip6 = /^([0-9a-fA-F]{1,4})(\:[0-9a-fA-F]{1,4}){7}$/;
+
+var validIPAddress = function(IP) {
+    const isIp4 = ip4.exec(IP);
+    if (isIp4 && isIp4.slice(1).every(d => parseInt(d, 10) < 256))
+        return 'IPv4';
+
+    const isIp6 = ip6.exec(IP);
+    if (isIp6)
+        return 'IPv6';
+    
+    return 'Neither';
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution straightforward string processing
+    const string validIPv6Chars = "0123456789abcdefABCDEF";
+    
+    bool isValidIPv4Block(string& block) {
+    	int num = 0;
+    	if (block.size() > 0 && block.size() <= 3) {
+    	    for (int i = 0; i < block.size(); i++) {
+    	        char c = block[i];
+    	        // special case: if c is a leading zero and there are characters left
+    	        if (!isalnum(c) || (i == 0 && c == '0' && block.size() > 1))
+    		    return false;
+    	        else {
+    		    num *= 10;
+    		    num += c - '0';
+    	        }
+    	    }
+    	    return num <= 255;
+    	}
+    	return false;
+    }
+    
+    bool isValidIPv6Block(string& block) {
+    	if (block.size() > 0 && block.size() <= 4) {
+    	    for (int i = 0; i < block.size(); i++) {
+    	        char c = block[i];
+    	        if (validIPv6Chars.find(c) == string::npos)
+    	    	    return false;
+    	    }
+    	    return true;
+    	}
+    	return false;
+    }
+    
+    string validIPAddress(string IP) {
+    	string ans[3] = {"IPv4", "IPv6", "Neither"};
+    	stringstream ss(IP);
+    	string block;
+    	// ipv4 candidate
+    	if (IP.substr(0, 4).find('.') != string::npos) {
+    	    for (int i = 0; i < 4; i++) {
+    		if (!getline(ss, block, '.') || !isValidIPv4Block(block))
+    	   	    return ans[2];
+    	    }
+    	    return ss.eof() ? ans[0] : ans[2];
+    	}
+    	// ipv6 candidate
+    	else if (IP.substr(0, 5).find(':') != string::npos) {
+    	    for (int i = 0; i < 8; i++) {
+    		if (!getline(ss, block, ':') || !isValidIPv6Block(block))
+    		    return ans[2];
+    	    }
+    	    return ss.eof() ? ans[1] : ans[2];
+    	}
+    
+    	return ans[2];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Simple Solution with RegExp
+public class Solution {
+    public String validIPAddress(String IP) {
+        if(IP.matches("(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"))return "IPv4";
+        if(IP.matches("(([0-9a-fA-F]{1,4}):){7}([0-9a-fA-F]{1,4})"))return "IPv6";
+        return "Neither";
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Simple Solution
+class Solution {
+private:
+    bool validIPv4(string &IP) {
+        int begin = 0, end = 0, cnt = 0;
+        while (end < IP.size()) {
+            int leadingZeroCount = 0, num = 0;
+            while (end < IP.size() && isdigit(IP[end])) {
+                num = num * 10 + IP[end] - '0';
+                if (IP[end] == '0' && num == 0) leadingZeroCount++;
+                if ((leadingZeroCount > 0 && num != 0)
+                || leadingZeroCount > 1
+                || end - begin + 1 > 3
+                || num > 255) return false;
+                ++end;
+            }
+            if (end == begin) return false;
+            ++cnt;
+            if (cnt <= 3) {
+                if (end >= IP.size() || IP[end] != '.') return false;
+                begin = ++end;
+            } else {
+                if (end != IP.size()) return false;
+            }
+        }
+        return cnt == 4;
+    }
+    
+    bool validIPv6(string &IP) {
+        int cnt = 0, begin = 0, end = 0;
+        while (end < IP.size()) {
+            while (end < IP.size() && isalnum(IP[end])) {
+                if ((IP[end] > 'f' && IP[end] <= 'z')
+                || (IP[end] > 'F' && IP[end] <= 'Z')
+                || end - begin + 1 > 4) return false;
+                ++end;
+            }
+            if (begin == end) return false;
+            ++cnt;
+            if (cnt <= 7) {
+                if (end >= IP.size() || IP[end] != ':') return false;
+                begin = ++end;
+            } else {
+                if (end != IP.size()) return false;
+            }
+        }
+        return cnt == 8;
+    }
+public:
+    string validIPAddress(string IP) {
+        if (validIPv4(IP)) return "IPv4";
+        if (validIPv6(IP)) return "IPv6";
+        return "Neither";
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+This question should be fixed to accept proper v6 addresses
+AF_INET
+              src points to a character string containing an IPv4 network
+              address in dotted-decimal format, "ddd.ddd.ddd.ddd", where ddd
+              is a decimal number of up to three digits in the range 0 to
+              255.  The address is converted to a struct in_addr and copied
+              to dst, which must be sizeof(struct in_addr) (4) bytes (32
+              bits) long.
+
+       AF_INET6
+              src points to a character string containing an IPv6 network
+              address.  The address is converted to a struct in6_addr and
+              copied to dst, which must be sizeof(struct in6_addr) (16)
+              bytes (128 bits) long.  The allowed formats for IPv6 addresses
+              follow these rules:
+
+              1. The preferred format is x:x:x:x:x:x:x:x.  This form
+                 consists of eight hexadecimal numbers, each of which
+                 expresses a 16-bit value (i.e., each x can be up to 4 hex
+                 digits).
+
+              2. A series of contiguous zero values in the preferred format
+                 can be abbreviated to ::.  Only one instance of :: can
+                 occur in an address.  For example, the loopback address
+                 0:0:0:0:0:0:0:1 can be abbreviated as ::1.  The wildcard
+                 address, consisting of all zeros, can be written as ::.
+
+              3. An alternate format is useful for expressing IPv4-mapped
+                 IPv6 addresses.  This form is written as
+                 x:x:x:x:x:x:d.d.d.d, where the six leading xs are
+                 hexadecimal values that define the six most-significant
+                 16-bit pieces of the address (i.e., 96 bits), and the ds
+                 express a value in dotted-decimal notation that defines the
+                 least significant 32 bits of the address.  An example of
+                 such an address is ::FFFF:204.152.189.116.
+
+              See RFC 2373 for further details on the representation of IPv6
+              addresses.
+
+
+----------------------------------------------------------------------------------------------------
+Java Simple solution without regex
+public class Solution {
+    public String validIPAddress(String IP) {
+        if(IP == null || IP.isEmpty()) return "Neither";
+        if(IP.contains(":")){
+            return (isV6(IP)?"IPv6":"Neither");
+        } else {
+            return (isV4(IP)?"IPv4":"Neither");
+        }
+    }
+    
+    private boolean isV6(String ip){
+        int dotCount = 0;
+        for(int i = 0;i<ip.length();i++) if(ip.charAt(i) == ':') dotCount++;
+        if(dotCount != 7) return false;
+        String gr[]= ip.split(":");
+        if(gr.length != 8) return false;
+        for(String g:gr){
+            if(g.isEmpty()) return false;
+            if(g.length()> 4){
+                return false;
+            }
+            for(int i = 0;i<g.length();i++){
+                char ch = g.charAt(i);
+                if(!((ch >= '0' && ch <= '9') || (ch>='a' && ch<='f') || (ch>='A' &&ch<='F'))) return false;
+            }
+        }
+        return true;
+    }
+    
+    private boolean isV4(String ip){
+        int dotCount = 0;
+        for(int i = 0;i<ip.length();i++) if(ip.charAt(i) == '.') dotCount++;
+        if(dotCount != 3) return false;
+        String gr[] = ip.split("\\.");
+        if(gr.length != 4) return false;
+        for(String g: gr){
+            if(g.isEmpty()) return false;
+            for(int i = 0;i<g.length();i++){
+                char ch = g.charAt(i);
+                if(ch < '0' || ch > '9') return false;
+            }
+            try{
+                int val =  Integer.parseInt(g);
+                if(val > 255 ) return false;
+                if(g.charAt(0) == '0' && (val != 0 || g.length() != 1) ) return false;
+            }catch(NumberFormatException ex){
+                return false;
+            }
+                
+        }
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Share My Java Solution with Comments
+public class Solution {
+    public String validIPAddress(String IP) {
+        if (IP.contains(".") && isIpv4(IP)) {
+            return "IPv4";
+        } else if (IP.contains(":") && isIpv6(IP)) {
+            return "IPv6";
+        } else {
+            return "Neither";
+        }
+    }
+    
+    public boolean isIpv4(String IP) {
+        // count number of "."
+        int count = 0;
+        for (int i = 0; i < IP.length(); i++) {
+            if (IP.charAt(i) == '.') {
+                count++;
+            }
+            // there is no empty string between "." and number of "." cannot be greater than 3
+            if ((i > 0 && IP.charAt(i) == '.' && IP.charAt(i - 1) == '.') || count > 3) {
+                return false;
+            }
+        }
+        // number of "." cannot be less than 3
+        if (count < 3) {
+            return false;
+        }
+        String[] strs = IP.split("\\.");
+        for (String str : strs) {
+            // str cannot has a number with size greater than 3 and leading zeroes
+            if (str.length() > 3 || (str.length() > 1 && str.charAt(0) == '0')) {
+                return false;
+            }
+            // check if each element is digit
+            for (int i = 0; i < str.length(); i++) {
+                if (!Character.isDigit(str.charAt(i))) {
+                    return false;
+                }
+            }
+            // check the number range
+            int num = Integer.parseInt(str);
+            if (num < 0 || num > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public boolean isIpv6(String IP) {
+        // count number of ":"
+        int count = 0;
+        for (int i = 0; i < IP.length(); i++) {
+            if (IP.charAt(i) == ':') {
+                count++;
+            }
+            // there is no empty string between ":" and number of ":" cannot be greater than 7
+            if ((i > 0 && IP.charAt(i) == ':' && IP.charAt(i - 1) == ':') || count > 7) {
+                return false;
+            }
+        }
+        // number of ":" cannot be less than 7
+        if (count < 7) {
+            return false;
+        }
+        String[] strs = IP.split("\\:");
+        for (String str : strs) {
+            str = str.toLowerCase();
+            if (str.equals("") || str.length() > 4) {
+                return false;
+            }
+            for (int i = 0; i < str.length(); i++) {
+                char c = str.charAt(i);
+                // check if each element is legal
+                if ('a' <= c && c <= 'f') {
+                    continue;
+                }
+                if ('0' <= c && c <= '9') {
+                    continue;
+                }
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple, easy to understand with comments
+public class Solution {
+    public String validIPAddress(String IP) {
+        if(IP==null || IP.length()==0) return "Neither";
+        if(IP.indexOf(".")>=0)
+            return validIP4(IP);
+        if(IP.indexOf(":")>=0)
+           return validIP6(IP);
+        return  "Neither";
+    }
+    
+    // simple logic, split the parts, then parse integer out of the parts
+    private String validIP4(String IP){
+        // IP4 cannot have :
+        if(IP.indexOf(":") >=0)  return "Neither";
+        
+        // must have exactly 3 dots
+        int dotCount = IP.length() - IP.replace(".", "").length();
+        if(dotCount != 3) return "Neither";
+        
+        // try to parse each part
+        String[] parts = IP.split("\\.");
+        if(parts.length != 4) return "Neither";
+        for(String part: parts){
+            if(part.length()==0)  return "Neither";
+            // since we are parsing integer out of prt, need to invalidate +- separately
+            if(part.charAt(0) == '-')  return "Neither";
+            if(part.charAt(0) == '+')  return "Neither";
+            if(part.length()>1 && part.charAt(0) == '0')  return "Neither";  // for IP4, cannot have leading zero except its single 0
+            try{
+                int val = Integer.parseInt(part);
+                if(val<0 || val>255)  return "Neither";
+            } catch (Exception e) {
+                 return "Neither";
+            }
+        }
+        return "IPv4";
+    }
+    
+    // simple logic, split the parts, then parse integer out of the parts
+    private String validIP6(String IP){
+        // IP6 cannot have .
+        if(IP.indexOf(".") >=0)  return "Neither";
+        // must have exactly 7 colons
+        int colonCount = IP.length() - IP.replace(":", "").length();
+        if(colonCount != 7) return "Neither";
+        
+        String[] parts = IP.split(":");
+        if(parts.length != 8) return "Neither";
+        for(String part: parts){
+            if(part.length()==0)  return "Neither";
+            // since we are parsing integer out of prt, need to invalidate +- separately
+            if(part.charAt(0) == '-')  return "Neither";
+            if(part.charAt(0) == '+')  return "Neither";  
+            if(part.length() >4 )  return "Neither";   // cannot have more than 4 chars
+            try{
+                int val = Integer.parseInt(part, 16);
+            } catch (Exception e) {
+                 return "Neither";
+            }
+        }
+        return "IPv6";
+    }
+    // debug prints
+    private void sop(String s){ System.out.println(s);}
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with comments
+    def validIPAddress(self, IP):
+        IPV4 = IP.split('.')
+        if len(IPV4) == 4 : # potential IPV4
+            for val in IPV4 :
+                if not val : return "Neither"
+                if val[0] == '-' or val[0] == '0'and len(val) > 1 : return "Neither"
+                try : 
+                    val = int(val)
+                    if val < 0 or val > 255 : return "Neither"
+                except : return "Neither"
+            return "IPv4"
+            
+        IPV6 = IP.split(':')
+        if len(IPV6) == 8 : # potential IPV6
+            for val in IPV6 :
+                if not val : return "Neither"
+                if val[0] == '-' or len(val) > 4  : return "Neither"
+                try : int(val, 16)
+                except : return "Neither"
+            return "IPv6"
+        
+        return "Neither" #neitheer IPV4 or IPV6
+
+
+----------------------------------------------------------------------------------------------------
+Simple short solution
+public String validIPAddress(String IP) {
+   if (IP.contains(".")){
+       if (IP.charAt(0) == '.' || IP.charAt(IP.length()-1) == '.') return "Neither";
+       String[] strs = IP.split("\\.");
+       if (strs.length == 4) {
+           for (String s : strs) {
+               if (s.length() == 0 || s.length() >4 || s.length()>1 && s.charAt(0) == '0') 
+                   return "Neither";
+               for (char c : s.toCharArray()) if (!Character.isDigit(c)) return "Neither";
+               if (Integer.valueOf(s) > 255) return "Neither";
+           }
+           return "IPv4";
+       }
+   }else if (IP.contains(":")) {
+       if (IP.charAt(0) == ':' || IP.charAt(IP.length()-1) == ':') return "Neither";
+       String[] strs = IP.split(":");
+       if (strs.length == 8) {
+           for (String s : strs) {
+               if (s.length() == 0 || s.length() >4) return "Neither";
+               for (char c : s.toCharArray()) 
+                  if (!Character.isDigit(c) && (c-'a'<0 || c-'f'>0) && (c-'A'<0 || c-'F'>0)) 
+                       return "Neither";
+           }
+           return "IPv6";
+       }
+   }
+   return "Neither";
+}
+
+
+----------------------------------------------------------------------------------------------------
+My 42s Python Solution
+ def validIPAddress(self, IP):
+        def is_valid_IPV4(ip):
+            parts = ip.split(".")
+            if len(parts)!= 4:
+                return False
+            for p in parts:
+                if p.isdigit() == False or p != str(int(p)) or int(p)<0 or int(p)>255:
+                    return False
+            return "IPv4"
+        def is_valid_IPV6(ip):
+            parts = ip.split(":")
+            if len(parts) != 8:
+                return False
+            for p in parts:
+                if len(p)>4 or len(p)==0:
+                    return False
+                for char in p:
+                    if char not in string.hexdigits:
+                        return False
+            return "IPv6"
+        return is_valid_IPV4(IP) or is_valid_IPV6(IP) or "Neither"
+
+
+----------------------------------------------------------------------------------------------------
+Python fast and clean
+class Solution(object):
+    def validIPAddress(self, IP):
+        ip_list = IP.split(".")
+        if len(ip_list) == 4:
+            for group in ip_list:
+                try:
+                    n = int(group)
+                    if n < 0 or n > 255 or len(str(n)) != len(group):
+                        return "Neither"
+                except:
+                    return "Neither"
+            return "IPv4"
+            
+        ip_list = IP.split(":")
+        if len(ip_list) != 8:
+            return "Neither"
+        
+        for group in ip_list:
+            try:
+                n = int(group, 16)
+                if n < 0 or n > int("FFFF", 16) or len(group) > 4 or group[0] == "-":
+                    return "Neither"
+            except:
+                return "Neither"
+        
+        return "IPv6"
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Solution - One function is enough!! Verify IPv4 and IPv6 in the same way.  (20 lines)
+string validIPAddress(string IP) {
+    if(IP.find_first_of('-') != string::npos) return "Neither";
+    auto isIPv4 = verify<4, '.', dec, 1, 0xFF>;
+    auto isIPv6 = verify<8, ':', hex, 4, 0xFFFF>;
+    return isIPv4(IP) ? "IPv4" : isIPv6(IP) ? "IPv6" : "Neither";
+}
+
+template<int count, char delim, decltype(dec) mode, int maxZeroCount, int maxNum>
+static bool verify(string IP){
+    istringstream iss(IP += delim);
+    int num; char c;
+    for(int i = 0, pos; pos = iss.tellg(), i < count; ++i) {
+        auto start0 = iss.peek() == '0';
+        iss >> mode >> num >> c;
+        if(iss.fail() || start0 && (iss.tellg() - pos > 1 + maxZeroCount) || c != delim || num > maxNum) return false;            
+    }
+    return iss.peek() == EOF;
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution - be careful about all details
+public class Solution {
+    private static String IPv4 = "IPv4";
+    private static String IPv6 = "IPv6";
+    private static String NEITHER = "Neither";
+
+    public String validIPAddress(String IP) {
+        if (IP == null || IP.length() == 0) {
+            return NEITHER;
+        }
+        return isIPv4(IP) ? IPv4 : (isIPv6(IP) ? IPv6 : NEITHER);
+    }
+
+    private boolean isIPv4(String IP) {
+        String[] parts = IP.split("\\.");
+        if (parts.length != 4 || IP.charAt(IP.length() - 1) == '.') {
+            return false;
+        }
+        for (String part : parts) {
+            if (part == null || part.length() == 0 || part.length() > 3) {
+                return false;
+            }
+            for (int i = 0; i < part.length(); i++) {
+                char c = part.charAt(i);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+            }
+            char first = part.charAt(0);
+            int val = Integer.parseInt(part);
+            if (first == '0' && (val != 0 || part.length() > 1)) {
+                return false;
+            }
+            if (val < 0 || val > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isIPv6(String IP) {
+        String[] parts = IP.split("\\:");
+        if (parts.length != 8 || IP.charAt(IP.length() - 1) == ':') {
+            return false;
+        }
+        for (String part : parts) {
+            if (part == null || part.length() == 0 || part.length() > 4) {
+                return false;
+            }
+            for (int i = 0; i < part.length(); i++) {
+                char c = part.charAt(i);
+                if ((c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Another Java solution
+static final String NEITHER = "Neither";
+public String validIPAddress(String IP) {
+    if (IP.contains(".")) {
+        return isValidIPv4(IP);
+    } else if (IP.contains(":")) {
+        return isValidIPv6(IP);
+    } else return NEITHER;
+}
+
+private String isValidIPv6(String IP) {
+    if (getDelimiterCount(IP, ':') != 7) return NEITHER;
+    String[] bytes = IP.split("\\:");
+    if (bytes.length != 8) return NEITHER;
+    for (int i = 0; i < 8; i++) {
+        if (hasInvalidIPV6Char(bytes[i])) return NEITHER;
+        try {
+            if (bytes[i].length() > 4) return NEITHER;
+            int intNum = Integer.parseInt(bytes[i], 16);
+            if (intNum < 0) return NEITHER;
+            if (i == 0 && intNum != 0 && bytes[i].charAt(0) == '0') return NEITHER;
+        } catch (Exception e) {
+            return NEITHER;
+        }
+
+    }
+    return "IPv6";
+}
+
+private String isValidIPv4(String IP) {
+    if (getDelimiterCount(IP, '.') != 3) return NEITHER;
+    String[] bytes = IP.split("\\.");
+    if (bytes.length != 4) return NEITHER;
+    for (String num : bytes) {
+        try {
+            int intNum = Integer.parseInt(num);
+            if (intNum > 255 || intNum < 0) return NEITHER;
+            if (intNum != 0 ) {
+                for (int i = 0; i < num.length(); i++) {
+                    if (num.charAt(i) == '0') return NEITHER;
+                    else break;
+                }
+            } else if (intNum == 0) {
+                if (num.length() != 1) return NEITHER;
+            }
+        } catch (Exception e) {
+            return NEITHER;
+        }
+    }
+    return "IPv4";
+}
+
+private boolean hasInvalidIPV6Char(String str) {
+    Set<Character> set = new HashSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'));
+    for (char c : str.toCharArray()) {
+        if (!set.contains(c)) return true;
+    }
+    return false;
+}
+
+private int getDelimiterCount(String ip, char delimiter) {
+    int count = 0;
+    for (char c : ip.toCharArray()) {
+        if (c == delimiter) count++;
+    }
+    return count;
+}
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java solution
+public class Solution {
+    public String validIPAddress(String IP) {
+        if (isIPv4(IP)) return "IPv4";
+        if (isIPv6(IP)) return "IPv6";
+        return "Neither";
+    }
+    
+    private boolean isIPv4(String IP) {
+        if (IP.length() > 0 && (IP.startsWith(".") || IP.charAt(IP.length()-1) == '.')) return false;
+        
+        String[] tokens = IP.split("\\.");
+        if (tokens.length != 4) return false;
+        
+        for (String s : tokens) {
+            if (s.length() == 0 || s.length() > 3) return false;
+            if (s.length() > 1 && s.startsWith("0")) return false;
+            
+            for (char c : s.toCharArray()) {
+                if (!Character.isDigit(c)) return false;
+            }
+            
+            int num = Integer.parseInt(s);
+            if (num < 0 || num > 255) return false;
+        }
+        
+        return true;
+    }
+    
+    private boolean isIPv6(String IP) {
+        if (IP.length() > 0 && (IP.startsWith(":") || IP.charAt(IP.length()-1) == ':')) return false;
+        
+        String[] tokens = IP.split(":");
+        if (tokens.length != 8) return false;
+        
+        for (String s : tokens) {
+            if (s.length() == 0 || s.length() > 4) return false;
+            s = s.toLowerCase();
+            
+            for (char c : s.toCharArray()) {
+                if (!Character.isDigit(c) && (c < 'a' || c > 'f')) return false;
+            }
+        }
+        
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My python solution
+def validIPAddress(self, IP):
+        """
+        :type IP: str
+        :rtype: str
+        """
+        ip4=''
+        ip6=''
+        if '.' in IP and ':' not in IP:
+            ip4=IP.split('.')
+            if len(ip4)!=4:return "Neither"
+        elif ':' in IP and '.' not in IP:
+            ip6=IP.split(':')
+            if len(ip6)!=8:return "Neither"
+        else:return "Neither"
+        dic=['a','b','c','d','e','f','A','B','C','D','E','F','0','1','2','3','4','5','6','7','8','9']
+        while ip4:
+            for ip in ip4:
+                if not ip.isdigit():
+                    return "Neither"
+                elif int(ip)>255 or int(ip)<0:
+                    return "Neither"
+                elif ip[0]=='0' and len(ip)>1:
+                    return "Neither"
+            return "IPv4"
+        while ip6:
+            for ip in ip6:
+                if ip=='' or len(ip)>4:return "Neither"
+                for i in ip:
+                    if i not in dic:
+                        return "Neither"
+            return "IPv6"
+
+
+----------------------------------------------------------------------------------------------------
+Solution with explanation
+public class Solution {
+public String validIPAddress(String IP) {
+    //String should not be null and without any characters
+    if(IP == null || IP.length() == 0 || IP.equals(""))
+        return "Neither";
+
+    int end = IP.length() - 1;
+    //it should contain either . or : not both
+    if((!IP.contains(".") && !IP.contains(":")) || (IP.contains(".") && IP.contains(":")))
+        return "Neither";
+    //check if each of the character is valid enough
+    if(!isValidCharacter(IP,0) || !isValidCharacter(IP,end))
+        return "Neither";
+
+    String[] split = null;
+    boolean ipv4 = false;
+    boolean ipv6 = false;
+    //Split with . for IPv4
+    split = IP.split("\\.");
+    if(split.length == 4)
+        ipv4 = validateForIpv4(split);
+    //Split with . for IPv6
+    split = IP.split(":");
+    if(split.length == 8)
+        ipv6 = validateForIpv6(split);
+
+    return ipv4 ? "IPv4" : (ipv6 ? "IPv6" : "Neither");
+}
+
+public boolean isValidCharacter(String IP,int index){
+    //character should not be greater than f or F
+    if(IP.charAt(index) > 70 && IP.charAt(index) < 90)
+       return false;
+    if(IP.charAt(index) > 102 && IP.charAt(index) < 122)
+       return false;
+    //character should be alphanumeric
+    if(IP.charAt(index) < 48 || IP.charAt(index) > 122)
+        return false;
+    if(IP.charAt(index) > 57 && IP.charAt(index) < 65)
+        return false;
+
+    return true;
+}
+
+public boolean validateForIpv4(String[] split){
+    boolean isValid = false;
+    for(int i=0;i<split.length;i++){
+        //the value should not be empty
+        if(split[i].equals(""))
+                return false;
+        try{
+            int value = Integer.valueOf(split[i]);
+            //the value should not having leading zero's for single, double or triple digit length
+            if(value < 10 && split[i].length() > 1)
+                return false;
+            else if((value > 9 && value < 100) && split[i].length() > 2)
+                return false;
+            else if((value > 99 && value < 255) && split[i].length() > 3)
+                return false;
+            //the value should be between 0 to 255
+            if(value >= 0 && value <= 255)
+                isValid = true;
+            else
+                return false;
+        }
+        catch(NumberFormatException e){ // for Integer conversion if there is a character in between then its not valid
+            return false;
+        }
+    }
+    return isValid;
+}
+
+public boolean validateForIpv6(String[] split){
+    boolean isValid = false;
+    for(int i=0;i<split.length;i++){
+        //the value should not be empty
+        if(split[i].equals(""))
+                return false;
+        //the value length should not be greater than 4
+        if(split[i].length() > 4)
+            return false;
+        //check if each character is valid alphnumeric
+        for(int j=0;j<split[i].length();j++){
+            char ch = split[i].charAt(j);
+            if(isValidCharacter(split[i],j))
+                isValid = true;
+            else
+                return false;
+        }
+    }
+    return isValid;
+}
+}
+
+----------------------------------------------------------------------------------------------------

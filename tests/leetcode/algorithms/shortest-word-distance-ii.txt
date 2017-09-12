@@ -1,0 +1,601 @@
+Easy to understand DP in Java
+The idea is the following:
+
+ - we will build an array `mem` where `mem[i+1][j+1]` means that `S[0..j]` contains `T[0..i]` that many times as distinct subsequences. Therefor the result will be `mem[T.length()][S.length()]`.
+ - we can build this array rows-by-rows:
+  - the first row must be filled with 1. That's because the empty string is a subsequence of any string but only 1 time. So `mem[0][j] = 1` for every `j`. So with this we not only make our lives easier, but we also return correct value if `T` is an empty string.
+  - the first column of every rows except the first must be 0. This is because an empty string cannot contain a non-empty string as a substring -- the very first item of the array: `mem[0][0] = 1`, because an empty string contains the empty string 1 time.
+
+So the matrix looks like this:
+
+      S 0123....j
+    T +----------+
+      |1111111111|
+    0 |0         |
+    1 |0         |
+    2 |0         |
+    . |0         |
+    . |0         |
+    i |0         |
+
+From here we can easily fill the whole grid: for each `(x, y)`, we check if `S[x] == T[y]` we add the previous item and the previous item in the previous row, otherwise we copy the previous item in the same row. The reason is simple:
+
+ - if the current character in S doesn't equal to current character T, then we have the same number of distinct subsequences as we had without the new character.
+ - if the current character in S equal to the current character T, then the distinct number of subsequences: the number we had before **plus** the distinct number of subsequences we had with less longer T and less longer S.
+
+An example:
+`S: [acdabefbc]` and `T: [ab]`
+
+first we check with `a`:
+
+               *  *
+          S = [acdabefbc]
+    mem[1] = [0111222222]
+
+then we check with `ab`:
+
+                   *  * ]
+          S = [acdabefbc]
+    mem[1] = [0111222222]
+    mem[2] = [0000022244]
+
+And the result is 4, as the distinct subsequences are:
+
+          S = [a   b    ]
+          S = [a      b ]
+          S = [   ab    ]
+          S = [   a   b ]
+
+See the code in Java:
+
+    public int numDistinct(String S, String T) {
+        // array creation
+        int[][] mem = new int[T.length()+1][S.length()+1];
+
+        // filling the first row: with 1s
+        for(int j=0; j<=S.length(); j++) {
+            mem[0][j] = 1;
+        }
+        
+        // the first column is 0 by default in every other rows but the first, which we need.
+        
+        for(int i=0; i<T.length(); i++) {
+            for(int j=0; j<S.length(); j++) {
+                if(T.charAt(i) == S.charAt(j)) {
+                    mem[i+1][j+1] = mem[i][j] + mem[i+1][j];
+                } else {
+                    mem[i+1][j+1] = mem[i+1][j];
+                }
+            }
+        }
+        
+        return mem[T.length()][S.length()];
+    }
+
+----------------------------------------------------------------------------------------------------
+Any better solution that takes less than O(n^2) space while in O(n^2) time?
+My solution is using O(n^2) space and running in O(n^2) time. I wonder is there a better way to do that which consumes less memory? I guess run time could not be improved though. Any thought/input would be highly appreciated, thanks!
+
+    /**
+     * Solution (DP):
+     * We keep a m*n matrix and scanning through string S, while
+     * m = T.length() + 1 and n = S.length() + 1
+     * and each cell in matrix Path[i][j] means the number of distinct subsequences of 
+     * T.substr(1...i) in S(1...j)
+     * 
+     * Path[i][j] = Path[i][j-1]            (discard S[j])
+     *              +     Path[i-1][j-1]    (S[j] == T[i] and we are going to use S[j])
+     *                 or 0                 (S[j] != T[i] so we could not use S[j])
+     * while Path[0][j] = 1 and Path[i][0] = 0.
+     */
+    int numDistinct(string S, string T) {
+        int m = T.length();
+        int n = S.length();
+        if (m > n) return 0;    // impossible for subsequence
+        vector<vector<int>> path(m+1, vector<int>(n+1, 0));
+        for (int k = 0; k <= n; k++) path[0][k] = 1;    // initialization
+        
+        for (int j = 1; j <= n; j++) {
+            for (int i = 1; i <= m; i++) {
+                path[i][j] = path[i][j-1] + (T[i-1] == S[j-1] ? path[i-1][j-1] : 0);
+            }
+        }
+        
+        return path[m][n];
+    }
+
+----------------------------------------------------------------------------------------------------
+Task clarification
+Could someone please clarify this problem to me?
+
+>  Given a string S and a string T, count the number of distinct
+> subsequences of T in S.
+> 
+> A subsequence of a string is a new string which is formed from the
+> original string by deleting some (can be none) of the characters
+> without disturbing the relative positions of the remaining characters.
+> (ie, "ACE" is a subsequence of "ABCDE" while "AEC" is not).
+> 
+> Here is an example: S = "rabbbit", T = "rabbit"  count = 3
+
+If I understood correctly, we need to find all distinct subsequences of T and see how many, if any appear in s. How does that equal to 3 in the given example?
+
+
+----------------------------------------------------------------------------------------------------
+The question should be reworded.
+Given a string S and a string T, count the number of distinct subsequences of T in S.
+
+*should be reworded to* 
+
+Given a string S and a string T, count the number of distinct **subsequences T in S**.
+
+*or*
+
+Given a string S and a string T, count the number of distinct **subsequences of S which equals T**.
+
+*or*
+
+Given a string S and a string T, count the number of distinct **sequences of T** in S.
+
+
+In the original description, *subsequences of T* could be any subsequences which are not necessary to be equal to T.
+
+----------------------------------------------------------------------------------------------------
+7-10 lines C++ Solutions with Detailed Explanations (O(m*n) time and O(m) space)
+Well, a dynamic programming problem. Let's first define its state `dp[i][j]` to be the number of distinct subsequences of `t[0..i - 1]` in `s[0..j - 1]`. Then we have the following state equations:
+
+ 1. General case 1: `dp[i][j] = dp[i][j - 1]` if `t[i - 1] != s[j - 1]`;
+ 2. General case 2: `dp[i][j] = dp[i][j - 1] + dp[i - 1][j - 1]` if `t[i - 1] == s[j - 1]`;
+ 3. Boundary case 1: `dp[0][j] = 1` for all `j`;
+ 4. Boundary case 2: `dp[i][0] = 0` for all **positive** `i`.
+
+Now let's give brief explanations to the four equations above.
+
+ 1. If `t[i - 1] != s[j - 1]`, the distinct subsequences will not include `s[j - 1]` and thus all the number of distinct subsequences will simply be those in `s[0..j - 2]`, which corresponds to `dp[i][j - 1]`;
+ 2. If `t[i - 1] == s[j - 1]`, the number of distinct subsequences include two parts: those with `s[j - 1]` and those without;
+ 3. An empty string will have exactly one subsequence in any string :-)
+ 4. Non-empty string will have no subsequences in an empty string.
+
+Putting these together, we will have the following simple codes (just like translation :-)):
+
+    class Solution {
+    public:
+        int numDistinct(string s, string t) {
+            int m = t.length(), n = s.length();
+            vector<vector<int>> dp(m + 1, vector<int> (n + 1, 0));
+            for (int j = 0; j <= n; j++) dp[0][j] = 1;
+            for (int j = 1; j <= n; j++)
+                for (int i = 1; i <= m; i++)
+                    dp[i][j] = dp[i][j - 1] + (t[i - 1] == s[j - 1] ? dp[i - 1][j - 1] : 0);
+            return dp[m][n];
+        }
+    };  
+
+Notice that we keep the whole `m*n` matrix simply for `dp[i - 1][j - 1]`. So we can simply store that value in a single variable and further optimize the space complexity. The final code is as follows.
+
+    class Solution {
+    public:
+        int numDistinct(string s, string t) {
+            int m = t.length(), n = s.length();
+            vector<int> cur(m + 1, 0);
+            cur[0] = 1;
+            for (int j = 1; j <= n; j++) { 
+                int pre = 1;
+                for (int i = 1; i <= m; i++) {
+                    int temp = cur[i];
+                    cur[i] = cur[i] + (t[i - 1] == s[j - 1] ? pre : 0);
+                    pre = temp;
+                }
+            }
+            return cur[m];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+What is the problem actually asking for?  The description is exceptionally unclear.
+In the example, S="rabbbit" and T="rabbit". The description says you're supposed to return 3 for that, but don't indicate what the three distinct subsequences are.
+
+By their definition of subsequence, it seems like the answer should be much larger, as T has the following subsequences, all of which are in T:
+
+"r" "ra" "rab" "rabb" "a" "ab" "abb" "b" "bb" "bbi" "bbit" "bi" "bit" "i" "it" "t"
+
+And I'm not even sure that list is complete. But, it's way more than 3. They must be using a very particular definition of 'distinct', as all of those subsequences look distinct to me.
+
+Can we get a clarification?  For example, how was '3' derived for the example?
+
+----------------------------------------------------------------------------------------------------
+A DP solution with clarification and explanation
+First of all, a bit clarification about the problem.  The problem statement can be rephrased as 
+
+**Given two sequences S, T,  how many unique ways in sequence S, to form a subsequence that is identical to the sequence T.** 
+
+    e.g. 
+    	S = "rabbbit", T = "rabbit"
+     
+        The number is 3. And the formations as follows: 
+         
+        S1= "ra_bbit" S2= "rab_bit" S3="rabb_it"                            
+
+        "_" marks the removed character. 
+
+**As a typical way to implement a dynamic programming algorithm, we construct a matrix dp, where each cell `dp[i][j]` represents the number of solutions of aligning substring T[0..i] with S[0..j];** 
+
+Rule 1).  `dp[0][j] = 1`, since aligning T = "" with any substring of S would have only ONE solution which is to delete all characters in S.  
+
+Rule 2).  when i > 0,  dp[i][j] can be derived by two cases: 
+
+  case 1). if T[i] != S[j], then the solution would be to ignore the character S[j] and align substring T[0..i] with S[0..(j-1)]. Therefore, `dp[i][j] = dp[i][j-1].`
+
+  case 2). if T[i] == S[j], then first we could adopt the solution in case 1), but also we could match the characters T[i] and S[j] and align the rest of them (i.e. T[0..(i-1)] and S[0..(j-1)]. As a result, `dp[i][j] = dp[i][j-1] + d[i-1][j-1]`
+
+e.g.     T = B, S = ABC
+
+dp[1][2]=1:  Align T'=B and S'=AB, only one solution, which is to remove character A in S'.     
+
+
+	public int numDistinct(String S, String T) {
+		int sl = S.length();
+		int tl = T.length();
+		
+		int [][] dp = new int[tl+1][sl+1];
+    
+		for(int i=0; i<=sl; ++i){
+			dp[0][i] = 1;
+		}
+		
+		for(int t=1; t<=tl; ++t){
+			
+			for(int s=1; s<=sl; ++s){
+				if(T.charAt(t-1) != S.charAt(s-1)){
+					dp[t][s] = dp[t][s-1];
+				}else{
+					dp[t][s] = dp[t][s-1] + dp[t-1][s-1];
+				}
+			}	
+		}
+		
+		return dp[tl][sl];
+	}
+  
+
+
+As one can observe from the algorithm, in the inner loop, we only refer to the values in the previous iteration, i.e. the values in the previous row of the dp matrix. Therefore, to optimize the algorithm, we could reduce the space by keeping only two arrays, instead of the entire matrix. The algorithm can be optimized as follows. The running time is then reduced from 448ms to 424 ms. 
+
+	public int numDistinct_sdp(String S, String T) {
+		int sl = S.length();
+		int tl = T.length();
+		
+		int [] preComb = new int[sl+1];
+		int [] comb = new int[sl+1];
+		
+		
+		for(int i=0; i<=sl; i++)
+			preComb[i] = 1;		
+	
+		for(int t=1; t<=tl; ++t){
+			for(int s=1; s<=sl; ++s){
+				if(T.charAt(t-1) != S.charAt(s-1)){
+					comb[s] = comb[s-1];
+				}else{
+					comb[s] = comb[s-1] + preComb[s-1];
+				}
+			}
+			
+			for(int i=0; i<=sl; ++i){
+				preComb[i] = comb[i];
+			}
+		}
+		
+		return preComb[sl];
+	}
+
+
+
+----------------------------------------------------------------------------------------------------
+4ms, 7 lines, c++ dp solution! very clear, almost best!
+prefixVec stores the numbers of t's prefixes occur when we iterate through s. the dp equation is when we encounter a character which also occurs in t at position i, then prefixVec[i] += prefixVec[i-1] (i > 0), prefixVec[i]++ (i = 0). we calculate prefixVec backwards so the new value produced won't influence the calculation of next value (at i-1), otherwise we need a temp vector.
+   
+    int numDistinct(string s, string t) {
+        int tLen = t.size();
+        vector<int> prefixVec(tLen,0);
+        for (auto c: s)
+            for (int i = tLen-1;i >= 0;--i)
+                if (t[i] == c)
+                    prefixVec[i] = (i > 0 ? prefixVec[i-1] : 1) + prefixVec[i];
+        return prefixVec.back();
+    }
+
+    /*
+    example showing how prefixVec is calculated when we eat a new char
+    rabbbit rabbit
+    
+    rabbit 
+    000000
+    100000 r
+    110000 a
+    111000 b
+    112100 b
+    113300 b
+    113330 i
+    113333 t
+    */
+
+----------------------------------------------------------------------------------------------------
+Ambiguity in problem statement
+Shouldn't the problem statement be:
+"Given a string S and a string T, count the number of sub-sequences of string S,that form string T??
+
+----------------------------------------------------------------------------------------------------
+My C++ DP solution (O(MN) time)
+For such kind of problems, a typical solution is DP. The idea is use an array path[i][j] to save the number of matches between s[0..i] and t[0..j]. When we move to s[0..i+1] and t[0..j+1] (j<=i), we find all possible matches can only come from two scenaria
+
+    1) a match between s[0..i] and t[0..j+1]
+    2) a match between s[0..i] and t[0..j] plus s[i+1] == t[j+1]
+
+So we get the recursive relation path[i+1][j+1] = path[i][j+1] + s[i+1]==t[j+1]?path[i][j]:0;
+Moreover, we can reduce the table path to one dimension as path[j+1] = path[j+1] +  s[i+1]==t[j+1]?path[j]:0;
+calculating path[j+1] needs the old path[j], so we have to update it in an order like tlen->0
+
+     
+       class Solution {
+        public:
+            int numDistinct(string s, string t) {
+                const int slen=s.size(), tlen = t.size(); 
+                if(slen<tlen || 0==tlen) return 0; //simple cases, just return results directly
+                if(slen==tlen) return s==t;
+                int path[tlen+1]; // path[j] to save the # of matches between t[0..j-1] to s[0..i]
+                int i,j;
+                
+                fill_n(path, tlen+1, 0); //initialize path array to all zero
+        
+                for(i=0, path[0]=1; i<slen; i++) // note path[0]=1 to ensure, when t[0]==s[i], we increase path[1] 
+                {
+                    for(j=min(tlen-1,i); j>=0; j--) // note in the decending order
+                    {
+                        path[j+1] += (t[j]==s[i]?path[j]:0);
+                    }
+                }
+            
+                return path[tlen];
+            }
+            
+        };
+
+----------------------------------------------------------------------------------------------------
+It is a really bad description
+It should be something like "how many different ways we can get the subsequence of S to become T". 
+
+----------------------------------------------------------------------------------------------------
+AC Java Solution with O(T) Space and O(TS) Time
+I think there is no need to maintain a matrix TxS; instead, I used a list of counters to track the number of prefix of T. This should improve in memory usage.
+For example, given T="ABC", count[0] = count of "A", count[1] = count of "AB", count[2] = count of "ABC".
+
+    public int numDistinct(String S, String T) {
+        if (T.length() == 0)
+            return 0;
+            
+        int[] counts = new int[T.length()];
+        for (int indexS = 0; indexS < S.length(); indexS++) {
+            char charS = S.charAt(indexS);
+            for (int indexT = T.length() - 1; indexT >= 0; indexT--) {
+                if (T.charAt(indexT) == charS) {
+                    if (indexT == 0)
+                        counts[0]++;
+                    else
+                        counts[indexT] += counts[indexT-1];
+                }
+            }
+        }
+        
+        return counts[counts.length-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Need to description clearer!
+need to description clearer!
+Can the author provide more examples to describe it clearer? I don't know why those authors suppose everyone should know what they think about his question. 
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution based on DP
+**Explanation**
+
+At first, I tried memorized DFS solution, but got stack overflow with the last large case. So then I was thinking about the non-recursive solution with DP, which is actually a bottom up memorized DFS solution without using stack.
+
+**DP Solution:**
+
+    public static int numDistinct(String s, String t) {
+    	int dp[][] = new int[s.length()+1][t.length()+1]; //dp[i][j]: number of the sequences for i long s and j long t
+    	for (int i = 0; i < s.length(); i++)
+    		dp[i][0] = 1;
+    	
+    	for (int i = 1; i <= s.length(); i++) {
+    		for (int j = 1; j <= t.length(); j++) {
+    			if (s.charAt(i-1) == t.charAt(j-1))// index = length - 1
+    				//dp[i-1][j]  : don't take s[i-2]
+    				//dp[i-1][j-1]: take s[i-2] 
+    				dp[i][j] = dp[i-1][j] + dp[i-1][j-1];
+    			else 
+    				dp[i][j] = dp[i-1][j];
+    		}
+    	}		
+    	return dp[s.length()][t.length()];
+    }
+
+**DFS Solution: (Stack Overflow)**
+
+ 
+
+     int slen, tlen;
+     int nums[][];
+     public int numDistinct(String s, String t) {
+    	 slen = s.length(); tlen = t.length();
+    	 nums = new int[slen][tlen];
+    	 for (int i = 0; i < slen; i++)
+    		 Arrays.fill(nums[i], -1);
+    	 return DFS(0, 0, s.toCharArray(), t.toCharArray(), 0, 0);		
+     }
+    
+     int DFS(int curLen, int si, char[] s, char[] t, int ti, int count) {
+    	 if (si > slen - 1 || ti > tlen - 1 || curLen == tlen) {
+    		 if (curLen == tlen) 
+    			 count++;			 
+    		 return count;
+    	 } 
+    	 if (nums[si][ti] != -1) return nums[si][ti];			 
+    	 if (s[si] == t[ti]) count += DFS(curLen + 1, si + 1, s, t, ti + 1, 0);// Take si char
+    	 count += DFS(curLen, si + 1, s, t, ti, 0);// Don't take si char			 
+    	 nums[si][ti] = count;
+    	 return count;
+     }
+
+
+----------------------------------------------------------------------------------------------------
+2ms Java solution beats 100%
+ An 2D int array is used to accelerate the lookup operation.
+  
+ 
+
+    public class Solution {
+            public int numDistinct(String s, String t) {
+                // arr works as a hash table
+                int[][] arr = new int[256][t.length()+1];
+                int[] cnt = new int[t.length()+1];
+                cnt[0] = 1;
+                char c;
+                for(int i = 0; i < t.length(); i++ ) {
+                    // arr[c] is a list of all the positions character c appears
+                    // arr[c][0] records how many times character c appears
+                    c = t.charAt(i);
+                    arr[c][arr[c][0]+1] = i+1;
+                    arr[c][0]++;
+                }
+                // DP
+                for( char a: s.toCharArray() ) {
+                    if( arr[a][0] != 0 ) {
+                        for( int i = arr[a][0]; i > 0; i-- ) {
+                            cnt[arr[a][i]] += cnt[arr[a][i]-1];
+                        }
+                    }
+                }
+                return cnt[t.length()];
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My O(n*m) solution for your reference
+    public int numDistinct(String S, String T) {
+      if(S==null || T==null)return 0;
+      int occu[]=new int[T.length()];
+      for(int i=S.length()-1;i>=0;i--){
+          for(int j=0;j<T.length();j++){
+              if(S.charAt(i)==T.charAt(j)){
+                  if(j==(T.length()-1))occu[j]++;
+                  else occu[j]+=occu[j+1];
+              }
+          }
+      }
+      return occu[0];
+     }
+  
+
+Basically the idea is iterate from the end of S, and if S.charAt(i) == T.charAt(j), then the distinct sub sequences of T.substring(j) in S.substring(i) can be calculated as occu[j]=occu[j]+occu[j+1]. The final result is occu[0].  
+
+----------------------------------------------------------------------------------------------------
+My easy to understand solution
+Actually, I start from S.substring(0, 1) and T.substring(0, 1). Then continue add one element to S and T. 
+When I try to add S.charAt(i + 1) to S.substring(0, i + 1), and T.charAt(j + 1) to T.substring(0, j + 1).
+If S.charAt(i + 1) == T.charAt(j + 1) then the numDistinct(S.substring(0, i + 2), T.substring(0, j + 2)) should be numDistinct(S.substring(0, i + 1), T.substring(0, j + 1)) (use the new element in the sub string) + numDistinct(S.substring(0, i + 1), T.substring(0, j + 2)) (don't use the new element in the sub string). 
+but if S.charAt(i + 1) != T.charAt(j + 1) then we can't use the new element in the sub string so numDistinct(S.substring(0, i + 2), T.substring(0, j + 2)) = numDistinct(S.substring(0, i + 1), T.substring(0, j + 2)).
+
+
+
+    public int numDistinct(final String S, final String T)
+       {
+            final int[][] results = new int[T.length()+1][S.length()+1];
+    
+            for (int i = 0; i < S.length(); ++i)
+            {
+                results[0][i] = 1;
+            }
+            
+            for (int i = 0; i < S.length(); ++i)
+            {
+                for (int j = 0; j < T.length(); ++j)
+                {
+                    if (S.charAt(i) == T.charAt(j))
+                    {
+                        results[j + 1][i + 1] = results[j][i] + results[j + 1][i];
+                    }
+                    else
+                    {
+                        results[j + 1][i + 1] = results[j + 1][i];
+                    }
+                }
+            }
+            
+            return results[T.length()][S.length()];
+        }
+
+----------------------------------------------------------------------------------------------------
+Python dp solutions (O(m*n), O(n) space).
+    
+    # O(m*n) space 
+    def numDistinct1(self, s, t):
+        l1, l2 = len(s)+1, len(t)+1
+        dp = [[1] * l2 for _ in xrange(l1)]
+        for j in xrange(1, l2):
+            dp[0][j] = 0
+        for i in xrange(1, l1):
+            for j in xrange(1, l2):
+                dp[i][j] = dp[i-1][j] + dp[i-1][j-1]*(s[i-1] == t[j-1])
+        return dp[-1][-1]
+      
+    # O(n) space  
+    def numDistinct(self, s, t):
+        l1, l2 = len(s)+1, len(t)+1
+        cur = [0] * l2
+        cur[0] = 1
+        for i in xrange(1, l1):
+            pre = cur[:]
+            for j in xrange(1, l2):
+                cur[j] = pre[j] + pre[j-1]*(s[i-1] == t[j-1])
+        return cur[-1]
+
+----------------------------------------------------------------------------------------------------
+What is distinct subsequence?
+i.e. "ABCDE": are "ABC" and "ACE" considered distinct subsequences? 
+
+----------------------------------------------------------------------------------------------------
+My AC 256ms Java DP Solution
+    public class Solution {
+        public int numDistinct(String s, String t) {
+            int res = 0;
+            int ls = s.length();
+            int ts = t.length();
+            int[][] Dp = new int[ls+1][ts+1];
+            if(ls<ts) return 0;
+            
+            for(int i = 0; i < ts+1; i++) Dp[0][i]=0;
+            for(int i = 0; i < ls+1; i++) Dp[i][0]=1;
+            
+            for(int i = 1; i <= ts ; i++)
+            {
+                // scan the string t first
+                for(int j = 1 ;j <= ls - ts + i  ; j ++)
+                {
+                    // if the rest substring of s is shorter than the rest substring of l, it's impossible to achieve.
+                        
+                    if(s.charAt(j-1)==t.charAt(i-1))
+                        Dp[j][i] = Dp[j-1][i-1]+Dp[j-1][i]; 
+                        // there are 2 ways to get the string: delete a char or exchange a char.
+                    else
+                        Dp[j][i] = Dp[j-1][i];
+                }
+            }
+            
+            
+            return Dp[ls][ts];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

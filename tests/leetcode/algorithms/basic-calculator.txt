@@ -1,0 +1,825 @@
+A simple recursive solution
+I start by noting that 1..n is the in-order traversal for any BST with nodes 1 to n. So if I pick i-th node as my root, the left subtree will contain elements 1 to (i-1), and the right subtree will contain elements (i+1) to n. I use recursive calls to get back all possible trees for left and right subtrees and combine them in all possible ways with the root. 
+
+
+
+    public class Solution {
+        public List<TreeNode> generateTrees(int n) {
+            
+            return genTrees(1,n);
+        }
+            
+        public List<TreeNode> genTrees (int start, int end)
+        {
+    
+            List<TreeNode> list = new ArrayList<TreeNode>();
+    
+            if(start>end)
+            {
+                list.add(null);
+                return list;
+            }
+            
+            if(start == end){
+                list.add(new TreeNode(start));
+                return list;
+            }
+            
+            List<TreeNode> left,right;
+            for(int i=start;i<=end;i++)
+            {
+                
+                left = genTrees(start, i-1);
+                right = genTrees(i+1,end);
+                
+                for(TreeNode lnode: left)
+                {
+                    for(TreeNode rnode: right)
+                    {
+                        TreeNode root = new TreeNode(i);
+                        root.left = lnode;
+                        root.right = rnode;
+                        list.add(root);
+                    }
+                }
+                    
+            }
+            
+            return list;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution with DP
+Here is my java solution with DP:
+
+    public class Solution {
+    	public static List<TreeNode> generateTrees(int n) {
+    		List<TreeNode>[] result = new List[n+1];
+    		result[0] = new ArrayList<TreeNode>();
+    		result[0].add(null);
+    
+    		for(int len = 1; len <= n; len++){
+    			result[len] = new ArrayList<TreeNode>();
+    			for(int j=0; j<len; j++){
+    				for(TreeNode nodeL : result[j]){
+    					for(TreeNode nodeR : result[len-j-1]){
+    						TreeNode node = new TreeNode(j+1);
+    						node.left = nodeL;
+    						node.right = clone(nodeR, j+1);
+    						result[len].add(node);
+    					}
+    				}
+    			}
+    		}
+    		return result[n];
+    	}
+    	
+    	private static TreeNode clone(TreeNode n, int offset){
+    		if(n == null)
+    			return null;
+    		TreeNode node = new TreeNode(n.val + offset);
+    		node.left = clone(n.left, offset);
+    		node.right = clone(n.right, offset);
+    		return node;
+    	}
+    }
+
+**result[i]** stores the result until length **i**. For the result for length i+1, select the root node j from 0 to i, combine the result from left side and right side. Note for the right side we have to clone the nodes as the value will be offsetted by **j**. 
+
+----------------------------------------------------------------------------------------------------
+Divide-and-conquer.  F(i) = G(i-1) * G(n-i)
+This problem is a variant of the problem of [Unique Binary Search Trees][1]. 
+
+I provided a solution along with explanation for the above problem, in the question ["DP solution in 6 lines with explanation"][2] 
+
+It is intuitive to solve this problem by following the same algorithm. Here is the code in a divide-and-conquer style. 
+
+    public List<TreeNode> generateTrees(int n) {
+    	return generateSubtrees(1, n);
+    }
+ 
+	private List<TreeNode> generateSubtrees(int s, int e) {
+		List<TreeNode> res = new LinkedList<TreeNode>();
+		if (s > e) {
+			res.add(null); // empty tree
+			return res;
+		}
+
+		for (int i = s; i <= e; ++i) {
+			List<TreeNode> leftSubtrees = generateSubtrees(s, i - 1);
+			List<TreeNode> rightSubtrees = generateSubtrees(i + 1, e);
+
+			for (TreeNode left : leftSubtrees) {
+				for (TreeNode right : rightSubtrees) {
+					TreeNode root = new TreeNode(i);
+					root.left = left;
+					root.right = right;
+					res.add(root);
+				}
+			}
+		}
+		return res;
+	}
+
+  [1]: https://oj.leetcode.com/problems/unique-binary-search-trees/
+  [2]: https://oj.leetcode.com/discuss/24282/dp-solution-in-6-lines-with-explanation-f-i-g-i-1-g-n-i
+
+
+----------------------------------------------------------------------------------------------------
+Share a C++ DP solution with O(1) space
+The basic idea is that we can construct the result of n node tree just from the result of n-1 node tree.
+Here's how we do it: only 2 conditions: 1)  The nth node is the new root, so `newroot->left = oldroot;`
+2) the nth node is not root, we traverse the old tree, every time the node in the old tree has a right child, we can perform: `old node->right = nth node, nth node ->left = right child;` and when we reach the end of the tree, don't forget we can also add the nth node here.
+One thing to notice is that every time we push a TreeNode in our result, I push the clone version of the root, and I recover what I do to the old node immediately. This is because you may use the old tree for several times.
+   
+
+     class Solution {
+        public:
+            TreeNode* clone(TreeNode* root){
+                if(root == nullptr)
+                    return nullptr;
+                TreeNode* newroot = new TreeNode(root->val);
+                newroot->left = clone(root->left);
+                newroot->right = clone(root->right);
+                return newroot;
+            }
+            vector<TreeNode *> generateTrees(int n) {
+                vector<TreeNode *> res(1,nullptr);
+                for(int i = 1; i <= n; i++){
+                    vector<TreeNode *> tmp;
+                    for(int j = 0; j<res.size();j++){
+                        TreeNode* oldroot = res[j];
+                        TreeNode* root = new TreeNode(i);
+                        TreeNode* target = clone(oldroot);
+                        root->left = target;
+                        tmp.push_back(root);
+                       
+                        if(oldroot!=nullptr){
+                            TreeNode* tmpold = oldroot;
+                            while(tmpold->right!=nullptr){
+                                TreeNode* nonroot = new TreeNode(i);
+                                TreeNode *tright = tmpold->right;
+                                tmpold->right = nonroot;
+                                nonroot->left = tright;
+                                TreeNode *target = clone(oldroot);
+                                tmp.push_back(target);
+                                tmpold->right = tright;
+                                tmpold = tmpold->right;
+                            }
+                            tmpold->right = new TreeNode(i);
+                            TreeNode *target = clone(oldroot);
+                            tmp.push_back(target);
+                            tmpold->right = nullptr;
+                        }
+                    }
+                    res=tmp;
+                }
+                return res;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Should-be-6-Liner
+If only LeetCode had a `TreeNode(val, left, right)` constructor... sigh. Then I wouldn't need to provide my own and my solution would be six lines instead of eleven.
+
+    def generateTrees(self, n):
+        def node(val, left, right):
+            node = TreeNode(val)
+            node.left = left
+            node.right = right
+            return node
+        def trees(first, last):
+            return [node(root, left, right)
+                    for root in range(first, last+1)
+                    for left in trees(first, root-1)
+                    for right in trees(root+1, last)] or [None]
+        return trees(1, n)
+
+Or even just **four** lines, if it's not forbidden to add an optional argument:
+
+    def node(val, left, right):
+        node = TreeNode(val)
+        node.left = left
+        node.right = right
+        return node
+    
+    class Solution:
+        def generateTrees(self, last, first=1):
+            return [node(root, left, right)
+                    for root in range(first, last+1)
+                    for left in self.generateTrees(root-1, first)
+                    for right in self.generateTrees(last, root+1)] or [None]
+
+Just another version, using loops instead of list comprehension:
+
+    def generateTrees(self, n):
+        def generate(first, last):
+            trees = []
+            for root in range(first, last+1):
+                for left in generate(first, root-1):
+                    for right in generate(root+1, last):
+                        node = TreeNode(root)
+                        node.left = left
+                        node.right = right
+                        trees += node,
+            return trees or [None]
+        return generate(1, n)
+
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DP Solution and Brute Force Recursive Solution.
+I don't quite understand the necessity to use iteration instead of recursion because the space complexity will be about the same, as it requires one copy of each tree. And the recursive solution will be much easier to interpret. Correct me if I'm wrong.
+
+        public List<TreeNode> generateTrees(int n) {
+            return generateTrees(1,n);
+        }
+    
+    public List<TreeNode> generateTrees(int start,int end){             
+        List<TreeNode> trees = new ArrayList<TreeNode>();
+        if(start>end){  trees.add(null); return trees;}
+    
+        for(int rootValue=start;rootValue<=end;rootValue++){
+            List<TreeNode> leftSubTrees=generateTrees(start,rootValue-1);
+            List<TreeNode> rightSubTrees=generateTrees(rootValue+1,end);
+    
+            for(TreeNode leftSubTree:leftSubTrees){
+                for(TreeNode rightSubTree:rightSubTrees){
+                    TreeNode root=new TreeNode(rootValue);
+                    root.left=leftSubTree;
+                    root.right=rightSubTree;
+                    trees.add(root);
+                }
+            }
+        }
+        return trees;
+    }
+
+----------------------------------------------------------------------------------------------------
+My Accepted C++ solution (recursive, less than 30 lines)
+**explaination:**
+Given a tree which n nodes, it has the follwing form: 
+(0)root(n-1)
+(1)root(n-2)
+(2)root(n-3)
+where (x) denotes the trees with x  nodes.
+
+Now take n=3 for example. Given n=3, we have [1 2 3] in which each of them can be used as the tree root.
+
+when root=1: [1 # 2 # 3]; [1 # 3 2];
+when root=2: [2 1 3]; 
+when root=3: (similar with the situations when root=1.)
+
+Thus, if we write a recursive function who generates a group of trees in which the numbers range from *f* to *t*, we have to generate the left trees and right trees of each tree in the vector. 
+
+I give the following recursive code and expect to see non-recursive ones. please! 
+
+**code:**
+
+    vector<TreeNode *> generateTree(int from, int to)
+    {
+        vector<TreeNode *> ret;
+        if(to - from < 0) ret.push_back(0);
+        if(to - from == 0) ret.push_back(new TreeNode(from));
+        if(to - from > 0)
+        {
+            for(int i=from; i<=to; i++)
+            {
+                vector<TreeNode *> l = generateTree(from, i-1);
+                vector<TreeNode *> r = generateTree(i+1, to);
+
+                for(int j=0; j<l.size(); j++)
+                {
+                    for(int k=0; k<r.size(); k++)
+                    {
+                        TreeNode * h = new TreeNode (i);
+                        h->left = l[j];
+                        h->right = r[k];
+                        ret.push_back(h);
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+    
+    vector<TreeNode *> generateTrees(int n) {
+        return generateTree(1, n);
+    }
+
+
+
+
+----------------------------------------------------------------------------------------------------
+30 ms c++ solution
+    /**
+     * Definition for binary tree
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        vector<TreeNode *> generateTrees(int n) {
+            return helper(1,n);
+        }
+        
+        vector<TreeNode*> helper(int s, int e) {
+            if (s > e) {
+                 return vector<TreeNode*>(1,NULL);
+            }
+            
+            vector<TreeNode*> result;
+            for (int i=s; i <= e; ++i) {
+                vector<TreeNode*> left, right;
+                    left = helper(s,i-1);
+                    right = helper(i+1,e);
+                    for (int j = 0; j < left.size(); ++j) {
+                        for (int k = 0; k < right.size(); ++k) {
+                            TreeNode* root = new TreeNode(i);
+                            root->left = left[j];
+                            root->right = right[k];
+                            result.push_back(root);
+                        }
+                    }
+            }
+            
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Recursive python solution
+    class Solution(object):
+        def generateTrees(self, n):
+            """
+            :type n: int
+            :rtype: List[TreeNode]
+            """
+            if n == 0:
+                return [[]]
+            return self.dfs(1, n+1)
+            
+        def dfs(self, start, end):
+            if start == end:
+                return None
+            result = []
+            for i in xrange(start, end):
+                for l in self.dfs(start, i) or [None]:
+                    for r in self.dfs(i+1, end) or [None]:
+                        node = TreeNode(i)
+                        node.left, node.right  = l, r
+                        result.append(node)
+            return result
+
+Use start/end instead of actual nodes to bosst the program.
+
+----------------------------------------------------------------------------------------------------
+20ms C++ top-down DP solution
+a bottom up solution looks much better, but I find it's also a little bit harder to understand. Top-down solution is straight forward,
+
+   
+
+    vector<TreeNode*> generateTrees(int n) {
+        vector<TreeNode*> ret;
+        vector<vector<vector<TreeNode*>>> dp(n,vector<vector<TreeNode*>>(n));
+        helper(1,n,ret,dp);
+        return ret;
+    }
+    
+    void helper(int start, int end, vector<TreeNode*> &ret,vector<vector<vector<TreeNode*>>> &dp) {
+        if (start > end) {
+            ret.push_back(NULL); return;
+        }
+        if (!dp[start-1][end-1].empty())  {
+            ret = dp[start-1][end-1]; return;
+        }
+        for (int i = start; i <= end; ++i) {
+            vector<TreeNode*> left, right;
+            helper(start, i-1,left,dp);
+            helper(i+1,end,right,dp);
+            for(int j = 0; j < left.size(); ++j) {
+                for (int k = 0; k < right.size(); ++k) {
+                    TreeNode* node = new TreeNode(i);
+                    node->left = left[j];
+                    node->right = right[k];
+                    ret.push_back(node);
+                }
+            }
+        }
+        dp[start-1][end-1] = ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+24ms c++ easy understanding solution
+    class Solution {
+    private:
+        vector<TreeNode*> helper(int start, int end){
+            vector<TreeNode*> res;
+            if(start > end) {
+                res.push_back(NULL);
+                return res;
+            }
+            for(int i = start; i <= end; i++){
+                vector<TreeNode*> lefts = helper(start, i - 1);
+                vector<TreeNode*> rights = helper(i + 1, end);
+                for(int j = 0; j < (int)lefts.size(); j++){
+                    for(int k = 0; k < (int)rights.size(); k++){
+                        TreeNode* root = new TreeNode(i);
+                        root->left = lefts[j];
+                        root->right = rights[k];
+                        res.push_back(root);
+                    }
+                }
+            }
+            return res;
+        }
+    public:
+        vector<TreeNode*> generateTrees(int n) {
+            if(n == 0) return vector<TreeNode*>(0);
+            return helper(1,n);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Help simplify my code (the second one)
+    class Solution {
+    private:
+    	vector<TreeNode*> generateTreesRec(int start, int end){
+    		vector<TreeNode*> v;
+    		if(start > end){
+    			v.push_back(NULL);
+    			return v;
+    		}
+    		for(int i = start; i <= end; ++i){
+    			vector<TreeNode*> left = generateTreesRec(start, i - 1);
+    			vector<TreeNode*> right = generateTreesRec(i + 1, end);
+    			TreeNode *node;
+    			for(int j = 0; j < left.size(); ++j){
+    				for(int k = 0; k < right.size(); ++k){
+    					node = new TreeNode(i);
+    					node->left = left[j];
+    					node->right = right[k];
+    					v.push_back(node);
+    				}
+    			}
+    		}
+    		return v;
+    	}
+    public:
+        vector<TreeNode *> generateTrees(int n) {
+            return generateTreesRec(1, n);
+        }
+    };
+
+I think one defect of the above code is that it constructs trees interleaving with rather than being independent of each other. For example, if `n == 5` and `3` is selected as root, you'll get four trees as follow:
+
+<a href="http://www.freeimagehosting.net/xepj1"><img src="http://www.freeimagehosting.net/t/xepj1.jpg"></a>
+
+I prefer to construct independent trees so I write the following code...
+
+    class Solution {
+    private:
+    	TreeNode *constructBSTRec(const string &preorder, int ps, int pe, int is, int ie){
+    		if(ps > pe || is > ie || pe - ps != ie - is) return NULL;
+    		TreeNode *root = new TreeNode(preorder[ps] - '0');
+    		int i = preorder[ps] - '0' - 1;
+    		int leftLen = i - is;
+    		root->left = constructBSTRec(preorder, ps + 1, ps + leftLen, is, i - 1);
+    		root->right = constructBSTRec(preorder, ps + leftLen + 1, pe, i + 1, ie);
+    		return root;
+    	}
+    	TreeNode *constructBST(const string &preorder){
+    		return constructBSTRec(preorder, 0, preorder.size() - 1, 0, preorder.size() - 1);
+    	}
+    	vector<string> combine(vector<string> &s1, vector<string> &s2){
+    		if(s1.empty() || s2.empty()){
+    			return s1.empty() ? s2 : s1;
+    		}
+    		vector<string> v;
+    		for(int i = 0; i < s1.size(); ++i){
+    			for(int j = 0; j < s2.size(); ++j){
+    				v.push_back(s1[i] + s2[j]);
+    			}
+    		}
+    		return v;
+    	}
+    	vector<string> preorderSequence(int start, int end){
+    		vector<string> v;
+    		for(int i = start; i <= end; ++i){
+    			vector<string> tmp;
+    			tmp.push_back(string(1, i + '0'));
+    			vector<string> left = preorderSequence(start, i - 1);
+    			vector<string> right = preorderSequence(i + 1, end);
+    			tmp = combine(tmp, left);
+    			tmp = combine(tmp, right);
+    			for(int i = 0; i < tmp.size(); ++i){
+    				v.push_back(tmp[i]);
+    			}
+    		}
+    		return v;
+    	}
+    public:
+        vector<TreeNode *> generateTrees(int n) {
+        	vector<TreeNode*> trees;
+        	if(n < 0) return trees;
+        	if(n == 0){
+        		trees.push_back(NULL);
+        		return trees;
+        	}
+        	vector<string> v = preorderSequence(1, n);
+        	for(int i = 0; i < v.size(); ++i){
+        		trees.push_back(constructBST(v[i]));
+        	}
+        	return trees;
+        }
+    };
+
+The main idea is to generate preorder sequences of unique BSTs and construct independent BSTs in the end. But I am afraid it's lack of readability. Can you help me simplify it? Any advice?
+
+
+  [1]: http://www.freeimagehosting.net/xepj1
+
+----------------------------------------------------------------------------------------------------
+A simple bottom-up DP solution
+The optimal substructure is that for any BST with nodes 1 to n, pick i-th node as root, then the left subtree will contain nodes from 1 to (i-1), and the right subtree will contain nodes from (i+1) to n. I use a 3-d vector to store all possible trees for subtrees with nodes from i to j (0 <= i <= j <=n+1 ), if i==j, there is only one-node tree; if j = i-1, then there is no actual node(storing NULL pointer).  Use a bottom up solution to generate all possible subtrees with nodes i to j. Finally the result will be the subtree set with nodes 1 to n, 
+    
+    	vector<TreeNode *> generateTrees(int n) {
+		if(n == 0)	return vector<TreeNode *>(1, NULL);
+		vector<vector<vector<TreeNode*>>> subtree(n+2, vector<vector<TreeNode*>>(n+2, vector<TreeNode*>()));
+		for(int i=1; i<=n+1; ++i){
+			subtree[i][i].push_back(new TreeNode(i));
+		    subtree[i][i-1].push_back(NULL);	
+		}
+		for(int l=2; l<=n; ++l){
+			for(int i=1; i<=n-l+1; ++i){
+				for(int j=i; j<=i+l-1; ++j){
+					for(int k=0; k<subtree[j+1][i+l-1].size(); ++k){
+					    for(int m=0; m<subtree[i][j-1].size(); ++m){
+					        TreeNode *T = new TreeNode(j);
+					        T->left = subtree[i][j-1][m];
+					        T->right = subtree[j+1][i+l-1][k];
+				            subtree[i][i+l-1].push_back(T);    
+					    }
+					}
+				}
+			}
+		}
+		return subtree[1][n];
+	}
+
+----------------------------------------------------------------------------------------------------
+Why is the expected result &quot;&lsqb;&lsqb;&rsqb;&rsqb;&quot; when the return type is just a List and not List of List?
+Hi,
+
+8/9 test cases are passed except the following edge case:-
+
+Input : 0
+Output : [ ]
+Expected : [ [ ] ]
+
+It seems expected output is like a List of list. Can someone clarify what is going wrong.
+
+Below is my java code :-
+
+    public class Solution {
+    public List<TreeNode> generateTrees(int n) {
+        if(n == 0) {
+            List<TreeNode> result = new ArrayList<TreeNode>();
+            return result;
+        }
+            
+        int[] arr = new int[n];
+        for(int i = 0; i < n; i++)
+            arr[i] = i + 1;
+        return generate(arr, 0, n - 1);
+    }
+    
+    List<TreeNode> generate(int[] arr, int begin, int end) {
+        if(begin > end)
+            return null;
+        List<TreeNode> result = new ArrayList<TreeNode>();
+        if(begin == end) {
+            result.add(new TreeNode(arr[begin]));
+            return result;
+        }
+        
+        for(int i = begin; i <= end; i++) {
+            
+            List<TreeNode> leftTrees = generate(arr, begin, i - 1);
+            List<TreeNode> rightTrees = generate(arr, i + 1, end);
+            if(leftTrees == null) {
+                for(TreeNode node : rightTrees) {
+                    TreeNode root = new TreeNode(arr[i]);
+                    root.right = node;
+                    result.add(root);
+                }
+            } else if(rightTrees == null) {
+                for(TreeNode node : leftTrees) {
+                    TreeNode root = new TreeNode(arr[i]);
+                    root.left = node;
+                    result.add(root);
+                }
+            } else {
+                for(TreeNode left : leftTrees) {
+                    for(TreeNode right : rightTrees) {
+                        TreeNode root = new TreeNode(arr[i]);
+                        root.left = left;
+                        root.right = right;
+                        result.add(root);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+My non-recursive C++ solution
+    vector<TreeNode *> generateTrees(int n) {
+        vector<TreeNode *> tmp;
+        vector<TreeNode *> ret;
+        tmp.push_back(NULL);        
+        ret.push_back(new TreeNode(1));
+        if (!n) return tmp;
+
+		/* insert the largeset number into previously contructed trees */
+        for (int i = 2; i <= n; i++) {
+            tmp.clear();
+            for (int j = 0; j < ret.size(); j++) {
+				/* firstly, put the largest number on the top of tree */
+                TreeNode *orgTree = ret[j];                
+                TreeNode *newNode = new TreeNode(i);
+                newNode->left = copy(orgTree);
+                tmp.push_back(newNode);
+                
+				/* traverse thru the right-most branch, 
+				 * insert the largest number one position after another */
+                TreeNode *orgRunner = orgTree;
+                while (orgRunner) {
+                    newNode = new TreeNode(i);
+                    newNode->left = orgRunner->right;
+                    orgRunner->right = newNode;
+                    tmp.push_back(copy(orgTree));
+					
+					/* recover the original tree */
+                    orgRunner->right = orgRunner->right->left;
+					
+					/* for the next loop */
+                    orgRunner = orgRunner->right;
+                }
+            }
+            ret =  tmp;
+        }
+        return ret;
+    }
+    
+    TreeNode *copy (TreeNode *root) {
+        TreeNode *ret = NULL;
+        if (root) {
+            ret = new TreeNode(root->val);
+            ret->left = copy(root->left);
+            ret->right = copy(root->right);
+        }
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+A straightforward python solution
+    from itertools import product
+    
+    class Solution:
+        # @param {integer} n
+        # @return {TreeNode[]}
+        def generateTrees(self, n):
+            return self.BST([i+1 for i in range(n)])
+            
+        def BST(self, nodes):
+            trees = []
+            for i in range(len(nodes)):
+                for leftSubTree, rightSubTree in product(self.BST(nodes[:i]), self.BST(nodes[i+1:])):
+                    root = TreeNode(nodes[i])
+                    root.left, root.right = leftSubTree, rightSubTree
+                    trees.append(root)
+                
+            return trees or [None]
+
+----------------------------------------------------------------------------------------------------
+Java 2ms solution beats 92%
+    /**
+     * Definition for a binary tree node.
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public List<TreeNode> generateTrees(int n) {
+            if(n==0) return new ArrayList<TreeNode>();
+            return generateTress(1, n);
+        }
+        
+        private List<TreeNode> generateTress(int start, int end){
+            if(start>end) {
+                List<TreeNode> list = new ArrayList<TreeNode>();
+                list.add(null);
+                return list;
+            }
+            if(start==end) {
+                List<TreeNode> list = new ArrayList<TreeNode>();
+                list.add(new TreeNode(start)); return list;
+            }
+            List<TreeNode> roots = new ArrayList<TreeNode>();
+            for(int i=start;i<=end;i++){
+                List<TreeNode> leftTrees = generateTress(start, i-1);
+                List<TreeNode> rightTrees = generateTress(i+1, end);
+                for(int j=0;j<leftTrees.size();j++){
+                    for(int k=0;k<rightTrees.size();k++){
+                        TreeNode root = new TreeNode(i);
+                        root.left = leftTrees.get(j);
+                        root.right = rightTrees.get(k);
+                        roots.add(root);
+                    }
+                }
+                
+            }
+            return roots;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+When n is 0, why the OJ requires returning the list with a NULL pointer, not an empty list?
+I don't think it makes any sense to do so. When n is 0, we just cannot generate any trees, so the list should be empty.
+
+----------------------------------------------------------------------------------------------------
+Accepted Iterative Java solution.
+The idea is to generate binary trees for every number from 1 and store them in map. And for every next N get roots from 1 to N and just link left and right subtrees generated previously. All values in right subtree should be encreased by the root value.
+
+    public List<TreeNode> generateTrees(int n) {
+        Map<Integer, List<TreeNode>> lists = new HashMap<Integer, List<TreeNode>>();
+        
+        List<TreeNode> list = new LinkedList<TreeNode>();
+        list.add(null);
+        if (n==0) return list;
+        lists.put(0, list);
+        
+        list = new LinkedList<TreeNode>();
+        TreeNode root = new TreeNode(1);
+        list.add(root);
+        lists.put(1, list);
+        
+        for (int i=2; i<=n; i++) {
+        	list = new LinkedList<TreeNode>();
+        	for (int j=1; j<=i; j++) {
+        		for (TreeNode left:lists.get(j-1)) {
+        			for (TreeNode right:lists.get(i-j)) {
+        				root = new TreeNode(j);
+            			root.left = left;
+        				root.right = greaterCopy(right, j);
+        				list.add(root);
+        			}
+        		}
+        	}
+        	lists.put(i, list);
+        }
+        return list;
+    }
+	
+	private TreeNode greaterCopy(TreeNode node, int add) {
+		if (node == null) return null;
+		TreeNode copy = new TreeNode(node.val + add);
+		copy.left = greaterCopy(node.left, add);
+		copy.right = greaterCopy(node.right, add);
+		return copy;
+	}
+
+----------------------------------------------------------------------------------------------------
+DP solution in Python
+----------
+
+class Solution:
+    # @return a list of tree node
+
+    def generateTrees(self, n):
+        if n == 0:
+            return [None]
+        tree_list = [[[None]] * (n + 2) for i in range(n + 2)]
+        for i in range(1, n + 1):
+            tree_list[i][i] = [TreeNode(i)]
+            for j in reversed(range(1, i)):
+                tree_list[j][i] = []
+                for k in range(j, i + 1):
+                    for left in tree_list[j][k - 1]:
+                        for right in tree_list[k + 1][i]:
+                            root = TreeNode(k)
+                            (root.left, root.right) = (left, right)
+                            tree_list[j][i].append(root)
+        return tree_list[1][n]
+
+----------------------------------------------------------------------------------------------------

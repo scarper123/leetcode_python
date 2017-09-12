@@ -1,0 +1,706 @@
+Share my solution
+First of all, let's look at the naive solution. Preprocess to calculate the prefix sums `S[i]` = `S(0, i)`, then `S(i, j)` = `S[j] - S[i]`. Note that here we define `S(i, j)` as the sum of range `[i, j)` where `j` exclusive and `j` > `i`. With these prefix sums, it is trivial to see that with `O(n^2)` time we can find all `S(i, j)` in the range `[lower, upper]`
+
+**Java - Naive Solution**
+
+    public int countRangeSum(int[] nums, int lower, int upper) {
+        int n = nums.length;
+        long[] sums = new long[n + 1];
+        for (int i = 0; i < n; ++i)
+            sums[i + 1] = sums[i] + nums[i];
+        int ans = 0;
+        for (int i = 0; i < n; ++i)
+            for (int j = i + 1; j <= n; ++j)
+                if (sums[j] - sums[i] >= lower && sums[j] - sums[i] <= upper)
+                    ans++;
+        return ans;
+    }
+
+**However the naive solution is set to TLE intentionally**
+
+**Now let's do better than this.**
+
+Recall [count smaller number after self](http://algobox.org/count-of-smaller-numbers-after-self/) where we encountered the problem
+
+* `count[i]` = count of `nums[j]` - `nums[i]` < `0` with `j` > `i`
+
+Here, after we did the preprocess, we need to solve the problem
+
+* `count[i]` = count of `a` <= `S[j]` - `S[i]` <= `b` with `j` > `i`
+* `ans` = sum(count[:])
+
+
+Therefore the two problems are almost the same. We can use the same technique used in that problem to solve this problem. One solution is merge sort based; another one is Balanced BST based. The time complexity are both `O(n log n)`.
+
+The merge sort based solution counts the answer while doing the merge. During the merge stage, we have already sorted the left half `[start, mid)` and right half `[mid, end)`. We then iterate through the left half with index `i`. For each `i`, we need to find two indices `k` and `j` in the right half where
+
+*  `j` is the first index satisfy `sums[j] - sums[i] > upper` and 
+* `k` is the first index satisfy `sums[k] - sums[i] >= lower`. 
+
+Then the number of sums in `[lower, upper]` is `j-k`. We also use another index `t` to copy the elements satisfy `sums[t] < sums[i]` to a cache in order to complete the merge sort.
+
+Despite the nested loops, the time complexity of the "merge & count" stage is still linear. Because the indices `k`, `j`, `t` will only increase but not decrease, each of them will only traversal the right half once at most. The total time complexity of this divide and conquer solution is then `O(n log n)`.
+
+One other concern is that the `sums` may overflow integer. So we use long instead.
+
+**Java - Merge Sort Solution**
+
+    public int countRangeSum(int[] nums, int lower, int upper) {
+        int n = nums.length;
+        long[] sums = new long[n + 1];
+        for (int i = 0; i < n; ++i)
+            sums[i + 1] = sums[i] + nums[i];
+        return countWhileMergeSort(sums, 0, n + 1, lower, upper);
+    }
+
+    private int countWhileMergeSort(long[] sums, int start, int end, int lower, int upper) {
+        if (end - start <= 1) return 0;
+        int mid = (start + end) / 2;
+        int count = countWhileMergeSort(sums, start, mid, lower, upper) 
+                  + countWhileMergeSort(sums, mid, end, lower, upper);
+        int j = mid, k = mid, t = mid;
+        long[] cache = new long[end - start];
+        for (int i = start, r = 0; i < mid; ++i, ++r) {
+            while (k < end && sums[k] - sums[i] < lower) k++;
+            while (j < end && sums[j] - sums[i] <= upper) j++;
+            while (t < end && sums[t] < sums[i]) cache[r++] = sums[t++];
+            cache[r] = sums[i];
+            count += j - k;
+        }
+        System.arraycopy(cache, 0, sums, start, t - start);
+        return count;
+    }
+
+----------------------------------------------------------------------------------------------------
+Summary of the Divide and Conquer based and Binary Indexed Tree based solutions
+Thanks for those contributing excellent ideas to this problem. Here is a quick summary of solutions based on either divide and conquer or binary indexed tree. 
+
+To start, we already know there is a straightforward solution by computing each range sum and checking whether it lies in [lower, upper] or not. If the number of elements is n, we have n*(n+1)/2 such range sums so the naive solution will end up with O(n^2) time complexity. Now we are asked to do better than that. So what are the targeted time complexities in your mind? When I first looked at the problem, my instinct is that O(n) solution is too ambitious, so I will target at linearithmic-like (O(n*(logn)^b)) solutions. To get the logarithmic part, it's natural to think of breaking down the original array, and that's where the divide-and-conquer idea comes from.
+
+For this problem, we need some array to apply our divide and conquer algorithm. Without much thinking, we can do that directly with the input array (nums) itself. Since our problem also involves range sums and I believe you have the experience of computing range sums from prefix array of the input array, we might as well apply divide and conquer ideas on the prefix array. So I will give both the input-array based and prefix-array based divide&conquer solutions.
+
+Let's first look at input-array based divide&conquer solution. Our original problem is like this: given an input array nums with length n and a range [lower, upper], find the total number of range sums that lie in the given range. Note the range [lower, upper] and the input array are both fixed. Therefore each range sum can be characterized by two indices i1 and i2 (i1 <= i2), such that range sum S(i1, i2) is the summation of input elements with indices going from i1 up to i2 (both inclusive). Then our problem can be redefined in terms of the value ranges of i1 and i2. For example our original problem can be restated as finding the total number of range sums lying in the given range with 0 <= i1 <= i2 <= n - 1, or in a symbolic way T(0, n-1).
+
+Now if we break our original input array into two subarrays, [0, m] and [m+1, n-1] with m = (n-1)/2, our original problem can be divided into three parts, depending on the values of i1 and i2. If i1 and i2 are both from the first subarray [0, m], we have a subproblem T(0, m); if i1 and i2 are both from the second subarray, we have a subproblem T(m+1, n-1); if i1 is from the first subarray and i2 from the second (note we assume i1 <= i2, therefore we don't have the other case with i2 from first subarray and i1 from second), then we have a new problem which I define as C. In summary we should have:
+
+T(0, n-1) = T(0, m) + T(m+1, n-1) + C
+
+Now from the master theorem, the time complexity of the new problem C should be better than O(n^2), otherwise we make no improvement by applying this divide&conquer idea. So again, I will aim at linearithmic-like solutions for the new problem C: find the total number of range sums lying in the given range with each range sum starting from the first subarray and ending at the second subarray.
+
+First let's try to compute all such range sums. The way I did it was first computing the prefix array of the second subarray and the suffix array (or "backward" prefix array if you like) of the first subarray. Then I can naively add each element in the suffix array to all elements in the prefix array to obtain all the possible range sums. Of course you end up with O(n^2) solution, as expected. So how can we approach it with better time complexity?
+
+Here are the facts I observed: for each element e in the suffix array, we need to add it to all elements in the prefix array. But the order in which we add it doesn't matter. This implies that we can sort our prefix array. This can be done in O(nlogn) time. Now we have a sorted prefix array, do we still need to add the element e to all elements in the prefix array? The answer is no. Because our final goal is to compare the resulted range sums with the given range bounds lower and upper. It is equivalent to modifying the range bounds so we have new bounds (lower - e) and (upper - e) and leave the prefix array unchanged. Now we can compare these new bounds with the sorted prefix array, and I'm sure you can write your own binary search algorithm to do that. So for each element e in the suffix array, we can compute the modified range bounds and get the number of range sums in this new range in logn time. Therefore the total time will be O(nlogn). So in summary, our new problem C can be solved in O(nlogn) time and according to the master theorem, our original problem can be solved in O(n(logn)^2) time. The following is the complete java program:
+
+    public int countRangeSum(int[] nums, int lower, int upper) {
+    	if (nums == null || nums.length == 0 || lower > upper) {
+    		return 0;
+    	}
+        
+        return countRangeSumSub(nums, 0, nums.length - 1, lower, upper);
+    }
+
+    private int countRangeSumSub(int[] nums, int l, int r, int lower, int upper) {
+    	if (l == r) {
+    		return nums[l] >= lower && nums[r] <= upper ? 1 : 0;  // base case
+    	}
+    	
+    	int m = l + (r - l) / 2;
+    	long[] arr = new long[r - m];  // prefix array for the second subarray
+    	long sum = 0;
+    	int count = 0;
+    	
+    	for (int i = m + 1; i <= r; i++) {
+    		sum += nums[i];
+    		arr[i - (m + 1)] = sum;	// compute the prefix array
+    	}
+    	
+    	Arrays.sort(arr);  // sort the prefix array
+    	
+    	// Here we can compute the suffix array element by element.
+    	// For each element in the suffix array, we compute the corresponding
+		// "insertion" indices of the modified bounds in the sorted prefix array
+    	// then the number of valid ranges sums will be given by the indices difference.
+        // I modified the bounds to be "double" to avoid duplicate elements.
+    	sum = 0;
+    	for (int i = m; i >= l; i--) {
+    		sum += nums[i];  
+    		count += findIndex(arr, upper - sum + 0.5) - findIndex(arr, lower - sum - 0.5);
+    	}
+    	
+    	return countRangeSumSub(nums, l, m, lower, upper) + countRangeSumSub(nums, m + 1, r, lower, upper) + count;
+    }
+
+    // binary search function
+    private int findIndex(long[] arr, double val) {
+    	int l = 0, r = arr.length - 1, m = 0;
+    	
+    	while (l <= r) {
+    		m = l + (r - l) / 2;
+    		
+    		if (arr[m] <= val) {
+    			l = m + 1;
+    		} else {
+    			r = m - 1;
+    		}
+    	}
+    	
+    	return l;
+    }
+
+**(Next two parts will come in answers due to the limitation of maximum length of characters )**
+
+----------------------------------------------------------------------------------------------------
+Short &amp; simple O(n log n)
+    def countRangeSum(self, nums, lower, upper):
+        first = [0]
+        for num in nums:
+            first.append(first[-1] + num)
+        def sort(lo, hi):
+            mid = (lo + hi) / 2
+            if mid == lo:
+                return 0
+            count = sort(lo, mid) + sort(mid, hi)
+            i = j = mid
+            for left in first[lo:mid]:
+                while i < hi and first[i] - left <  lower: i += 1
+                while j < hi and first[j] - left <= upper: j += 1
+                count += j - i
+            first[lo:hi] = sorted(first[lo:hi])
+            return count
+        return sort(0, len(first))
+
+First compute the prefix sums: `first[m]` is the sum of the first `m` numbers.  
+Then the sum of any subarray `nums[i:k]` is simply `first[k] - first[i]`.  
+So we just need to count those where `first[k] - first[i]` is in `[lower,upper]`.
+
+To find those pairs, I use mergesort with embedded counting. The pairs in the left half and the pairs in the right half get counted in the recursive calls. We just need to also count the pairs that use both halves.
+
+For each `left` in `first[lo:mid]` I find all `right` in `first[mid:hi]` so that `right - left` lies in `[lower, upper]`. Because the halves are sorted, these fitting `right` values are a subarray `first[i:j]`. With increasing `left` we must also increase `right`, meaning must we leave out `first[i]` if it's too small and and we must include `first[j]` if it's small enough.
+
+Besides the counting, I also need to actually merge the halves for the sorting. I let `sorted` do that, which uses [Timsort](https://en.wikipedia.org/wiki/Timsort) and takes linear time to recognize and merge the already sorted halves.
+
+----------------------------------------------------------------------------------------------------
+Java SegmentTree Solution, 36ms
+Understand my segmentTree implementation is not optimized.
+Please feel free to give me suggestions.
+
+    public class Solution {
+        class SegmentTreeNode {
+            SegmentTreeNode left;
+            SegmentTreeNode right;
+            int count;
+            long min;
+            long max;
+            public SegmentTreeNode(long min, long max) {
+                this.min = min;
+                this.max = max;
+            }
+        }
+        private SegmentTreeNode buildSegmentTree(Long[] valArr, int low, int high) {
+            if(low > high) return null;
+            SegmentTreeNode stn = new SegmentTreeNode(valArr[low], valArr[high]);
+            if(low == high) return stn;
+            int mid = (low + high)/2;
+            stn.left = buildSegmentTree(valArr, low, mid);
+            stn.right = buildSegmentTree(valArr, mid+1, high);
+            return stn;
+        }
+        private void updateSegmentTree(SegmentTreeNode stn, Long val) {
+            if(stn == null) return;
+            if(val >= stn.min && val <= stn.max) {
+                stn.count++;
+                updateSegmentTree(stn.left, val);
+                updateSegmentTree(stn.right, val);
+            }
+        }
+        private int getCount(SegmentTreeNode stn, long min, long max) {
+            if(stn == null) return 0;
+            if(min > stn.max || max < stn.min) return 0;
+            if(min <= stn.min && max >= stn.max) return stn.count;
+            return getCount(stn.left, min, max) + getCount(stn.right, min, max);
+        }
+    
+        public int countRangeSum(int[] nums, int lower, int upper) {
+    
+            if(nums == null || nums.length == 0) return 0;
+            int ans = 0;
+            Set<Long> valSet = new HashSet<Long>();
+            long sum = 0;
+            for(int i = 0; i < nums.length; i++) {
+                sum += (long) nums[i];
+                valSet.add(sum);
+            }
+    
+            Long[] valArr = valSet.toArray(new Long[0]);
+    
+            Arrays.sort(valArr);
+            SegmentTreeNode root = buildSegmentTree(valArr, 0, valArr.length-1);
+    
+            for(int i = nums.length-1; i >=0; i--) {
+                updateSegmentTree(root, sum);
+                sum -= (long) nums[i];
+                ans += getCount(root, (long)lower+sum, (long)upper+sum);
+            }
+            return ans;
+        }
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+8-line multiset  C++ solution (100ms), also binary search tree (180ms) + mergesort(52ms)
+The basic idea is to use a multiset to save sum, where sum at i = nums[0]+...+ nums[i]. At each i, only those sum[j] that satisfies  lower=< sum[i]-sum[j]<= upper can generate a valid range[j,i]. so we only need to calculate how many j (0=< j< i) satisfy  sum[i]-upper=< sum[j]<=-sum[i]-lower. The STL multiset can take care of sort and find upper_bound, lower_bound j. Since the multiset is usually implemented with Red-black tree, so those operations should have complexity of O(logN). So in total, the complexity is O(NlogN) (except the distance part). At least it looks neat
+
+    class Solution {
+    public:
+        int countRangeSum(vector<int>& nums, int lower, int upper) {
+            multiset<long long> pSum;
+            int res = 0,  i; 
+            long long left, right, sum=0;
+            for(i=0,pSum.insert(0); i<nums.size(); ++i)
+            {
+                sum +=nums[i];
+                res += std::distance(pSum.lower_bound(sum-upper), pSum.upper_bound(sum-lower));
+                pSum.insert(sum);
+            }
+            return res;
+        }
+    };
+
+In the comments made by StefanPochmann, there is concern that the STL distance function increases the total complexity to O(N^2), which is true. In the following version, I just show one possible way to fix that (O(1) distance function) if we implement the binary search tree by ourselves. Of course, the below version is not a balanced binary search tree, so the worst case is still O(N^2) even if the input is random, the average complexity is O(NlogN)
+
+    class Solution {
+    private:
+        class BSTNode{ // Binary search tree implementation
+        public:    
+            long long val;
+            int cnt; // how many nodes with value of "val'
+            int lCnt; // how many nodes on its left subtree
+            BSTNode *left;
+            BSTNode *right;
+            
+            BSTNode(long long x)
+            {
+                val = x;
+                cnt = 1;
+                lCnt = 0;
+                left = right = nullptr;
+            }
+        };
+        
+        int getBound(BSTNode *root, long long x, bool includeSelf)
+        { // get the index of the last node that satisfy val<x (includeSelf=false) or val<=x (includeSelf = true)
+            if(!root) return 0;
+            if(root->val == x) return  root->lCnt + (includeSelf?root->cnt:0);
+            else if(root->val > x) return getBound(root->left, x, includeSelf);
+            else return root->cnt + root->lCnt + getBound(root->right, x, includeSelf);
+        }
+        void insert(BSTNode*& root, long long x)
+        { // insert a node to the tree
+            if(!root) root = new BSTNode(x);
+            else if(root->val == x) (root->cnt)++;
+            else if(root->val < x) 
+                insert(root->right,x);
+            else{
+                ++(root->lCnt);
+                insert(root->left,x);
+            }
+        }
+        void deleteTree(BSTNode*root)
+        { //destroy the tree
+            if(!root) return;
+            deleteTree(root->left);
+            deleteTree(root->right);
+            delete root;
+        }
+        
+        
+    public:
+        int countRangeSum(vector<int>& nums, int lower, int upper) { // same idea as the multiset  version
+            BSTNode *root= new BSTNode(0);
+            int res = 0,  i; 
+            long long left, right, sum=0;
+            for(i=0; i<nums.size(); ++i)
+            {
+                sum +=nums[i];
+                res += getBound(root, sum-lower, true) - getBound(root, sum-upper, false);
+                insert(root, sum);
+            }
+            deleteTree(root);
+            return res;
+         }
+    };
+
+Another option is to multify mergesort to do counting. The code is as below and the complexity is O(NlogN) (52ms)
+
+    class Solution {
+    private:    
+        int mergeSort(vector<long long>&sum, int left, int right, int lower, int upper)
+        {
+            int mid, i, res, j, k;
+            if(left>right) return 0;
+            if(left==right) return ( (sum[left]>=lower) && (sum[left]<=upper) )?1:0;
+            else
+            {
+                vector<long long> temp(right-left+1,0);
+                mid = (left+right)/2;
+                res = mergeSort(sum, left,mid, lower, upper) + mergeSort(sum, mid+1,right, lower, upper); // merge sort two halfs first, be careful about how to divide [left, mid] and [mid+1, right]
+                for(i=left, j=k=mid+1; i<=mid; ++i)
+                { // count the valid ranges [i,j], where i is in the first half and j is in the second half
+                    while(j<=right && sum[j]-sum[i]<lower)  ++j;
+                    while(k<=right && sum[k]-sum[i]<=upper) ++k;
+                    res +=k-j;
+                }
+                for(i=k=left, j=mid+1; k<=right; ++k) //merge the sorted two halfs
+                    temp[k-left] = (i<=mid) && (j>right || sum[i]<sum[j])?sum[i++]:sum[j++]; 
+                for(k=left; k<=right; ++k) // copy the sorted results back to sum
+                    sum[k] = temp[k-left]; 
+                return res;
+            }
+        }
+    public:
+        int countRangeSum(vector<int>& nums, int lower, int upper) {
+             int len = nums.size(), i;
+             vector<long long> sum(len+1, 0);
+             for(i=1; i<=len; ++i) sum[i] = sum[i-1]+nums[i-1];
+             return mergeSort(sum, 1, len, lower, upper);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ merge sort solution, very short
+    class Solution {
+    public:
+        int mergeSort(vector<long>& sum, int lower, int upper, int low, int high)
+        {
+            if(high-low <= 1) return 0;
+            int mid = (low+high)/2, m = mid, n = mid, count =0;
+            count =mergeSort(sum,lower,upper,low,mid) +mergeSort(sum,lower,upper,mid,high);
+            for(int i =low; i< mid; i++)
+            {
+                while(m < high && sum[m] - sum[i] < lower) m++;
+                while(n < high && sum[n] - sum[i] <= upper) n++;
+                count += n - m;
+            }
+            inplace_merge(sum.begin()+low, sum.begin()+mid, sum.begin()+high);
+            return count;
+        }
+    
+        int countRangeSum(vector<int>& nums, int lower, int upper) {
+            int len = nums.size();
+            vector<long> sum(len + 1, 0);
+            for(int i =0; i< len; i++) sum[i+1] = sum[i]+nums[i];
+            return mergeSort(sum, lower, upper, 0, len+1);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java BST solution averagely O(nlogn)
+The performance would be bad if all the numbers are positive or negative, where the BST is completely unbalanced.
+
+    public class Solution {
+        private class TreeNode {
+            long val = 0;
+            int count = 1;
+            int leftSize = 0;
+            int rightSize = 0;
+            TreeNode left = null;
+            TreeNode right = null;
+            public TreeNode(long v) {
+                this.val = v;
+                this.count = 1;
+                this.leftSize = 0;
+                this.rightSize = 0;
+            }
+        }
+        
+        private TreeNode insert(TreeNode root, long val) {
+            if(root == null) {
+                return new TreeNode(val);
+            } else if(root.val == val) {
+                root.count++;
+            } else if(val < root.val) {
+                root.leftSize++;
+                root.left = insert(root.left, val);
+            } else if(val > root.val) {
+                root.rightSize++;
+                root.right = insert(root.right, val);
+            }
+            return root;
+        }
+        
+        private int countSmaller(TreeNode root, long val) {
+            if(root == null) {
+                return 0;
+            } else if(root.val == val) {
+                return root.leftSize;
+            } else if(root.val > val) {
+                return countSmaller(root.left, val);
+            } else {
+                return root.leftSize + root.count + countSmaller(root.right, val);
+            }
+        }
+        
+        private int countLarger(TreeNode root, long val) {
+            if(root == null) {
+                return 0;
+            } else if(root.val == val) {
+                return root.rightSize;
+            } else if(root.val < val) {
+                return countLarger(root.right, val);
+            } else {
+                return countLarger(root.left, val) + root.count + root.rightSize;
+            }
+        }
+        
+        private int rangeSize(TreeNode root, long lower, long upper) {
+            int total = root.count + root.leftSize + root.rightSize;
+            int smaller = countSmaller(root, lower);    // Exclude everything smaller than lower
+            int larger = countLarger(root, upper);      // Exclude everything larger than upper
+            return total - smaller - larger;
+        }
+        
+        public int countRangeSum(int[] nums, int lower, int upper) {
+            if(nums.length == 0) {
+                return 0;
+            }
+            long[] sums = new long[nums.length + 1];
+            for(int i = 0; i < nums.length; i++) {
+                sums[i + 1] = sums[i] + nums[i];
+            }
+            TreeNode root = new TreeNode(sums[0]);
+            int output = 0;
+            for(int i = 1; i < sums.length; i++) {
+                output += rangeSize(root, sums[i] - upper, sums[i] - lower);
+                insert(root, sums[i]);
+            }
+            return output;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Summary Of BIT, Divide And Conquer and elses...
+[Leetcode, Count of Range Sum][1]
+
+  [1]: http://huntzhan.org/leetcode-count-of-range-sum/
+
+----------------------------------------------------------------------------------------------------
+Share my Java solution using TreeMap
+public class Solution {
+    public int countRangeSum(int[] nums, int lower, int upper) {
+        if(nums==null || nums.length==0) return 0;
+        TreeMap<Long, Long> tr = new TreeMap<Long, Long>();
+        tr.put((long)0, (long)1);
+        long sum = 0;
+        long count = 0;
+        for(int i=0;i<nums.length;i++){
+            sum += nums[i];
+            long from = sum - upper;
+            long to = sum - lower;
+            Map<Long, Long> sub = tr.subMap(from, true, to, true);
+            for(Long value:sub.values()){
+                count+=value;
+            }
+            if(tr.containsKey(sum)){
+                tr.put(sum, tr.get(sum)+1);
+            } else {
+                tr.put(sum, (long)1);
+            }
+        }
+        return (int)count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Divide and Conquer Solution with brief comments
+    class Solution {
+    public:
+    	int countRangeSum(vector<int>& nums, int lower, int upper) {
+    
+    		if (nums.size() == 0)
+    			return 0;
+    
+    		// build cumulative summation array
+    		vector<long long> cums(nums.size(), 0);
+    		cums[0] = nums[0];
+    		for (int i = 1; i < nums.size(); ++i) 
+    			cums[i] = cums[i - 1] + nums[i];
+    
+    		// run divide and conquer
+    		vector<long long> tmp(nums.size());
+    		return recursive_count(cums, 0, nums.size() - 1, tmp, lower, upper);
+    	}
+    
+    	int recursive_count(vector<long long>& cums, int i, int j, vector<long long>& tmp, int lower, int upper) {
+    
+    		if (i == j)
+    			return cums[i] >= lower && cums[i] <= upper;
+    		if (i > j)
+    			return 0;
+    
+    		int mid = (i + j) / 2;
+    		int left = recursive_count(cums, i, mid, tmp, lower, upper);
+    		int right = recursive_count(cums, mid + 1, j, tmp, lower, upper);
+    
+    		// compute the cross-boundary case in O(n) 
+    		// based on the assumption that both left and right array are sorted
+    		int p = i, q = i, k = mid + 1;
+    		int cross = 0;
+    		for (k = mid + 1; k <= j; ++k) {
+    			while (p <= mid && cums[k] - cums[p] > upper) 
+    				++p;
+    			while (q <= mid && cums[k] - cums[q] >= lower) 
+    				++q;
+    			cross += q - p;
+    		}
+    
+    		// merge sort in O(n)
+    		p = i; q = mid + 1; int o = i;
+    		while (p <= mid || q <= j) {
+    			long long v1 = (p <= mid ? cums[p] : LONG_MAX);
+    			long long v2 = (q <= j ? cums[q] : LONG_MAX);
+    			if (v1 < v2)
+    				tmp[o++] = cums[p++];
+    			else
+    				tmp[o++] = cums[q++];
+    		}
+    		copy(tmp.begin() + i, tmp.begin() + j + 1, cums.begin() + i);
+    
+    		return left + right + cross;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+O(NlogN) Python solution, binary indexed tree, 268 ms
+`Sum[k]` is the sum of first k numbers. O(N^2) solution is 
+
+    for j in range(n + 1):
+        for i in range(j):
+            if lower <= Sum[j] - Sum[i] <= upper: res += 1
+
+This is equal to:
+
+    collection = empty
+    for sum_j in Sum:
+        sum_i_count = how many sum_i in this collection that sum_j - upper <= sum_i <= sum_j - lower
+        res += sum_i_count
+        put sum_j into this collection
+
+With [Binary indexed tree][1], counting `sum_i` number is O(logN), putting  `sum_i` into tree is also O(logN). Here we store the index of `sortSum` in the tree. Since index of `BITree` starts from 1, we need `bisect.bisect_left(sortSum, sum_j) + 1` for `update()`.
+
+    def countRangeSum(self, nums, lower, upper):
+        n = len(nums)
+        Sum, BITree = [0] * (n + 1), [0] * (n + 2)
+        
+        def count(x):
+            s = 0
+            while x:
+                s += BITree[x]
+                x -= (x & -x)
+            return s
+        
+        def update(x):
+            while x <= n + 1:
+                BITree[x] += 1
+                x += (x & -x)
+                
+        for i in range(n):
+            Sum[i + 1] = Sum[i] + nums[i]
+        sortSum, res = sorted(Sum), 0
+        for sum_j in Sum:
+            sum_i_count = count(bisect.bisect_right(sortSum, sum_j - lower)) - count(bisect.bisect_left(sortSum, sum_j - upper))
+            res += sum_i_count
+            update(bisect.bisect_left(sortSum, sum_j) + 1)
+        return res
+
+
+  [1]: https://en.wikipedia.org/wiki/Fenwick_tree
+
+----------------------------------------------------------------------------------------------------
+44ms Balanced BST C++ solution
+struct MyTreeNode {
+    MyTreeNode(long long value) {
+        val = value;
+        count = less = 0;
+        left = right = nullptr;
+    }
+    long long val;
+    int count;
+    int less;
+    MyTreeNode* left;
+    MyTreeNode* right;
+};
+
+class Solution {
+public:
+    int countRangeSum(vector<int>& nums, int lower, int upper) {
+        int result = 0;
+        long long sum = 0;
+
+        // remove duplicated
+        unordered_set<long long> hash = {0};
+        for (int n : nums) {
+            sum += n;
+            hash.insert(sum);
+        }
+        // sort
+        vector<long long> orderedNums(hash.begin(), hash.end());
+        sort(orderedNums.begin(), orderedNums.end());
+
+        auto* tree = buildBalancedTree(orderedNums.begin(), orderedNums.end());
+        
+        // lower <= sum[i] - sum[x] <= upper      (i > x)
+        // sum[i] - upper <= sum[x] <= sum[i] - lower;
+        sum = 0;
+        insert(tree, 0);
+        for (int n : nums) {
+            sum += n;
+            int loCount = countLessThanValue(tree, sum - upper);
+            int hiCount = countLessThanValue(tree, sum - lower + 1);
+            result += hiCount - loCount;
+            insert(tree, sum);
+        }
+        
+        return result;
+    }
+private:
+    MyTreeNode* buildBalancedTree(vector<long long>::iterator begin, vector<long long>::iterator end) {
+        if (begin == end) return nullptr;
+        auto mid = begin + (end - begin) / 2;
+        auto* node = new MyTreeNode(*mid);
+        node->left = buildBalancedTree(begin, mid);
+        node->right = buildBalancedTree(mid + 1, end);
+        return node;
+    }
+    int countLessThanValue(MyTreeNode* pNode, long long value) {
+        int count = 0;
+        while (pNode != nullptr) {
+            if (value < pNode->val) {
+                pNode = pNode->left;
+            } else if (value > pNode->val) {
+                count += pNode->count + pNode->less;
+                pNode = pNode->right;
+            } else {
+                count += pNode->less;
+                break;
+            }
+        }
+        
+        return count;
+    }
+    void insert(MyTreeNode* pNode, long long value) {
+        while (value != pNode->val) {
+            if (value < pNode->val) {
+                ++(pNode->less);
+                pNode = pNode->left;
+            } else {
+                pNode = pNode->right;
+            }
+        }
+        ++(pNode->count);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+An O(n log n) solution via Fenwick Tree

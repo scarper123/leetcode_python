@@ -1,0 +1,859 @@
+Really Easy Understanding Solution(O(n), Java)
+public boolean isRectangleCover(int[][] rectangles) {
+
+        if (rectangles.length == 0 || rectangles[0].length == 0) return false;
+
+        int x1 = Integer.MAX_VALUE;
+        int x2 = Integer.MIN_VALUE;
+        int y1 = Integer.MAX_VALUE;
+        int y2 = Integer.MIN_VALUE;
+        
+        HashSet<String> set = new HashSet<String>();
+        int area = 0;
+        
+        for (int[] rect : rectangles) {
+            x1 = Math.min(rect[0], x1);
+            y1 = Math.min(rect[1], y1);
+            x2 = Math.max(rect[2], x2);
+            y2 = Math.max(rect[3], y2);
+            
+            area += (rect[2] - rect[0]) * (rect[3] - rect[1]);
+            
+            String s1 = rect[0] + " " + rect[1];
+            String s2 = rect[0] + " " + rect[3];
+            String s3 = rect[2] + " " + rect[3];
+            String s4 = rect[2] + " " + rect[1];
+            
+            if (!set.add(s1)) set.remove(s1);
+            if (!set.add(s2)) set.remove(s2);
+            if (!set.add(s3)) set.remove(s3);
+            if (!set.add(s4)) set.remove(s4);
+        }
+        
+        if (!set.contains(x1 + " " + y1) || !set.contains(x1 + " " + y2) || !set.contains(x2 + " " + y1) || !set.contains(x2 + " " + y2) || set.size() != 4) return false;
+        
+        return area == (x2-x1) * (y2-y1);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution by counting corners with detailed explaination
+struct pairhash {//double hash function for pair key
+public:
+    template <typename T, typename U>
+    size_t operator()(const pair<T, U> &rhs) const {
+        size_t l = hash<T>()(rhs.first);
+        size_t r = hash<U>()(rhs.second);
+        return l + 0x9e3779b9 + (r << 6) + (r >> 2);
+    }
+};
+
+bool isRectangleCover(vector<vector<int>>& rectangles) {
+    // step 1: counting
+    unordered_map<pair<int, int>, int, pairhash> corner_count;
+    int minx = INT_MAX, maxx=INT_MIN, miny=INT_MAX, maxy=INT_MIN;
+    for (auto& rect : rectangles) {
+        minx = min(minx, rect[0]);
+        maxx = max(maxx, rect[2]);
+        miny = min(miny, rect[1]);
+        maxy = max(maxy, rect[3]);
+        
+        int& m1 = corner_count[make_pair(rect[0], rect[1])]; 
+        if (m1 & 1) return false; else m1 |= 1;
+        int& m2 = corner_count[make_pair(rect[2], rect[1])];
+        if (m2 & 2) return false; else m2 |= 2;
+        int& m3 = corner_count[make_pair(rect[0], rect[3])]; 
+        if (m3 & 4) return false; else m3 |= 4;
+        int& m4 = corner_count[make_pair(rect[2], rect[3])]; 
+        if (m4 & 8) return false; else m4 |= 8;
+    }
+    
+    //step2: checking
+    for (const auto& kv: corner_count) {
+        pair<int, int> pos; int mask;
+        tie(pos, mask) = kv;
+        if ((pos.first != minx && pos.first != maxx) || (pos.second != miny && pos.second != maxy)) {
+            if (mask != 3 && mask != 5 && mask != 10 && mask != 12 && mask != 15) return false;
+        }
+    }
+    return true;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n log n) sweep line solution
+public class Event implements Comparable<Event> {
+	int time;
+	int[] rect;
+
+	public Event(int time, int[] rect) {
+		this.time = time;
+		this.rect = rect;
+	}
+	
+	public int compareTo(Event that) {
+		if (this.time != that.time) return this.time - that.time;
+		else return this.rect[0] - that.rect[0];
+	}
+}
+
+public boolean isRectangleCover(int[][] rectangles) {
+	PriorityQueue<Event> pq = new PriorityQueue<Event> ();
+        // border of y-intervals
+	int[] border= {Integer.MAX_VALUE, Integer.MIN_VALUE};
+	for (int[] rect : rectangles) {
+		Event e1 = new Event(rect[0], rect);
+		Event e2 = new Event(rect[2], rect);
+		pq.add(e1);
+		pq.add(e2);
+		if (rect[1] < border[0]) border[0] = rect[1];
+		if (rect[3] > border[1]) border[1] = rect[3];
+	}
+	TreeSet<int[]> set = new TreeSet<int[]> (new Comparator<int[]> () {
+		@Override
+                // if two y-intervals intersects, return 0
+		public int compare (int[] rect1, int[] rect2) {
+			if (rect1[3] <= rect2[1]) return -1;
+			else if (rect2[3] <= rect1[1]) return 1;
+			else return 0;
+		}
+	});
+	int yRange = 0;
+	while (!pq.isEmpty()) {
+		int time = pq.peek().time;
+		while (!pq.isEmpty() && pq.peek().time == time) {
+			Event e = pq.poll();
+			int[] rect = e.rect;
+			if (time == rect[2]) {
+				set.remove(rect);
+				yRange -= rect[3] - rect[1];
+			} else {
+				if (!set.add(rect)) return false;
+				yRange += rect[3] - rect[1];
+			}
+		}
+                // check intervals' range
+		if (!pq.isEmpty() && yRange != border[1] - border[0]) {
+                        return false;
+			//if (set.isEmpty()) return false;
+			//if (yRange != border[1] - border[0]) return false;
+		}
+	}
+	return true;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Java solution with explanation (updated)
+public class Solution {
+    Map<String, Integer> map = new HashMap<String, Integer>();
+    public boolean isRectangleCover(int[][] rectangles) {
+        if (rectangles.length == 0 || rectangles[0].length == 0) return false;
+        int lx = Integer.MAX_VALUE, ly = lx, rx = Integer.MIN_VALUE, ry = rx, sum = 0;
+        for (int[] rec : rectangles) {
+            lx = Math.min(lx, rec[0]);
+            ly = Math.min(ly, rec[1]);
+            rx = Math.max(rx, rec[2]);
+            ry = Math.max(ry, rec[3]);
+            sum += (rec[2] - rec[0]) * (rec[3] - rec[1]);
+            //bottom-left
+            if (overlap(rec[0] + " " + rec[1], 1)) return false;
+            //top-left
+            if (overlap(rec[0] + " " + rec[3], 2)) return false;
+            //bottom-right
+            if (overlap(rec[2] + " " + rec[1], 4)) return false;
+            //top-right
+            if (overlap(rec[2] + " " + rec[3], 8)) return false;
+        }
+        int count = 0;
+        Iterator<Integer> iter = map.values().iterator();
+        while (iter.hasNext()) {
+            Integer i = iter.next();
+            if (i != 15 && i != 12 && i != 10 && i != 9 && i != 6 && i != 5 && i != 3) count++;
+        }
+        return count == 4 && sum == (rx - lx) * (ry - ly);
+    }
+    
+    private boolean overlap(String corner, Integer type) {
+        Integer temp = map.get(corner);
+        if (temp == null) temp = type;
+        else if ((temp & type) != 0) return true;
+        else temp |= type;
+        map.put(corner, temp);
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Understanding O(n) Python Solution
+class Solution(object):
+    def isRectangleCover(self, rectangles):
+        def recordCorner(point):
+            if point in corners:
+                corners[point] += 1
+            else:
+                corners[point] = 1
+
+        corners = {}                                # record all corners 
+        L, B, R, T, area = float('inf'), float('inf'), -float('inf'), -float('inf'), 0
+
+        for sub in rectangles:
+            L, B, R, T = min(L, sub[0]), min(B, sub[1]), max(R, sub[2]), max(T, sub[3])
+            ax, ay, bx, by = sub[:]
+            area += (bx-ax)*(by-ay)                 # sum up the area of each sub-rectangle
+            map(recordCorner, [(ax, ay), (bx, by), (ax, by), (bx, ay)])
+
+        if area != (T-B)*(R-L): return False        # check the area
+
+        big_four = [(L,B),(R,T),(L,T),(R,B)]
+
+        for bf in big_four:                         # check corners of big rectangle
+            if bf not in corners or corners[bf] != 1:
+                return False
+
+        for key in corners:                         # check existing "inner" points
+            if corners[key]%2 and key not in big_four:
+                return False
+
+        return True
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) solution using multiset, and O(n) solution using unordered_map
+    struct pairhash {   //double hash function for pair key
+        template <typename T, typename U>
+        size_t operator()(const pair<T, U> &p) const {
+            size_t l = hash<T>()(p.first), r = hash<U>()(p.second);
+            return l + 0x9e3779b9 + (r << 6) + (r >> 2);
+        }
+    };
+    
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        int area = 0, xmin = INT_MAX, ymin = INT_MAX, xmax = INT_MIN, ymax = INT_MIN;
+        unordered_map<pair<int, int>, int, pairhash> m;
+        
+        // Calculate area, and count points of appearances
+        vector<pair<int, int>> points = {{0, 1}, {0, 3}, {2, 3}, {2, 1}};
+        for (auto v : rectangles) {
+            for (auto point : points) {
+                if (++m[make_pair(v[point.first], v[point.second])] > 4) { return false; }
+            }
+            area += (v[2] - v[0]) * (v[3] - v[1]);
+            xmin = min(xmin, v[0]), ymin = min(ymin, v[1]), xmax = max(xmax, v[2]), ymax = max(ymax, v[3]);
+        }
+        if (area != (xmax - xmin) * (ymax - ymin)) { return false; }
+        
+        // Check if points appearing odd number of times are exactly large rectangles' 4 corners
+        unordered_set<pair<int, int>, pairhash> s = {{xmin, ymin}, {xmin, ymax}, {xmax, ymax}, {xmax, ymin}};
+        for (auto it = m.begin(); it != m.end(); it++) {
+            if (it->second & 1 == 1) {
+                if (s.count(it->first) > 0) {
+                    s.erase(it->first); 
+                } else {
+                    return false;
+                }
+            }
+        }
+        return s.empty();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Might be the simplest O(n) solution, only count corners,no area, no maxmin(with comments)
+public boolean isRectangleCover(int[][] rectangles) {
+        Set<String> set = new HashSet<>();
+        for(int[] rec: rectangles){
+            //b = bottom, l = left, r = right, t = top
+            //create corners with type
+            String bl = rec[0]+","+rec[1]+"bl";
+            String br = rec[2]+","+rec[1]+"br";
+            String tl = rec[0]+","+rec[3]+"tl";
+            String tr = rec[2]+","+rec[3]+"tr";
+            //if these corners already exist, return false
+            if(!set.add(bl) || !set.add(br) || !set.add(tl) || !set.add(tr)) return false;
+            //if these 4 corners and previously added corners form a line, remove them
+            if(set.remove(rec[0]+","+rec[1]+"tl")) set.remove(bl);
+            else if(set.remove(rec[0]+","+rec[1]+"br")) set.remove(bl);
+            if(set.remove(rec[2]+","+rec[1]+"bl")) set.remove(br);
+            else if(set.remove(rec[2]+","+rec[1]+"tr")) set.remove(br);
+            if(set.remove(rec[0]+","+rec[3]+"tr")) set.remove(tl);
+            else if(set.remove(rec[0]+","+rec[3]+"bl")) set.remove(tl);
+            if(set.remove(rec[2]+","+rec[3]+"tl")) set.remove(tr);
+            else if(set.remove(rec[2]+","+rec[3]+"br")) set.remove(tr);
+        }
+        //a perfect rectangle contains 4 corners
+        return set.size()==4;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution With HashMap
+public class Solution {
+    public boolean isRectangleCover(int[][] rectangles) {
+        long area=0;
+        int up=Integer.MIN_VALUE, low = Integer.MAX_VALUE, rightest=Integer.MIN_VALUE, leftest=Integer.MAX_VALUE;
+        HashMap<Integer,ArrayList<Interval>> topmap = new HashMap<>();
+        HashMap<Integer,ArrayList<Interval>> bottommap = new HashMap<>();
+        HashMap<Integer,ArrayList<Interval>> leftmap = new HashMap<>();
+        HashMap<Integer,ArrayList<Interval>> rightmap = new HashMap<>();
+        for(int i=0;i<rectangles.length;i++){
+            int[] r1 = rectangles[i];
+            int top = r1[3], right = r1[2], left = r1[0], bottom = r1[1];
+            up = Math.max(top,up);
+            low = Math.min(low, bottom);
+            rightest = Math.max(right,rightest);
+            leftest = Math.min(left, leftest);
+            if (!topmap.containsKey(top))  topmap.put(top,new ArrayList<Interval>());
+            topmap.get(top).add(new Interval(left,right));
+            if (!bottommap.containsKey(bottom))  bottommap.put(bottom,new ArrayList<Interval>());
+            bottommap.get(bottom).add(new Interval(left,right));
+            if(!leftmap.containsKey(left)) leftmap.put(left,new ArrayList<Interval>());
+            leftmap.get(left).add(new Interval(bottom,top));
+            if(!rightmap.containsKey(right)) rightmap.put(right,new ArrayList<Interval>());
+            rightmap.get(right).add(new Interval(bottom,top));
+            area += (top-bottom)*(right-left);
+        }
+        if(area!=( rightest-leftest)*(up-low)) return false;
+        if(bottommap.size()!=topmap.size()||leftmap.size()!=rightmap.size()) return false;
+        return (compareMaps(bottommap,topmap,low) && compareMaps(rightmap,leftmap,rightest) ) ;
+    }
+    public boolean compareMaps(HashMap<Integer,ArrayList<Interval>> map1, HashMap<Integer,ArrayList<Interval>> map2, int side){
+        for(int top: map1.keySet()  ){
+            if(top==side) continue;
+            List<Interval> mergedTopList = merge(map1.get(top));
+            if(!map2.containsKey(top)) return false;
+            List<Interval> mergedBottomeList = merge(map2.get(top));
+            if(mergedBottomeList.size()!=mergedTopList.size()) return false;
+            for(int i=0;i<mergedBottomeList.size();i++) {
+                if(mergedBottomeList.get(i).start!=mergedTopList.get(i).start ||mergedBottomeList.get(i).end!=mergedTopList.get(i).end) return false;
+            }
+        }
+        return true;
+    }
+    public List<Interval> merge(List<Interval> intervals) {
+        List<Interval> res = new ArrayList<>();
+        if(intervals==null||intervals.size()<2) return intervals;
+        Collections.sort(intervals, new Comparator<Interval>(){public int compare(Interval i1, Interval i2) { return i1.start-i2.start; } } );
+        int start = intervals.get(0).start, end=intervals.get(0).end;
+        for(int i=1;i<intervals.size();i++){
+            Interval cur = intervals.get(i);
+            if(cur.start>end){
+                res.add(new Interval(start, end) );
+                start=cur.start;
+            }
+            if(cur.end>end) end=cur.end;
+        }
+        res.add(new Interval(start, end) ); 
+        return res;
+    }
+}
+class Interval {
+    int start,end;
+    Interval() { start = 0; end = 0; }
+    Interval(int s, int e) { start = s; end = e; }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise 15 lines O(N) C++ solution
+bool isRectangleCover(vector<vector<int>>& rectangles) {
+        unordered_map<string,int> mp;
+        string corners[4];
+        for(auto v: rectangles)
+            for(int i = 0; i<4; ++i){
+                corners[i] = to_string(v[i/2*2]) + "," + to_string(v[(i%2)*2+1]);
+                if(mp[corners[i]] & int(pow(2,i))) return false;
+                else mp[corners[i]] |= int(pow(2,i));
+            }
+        int corner = 0;
+        for(auto i=mp.begin(); i!=mp.end(); ++i){
+            int val = i->second;
+            if(!(val & (val-1)) && (++corner >4)) return false;
+            if((val & (val-1)) && !(val == 3 || val==12 || val==10 || val==5 || val==15)) return false;
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) DFS solution ( Updated )
+public class Solution {
+    
+    long encode(int[] point) {
+        return ((long)point[0] << 32) + (long)point[1];
+    }
+    void addPoint(long key, Set<Long> conners){
+        if (conners.contains(key)) conners.remove(key);
+        else conners.add(key);
+    }
+    boolean DFS(int x, int y, HashMap<Long,int[]> rects) {
+        Stack<int[]> points = new Stack<int[]>();
+        Set<Long> conners = new HashSet<Long>();
+        points.push(new int[]{x,y});
+        while ( ! points.isEmpty() ) {
+            long key =  encode(points.pop());
+            if ( rects.containsKey(key)) {
+                int[] rect = rects.remove(key);
+                addPoint(key, conners);
+                addPoint(encode(new int[]{rect[2],rect[3]}),conners);
+                addPoint(encode(new int[]{rect[0],rect[3]}),conners);
+                addPoint(encode(new int[]{rect[2],rect[1]}),conners);
+                points.push(new int[]{rect[2],rect[3]}); 
+                points.push(new int[]{rect[0],rect[3]});
+                points.push(new int[]{rect[2],rect[1]});
+            } 
+        }
+        return conners.size() == 4;
+    }
+    public boolean isRectangleCover(int[][] rectangles) {
+        if (rectangles==null) return false;
+        long sum = 0;
+        int top = Integer.MIN_VALUE, bottom = Integer.MAX_VALUE, left = Integer.MAX_VALUE, right = Integer.MIN_VALUE;
+        HashMap<Long,int[]> rects = new HashMap<>();
+        for (int[] rect : rectangles) {
+            long key = encode(new int[]{rect[0],rect[1]});
+            if ( rects.containsKey(key) ) return false;
+            rects.put(key, rect);
+            left = Math.min(left, rect[0]);
+            right = Math.max(right, rect[2]);
+            bottom = Math.min(bottom,rect[1]);
+            top = Math.max(top, rect[3]);
+            sum += ((long)rect[2]-(long)rect[0]) * ((long)rect[3]-(long)rect[1]); 
+        }
+        if ( sum != ((long)top-(long)bottom) * ((long)right-(long)left)) return false;
+        if (! DFS(left, bottom, rects)) return false;
+        return rects.isEmpty();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+clean C++ sweep line solution
+struct interval {
+    int start;
+    int end;
+    interval(int start_, int end_) : start(start_), end(end_) {};
+};
+
+struct edge {
+    int t;
+    interval i;
+    edge(int t_, interval i_) : t(t_), i(i_) {};
+};
+
+struct interval_cmp {
+   bool operator()(interval i1, interval i2) { return i1.start < i2.start; }; 
+};
+
+struct edge_cmp {
+   bool operator()(edge e1, edge e2) { return e1.t > e2.t; }; 
+};
+
+bool isRectangleCover(vector<vector<int>>& rectangles) {
+    priority_queue<edge, vector<edge>, edge_cmp>  q;
+    set<interval, interval_cmp> active_intervals;
+    
+    int minx = INT_MAX, miny = INT_MAX, maxx = INT_MIN, maxy = INT_MIN;
+    int area = 0;
+    for (const auto& rect : rectangles) {
+        area += (rect[2]-rect[0])* (rect[3]-rect[1]);
+        minx = min(rect[0], minx);
+        miny = min(rect[1], miny);
+        maxx = max(rect[2], maxx);
+        maxy = max(rect[3], maxy);
+        q.emplace(rect[0]*2+1, interval(rect[1], rect[3]));
+        q.emplace(rect[2]*2  , interval(rect[1], rect[3]));
+    }
+    
+    while (!q.empty()) {
+        int t = q.top().t;
+        interval i = q.top().i;
+        if (t % 2) { //insert interval
+            auto it = active_intervals.lower_bound(i);
+            if (it != active_intervals.begin() && prev(it)->end > i.start) return false;
+            if (it != active_intervals.end() && it->start < i.end) return false;
+            active_intervals.insert(it, i);
+        }
+        else { //remove interval
+            active_intervals.erase(i);
+        }
+        q.pop();
+    }
+    return area == (maxx-minx) * (maxy - miny);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution Based On hxtang&#x27;s Idea
+class Solution(object):
+    def isRectangleCover(self, rectangles):
+        """
+        :type rectangles: List[List[int]]
+        :rtype: bool
+        """
+        left = min(x[0] for x in rectangles)
+        bottom = min(x[1] for x in rectangles)
+        right = max(x[2] for x in rectangles)
+        top = max(x[3] for x in rectangles)
+
+        points = collections.defaultdict(int)
+        for l, b, r, t in rectangles:
+            A, B, C, D = (l, b), (r, b), (r, t), (l, t)
+            for p, q in zip((A, B, C, D), (1, 2, 4, 8)):
+                if points[p] & q: return False
+                points[p] |= q
+
+        for px, py in points:
+            if left < px < right or bottom < py < top:
+                if points[(px, py)] not in (3, 6, 9, 12, 15):
+                    return False
+        return True
+
+
+
+----------------------------------------------------------------------------------------------------
+Sweep Line + Degenerated Interval Tree solution, O(nlogn)
+public class Solution {
+    public boolean isRectangleCover(int[][] rectangles) {
+        if (rectangles == null || rectangles.length <= 1) {
+            return true;
+        }
+        assert rectangles[0].length == 4;
+        // find most left, most bottom point (minx, miny)
+        Integer minx = rectangles[0][0];
+        Integer miny = rectangles[0][1];
+        int minxseen = Integer.MAX_VALUE;
+        int minyseen = Integer.MAX_VALUE;
+        for (int i = 1; i < rectangles.length; i++) {
+            int[] rectangle = rectangles[i];
+            if (minx != null && miny != null) {
+                if (rectangle[0] <= minx && rectangle[1] <= miny) {
+                    minx = rectangle[0];
+                    miny = rectangle[1];
+                } else if (!(rectangle[0] >= minx && rectangle[1] >= miny)) {
+                    minx = null;
+                    miny = null;
+                }
+            } else {
+                minx = rectangle[0];
+                miny = rectangle[1];
+            }
+            minxseen = Math.min(minxseen, rectangle[0]);
+            minyseen = Math.min(minyseen, rectangle[1]);
+        }
+        if (minx == null || miny == null || minx > minxseen || miny > minyseen) {
+            return false;
+        }
+        // find most right, most top point (maxx, maxy)
+        Integer maxx = rectangles[0][2];
+        Integer maxy = rectangles[0][3];
+        int maxxseen = Integer.MIN_VALUE;
+        int maxyseen = Integer.MIN_VALUE;
+        for (int i = 1; i < rectangles.length; i++) {
+            int[] rectangle = rectangles[i];
+            if (maxx != null && maxy != null) {
+                if (rectangle[2] >= maxx && rectangle[3] >= maxy) {
+                    maxx = rectangle[2];
+                    maxy = rectangle[3];
+                } else if (!(rectangle[2] <= maxx && rectangle[3] <= maxy)) {
+                    maxx = null;
+                    maxy = null;
+                }
+            } else {
+                maxx = rectangle[2];
+                maxy = rectangle[3];
+            }
+            maxxseen = Math.max(maxxseen, rectangle[2]);
+            maxyseen = Math.max(maxyseen, rectangle[3]);
+        }
+        if (maxx == null || maxy == null || maxx < maxxseen || maxy < maxyseen) {
+            return false;
+        }
+        // expected area
+        int expectArea = (maxx - minx) * (maxy - miny);
+        // real area
+        int realArea = 0;
+        for (int[] rectangle : rectangles) {
+            realArea += (rectangle[2] - rectangle[0]) * (rectangle[3] - rectangle[1]);
+        }
+        // filter
+        if (expectArea != realArea) {
+            return false;
+        }
+        // if overlap, then false; otherwise, true
+        List<Interval> intervals = new ArrayList<>();
+        for (int[] rectangle : rectangles) {
+            Interval left = new Interval(rectangle[0], rectangle[1], rectangle[3] - 1, true);
+            Interval right = new Interval(rectangle[2] - 1, rectangle[1], rectangle[3] - 1, false);
+            intervals.add(left);
+            intervals.add(right);
+        }
+        Collections.sort(intervals, new Comparator<Interval>() {
+            @Override
+            public int compare(Interval itv1, Interval itv2) {
+                if (itv1.x != itv2.x) {
+                    return itv1.x - itv2.x;
+                } else if (itv1.left == itv2.left) {
+                    return 0;
+                } else if (itv1.left) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+        });
+        Set<Interval> bst = new TreeSet<>(new Comparator<Interval>() {
+            @Override
+            public int compare(Interval itv1, Interval itv2) {
+                if (itv1.y2 < itv2.y1) {
+                    return -1;
+                } else if (itv1.y1 > itv2.y2) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        for (Interval interval : intervals) {
+            if (interval.left) {
+                if (!bst.add(interval)) {
+                    return false;
+                }
+            } else {
+                bst.remove(interval);
+            }
+        }
+        return true;
+    }
+    
+    class Interval {
+        int x;
+        int y1;
+        int y2;
+        boolean left;
+        public Interval(int x, int y1, int y2, boolean left) {
+            this.x = x;
+            this.y1 = y1;
+            this.y2 = y2;
+            this.left = left;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Is it enough to check &quot;unpaired vertices == 4&quot; only?
+class Solution {
+public:
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        unordered_map<unsigned long long, uint> map;
+        map.reserve(rectangles.size()*4);
+        for (auto& rec : rectangles) {
+            unsigned long long xy[4];
+            xy[0]= (unsigned long long)rec[0] << 32 | (uint)rec[1];
+            xy[1]= (unsigned long long)rec[0] << 32 | (uint)rec[3];
+            xy[2]= (unsigned long long)rec[2] << 32 | (uint)rec[3];
+            xy[3]= (unsigned long long)rec[2] << 32 | (uint)rec[1];
+            for (uint i = 0; i < 4; i++)  {
+                uint pos = 1 << i; //1 Left Bottom, 2 Left Top, 4 Right Top, 8 Right Bottom
+                uint& val = map[xy[i]];
+                if (val & pos) return false;
+                else val |= pos;
+            }
+        }
+        uint cnt = 0;
+        for (auto& p : map) {
+            uint pos = p.second;
+            if (!(pos == 1+2 || pos == 2+4 || pos == 4+8 || pos == 8+1 || pos == 1+2+4+8) && ++cnt > 4) return false;
+        }
+        return cnt == 4;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) Solution
+class Solution {
+public:
+    Solution(){
+        vector<int> tmp(4,0);
+        perfect_rect = tmp;
+    }
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        int minsum(INT_MAX),maxsum(INT_MIN);
+        int subrectarea = 0;
+        
+        for(vector<int> rect : rectangles){
+            subrectarea += area(rect);
+            if(rect[0]+rect[1] < minsum){
+                perfect_rect[0] = rect[0];
+                perfect_rect[1] = rect[1];
+                minsum = rect[0]+rect[1];
+            }
+            if(rect[2]+rect[3] > maxsum){
+                perfect_rect[2] = rect[2];
+                perfect_rect[3] = rect[3];
+                maxsum = rect[2]+rect[3];
+            }
+        }
+        if(subrectarea != area(perfect_rect))
+            return false;
+         
+        for(vector<int> rect : rectangles){
+            VertexPos E;
+            E = getVertexPos(rect[0],rect[1]);
+            if(!checkVertexinMap(rect[0],rect[1],E))
+                return false;
+            E = getVertexPos(rect[2],rect[1]);
+            if(!checkVertexinMap(rect[2],rect[1],E))
+                return false;
+            E = getVertexPos(rect[0],rect[3]);
+            if(!checkVertexinMap(rect[0],rect[3],E))
+                return false;
+            E = getVertexPos(rect[2],rect[3]);
+            if(!checkVertexinMap(rect[2],rect[3],E))
+                return false;
+        }
+        
+        for(auto it=EdgeMap.begin(); it!=EdgeMap.end(); it++)
+            if(it->second != 2)
+                return false;
+        
+        for(auto it=InsideMap.begin(); it!=InsideMap.end(); it++)
+            if(it->second != 2 && it->second != 4)
+                return false;
+
+        return true;
+    }
+    
+private:
+    vector<int> perfect_rect;
+    enum VertexPos{Corner,Edge,Inside};
+    unordered_map<string,int> CornerMap; // all values should be 1
+    unordered_map<string,int> EdgeMap;   // all values should be 2
+    unordered_map<string,int> InsideMap; // all values should be 2 or 4
+    
+    
+    bool checkVertexinMap(int x, int y, VertexPos v){
+        string s = to_string(x) + " " + to_string(y);
+        if(v == Corner){
+            CornerMap[s]++;
+            if(CornerMap[s]>1)
+                return false;
+        }
+        else if(v == Edge){
+            EdgeMap[s]++;
+            if(EdgeMap[s]>2)
+                return false;
+        }
+        else{
+            InsideMap[s]++;
+            if(InsideMap[s]>4)
+                return false;
+        }
+        return true;
+    }
+    
+    //get the vertex position
+    VertexPos getVertexPos(int x, int y){
+        int num = 0;
+        if(x ==perfect_rect[0] || x == perfect_rect[2])
+            num++;
+        if(y == perfect_rect[1] || y == perfect_rect[3])
+            num++;
+        if(num==0)
+            return Inside;
+        else if(num==1)
+            return Edge;
+        return Corner;
+    }
+    
+    int area(const vector<int>& rect){
+        return (rect[2]-rect[0])*(rect[3]-rect[1]);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand O(n log(n)) solution in C++
+class Solution {
+public:
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        
+        sort(rectangles.begin(), rectangles.end());
+        
+        int n= rectangles.size();
+        int x0, y0, x1, y1;
+        int xmax = INT_MIN, ymax = INT_MIN, xmin = INT_MAX, ymin = INT_MAX;
+        
+        for(int i=0;i<n;i++)
+        {
+            xmax = max(xmax, rectangles[i][2]);
+            ymax = max(ymax, rectangles[i][3]);
+            xmin = min(xmin, rectangles[i][0]);
+            ymin = min(ymin, rectangles[i][1]);
+        }
+        
+        int area = 0;
+        int totalarea = (xmax-xmin)*(ymax-ymin);
+        
+        set<pair<int, int>> mymap;
+        
+        pair<int, int> p00, p10, p01, p11;
+        
+        int i=0;
+ // insert the first rectangle into the set
+        x0 = rectangles[i][0];
+        y0 = rectangles[i][1];
+        x1 = rectangles[i][2];
+        y1 = rectangles[i][3];
+        
+        p00 = make_pair(x0,y0);
+        p01 = make_pair(x0,y1);
+        p10 = make_pair(x1,y0);
+        p11 = make_pair(x1,y1);
+        
+        mymap.insert(p00); mymap.insert(p01); mymap.insert(p10); mymap.insert(p11);
+        area += (x1-x0)*(y1-y0);
+        
+        for(i=1;i<n;i++)
+        {
+        x0 = rectangles[i][0];
+        y0 = rectangles[i][1];
+        x1 = rectangles[i][2];
+        y1 = rectangles[i][3];
+        
+        p00 = make_pair(x0,y0);
+        p01 = make_pair(x0,y1);
+        p10 = make_pair(x1,y0);
+        p11 = make_pair(x1,y1);
+        
+        area += (x1-x0)*(y1-y0);
+        
+        if(mymap.find(p00) == mymap.end()) return false;
+        mymap.erase(p00);
+        if(mymap.find(p01) != mymap.end()) mymap.erase(p01);
+        else mymap.insert(p01);
+        if(mymap.find(p10) != mymap.end()) mymap.erase(p10);
+        else mymap.insert(p10);
+        if(mymap.find(p11) != mymap.end()) mymap.erase(p11);
+        else mymap.insert(p11);
+        }
+
+        p00 = make_pair(xmin,ymin);
+        p01 = make_pair(xmin,ymax);
+        p10 = make_pair(xmax,ymin);
+        p11 = make_pair(xmax,ymax);
+        
+        if((mymap.find(p00) == mymap.end())or(mymap.find(p01) == mymap.end())) return false;
+        if((mymap.find(p10) == mymap.end())or(mymap.find(p11) == mymap.end())) return false;
+
+        return ((mymap.size() == 4) and (area == totalarea));
+        
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+perfect rectangle

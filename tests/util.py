@@ -6,6 +6,9 @@
 import random
 import re
 import string
+import urlparse
+
+import grequests
 
 EMPTY_PATTERN = re.compile(r'[\s]+')
 COMMON_SOLUTION_TYPE = [
@@ -58,3 +61,12 @@ def generate_file_name(title):
     valid_name = generate_valid_name(title)
 
     return "%s.%s" % (valid_name, suffix)
+
+
+def fetch_response(baseurl, urls):
+    reqs = (grequests.get(urlparse.urljoin(baseurl, url)) for url in urls)
+    for res in grequests.map(reqs):
+        try:
+            yield res.json()
+        except ValueError:
+            yield res.content

@@ -1,0 +1,675 @@
+4-9 lines Python solutions
+**Solution 1: *Build it inside-out*** - 44 ms, 5 lines
+
+Start with the empty matrix, add the numbers in reverse order until we added the number 1. Always rotate the matrix clockwise and add a top row:
+
+        ||  =>  |9|  =>  |8|      |6 7|      |4 5|      |1 2 3|
+                         |9|  =>  |9 8|  =>  |9 6|  =>  |8 9 4|
+                                             |8 7|      |7 6 5|
+
+The code:
+
+    def generateMatrix(self, n):
+        A, lo = [], n*n+1
+        while lo > 1:
+            lo, hi = lo - len(A), lo
+            A = [range(lo, hi)] + zip(*A[::-1])
+        return A
+
+While this isn't O(n^2), it's actually quite fast, presumably due to me not doing much in Python but relying on `zip` and `range` and `+` being fast. I got it accepted in 44 ms, matching the fastest time for recent Python submissions (according to the submission detail page).
+
+---
+
+**Solution 2: *Ugly inside-out*** - 48 ms, 4 lines
+
+Same as solution 1, but without helper variables. Saves a line, but makes it ugly. Also, because I access A[0][0], I had to handle the n=0 case differently.
+
+    def generateMatrix(self, n):
+        A = [[n*n]]
+        while A[0][0] > 1:
+            A = [range(A[0][0] - len(A), A[0][0])] + zip(*A[::-1])
+        return A * (n>0)
+
+---
+
+**Solution 3: *Walk the spiral*** - 52 ms, 9 lines
+
+Initialize the matrix with zeros, then walk the spiral path and write the numbers 1 to n*n. Make a right turn when the cell ahead is already non-zero.
+
+    def generateMatrix(self, n):
+        A = [[0] * n for _ in range(n)]
+        i, j, di, dj = 0, 0, 0, 1
+        for k in xrange(n*n):
+            A[i][j] = k + 1
+            if A[(i+di)%n][(j+dj)%n]:
+                di, dj = dj, -di
+            i += di
+            j += dj
+        return A
+
+
+----------------------------------------------------------------------------------------------------
+My Super Simple Solution. Can be used for both Spiral Matrix I and II
+This is my solution for Spiral Matrix I, [https://oj.leetcode.com/discuss/12228/super-simple-and-easy-to-understand-solution][1]. If you can understand that, this one is a no brainer :)
+
+Guess what? I just made several lines of change (with comment "//change") from that and I have the following AC code:
+
+    public class Solution {
+        public int[][] generateMatrix(int n) {
+            // Declaration
+            int[][] matrix = new int[n][n];
+            
+            // Edge Case
+            if (n == 0) {
+                return matrix;
+            }
+            
+            // Normal Case
+            int rowStart = 0;
+            int rowEnd = n-1;
+            int colStart = 0;
+            int colEnd = n-1;
+            int num = 1; //change
+            
+            while (rowStart <= rowEnd && colStart <= colEnd) {
+                for (int i = colStart; i <= colEnd; i ++) {
+                    matrix[rowStart][i] = num ++; //change
+                }
+                rowStart ++;
+                
+                for (int i = rowStart; i <= rowEnd; i ++) {
+                    matrix[i][colEnd] = num ++; //change
+                }
+                colEnd --;
+                
+                for (int i = colEnd; i >= colStart; i --) {
+                    if (rowStart <= rowEnd)
+                        matrix[rowEnd][i] = num ++; //change
+                }
+                rowEnd --;
+                
+                for (int i = rowEnd; i >= rowStart; i --) {
+                    if (colStart <= colEnd)
+                        matrix[i][colStart] = num ++; //change
+                }
+                colStart ++;
+            }
+            
+            return matrix;
+        }
+    }
+
+Obviously, you could merge colStart and colEnd into rowStart and rowEnd because it is a square matrix. But this is easily extensible to matrices that are m*n.
+
+Hope this helps :)
+
+
+  [1]: https://oj.leetcode.com/discuss/12228/super-simple-and-easy-to-understand-solution
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution(with explaination)
+   
+    class Solution {
+        public:
+            vector<vector<int> > generateMatrix(int n) {
+                vector<vector<int> > ret( n, vector<int>(n) );
+            	int k = 1, i = 0;
+            	while( k <= n * n )
+            	{
+            		int j = i;
+                        // four steps
+            		while( j < n - i )             // 1. horizonal, left to right
+            			ret[i][j++] = k++;
+            		j = i + 1;
+            		while( j < n - i )             // 2. vertical, top to bottom
+            			ret[j++][n-i-1] = k++;
+            		j = n - i - 2;
+            		while( j > i )                  // 3. horizonal, right to left 
+            			ret[n-i-1][j--] = k++;
+            		j = n - i - 1;
+            		while( j > i )                  // 4. vertical, bottom to  top 
+            			ret[j--][i] = k++;
+            		i++;      // next loop
+            	}
+            	return ret;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Share my java solution
+    public static int[][] generateMatrix(int n) {
+		int[][] ret = new int[n][n];
+		int left = 0,top = 0;
+		int right = n -1,down = n - 1;
+		int count = 1;
+		while (left <= right) {
+			for (int j = left; j <= right; j ++) {
+				ret[top][j] = count++;
+			}
+			top ++;
+			for (int i = top; i <= down; i ++) {
+				ret[i][right] = count ++;
+			}
+			right --;
+			for (int j = right; j >= left; j --) {
+				ret[down][j] = count ++;
+			}
+			down --;
+			for (int i = down; i >= top; i --) {
+				ret[i][left] = count ++;
+			}
+			left ++;
+		}
+		return ret;
+	}
+
+----------------------------------------------------------------------------------------------------
+My AC solution with using direction variable
+      
+     vector<vector<int> > generateMatrix(int n) {
+                int dir = 0;
+                vector< vector<int> > matrix(n, vector<int> (n, 0));
+                int i = 0, j = 0, k = 1;
+                while (k <= n * n) {
+                    matrix[i][j] = k++;
+                    if (dir == 0){
+                        j++;
+                        if (j == n || matrix[i][j] != 0) dir = 1, j--, i++;
+                    } else
+                    if (dir == 1) {
+                        i++;
+                        if (i == n || matrix[i][j] != 0) dir = 2, i--, j--;
+                    } else
+                    if (dir == 2) {
+                        j--;
+                        if (j < 0 || matrix[i][j] != 0) dir = 3, j++, i--;
+                    } else
+                    if (dir == 3) {
+                        i--;
+                        if (i < 0 || matrix[i][j] != 0) dir = 0, i++, j++;
+                    }
+                }
+                return matrix;
+            }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution
+    class Solution {
+    public:
+        vector<vector<int> > generateMatrix(int n) {
+            vector<vector<int> > vv(n, vector<int>(n));
+        
+            int rowStart = 0, rowEnd = n - 1;
+            int colStart = 0, colEnd = n - 1;
+            int cnt = 1;
+        
+            while(rowStart <= rowEnd && colStart <= colEnd)
+            {
+                for(int i = colStart; i<= colEnd; i++)
+                    vv[rowStart][i] = cnt++;
+                rowStart++;
+            
+                for(int i = rowStart; i<= rowEnd; i++)
+                    vv[i][colEnd] = cnt++;
+                colEnd--;
+            
+                for(int i = colEnd; i>= colStart; i--)
+                    vv[rowEnd][i] = cnt++;
+                rowEnd--;
+            
+                for(int i = rowEnd; i>= rowStart; i--)
+                    vv[i][colStart] = cnt++;
+                colStart++;
+            }
+        
+            return vv;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+If we can&#x27;t write data to the matrix, we change the direction,a simple python solution
+    class Solution:
+    # @return a list of lists of integer
+    def generateMatrix(self, n):
+        matrix = [[0]*n for _ in range(n)]
+        directions = ((0, 1), (1, 0), (0, -1), (-1, 0))
+        d = 0
+        y, x = 0, 0
+        for i in range(1, n*n+1):
+            matrix[y][x] = i
+            dy, dx = directions[d % 4]
+            if -1 < y+dy < n and -1 < x+dx < n and matrix[y+dy][x+dx] == 0:
+                y, x = y+dy, x+dx
+            else:
+                d += 1
+                dy, dx = directions[d % 4]
+                y, x = y+dy, x+dx
+        return matrix
+
+Change the direction If the we can't write to the matrix
+
+----------------------------------------------------------------------------------------------------
+C++ concise solution.
+        
+    vector<vector<int>> generateMatrix(int n) {
+        vector<vector<int>> res(n, vector<int> (n, 1));
+        int left, right, top, down, index;
+        left = top = index = 0, right = down = n-1;
+        while (left <= right && top <= down) {
+            for (unsigned int j = left; j <= right; j++)
+                res[top][j] = ++index;
+            top++;
+            for (unsigned int i = top; i <= down; i++)
+                res[i][right] = ++index;
+            right--;
+            for (int j = right; j >= left; j--)
+                res[down][j] = ++index;
+            down--;
+            for (int i = down; i >= top; i--)
+                res[i][left] = ++index;
+            left++;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java, simple and clear, easy understood
+public class Solution {
+    public int[][] generateMatrix(int n) {
+        // similar to spiral matrix I,done by myself
+        int[][] rs = new int[n][n];
+        int top = 0,bottom = n-1,left = 0,right = n-1;
+        int num = 1;
+        
+        while(left<=right && top <=bottom){
+            for(int i=left;i<=right;i++){
+                rs[top][i] = num++;
+            }
+            top++;
+            for(int i= top;i<=bottom;i++){
+                rs[i][right] = num++;
+            }
+            right--;
+            for(int i= right;i>=left;i-- ){
+                rs[bottom][i] = num++;
+            }
+            bottom--;
+            for(int i = bottom;i>=top;i--){
+                rs[i][left] = num++;
+            }
+            left++;
+        }
+        return rs;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Share my simple solution with graphical explanation - Java
+If n is odd, only the first direction will cover it (top left -> right, shown as # in the graph), because the other three direction all start from the next position( +1 or -1).
+
+    /**
+    	 * -> -> ->
+    	 * ^      |
+    	 * |      |
+    	 * <- <-- V
+    	 * 
+    	 * # # # #
+    	 * %     $
+    	 * %     $
+    	 * & & & $
+    	 *     
+    	 */
+        public static int[][] generateMatrix(int n) {
+        	int[][] res = new int[n][n];
+        	
+        	int num = 1;
+        	int level = (int) Math.ceil(n / 2.);
+        	
+        	for(int i = 0; i < level; i++) {
+        		
+        		// top left -> right, shown as #
+        		for(int j = i; j < n - i; j++)
+        			res[i][j] = num++;
+        		
+        		// top right + 1 -> bot, shown as $
+        		for(int j = i + 1; j < n - i; j++)
+        			res[j][n - i - 1] = num++;
+        		
+        		// bot right - 1 -> left, shown as &
+        		for(int j = n - i - 2; j >= i; j--)
+        			res[n - i - 1][j] = num++;
+        		
+        		// bot left -1 -> top + 1, shown as %
+        		for(int j = n - i - 2; j > i; j--)
+        			res[j][i] = num++;
+        	}
+        	return res;
+        }
+
+----------------------------------------------------------------------------------------------------
+9 lines python solution
+(1) Create a matrix to store the coordinates
+> (0,0) (0,1) (0,2)
+
+> (1,0) (1,1) (1,2)
+
+> (2,0) (2,1) (2,2)
+
+(2) Read it out using the trick of "[Spiral Matrix I][1]"
+
+> (0,0) (0,1) (0,2) (1,2) (2,2) ...
+
+(3) Put 1, 2, 3, ... n**2 at these coordinates sequentially.  Done.
+
+    def generateMatrix(self, n):
+        
+        result = [[0 for i in range(n)] for j in range(n)]
+        coord = [[(i,j) for j in range(n)] for i in range(n)]
+        
+        count = 1
+        
+        while coord:
+            for x, y in coord.pop(0):
+                result[x][y] = count
+                count += 1
+            coord = zip(*coord)[::-1]
+
+        return result
+
+
+  [1]: https://leetcode.com/discuss/46516/lines-recursive-python-solution-lines-solution-recursion
+
+----------------------------------------------------------------------------------------------------
+Simplest c++ solution, easy and clear, have a look
+comments will be highly appreciated . 
+
+    vector<vector<int>> generateMatrix(int n) {
+            // 2d vector initialization  vector<vector<int>> myvec(rowsize,vector<int>(colsize,0));
+            vector<vector<int>> res(n,vector<int>(n,0));
+            if(!n) return res;
+            
+            int l=0,r=n-1,t=0,b=n-1,limit=n*n+1;  // l=left column , r=right column , t=top row, b=bottom row 
+            int count=1;
+            
+            while(count<limit){         // loop until count == n*n 
+                for(int i=l;i<=r;i++) res[t][i]=count++; // process top row
+                t++;
+                for(int i=t;i<=b;i++) res[i][r]=count++; // process right column
+                r--;
+                if(count==limit) break;         // termination condition to avoid overwritting          
+                for(int i=r; i>=l;i--) res[b][i]=count++; // process bottom row
+                b--;
+                for(int i=b;i>=t;i--) res[i][l]=count++;  //process left column
+                l++;
+            }
+            
+           return res;
+        }
+
+----------------------------------------------------------------------------------------------------
+A Better Solution than Switching Directions
+Rotate the Matrix is more easier :)
+
+	public class Solution {
+		int[][] step = {{0,1},{1,0},{0,-1},{-1,0}};
+		int cnt = 1;
+		void vortex(int[][] res, int len, int wid, int x, int y, int sg){
+			if(len == 0) return;
+			for(int i = 0; i < len; ++i){
+				x += step[sg][0];
+				y += step[sg][1];
+				res[x][y] = cnt++;
+			}
+			sg = (sg+1)%4;
+			vortex(res,--wid,len, x, y, sg);
+		}
+	    public int[][] generateMatrix(int n) {
+	        int[][] res = new int[n][n];
+	        vortex(res,n,n,0,-1,0);
+	        return res;
+	    }
+	}
+
+----------------------------------------------------------------------------------------------------
+Python easy to follow solution.
+        
+    def generateMatrix(self, n):
+        if not n:
+            return []
+        res = [[0 for _ in xrange(n)] for _ in xrange(n)]
+        left, right, top, down, num = 0, n-1, 0, n-1, 1
+        while left <= right and top <= down:
+            for i in xrange(left, right+1):
+                res[top][i] = num 
+                num += 1
+            top += 1
+            for i in xrange(top, down+1):
+                res[i][right] = num
+                num += 1
+            right -= 1
+            for i in xrange(right, left-1, -1):
+                res[down][i] = num
+                num += 1
+            down -= 1
+            for i in xrange(down, top-1, -1):
+                res[i][left] = num
+                num += 1
+            left += 1
+        return res
+
+----------------------------------------------------------------------------------------------------
+C++ template for Spiral Matrix  &amp; Spiral Matrix II
+Spiral Matrix II code:
+
+    class Solution {
+    public:
+        vector<vector<int>> generateMatrix(int n) {
+            vector<vector<int>> result(n, vector<int>(n, 0));
+            int l=0, r=n-1, u=0, d=n-1;
+            int k=1;
+            while(true){
+                for(int i=l; i<=r; i++)  result[u][i]=k++;
+                if(++u>d) break;
+                
+                for(int i=u; i<=d; i++)  result[i][r]=k++;
+                if(r--<l) break;
+                
+                for(int i=r; i>=l; i--)  result[d][i]=k++;
+                if(--d<u) break;
+                
+                for(int i=d; i>=u; i--)  result[i][l]=k++;
+                if(++l>r) break;
+            }
+            return result;
+        }
+    };
+
+Spiral Matrix Code:
+
+    class Solution {
+    public:
+        vector<int> spiralOrder(vector<vector<int>>& matrix) {
+            if(matrix.empty())  return {};
+            int m=matrix.size(), n=matrix[0].size();
+            vector<int> spiral(m*n);
+            int u=0, d=m-1, l=0, r=n-1, k=0;
+            while(true){
+                /** up **/
+                for(int col=l; col<=r; col++)  spiral[k++]=matrix[u][col];
+                if(++u>d) break;
+                /** right **/
+                for(int row=u; row<=d; row++)  spiral[k++]=matrix[row][r];
+                if(--r<l) break;
+                /** down **/
+                for(int col=r; col>=l; col--)  spiral[k++]=matrix[d][col];
+                if(--d<u) break;
+                /** left **/
+                for(int row=d; row>=u; row--)  spiral[k++]=matrix[row][l];
+                if(++l>r) break;
+            }
+            return spiral;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+7-line Python solution, step pattern is n, n-1, n-1, n-2, n-2 ..., 2, 2, 1, 1
+If `n` is 5, `step` list will be [5, 4, 4, 3, 3, 2, 2, 1, 1], it means move forward 5 steps, turn right, move forward 4 steps, turn right, move forward 4 steps, turn right and so on. `x` axis is from left to right, `y` axis is from top to bottom, we start from point `(-1, 0)`.
+
+    def generateMatrix(self, n):
+        mat, x, y, dx, dy, number = [[0] * n for i in xrange(n)], -1, 0, 1, 0, 0
+        for step in [i / 2 for i in xrange(2 * n, 1, -1)]:
+            for j in xrange(step):
+                x, y, number = x + dx, y + dy, number + 1
+                mat[y][x] = number
+            dx, dy = -dy, dx # turn right
+        return mat
+
+----------------------------------------------------------------------------------------------------
+Any Better Solution than Switching Directions?
+My Solution is to make a matrix at first and use a mover to fill in the number. Switching the direction of mover if the mover hit the boundary or hit somewhere above 0. It sounds pretty native. So I just wonder is there any solution rather than my native idea??
+
+    public class Solution {
+    public int[][] generateMatrix(int n) {
+        int row=0;
+        int column=0;
+        int direction=0;
+        int[][] matrix= new int[n][n];
+        	for (int i=0;i<n;i++)
+        		matrix[i]=new int[n];
+        
+        for (int i=0;i<n*n;i++){
+            matrix[row][column]=i+1;
+            switch (direction){
+                case 0:
+                    column++;
+                    if (column>=n||matrix[row][column]>0) {
+                        column--;
+                        row++;
+                        direction=1;
+                    }
+                    break;
+                case 1:
+                    row++;
+                    if (row>=n||matrix[row][column]>0) {
+                        column--;
+                        row--;
+                        direction=2;
+                    }
+                    break;
+                case 2:
+                    column--;
+                    if (column<0||matrix[row][column]>0) {
+                        column++;
+                        row--;
+                        direction=3;
+                    }
+                   
+                    break;
+                case 3:
+                    row--;
+                    if (row<0||matrix[row][column]>0) {
+                        column++;
+                        row++;
+                        direction=0;
+                    }
+                    break;
+            }
+        }
+        return matrix;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Very simple solution using clockwise direction variable
+In case anyone is interested in a simple direction based solution...
+
+    class Solution {
+    public:
+        vector<vector<int> > generateMatrix(int n) {
+            
+            vector<vector<int> > res(n, vector<int>(n, 0));
+            
+            if( n == 1 ) 
+                res[0][0] = 1;
+                
+            if(n <= 1)    
+                return res;
+                
+            int dx[] = {0, 1, 0,-1}, dy[] = {1, 0,-1, 0};
+            int d = 0, i = 0, j = 0, v = 1;
+            
+            while(true){
+                res[i][j] = v++;
+                
+                if( i + dx[d] == n || j + dy[d] == n || res[ i + dx[d] ][ j + dy[d] ])
+                    d = (d+1)%4;
+                
+                i += dx[d], j += dy[d];
+    
+                if(res[i][j])
+                    break;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms C++ ,Easy to Understand!
+    vector<vector<int> > Solution::generateMatrix(int x)
+    {
+    	vector<vector<int> > my2DVector(x,vector<int>(x,0));
+    	int number = 1;
+    	int m = my2DVector.size();
+    	for(int i=0;i<=m/2;i++)
+    	{
+    		for(int j=i;j<m-i;j++) // left -->right
+    			my2DVector[i][j] = number++;
+    		for(int j=i+1;j<m-i;j++) // up --> down
+    			my2DVector[j][m-i-1] = number++;
+    		for(int j=m-i-2;j>=i;j--) // right --> left
+    			my2DVector[m-i-1][j] = number++;
+    		for(int j=m-i-2;j>=i+1;j--) // down --> up
+    			my2DVector[j][i] = number++;
+    	}
+    	return my2DVector;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple java solution
+    public int[][] generateMatrix(int n) {
+        int[][] res = new int[n][n];
+        int count = 1, row = 0, col = 0;
+        int tag = 0; // 0: right | 1: down | 2: left | 3: up
+        int left = 0, right = n - 1;
+        int top = 0, bottom = n - 1;
+        for (int m = 1; m <= n * n; m++) {
+            if (tag == 0) {
+                res[row][col++] = m;
+                if (col == right) {
+                    tag = 1;
+                    top++;
+                }
+            } else if (tag == 1) {
+                res[row++][col] = m;
+                if (row == bottom) {
+                    tag = 2;
+                    right--;
+                }
+            } else if (tag == 2) {
+                res[row][col--] = m;
+                if (col == left) {
+                    tag = 3;
+                    bottom--;
+                }
+            } else {
+                res[row--][col] = m;
+                if (row == top) {
+                    tag = 0;
+                    left++;
+                }
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------

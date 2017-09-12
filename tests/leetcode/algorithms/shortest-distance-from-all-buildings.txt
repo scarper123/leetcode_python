@@ -1,0 +1,520 @@
+My simple and clean Java code
+Using backtrack to check each character of word to search.
+
+    public class WordDictionary {
+        public class TrieNode {
+            public TrieNode[] children = new TrieNode[26];
+            public String item = "";
+        }
+        
+        private TrieNode root = new TrieNode();
+    
+        public void addWord(String word) {
+            TrieNode node = root;
+            for (char c : word.toCharArray()) {
+                if (node.children[c - 'a'] == null) {
+                    node.children[c - 'a'] = new TrieNode();
+                }
+                node = node.children[c - 'a'];
+            }
+            node.item = word;
+        }
+    
+        public boolean search(String word) {
+            return match(word.toCharArray(), 0, root);
+        }
+        
+        private boolean match(char[] chs, int k, TrieNode node) {
+            if (k == chs.length) return !node.item.equals("");   
+            if (chs[k] != '.') {
+                return node.children[chs[k] - 'a'] != null && match(chs, k + 1, node.children[chs[k] - 'a']);
+            } else {
+                for (int i = 0; i < node.children.length; i++) {
+                    if (node.children[i] != null) {
+                        if (match(chs, k + 1, node.children[i])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+80ms Clear C++ Code with Detailed Explanations
+This problem is an application of the Trie data structure. In the following, it is assumed that you have solved [Implement Trie (Prefix Tree)][1].
+
+Now, let's first look at the `TrieNode` class. I define it as follows.
+
+    class TrieNode {
+    public:
+        bool isKey;
+        TrieNode* children[26];
+        TrieNode(): isKey(false) {
+            memset(children, NULL, sizeof(TrieNode*) * 26); 
+        }
+    };
+ 
+The field `isKey` is to label whether the string comprised of characters starting from `root` to the current node is a key (word that has been added). In this problem, only lower-case letters `a - z` need to be considered, so each `TrieNode` has at most `26` children. I store it in an array of `TrieNode*`: `children[i]` corresponds to letter `'a' + i`. The remaining code defines the constructor of the `TrieNode` class. 
+
+Adding a word can be done in the same way as in [Implement Trie (Prefix Tree)][2]. The basic idea is to create a `TrieNode` corresponding to each letter in the word. When we are done, label the last node to be a key (set `isKey = true`). The code is as follows. 
+
+    void addWord(string word) {
+        TrieNode* run = root;
+        for (char c : word) {
+            if (!(run -> children[c - 'a']))
+                run -> children[c - 'a'] = new TrieNode();
+            run = run -> children[c - 'a']; 
+        }
+        run -> isKey = true;
+    }
+
+By the way, `root` is defined as private data of `WordDictionary`:
+
+    private:
+        TrieNode* root;
+
+And the `WordDictionary` class has a constructor to initialize `root`:
+
+    WordDictionary() {
+        root = new TrieNode();
+    }
+
+Now we are left only with `search`. Let's do it. The basic idea is still the same as typical search operations in a Trie. The critical part is how to deal with the dots `.`. Well, my solution is very naive in this place. Each time when we reach a `.`, just traverse all the children of the current node and recursively search the remaining substring in `word` starting from that children. So I define a helper function `query` for `search` that takes in a string and a starting node. And the initial call to `query` is like `query(word, root)`. 
+
+By the way, I pass a `char*` instead of `string` to `query` and it greatly speeds up the code. So the initial call to `query` is actually `query(word.c_str(), root)`.
+
+Now I put all the codes together below. Hope it to be useful! 
+
+    class TrieNode {
+    public:
+        bool isKey;
+        TrieNode* children[26];
+        TrieNode(): isKey(false) {
+            memset(children, NULL, sizeof(TrieNode*) * 26);
+        }
+    };
+    
+    class WordDictionary {
+    public:
+        WordDictionary() {
+            root = new TrieNode();
+        }
+    
+        // Adds a word into the data structure.
+        void addWord(string word) {
+            TrieNode* run = root;
+            for (char c : word) {
+                if (!(run -> children[c - 'a'])) 
+                    run -> children[c - 'a'] = new TrieNode();
+                run = run -> children[c - 'a'];
+            }
+            run -> isKey = true;
+        }
+    
+        // Returns if the word is in the data structure. A word could
+        // contain the dot character '.' to represent any one letter.
+        bool search(string word) {
+            return query(word.c_str(), root);
+        }
+    
+    private:
+        TrieNode* root;
+    
+        bool query(const char* word, TrieNode* node) {
+            TrieNode* run = node;
+            for (int i = 0; word[i]; i++) {
+                if (run && word[i] != '.')
+                    run = run -> children[word[i] - 'a'];
+                else if (run && word[i] == '.') { 
+                    TrieNode* tmp = run;
+                    for (int j = 0; j < 26; j++) {
+                        run = tmp -> children[j];
+                        if (query(word + i + 1, run))
+                            return true;
+                    }
+                }
+                else break;
+            }
+            return run && run -> isKey; 
+        }
+    };
+    
+    // Your WordDictionary object will be instantiated and called as such:
+    // WordDictionary wordDictionary;
+    // wordDictionary.addWord("word");
+    // wordDictionary.search("pattern");  
+
+  [1]: https://leetcode.com/problems/implement-trie-prefix-tree/
+  [2]: https://leetcode.com/problems/implement-trie-prefix-tree/
+
+----------------------------------------------------------------------------------------------------
+My JAVA Trie based solution
+    public class WordDictionary {
+        WordNode root = new WordNode();
+    	public void addWord(String word) {
+    		char chars[] = word.toCharArray();
+            addWord(chars, 0, root);
+        }
+    	
+    	private void addWord(char[] chars, int index, WordNode parent) {
+    		char c = chars[index];
+    		int idx = c-'a';
+            WordNode node = parent.children[idx];
+            if (node == null){
+            	node = new WordNode();
+            	parent.children[idx]=node;
+            }
+            if (chars.length == index+1){
+            	node.isLeaf=true;
+            	return;
+            }
+            addWord(chars, ++index, node);
+        }
+    
+    
+        public boolean search(String word) {
+        	return search(word.toCharArray(), 0, root);				     
+        }
+        
+        private boolean search(char[] chars, int index, WordNode parent){
+        	if (index == chars.length){
+        		if (parent.isLeaf){
+        			return true;
+        		}
+        		return false;
+        	}
+        	WordNode[] childNodes = parent.children;
+        	char c = chars[index];
+        	if (c == '.'){
+    	    	for (int i=0;i<childNodes.length;i++){
+    	    		WordNode n = childNodes[i];
+    	    		if (n !=null){
+    	    			boolean b = search(chars, index+1, n);
+    	    			if (b){
+    	    				return true;
+    	    			}
+    	    		}
+    	    	}
+    	    	return false;
+        	}
+        	WordNode node = childNodes[c-'a'];
+        	if (node == null){
+        		return false;
+        	}
+        	return search(chars, ++index, node);
+        }
+        
+    
+        
+        private class WordNode{
+        	boolean isLeaf;
+        	WordNode[] children = new WordNode[26];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python 168ms-beat-100% solution
+    class WordDictionary(object):
+        def __init__(self):
+            self.word_dict = collections.defaultdict(list)
+            
+    
+        def addWord(self, word):
+            if word:
+                self.word_dict[len(word)].append(word)
+    
+        def search(self, word):
+            if not word:
+                return False
+            if '.' not in word:
+                return word in self.word_dict[len(word)]
+            for v in self.word_dict[len(word)]:
+                # match xx.xx.x with yyyyyyy
+                for i, ch in enumerate(word):
+                    if ch != v[i] and ch != '.':
+                        break
+                else:
+                    return True
+            return False
+
+The search function could be done in a more pythonic way, but I see that performance has suffered so I just wrote the raw logic by myself.
+
+----------------------------------------------------------------------------------------------------
+Tree solutions, 18-20 lines
+    class WordDictionary:
+    
+        def __init__(self):
+            self.root = {}
+        
+        def addWord(self, word):
+            node = self.root
+            for char in word:
+                node = node.setdefault(char, {})
+            node[None] = None
+    
+        def search(self, word):
+            def find(word, node):
+                if not word:
+                    return None in node
+                char, word = word[0], word[1:]
+                if char != '.':
+                    return char in node and find(word, node[char])
+                return any(find(word, kid) for kid in node.values() if kid)
+            return find(word, self.root)
+
+An iterative alternative for the `search` method:
+
+        def search(self, word):
+            nodes = [self.root]
+            for char in word:
+                nodes = [kid
+                         for node in nodes
+                         for key, kid in node.items()
+                         if char in (key, '.') and kid]
+            return any(None in node for node in nodes)
+
+And one that's a bit longer but faster:
+
+        def search(self, word):
+            nodes = [self.root]
+            for char in word:
+                nodes = [kid for node in nodes for kid in
+                         ([node[char]] if char in node else
+                          filter(None, node.values()) if char == '.' else [])]
+            return any(None in node for node in nodes)
+
+And a neat version where I append my end-marker to the word to simplify the final check:
+
+    class WordDictionary:
+    
+        def __init__(self):
+            self.root = {}
+        
+        def addWord(self, word):
+            node = self.root
+            for char in word:
+                node = node.setdefault(char, {})
+            node['$'] = None
+    
+        def search(self, word):
+            nodes = [self.root]
+            for char in word + '$':
+                nodes = [kid for node in nodes for kid in
+                         ([node[char]] if char in node else
+                          filter(None, node.values()) if char == '.' else [])]
+            return bool(nodes)
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, easy understand
+    public class WordDictionary {
+        
+        Map<Integer, List<String>> map = new HashMap<Integer, List<String>>();
+        // Adds a word into the data structure.
+        public void addWord(String word) {
+            int index = word.length();
+            if(!map.containsKey(index)){
+                List<String> list = new ArrayList<String>();
+                list.add(word);
+                map.put(index, list);
+            }else{
+                map.get(index).add(word);
+            }
+            
+        }
+    
+        // Returns if the word is in the data structure. A word could
+        // contain the dot character '.' to represent any one letter.
+        public boolean search(String word) {
+            int index = word.length();
+            if(!map.containsKey(index)){
+                return false;
+            }
+            List<String> list = map.get(index);
+            if(isWords(word)){
+                return list.contains(word);
+            }
+            for(String s : list){
+                if(isSame(s, word)){
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        boolean isWords(String s){
+            for(int i = 0; i < s.length(); i++){
+                if(!Character.isLetter(s.charAt(i))){
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        boolean isSame(String a, String search){
+            if(a.length() != search.length()){
+                return false;
+            }
+            for(int i = 0; i < a.length(); i++){
+                if(search.charAt(i) != '.' && search.charAt(i) != a.charAt(i)){
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ using Trie and DFS for search. easy understand solution
+     struct Trie {
+         vector<Trie *> child;
+         bool isWord;
+         Trie() : isWord(false), child(vector<Trie *>(26, nullptr)) {}
+     };
+     Trie *root;
+     WordDictionary() : root(new Trie()) {}
+
+    void addWord(string word) {
+        const int size_w = word.size();
+        Trie *cur = root;
+        for (int i = 0; i < size_w; i++) {
+            int index = word[i] - 'a';
+            if (!cur->child[index]) cur->child[index] = new Trie();
+            cur = cur->child[index];
+        }
+        cur->isWord = true;
+    }
+
+    bool search(string word) {
+        return search(word.c_str(), root);
+    }
+    bool search(const char *ch, TrieNode *cur) {
+        if (!cur) return false;
+        if (*ch == '\0') return cur->isWord;
+        if (*ch != '.') {
+             return search(ch+1, cur->child[*ch - 'a']);
+        } else {
+            for (int i = 0; i <= 25; i++) {
+                if (search(ch+1, cur->child[i])) return true;
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Trie Tree java solution! very easy to understand!
+This solution uses Trier tree and DFS to search '.' case.
+
+    1, first build the standard trier tree root.
+    2, add the word into the tree.
+    3, basic search for normal character 'a'-'z' and DFS for the '.'
+
+Here is the solution, it is fast that beat 80%-90% solutions.
+
+    public class WordDictionary {
+    
+        // Adds a word into the data structure.
+        Trier root = new Trier();
+        public void addWord(String word) {
+            Trier pointer = root;
+            for(int i = 0; i < word.length(); i++) {
+                char c = word.charAt(i);
+                if (pointer.children[c-'a'] == null) {
+                    pointer.children[c-'a'] = new Trier();
+                    pointer = pointer.children[c-'a'];
+                } else {
+                    pointer = pointer.children[c-'a'];
+                }
+            }
+            pointer.flag = true;
+        }
+    
+        // Returns if the word is in the data structure. A word could
+        // contain the dot character '.' to represent any one letter.
+        public boolean search(String word) {
+            Trier pointer = root;
+            return helper(word,0,pointer);
+        }
+        private boolean helper(String word, int start, Trier cur) {
+            if (start == word.length()) {
+                if (cur.flag) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            char c = word.charAt(start);
+            if (c == '.') {
+                for (int i = 0; i < 26; i++) {
+                    if (cur.children[i] != null) {
+                        if (helper(word,start+1,cur.children[i])) {
+                            return true;
+                        }
+                    }
+                }
+            } else {
+                if (cur.children[c-'a'] == null) {
+                    return false;
+                } else {
+                    return helper(word,start+1,cur.children[c-'a']);
+                }
+            }
+            return false;
+        }
+        class Trier {
+            Trier[] children;
+            char c;
+            boolean flag;
+            public Trier() {
+                children = new Trier[26];
+                flag = false;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solution recursive version (DFS)
+
+class TrieNode(object):
+
+    def __init__(self):
+        self.word = False
+        self.children = {}
+
+class WordDictionary(object):
+
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word):
+        node = self.root
+        for c in word:
+            if c not in node.children:
+                node.children[c] = TrieNode()
+            node = node.children[c]
+        node.word = True
+
+    def search(self, word):
+        return self.searchFrom(self.root, word)
+
+    def searchFrom(self, node, word):
+        for i in xrange(len(word)):
+            c = word[i]
+            if c == '.':
+                for k in node.children:
+                    if self.searchFrom(node.children[k], word[i+1:]):
+                        return True
+                return False
+            elif c not in node.children:
+                return False
+            node = node.children[c]
+        return node.word
+
+
+----------------------------------------------------------------------------------------------------
+Java 19ms solution (modified trie solution)

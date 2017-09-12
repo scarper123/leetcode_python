@@ -1,0 +1,628 @@
+Depth First Simple Java Solution
+    public class Solution {
+        private HashMap<Integer, UndirectedGraphNode> map = new HashMap<>();
+        public UndirectedGraphNode cloneGraph(UndirectedGraphNode node) {
+            return clone(node);
+        }
+    
+        private UndirectedGraphNode clone(UndirectedGraphNode node) {
+            if (node == null) return null;
+            
+            if (map.containsKey(node.label)) {
+                return map.get(node.label);
+            }
+            UndirectedGraphNode clone = new UndirectedGraphNode(node.label);
+            map.put(clone.label, clone);
+            for (UndirectedGraphNode neighbor : node.neighbors) {
+                clone.neighbors.add(clone(neighbor));
+            }
+            return clone;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java iterative BFS solution with HashMap and queue
+Use HashMap to look up nodes and add connection to them while performing BFS.
+
+    public class Solution {
+        public UndirectedGraphNode cloneGraph(UndirectedGraphNode node) {
+            if (node == null) return null;
+            
+            UndirectedGraphNode newNode = new UndirectedGraphNode(node.label); //new node for return
+            HashMap<Integer, UndirectedGraphNode> map = new HashMap(); //store visited nodes
+            
+            map.put(newNode.label, newNode); //add first node to HashMap
+            
+            LinkedList<UndirectedGraphNode> queue = new LinkedList(); //to store **original** nodes need to be visited
+            queue.add(node); //add first **original** node to queue
+            
+            while (!queue.isEmpty()) { //if more nodes need to be visited
+                UndirectedGraphNode n = queue.pop(); //search first node in the queue
+                for (UndirectedGraphNode neighbor : n.neighbors) {
+                    if (!map.containsKey(neighbor.label)) { //add to map and queue if this node hasn't been searched before
+                        map.put(neighbor.label, new UndirectedGraphNode(neighbor.label));
+                        queue.add(neighbor);
+                    }
+                    map.get(n.label).neighbors.add(map.get(neighbor.label)); //add neighbor to new created nodes
+                }
+            }
+            
+            return newNode;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+7-17 lines C++ BFS&#x2F;DFS Solutions
+This problem is an application of graph traversal, which has two systematic methods: **Bread-First Search (BFS)** and **Depth-First Search (DFS)**. In the following, I am going to assume that you are familiar with them and just focus on what I think is the most tricky part of this problem, that is, what else is needed beyond graph traversal to clone a graph? 
+ 
+In order to clone a graph, you need to have a **copy** of each node in the original graph. Well, you may not have too many ideas about it. Let's do an example.
+
+Suppose we are given a graph `{0, 1 # 1, 0}`. We know that the graph has two nodes `0` and `1` and they are connected to each other.
+
+We now start from `0`. We make a copy of `0`. Then we check `0`'s neighbors and we see `1`. We make a copy of `1` and we add the copy to the neighbors of the copy of `0`. Now the cloned graph is `{0 (copy), 1 (copy)}`. Then we visit `1`. We make a copy of `1`... well, wait, why do we make another copy of it? We already have one! **Note that if you make a new copy of the node, these copies are not the same and the graph structure will be wrong!** This is just what I mean by "the most tricky part of this problem". In fact, we need to maintain a mapping from each node to its copy. If the node has an existed copy, we simply use it. So in the above example, the remaining process is that we visit the copy of `1` and add the copy of `0` to its neighbors and the cloned graph is eventually `{0 (copy), 1 (copy) # 1 (copy), 0 (copy)}`.  
+
+Note that the above process uses BFS. Of course, you can use DFS. The key is the node-copy mapping, anyway.
+
+----------
+**BFS**
+
+    class Solution {
+    public:
+        UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+            if (!node) return NULL;
+            UndirectedGraphNode* copy = new UndirectedGraphNode(node -> label);
+            mp[node] = copy;
+            queue<UndirectedGraphNode*> toVisit;
+            toVisit.push(node);
+            while (!toVisit.empty()) {
+                UndirectedGraphNode* cur = toVisit.front();
+                toVisit.pop();
+                for (UndirectedGraphNode* neigh : cur -> neighbors) {
+                    if (mp.find(neigh) == mp.end()) {
+                        UndirectedGraphNode* neigh_copy = new UndirectedGraphNode(neigh -> label);
+                        mp[neigh] = neigh_copy;
+                        toVisit.push(neigh);
+                    }
+                    mp[cur] -> neighbors.push_back(mp[neigh]);
+                }
+            }
+            return copy; 
+        }
+    private:
+        unordered_map<UndirectedGraphNode*, UndirectedGraphNode*> mp;
+    };
+
+----------
+**DFS**
+
+This very succinct DFS code is taken from [this post][1].
+
+    class Solution {
+    public:
+        UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+            if (!node) return NULL;
+            if (mp.find(node) == mp.end()) {
+                mp[node] = new UndirectedGraphNode(node -> label);
+                for (UndirectedGraphNode* neigh : node -> neighbors)
+                    mp[node] -> neighbors.push_back(cloneGraph(neigh));
+            }
+            return mp[node];
+        } 
+    private:
+        unordered_map<UndirectedGraphNode*, UndirectedGraphNode*> mp;
+    };
+
+If you want to learn more about this problem, you may refer to [this article][2].
+
+  [1]: https://leetcode.com/discuss/26440/9-line-c-dfs-solution
+  [2]: http://articles.leetcode.com/2012/05/clone-graph-part-i.html
+
+----------------------------------------------------------------------------------------------------
+9 line c++ DFS Solution
+The solution is same as https://oj.leetcode.com/discuss/22244/simple-c-solution-using-dfs-and-recursion
+I just make it shorter;
+
+    /**
+    *  author : s2003zy
+    *  weibo  : http://weibo.com/songzy982
+    *  blog   : s2003zy.com
+    *  date   : 2015.02.27
+    */
+    class Solution {
+    public:
+        unordered_map<UndirectedGraphNode*, UndirectedGraphNode*> hash;
+        UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+           if (!node) return node;
+           if(hash.find(node) == hash.end()) {
+               hash[node] = new UndirectedGraphNode(node -> label);
+               for (auto x : node -> neighbors) {
+                    (hash[node] -> neighbors).push_back( cloneGraph(x) );
+               }
+           }
+           return hash[node];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Graph representation?
+Problem statement says that this is an undirected graph, but how does the adjacency list correspond to it?
+{0,1,2#1,2#2,2}
+means that adjacency list for the give graph is:
+
+    0   1, 2
+    1   2
+    2   2
+
+In an undirected graph, adjacency list for 1 should contain 0 as well, and 2 should contain 0 and 1. What I would expect is:
+
+    0   1, 2
+    1   2, 0
+    2   2, 0, 1
+
+
+The  first representation looks like directed graph, because there is an edge 0->1 but not 1->0.
+
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS solution
+    public UndirectedGraphNode cloneGraph(UndirectedGraphNode root) {
+      if (root == null) return null;
+      
+      // use a queue to help BFS
+      Queue<UndirectedGraphNode> queue = new LinkedList<UndirectedGraphNode>();
+      queue.add(root);
+      
+      // use a map to save cloned nodes
+      Map<UndirectedGraphNode, UndirectedGraphNode> map = new HashMap<UndirectedGraphNode, UndirectedGraphNode>();
+      
+      // clone the root
+      map.put(root, new UndirectedGraphNode(root.label));
+      
+      while (!queue.isEmpty()) {
+        UndirectedGraphNode node = queue.poll();
+        
+        // handle the neighbors
+        for (UndirectedGraphNode neighbor : node.neighbors) {
+          if (!map.containsKey(neighbor)) {
+            // clone the neighbor
+            map.put(neighbor, new UndirectedGraphNode(neighbor.label));
+            // add it to the next level
+            queue.add(neighbor);
+          }
+          
+          // copy the neighbor
+          map.get(node).neighbors.add(map.get(neighbor));
+        }
+      }
+      
+      return map.get(root);
+    }
+
+----------------------------------------------------------------------------------------------------
+Python DFS short solution
+Use a dictionary to store the UndirectedGraphNode
+
+    def cloneGraph(self, node):
+        if not node:
+            return node
+        root = UndirectedGraphNode(node.label)
+        stack = [node]
+        visit = {}
+        visit[node.label] = root
+        while stack:
+            top = stack.pop()
+        
+            for n in top.neighbors:
+                if n.label not in visit:
+                    stack.append(n)
+                    visit[n.label] = UndirectedGraphNode(n.label)
+                visit[top.label].neighbors.append(visit[n.label])
+        
+        return root
+
+----------------------------------------------------------------------------------------------------
+Accepted recursive depth first search solution
+    class Solution {
+    public:
+    	UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) 
+    	{
+    		// initialize marks
+    		map<int, UndirectedGraphNode*> marks;
+    		if (node) return dfs(node, marks);
+    		else return NULL;
+    	}
+    
+    	UndirectedGraphNode * dfs(UndirectedGraphNode *node, map<int, UndirectedGraphNode*> & marks)
+    	{
+    		// create new node and search its all neighbors
+    		UndirectedGraphNode *p;
+    		p = new UndirectedGraphNode(node->label);
+    		marks[p->label] = p;
+    
+    		// loop all neighbors
+    		for(UndirectedGraphNode* n : node->neighbors)
+    		{
+    			// hook already created and searched node
+    			if(marks.count(n->label) > 0)
+    				(p->neighbors).push_back(marks[n->label]);
+    			else
+    				(p->neighbors).push_back(dfs(n,marks));
+    		}
+    		return p;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solutions (BFS, DFS iteratively, DFS recursively).
+        
+    # BFS
+    def cloneGraph1(self, node):
+        if not node:
+            return 
+        nodeCopy = UndirectedGraphNode(node.label)
+        dic = {node: nodeCopy}
+        queue = collections.deque([node])
+        while queue:
+            node = queue.popleft()
+            for neighbor in node.neighbors:
+                if neighbor not in dic: # neighbor is not visited
+                    neighborCopy = UndirectedGraphNode(neighbor.label)
+                    dic[neighbor] = neighborCopy
+                    dic[node].neighbors.append(neighborCopy)
+                    queue.append(neighbor)
+                else:
+                    dic[node].neighbors.append(dic[neighbor])
+        return nodeCopy
+        
+    # DFS iteratively
+    def cloneGraph2(self, node):
+        if not node:
+            return 
+        nodeCopy = UndirectedGraphNode(node.label)
+        dic = {node: nodeCopy}
+        stack = [node]
+        while stack:
+            node = stack.pop()
+            for neighbor in node.neighbors:
+                if neighbor not in dic:
+                    neighborCopy = UndirectedGraphNode(neighbor.label)
+                    dic[neighbor] = neighborCopy
+                    dic[node].neighbors.append(neighborCopy)
+                    stack.append(neighbor)
+                else:
+                    dic[node].neighbors.append(dic[neighbor])
+        return nodeCopy
+        
+    # DFS recursively
+    def cloneGraph(self, node):
+        if not node:
+            return 
+        nodeCopy = UndirectedGraphNode(node.label)
+        dic = {node: nodeCopy}
+        self.dfs(node, dic)
+        return nodeCopy
+        
+    def dfs(self, node, dic):
+        for neighbor in node.neighbors:
+            if neighbor not in dic:
+                neighborCopy = UndirectedGraphNode(neighbor.label)
+                dic[neighbor] = neighborCopy
+                dic[node].neighbors.append(neighborCopy)
+                self.dfs(neighbor, dic)
+            else:
+                dic[node].neighbors.append(dic[neighbor])
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution using DFS and recursion.
+Create a new node if the node map doesn't already contain a node with this label, otherwise return the pointer to the node with that label from the node map. Add the children to new nodes recursively through BFS. 
+
+    UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+        if(!node) return node;
+        
+        unordered_map<int, UndirectedGraphNode*>::iterator itr = mNodeMap.find(node->label);
+        if(itr == mNodeMap.end()){
+            UndirectedGraphNode* newNode = new UndirectedGraphNode(node->label);
+            mNodeMap[node->label] = newNode;
+            for(int i = 0; i < node->neighbors.size(); ++i){
+                newNode->neighbors.push_back(cloneGraph(node->neighbors[i]));   
+            }
+            return newNode;
+        }else{
+            return itr->second;
+        }
+    }
+    
+    unordered_map<int, UndirectedGraphNode*> mNodeMap;
+
+----------------------------------------------------------------------------------------------------
+Is the graph representation for directed graph?
+Well, I have some doubt about the graph representation in this problem, though it might not affect the solution to this problem. In this problem, we are asked to clone a undirected graph, which means for the pair of connected nodes, each one should be presented in the other's neighbors list. 
+
+ - For example: if there are two nodes 0 and 1 in a graph, and they are
+   connected to each other, then the graph representation should be
+   {0,1#1,0} 
+ - So the test case in this problem, the graph
+   {0,1,2#1,2#2,2} should be regarded as a directed graph.
+
+As said before, the solution might not be affected no matter what the representation is, but I don't want to be confused by the understanding of graph representation. So tell me if my understanding is wrong. Thanks!
+
+----------------------------------------------------------------------------------------------------
+Java solution with DFS and BFS
+    private Map<UndirectedGraphNode, UndirectedGraphNode> map = new HashMap<UndirectedGraphNode, UndirectedGraphNode>();
+    // DFS
+    public UndirectedGraphNode cloneGraph(UndirectedGraphNode node) {
+        if (node == null) return null;
+        if (map.containsKey(node)) return map.get(node);
+        UndirectedGraphNode copy = new UndirectedGraphNode(node.label);
+        map.put(node, copy);
+        for (UndirectedGraphNode n : node.neighbors)
+            copy.neighbors.add(cloneGraph(n));
+        return copy;
+    }
+    
+    // BFS
+    public UndirectedGraphNode cloneGraph(UndirectedGraphNode node) {
+        if (node == null) return null;
+        Queue<UndirectedGraphNode> q = new LinkedList<UndirectedGraphNode>();
+        q.add(node);
+        UndirectedGraphNode copy = new UndirectedGraphNode(node.label);
+        map.put(node, copy);
+        while (!q.isEmpty()) {
+            UndirectedGraphNode cur = q.poll();
+            for (UndirectedGraphNode neigh : cur.neighbors) {
+                if (map.containsKey(neigh)) map.get(cur).neighbors.add(map.get(neigh));
+                else {
+                    UndirectedGraphNode neighCopy = new UndirectedGraphNode(neigh.label);
+                    map.put(neigh, neighCopy);
+                    map.get(cur).neighbors.add(neighCopy);
+                    q.add(neigh);
+                }
+            }
+        }
+        return copy;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+This question is the WORST one!
+What does undirected graph mean? It's a graph in which a node is a neighbor of its neighbors.
+Many people would think the terrible {#} format is just for OJ's input/output. I was stuck for this reason for half an hour.
+
+Why the question stress that the graph is undirected when it's actually directed?
+
+----------------------------------------------------------------------------------------------------
+I believe undirected graph neighbor list should always contain each other
+It seems to me the input from OJ is problematic. When a and b are neighbors, b is in a's neighbor list but a is not in b's neighbor list. Under such condition only certain algorithm can generate correct output.
+
+I've pasted a BFS solution which is correct if a and b are put into to each other's neighbor list, but doesn't work properly under current OJ:
+
+
+
+
+    UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+            //key -> old node, value -> the new copy
+            unordered_map<UndirectedGraphNode*, UndirectedGraphNode*> m;
+            //the queue always contains old nodes that haven't been copied
+            queue<UndirectedGraphNode*> q;
+            if(node)
+                q.push(node);
+            
+            while(!q.empty()) {
+                
+                UndirectedGraphNode* n = q.front();
+                q.pop();
+                if(m.count(n)) continue; // if the node is already copied, continue
+                
+                // create the copy
+                m[n] = new UndirectedGraphNode(n->label);
+                
+                // loop through the neighbors, if it's copied already, add the new copy to new copy's neighbor list
+                for(UndirectedGraphNode* oldNei : n->neighbors) {
+    
+                    if(m.count(oldNei)) {
+                        
+                        UndirectedGraphNode* newNei = m[oldNei];
+                        
+                        if(m[n]->neighbors.size()==n->neighbors.size())
+                            continue;
+                        
+                        m[n]->neighbors.push_back(newNei);
+                        newNei->neighbors.push_back(m[n]);
+                    }
+                    
+                    else// if not in the map, it's not copied/visited yet
+                    
+                        q.push(oldNei);
+                }
+    
+            }
+            
+            return m[node];
+        } 
+
+This won't pass case {-1,1#1} since 1 is neighbor of -1, but -1 is not neighbor of 1.
+
+If you think the above algorithm is wrong, please point it out. Otherwise I think the OJ needs to be fixed.
+
+----------------------------------------------------------------------------------------------------
+Accepted : Simple c++ DFS  with hash map
+     typedef UndirectedGraphNode unode;
+    class Solution {
+    public:
+        unordered_map<unode*,unode *> mp;   //maps input node with cloned node
+      
+        UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+           if(!node)
+            return NULL;
+           unode *temp=new unode(node->label);
+           mp[node]=temp;
+           int len=(node->neighbors).size();
+           
+           for(int i=0 ; i<len ; i++)
+              if(mp[node->neighbors[i]]==0)
+           //If input node is not visited,clone it
+                (temp->neighbors).push_back(cloneGraph(node->neighbors[i]));   
+               else
+           //If input node is already visited,simple push the mapped cloned node.
+                  (temp->neighbors).push_back(mp[node->neighbors[i]]); 
+           return temp;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My Python solution with dictionary
+
+       def cloneGraph(self, node):
+            if not node:
+                return None
+            self.newNodeDict={}
+            return self.createNode(node)
+                    
+        def createNode(self, oldNode):
+            newNode = UndirectedGraphNode(oldNode.label)
+            self.newNodeDict[newNode.label] = newNode
+            
+            for i in oldNode.neighbors:
+                if i.label not in self.newNodeDict:
+                    self.createNode(i) #recursively create nodes
+                newNode.neighbors.append(self.newNodeDict[i.label])
+            return newNode  
+
+----------------------------------------------------------------------------------------------------
+BFS and DFS with Hash(unordered_map)  in C++
+
+Both BFS and DFS use hash(unordered_map) to connect node with new clone node.
+
+1. BFS
+======
+    UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node)
+    {
+        if(node == NULL)
+            return NULL;
+        
+        unordered_map<UndirectedGraphNode *, UndirectedGraphNode *> map;
+        map[node] = new UndirectedGraphNode(node -> label);
+        
+        queue<UndirectedGraphNode *> q;
+        q.push(node);
+        while(!q.empty())
+        {
+            UndirectedGraphNode *temp = q.front();
+            q.pop();
+            
+            for(int i = 0; i < temp -> neighbors.size(); ++ i)
+            {
+                if(map.find(temp -> neighbors[i]) == map.end())
+                {
+                    map[temp -> neighbors[i]] = new UndirectedGraphNode(temp -> neighbors[i] -> label);
+                    q.push(temp -> neighbors[i]);
+                }
+                (map[temp] -> neighbors).push_back(map[temp -> neighbors[i]]);
+            }
+        }
+        
+        return map[node];
+    }
+
+2. DFS
+======
+    unordered_map<UndirectedGraphNode *, UndirectedGraphNode *> map;
+    UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node)
+    {
+        if(node == NULL)
+            return NULL;
+        
+        if(map.find(node) == map.end())
+        {
+            map[node] = new UndirectedGraphNode(node -> label);
+            for(auto n : node -> neighbors)
+                (map[node] -> neighbors).push_back(cloneGraph(n));
+        }
+        return map[node];
+    }
+
+See [here](http://www.makuiyu.cn/2015/03/LeetCode_133.%20Clone%20Graph/) for more.
+
+----------------------------------------------------------------------------------------------------
+Java DFS solution (iterative)
+    public UndirectedGraphNode cloneGraph(UndirectedGraphNode root) {
+      if (root == null) return null;
+      
+      // use a stack to help DFS
+      Stack<UndirectedGraphNode> stack = new Stack<UndirectedGraphNode>();
+      stack.push(root);
+      
+      // use a map to save cloned nodes
+      Map<UndirectedGraphNode, UndirectedGraphNode> map = new HashMap<UndirectedGraphNode, UndirectedGraphNode>();
+      
+      // clone the root
+      map.put(root, new UndirectedGraphNode(root.label));
+      
+      while (!stack.isEmpty()) {
+        UndirectedGraphNode node = stack.pop();
+        
+        // handle the neighbors
+        for (UndirectedGraphNode neighbor : node.neighbors) {
+          if (!map.containsKey(neighbor)) {
+            // clone the neighbor
+            map.put(neighbor, new UndirectedGraphNode(neighbor.label));
+            // add it to the next level
+            stack.push(neighbor);
+          }
+          
+          // copy the neighbor
+          map.get(node).neighbors.add(map.get(neighbor));
+        }
+      }
+      
+      return map.get(root);
+    }
+
+----------------------------------------------------------------------------------------------------
+11-liner in Python&#x2F;C++
+typedef UndirectedGraphNode UGNode;
+
+class Solution {
+public:
+    UGNode* cloneGraph(UGNode* start) {
+        if (start == NULL) return NULL;
+        map<int, UGNode*> news, olds;
+        queue<UGNode*> q; q.push(start);
+        while (!q.empty()) {
+            auto node = q.front(); q.pop();
+            if (news.count(node->label)) continue;
+            news[node->label] = new UGNode(node->label);
+            olds[node->label] = node;
+            for (auto neigh: node->neighbors) q.push(neigh);
+        }
+        for (auto keyval: news) {
+            for (auto neighl: olds[keyval.first]->neighbors)
+                news[keyval.first]->neighbors.push_back(news[neighl->label]);
+        }
+        return news[start->label];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy ...recursive solution ....with full explanations....O(n) space ..c++11
+
+
+    class Solution {
+    public:
+        unordered_map<UndirectedGraphNode *,UndirectedGraphNode *> created;///although it takes O(n) space but it is the efficent way to search available in C++11...for C++4.8 use map...
+        UndirectedGraphNode *cloneGraph(UndirectedGraphNode *node) {
+            if(!node)return node; //not required ..only to be in safe side
+            if(created.find(node)!=created.end())return created[node]; ///if this node is already created then just return the reference of the new node created earlier
+            UndirectedGraphNode * t=new UndirectedGraphNode(node->label);///otherwise create a new node and mark corresponding node in original graph created.
+            created[node]=t;
+            for(int i=0;i<node->neighbors.size();i++){
+                t->neighbors.push_back(cloneGraph(node->neighbors[i]));//do recursively for all its neighbors...:)
+            }
+            return t;
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

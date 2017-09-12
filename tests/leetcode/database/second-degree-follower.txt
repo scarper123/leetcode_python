@@ -1,0 +1,175 @@
+Sharing my solution,
+    select 
+    t.Request_at Day, 
+    round(sum(case when t.Status like 'cancelled_%' then 1 else 0 end)/count(*),2) Rate
+    from Trips t 
+    inner join Users u 
+    on t.Client_Id = u.Users_Id and u.Banned='No'
+    where t.Request_at between '2013-10-01' and '2013-10-03'
+    group by t.Request_at
+
+----------------------------------------------------------------------------------------------------
+Solution without join
+    SELECT Request_at as Day,
+           ROUND(COUNT(IF(Status != 'completed', TRUE, NULL)) / COUNT(*), 2) AS 'Cancellation Rate'
+    FROM Trips
+    WHERE (Request_at BETWEEN '2013-10-01' AND '2013-10-03')
+          AND Client_id NOT IN (SELECT Users_Id FROM Users WHERE Banned = 'Yes')
+    GROUP BY Request_at;
+
+----------------------------------------------------------------------------------------------------
+Sharing my solution
+    SELECT Trips.Request_at Day,
+           round(sum(if(status != 'completed', 1, 0)) / sum(1), 2) 'Cancellation Rate'
+    FROM Trips
+    JOIN Users
+      ON Trips.Client_Id = Users.Users_Id
+    WHERE Users.Banned = 'No' 
+      AND Trips.Request_at between '2013-10-01' AND '2013-10-03'   
+    GROUP BY Trips.Request_at 
+
+----------------------------------------------------------------------------------------------------
+Question towards problem description
+The question says "Write a SQL query to find the cancellation rate of requests made by unbanned clients". Why does the solution need to count the cancellations made by both clients and drivers, considering the the fact that it doesn't ask us to filter out banned drivers?
+
+----------------------------------------------------------------------------------------------------
+My solution share
+195ms~240ms
+
+
+    SELECT
+    	Request_at,
+    	round(
+    		count(
+    
+    			IF (STATUS != 'completed', TRUE, NULL)
+    		) / count(*),
+    		2
+    	) AS 'Cancellation Rate'
+    FROM
+    	(
+    		SELECT
+    			Request_at,
+    			STATUS
+    		FROM
+    			Users
+    		JOIN (
+    			SELECT
+    				Client_Id,
+    				Request_at,
+    				Status
+    			FROM
+    				Trips
+    			WHERE
+    				Request_at >= '2013-10-01'
+    			AND Request_at <= '2013-10-03'
+    		) AS a ON Users.Users_Id = a.Client_Id
+    		WHERE
+    			Role = 'client'
+    		AND Banned = 'No'
+    	) b
+    GROUP BY
+    	Request_at
+
+----------------------------------------------------------------------------------------------------
+Simple join + sum function solution
+    select t.Request_at as Day,
+           round(sum(if(t.Status <> 'completed', 1, 0))/sum(1), 2) as 'Cancellation Rate'
+    from Trips as t
+    inner join Users as u on t.Client_id = u.Users_id and u.Banned <> 'Yes'
+    where t.Request_at >= '2013-10-01' and t.Request_at <='2013-10-03'
+    group by t.Request_at;
+
+----------------------------------------------------------------------------------------------------
+129 ms solution
+# Write your MySQL query statement below
+select Day, round(avg(cnt), 2) as "Cancellation Rate"
+from 
+(   select a.request_at as Day, 
+    @cnt := IF(a.Status = 'completed', 0, 1) as cnt
+    from Trips a, Users b
+    where a.Client_Id = b.Users_Id and b.Banned = 'No'
+) c
+where Day BETWEEN '2013-10-01' AND '2013-10-03'
+group by Day
+
+
+
+
+----------------------------------------------------------------------------------------------------
+My straightforward answer-223ms
+SELECT `Trips`.Request_at AS Day , ROUND(SUM(`Trips`.Status LIKE 'cancelled%')/COUNT(*),2) AS CancellationRate FROM `Trips`  JOIN `Users` ON `Users`.Users_id =`Trips`.Client_Id
+WHERE (`Trips`.Request_at BETWEEN '2013-10-01' AND '2013-10-03') AND `Users`.Banned='No' 
+GROUP BY Day;
+
+----------------------------------------------------------------------------------------------------
+Share my answer
+    select  t.`Request_at` as  Day ,
+    round(
+    sum(case when t.Status = 'completed' then 0 else 1 end) / count(1) ) 
+    ,2) as  'Cancellation Rate'
+    from Trips t 
+    where (select Banned from Users u where t.Client_id = u.Users_id) = 'No' 
+    and (select Banned from Users u where t.Driver_id = u.Users_id) = 'No' 
+    and t.Request_at >= '2013-10-01' and t.Request_at <= '2013-10-03'
+    group by t.`Request_at`
+
+----------------------------------------------------------------------------------------------------
+My Easy Solution
+    SELECT Request_at Day, ROUND(SUM(IF(Status = 'completed', 0, 1))/COUNT(*),2) `Cancellation Rate` 
+    FROM Trips t LEFT JOIN Users t1 ON t.Client_Id = t1.Users_Id LEFT JOIN Users t2 ON t.Driver_Id = 
+    t2.Users_Id WHERE t1.Banned = 'No' AND t2.Banned = 'No'AND Request_at BETWEEN '2013-10-01' 
+    AND '2013-10-03' GROUP BY t.Request_at;
+
+SUM(IF(Status = 'completed', 0, 1)) can get the quantity of cancelled status and count(*) can get all quantity of status. This is the key of this answer;
+
+----------------------------------------------------------------------------------------------------
+Inconvenient solution without using sum
+    select A.Request_at Day, round(B.Status/A.Status,2) "Cancellation Rate" 
+    from 
+        (select count(Status) Status, Request_at from Trips,Users 
+                where Client_Id=Users.Users_Id and Users.Banned='No'  group by Request_at
+         ) A,
+            
+        (select B2.Request_at Request_at, ifnull(Status,0)  Status
+                from
+                    (select count(Status) Status, Request_at from Trips,Users
+                        where Status!='completed'  and Client_Id=Users.Users_Id and Users.Banned='No' group by Request_at) B1
+                right join
+                    (select distinct Request_at from Trips) B2
+                on B2.Request_at = B1.Request_at
+        ) B
+    where A.Request_at=B.Request_at and date(A.Request_at) between date("2013-10-01") and date("2013-10-03") 
+
+
+
+----------------------------------------------------------------------------------------------------
+Accept sample code, need to be impproved
+    # Write your MySQL query statement below
+    select b.Request_at as Day,
+        case 
+            when cancel is null then round(0,2)
+            else round(cancel/total,2)
+        end as 'Cancellation Rate'
+        from (
+            select 
+                Request_at,
+                count(1) as cancel
+            from Trips left join Users
+            on Trips.Client_Id = Users.Users_Id 
+            where Banned = "No" and Status like "cancel%" and datediff(Request_at,"2013-10-01") in (0,1,2)
+            group by Request_at
+        ) a
+        right join (
+            select 
+                Request_at,
+                count(1) as total
+            from Trips left join Users
+            on Trips.Client_Id = Users.Users_Id 
+            where Banned = "No"  and datediff(Request_at,"2013-10-01") in (0,1,2)
+            group by Request_at
+        ) b
+        on a.Request_at = b.Request_at
+        order by Day
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,1620 @@
+Java OO Design with most efficient function getNewsFeed
+    public class Twitter {
+        private static int timeStamp=0;
+        
+        // easy to find if user exist
+        private Map<Integer, User> userMap;
+        
+        // Tweet link to next Tweet so that we can save a lot of time
+        // when we execute getNewsFeed(userId)
+        private class Tweet{
+            public int id;
+            public int time;
+            public Tweet next;
+            
+            public Tweet(int id){
+                this.id = id;
+                time = timeStamp++;
+                next=null;
+            }
+        }
+        
+        
+        // OO design so User can follow, unfollow and post itself
+        public class User{
+            public int id;
+            public Set<Integer> followed;
+            public Tweet tweet_head;
+            
+            public User(int id){
+                this.id=id;
+                followed = new HashSet<>();
+                follow(id); // first follow itself
+                tweet_head = null;
+            }
+            
+            public void follow(int id){
+                followed.add(id);
+            }
+            
+            public void unfollow(int id){
+                followed.remove(id);
+            }
+            
+            
+            // everytime user post a new tweet, add it to the head of tweet list.
+            public void post(int id){
+                Tweet t = new Tweet(id);
+                t.next=tweet_head;
+                tweet_head=t;
+            }
+        }
+        
+        
+        
+    
+        /** Initialize your data structure here. */
+        public Twitter() {
+            userMap = new HashMap<Integer, User>();
+        }
+        
+        /** Compose a new tweet. */
+        public void postTweet(int userId, int tweetId) {
+            if(!userMap.containsKey(userId)){
+                User u = new User(userId);
+                userMap.put(userId, u);
+            }
+            userMap.get(userId).post(tweetId);
+                
+        }
+        
+ 
+        
+        // Best part of this.
+        // first get all tweets lists from one user including itself and all people it followed.
+        // Second add all heads into a max heap. Every time we poll a tweet with 
+        // largest time stamp from the heap, then we add its next tweet into the heap.
+        // So after adding all heads we only need to add 9 tweets at most into this 
+        // heap before we get the 10 most recent tweet.
+        public List<Integer> getNewsFeed(int userId) {
+            List<Integer> res = new LinkedList<>();
+    
+            if(!userMap.containsKey(userId))   return res;
+            
+            Set<Integer> users = userMap.get(userId).followed;
+            PriorityQueue<Tweet> q = new PriorityQueue<Tweet>(users.size(), (a,b)->(b.time-a.time));
+            for(int user: users){
+                Tweet t = userMap.get(user).tweet_head;
+                // very imporant! If we add null to the head we are screwed.
+                if(t!=null){
+                    q.add(t);
+                }
+            }
+            int n=0;
+            while(!q.isEmpty() && n<10){
+              Tweet t = q.poll();
+              res.add(t.id);
+              n++;
+              if(t.next!=null)
+                q.add(t.next);
+            }
+            
+            return res;
+            
+        }
+        
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        public void follow(int followerId, int followeeId) {
+            if(!userMap.containsKey(followerId)){
+                User u = new User(followerId);
+                userMap.put(followerId, u);
+            }
+            if(!userMap.containsKey(followeeId)){
+                User u = new User(followeeId);
+                userMap.put(followeeId, u);
+            }
+            userMap.get(followerId).follow(followeeId);
+        }
+        
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        public void unfollow(int followerId, int followeeId) {
+            if(!userMap.containsKey(followerId) || followerId==followeeId)
+                return;
+            userMap.get(followerId).unfollow(followeeId);
+        }
+    }
+    
+    /**
+     * Your Twitter object will be instantiated and called as such:
+     * Twitter obj = new Twitter();
+     * obj.postTweet(userId,tweetId);
+     * List<Integer> param_2 = obj.getNewsFeed(userId);
+     * obj.follow(followerId,followeeId);
+     * obj.unfollow(followerId,followeeId);
+     */
+
+----------------------------------------------------------------------------------------------------
+Python solution
+    class Twitter(object):
+    
+        def __init__(self):
+            self.timer = itertools.count(step=-1)
+            self.tweets = collections.defaultdict(collections.deque)
+            self.followees = collections.defaultdict(set)
+    
+        def postTweet(self, userId, tweetId):
+            self.tweets[userId].appendleft((next(self.timer), tweetId))
+    
+        def getNewsFeed(self, userId):
+            tweets = heapq.merge(*(self.tweets[u] for u in self.followees[userId] | {userId}))
+            return [t for _, t in itertools.islice(tweets, 10)]
+    
+        def follow(self, followerId, followeeId):
+            self.followees[followerId].add(followeeId)
+    
+        def unfollow(self, followerId, followeeId):
+            self.followees[followerId].discard(followeeId)
+
+----------------------------------------------------------------------------------------------------
+Java Solutions with Two Maps and PriorityQueue
+I use a map to track the tweets for each user. When we need to generate a news feed, I merge the news feed for all the followees and take the most recent 10. This is unlikely to perform, but the code passes the OJ. I'm sure design interviews ask for performance trade-offs and just posting this code in a design interview will not help you get an offer.
+
+    public class Twitter {
+        Map<Integer, Set<Integer>> fans = new HashMap<>();
+        Map<Integer, LinkedList<Tweet>> tweets = new HashMap<>();
+        int cnt = 0;
+    
+        public void postTweet(int userId, int tweetId) {
+            if (!fans.containsKey(userId)) fans.put(userId, new HashSet<>());
+            fans.get(userId).add(userId);
+            if (!tweets.containsKey(userId)) tweets.put(userId, new LinkedList<>());
+            tweets.get(userId).addFirst(new Tweet(cnt++, tweetId));
+        }
+    
+        public List<Integer> getNewsFeed(int userId) {
+            if (!fans.containsKey(userId)) return new LinkedList<>();
+            PriorityQueue<Tweet> feed = new PriorityQueue<>((t1, t2) -> t2.time - t1.time);
+            fans.get(userId).forEach(f -> tweets.get(f).forEach(feed::add));
+            List<Integer> res = new LinkedList<>();
+            while (feed.size() > 0 && res.size() < 10) res.add(feed.poll().id);
+            return res;
+        }
+    
+        public void follow(int followerId, int followeeId) {
+            if (!fans.containsKey(followerId)) fans.put(followerId, new HashSet<>());
+            fans.get(followerId).add(followeeId);
+        }
+    
+        public void unfollow(int followerId, int followeeId) {
+            if (fans.containsKey(followerId) && followeeId != followerId) fans.get(followerId).remove(followeeId);
+        }
+    
+        class Tweet {
+            int time;
+            int id;
+    
+            Tweet(int time, int id) {
+                this.time = time;
+                this.id = id;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+72ms C++ solution
+Complexity: O(1) post/follow/unfollow, O(k log n) newsfeed for getting k tweets from n followed users
+
+Use `std::vector` to store tweets, `std::unordered_set` to store followed users, `std::unordered_map` to associate each user with their tweets and followed users.
+
+Use a heap to merge most recent k tweets from followed users. `std::make/push/pop_heap` provide finer control than `std::priority_queue`.
+
+
+    class Twitter
+    {
+        struct Tweet
+        {
+            int time;
+            int id;
+            Tweet(int time, int id) : time(time), id(id) {}
+        };
+    
+        std::unordered_map<int, std::vector<Tweet>> tweets; // [u] = array of tweets by u
+        std::unordered_map<int, std::unordered_set<int>> following; // [u] = array of users followed by u
+    
+        int time;
+    
+    public:
+        Twitter() : time(0) {}
+    
+        void postTweet(int userId, int tweetId)
+        {
+            tweets[userId].emplace_back(time++, tweetId);
+        }
+    
+        std::vector<int> getNewsFeed(int userId)
+        {
+            std::vector<std::pair<Tweet*, Tweet*>> h; // pair of pointers (begin, current)
+    
+            for (auto& u: following[userId])
+            {
+                auto& t = tweets[u];
+                if (t.size() > 0)
+                    h.emplace_back(t.data(), t.data() + t.size() - 1);
+            }
+            auto& t = tweets[userId]; // self
+            if (t.size() > 0)
+                h.emplace_back(t.data(), t.data() + t.size() - 1);
+    
+            auto f = [](const std::pair<Tweet*, Tweet*>& x, const std::pair<Tweet*, Tweet*>& y) {
+                return x.second->time < y.second->time;
+            };
+            std::make_heap(h.begin(), h.end(), f);
+    
+            const int n = 10;
+            std::vector<int> o;
+            o.reserve(n);
+            for (int i = 0; (i < n) && !h.empty(); ++i)
+            {
+                std::pop_heap(h.begin(), h.end(), f);
+    
+                auto& hb = h.back();
+                o.push_back(hb.second->id);
+    
+                if (hb.first == hb.second--)
+                    h.pop_back();
+                else
+                    std::push_heap(h.begin(), h.end(), f);
+            }
+            return o;
+        }
+    
+        void follow(int followerId, int followeeId)
+        {
+            if (followerId != followeeId)
+                following[followerId].insert(followeeId);
+        }
+    
+        void unfollow(int followerId, int followeeId)
+        {
+            following[followerId].erase(followeeId);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple and Clean Python code, O(logK) for getting news feed
+    import heapq
+    
+    class Twitter(object):
+    
+        def __init__(self):
+            self.time = 0
+            self.tweets = {}
+            self.followee = {}
+            
+    
+        def postTweet(self, user, tweet):
+            self.time += 1
+            self.tweets[user] = self.tweets.get(user, []) + [(-self.time,  tweet)]
+            
+            
+    
+        def getNewsFeed(self, user):
+            h, tweets = [], self.tweets
+            people = self.followee.get(user, set()) | set([user])
+            for person in people:
+                if person in tweets and tweets[person]:
+                    time, tweet = tweets[person][-1]
+                    h.append((time, tweet, person, len(tweets[person]) - 1))
+            heapq.heapify(h)
+            news = []
+            for _ in range(10):
+                if h:
+                    time, tweet, person, idx = heapq.heappop(h)
+                    news.append(tweet)
+                    if idx:
+                        new_time, new_tweet = tweets[person][idx-1]
+                        heapq.heappush(h, (new_time, new_tweet, person, idx - 1))
+            return news
+            
+            
+    
+        def follow(self, follower, other):
+            self.followee[follower] = self.followee.get(follower, set()) | set([other])
+            
+            
+    
+        def unfollow(self, follower, other):
+            if follower in self.followee:
+                self.followee[follower].discard(other)
+ 
+
+ `K` is the number of followee of `user`. We have `O(log(K))` runtime for getting news feed because we do maximum 10 extractions in a heap that holds maximum `K` elements (similar to what is done in merge `K` linked lists). The other ops are obviously `O(1)`.
+
+----------------------------------------------------------------------------------------------------
+Java Solution using HashMap and PriorityQueue
+	private static class Tweet {
+		int timestamp;
+		int tweetId;
+
+		public Tweet(int tweetId, int timestamp) {
+			this.tweetId = tweetId;
+			this.timestamp = timestamp;
+		}
+	}
+
+	private Map<Integer, Set<Integer>> followMap = new HashMap<Integer, Set<Integer>>();
+	private Map<Integer, List<Tweet>> tweetMap = new HashMap<Integer, List<Tweet>>();
+
+	private AtomicInteger timestamp;
+
+	/** Initialize your data structure here. */
+	public Twitter() {
+		timestamp = new AtomicInteger(0);
+	}
+
+	/** Compose a new tweet. */
+	public void postTweet(int userId, int tweetId) {
+		Tweet newTweet = new Tweet(tweetId, timestamp.getAndIncrement());
+
+		if (!tweetMap.containsKey(userId)) {
+			tweetMap.put(userId, new ArrayList<Tweet>());  //Assuming no deletion for now?
+		}
+
+		tweetMap.get(userId).add(newTweet);
+	}
+
+	/**
+	 * Retrieve the 10 most recent tweet ids in the user's news feed. Each item
+	 * in the news feed must be posted by users who the user followed or by the
+	 * user herself. Tweets must be ordered from most recent to least recent.
+	 */
+	public List<Integer> getNewsFeed(int userId) {
+		List<Integer> result = new ArrayList<Integer>(10);
+
+		PriorityQueue<int[]> pq = new PriorityQueue<int[]>(new Comparator<int[]>() {
+			public int compare(int[] it1, int[] it2) {
+				return tweetMap.get(it2[0]).get(it2[1]).timestamp - tweetMap.get(it1[0]).get(it1[1]).timestamp;
+			}
+		});
+
+		Set<Integer> followeeSet = new HashSet<Integer>();
+		followeeSet.add(userId);
+		if (followMap.containsKey(userId)) {
+			followeeSet.addAll(followMap.get(userId));
+		}
+
+		for (Integer followee : followeeSet) {
+			if (tweetMap.containsKey(followee)) {
+				List<Tweet> tweetList = tweetMap.get(followee);
+				if (tweetList.size() > 0) {
+					pq.add(new int[] { followee, tweetList.size() - 1 });
+				}
+			}
+		}
+
+		while (result.size() < 10 && pq.size() > 0) {
+			int[] it = pq.poll();
+
+			result.add(tweetMap.get(it[0]).get(it[1]).tweetId);
+			it[1]--;
+			if (it[1] >= 0) {
+				pq.add(it);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Follower follows a followee. If the operation is invalid, it should be a
+	 * no-op.
+	 */
+	public void follow(int followerId, int followeeId) {
+		Set<Integer> followSet = followMap.get(followerId);
+		if (followSet == null) {
+			followSet = new HashSet<Integer>();
+			followMap.put(followerId, followSet);
+		}
+
+		followSet.add(followeeId);
+	}
+
+	/**
+	 * Follower unfollows a followee. If the operation is invalid, it should be
+	 * a no-op.
+	 */
+	public void unfollow(int followerId, int followeeId) {
+		Set<Integer> followSet = followMap.get(followerId);
+		if (followSet == null) {
+			followSet = new HashSet<Integer>();
+			followMap.put(followerId, followSet);
+		}
+
+		followSet.remove(followeeId);
+	}
+
+----------------------------------------------------------------------------------------------------
+C++ simple code using stl
+    class Twitter {
+    private:
+        struct P {
+            int id, ref;
+            P(int i = 0, int j = 0) :id(i), ref(j) {}
+            inline bool operator<(const P &a) const { return ref > a.ref; }
+        };
+    public:
+        Twitter() { time = 1; }
+        void postTweet(int userId, int tweetId) {
+            userPost[userId].insert(P(tweetId, time++));
+            userFollow[userId].insert(userId);
+        }
+        vector<int> getNewsFeed(int userId) {
+            q.clear();
+            vector<int> res;
+            for(auto &r: userFollow[userId]) {
+                int n = userPost[r].size();
+                auto it = userPost[r].begin();
+                n = min(n, 10);
+                while(n--) {
+                    if(q.size() < 10) {
+                        q.insert(*it++);
+                    } else {
+                        auto c = q.end();
+                        if(*it < *--c) {
+                            q.erase(c);
+                            q.insert(*it++);
+                        }
+                    }
+                }
+            }
+            for(auto &r: q) res.push_back(r.id);
+            return res;
+        }
+        void follow(int followerId, int followeeId) {
+            userFollow[followerId].insert(followeeId);
+        }
+        void unfollow(int followerId, int followeeId) {
+            if(followerId == followeeId) return;
+            userFollow[followerId].erase(followeeId);
+        }
+    private:
+        int time;
+        set<P> q;
+        unordered_map<int, set<int>> userFollow;
+        unordered_map<int, set<P>> userPost;
+    };
+
+----------------------------------------------------------------------------------------------------
+Java OOD solution with detailed explanation
+OOD design:
+data structure need in the Tweet system:
+
+	1. A data structure that save the following relationship
+	2. A data structure that save the tweets posted 
+
+Based on the requirement of method 3: we should get our followees' tweets and select the most recent 10 tweet. So there should have a timestamp inside the tweet. So we create a new class to represent a tweet
+
+	3. A class Tweet containing timestamp
+
+
+There are some tips in the system:
+
+	1. One should get the tweets of itself, which means the followee must contain itself
+	2. Since the followee must contains itself, it cannot unfollow itself(unfollow add this constraint)
+	3. The followees must be identical
+According to the analysis above, we have these data struture in this class:
+
+	1. A inner class Tweet(tweetId, timePosted)
+	2. A HashMap(follower, Set(followees))
+	3. A HashMap(UserId, List(Tweet))
+	4. A Static int timeStamp
+	5. A int Maximum number of feed(can adjust if needed, optional)
+
+For method 3, just simply use min heap to get the most recent 10.
+
+    public class Twitter {
+    
+    private static class Tweet{
+        int tweetId;
+        int timePosted;
+        public Tweet(int tId, int time){
+            tweetId = tId;
+            timePosted = time;
+        }
+    }
+    
+    static int timeStamp;
+    int feedMaxNum;
+    Map<Integer, Set<Integer>> followees;
+    Map<Integer, List<Tweet>> tweets;
+    
+    /** Initialize your data structure here. */
+    public Twitter() {
+        timeStamp = 0;
+        feedMaxNum = 10;
+        followees = new HashMap<>();
+        tweets = new HashMap<>();
+    }
+    
+    /** Compose a new tweet. */
+    public void postTweet(int userId, int tweetId) {
+        if(!tweets.containsKey(userId)) {
+            tweets.put(userId, new LinkedList<Tweet>());
+            follow(userId, userId);  //follow itself
+        }
+        tweets.get(userId).add(0, new Tweet(tweetId, timeStamp++)); //add new tweet on the first place
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    public List<Integer> getNewsFeed(int userId) {
+        //min heap that the earliest tweet is on the top
+        PriorityQueue<Tweet> feedHeap = new PriorityQueue<>(new Comparator<Tweet>(){
+            public int compare(Tweet t1, Tweet t2){
+                return t1.timePosted - t2.timePosted;
+            }
+        });
+
+        //add tweets of the followees
+        Set<Integer> myFollowees = followees.get(userId);
+        if(myFollowees != null){
+            for(int followeeId : myFollowees){
+                List<Tweet> followeeTweets = tweets.get(followeeId);
+                if(followeeTweets == null) continue;
+                for(Tweet t : followeeTweets){
+                    if(feedHeap.size() < feedMaxNum) feedHeap.add(t);
+                    else{
+                        if(t.timePosted <= feedHeap.peek().timePosted) break;
+                        else{
+                            feedHeap.add(t);
+                            feedHeap.poll(); //remove the oldest tweet
+                        }
+                    }
+                }
+            }
+        }
+        List<Integer> myFeed = new LinkedList<>();
+        while(!feedHeap.isEmpty()){
+            myFeed.add(0, feedHeap.poll().tweetId);
+        }
+        return myFeed;
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    public void follow(int followerId, int followeeId) {
+        if(!followees.containsKey(followerId)) followees.put(followerId, new HashSet<Integer>());
+        followees.get(followerId).add(followeeId);
+    }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    public void unfollow(int followerId, int followeeId) {
+        if(!followees.containsKey(followerId) || followerId == followeeId) return; //cannot unfollow itself
+        followees.get(followerId).remove(followeeId);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ 80ms unordered_map list priority_queue solution
+Time Complexity: n is number of user
+
+postTweet: O(1)
+
+getNewsFeed: O(n log n)
+
+follow: O(1)
+
+unfollow: O(1)
+
+    class Twitter {
+    private:
+        struct tweet{
+            int userId;
+            int tweetId;
+            int timestamp;
+            tweet(int x, int y, int z):userId(x), tweetId(y), timestamp(z){};
+        };
+        struct mycompare{
+            bool operator()(pair<list<tweet>::iterator, list<tweet>::iterator> p1, pair<list<tweet>::iterator, list<tweet>::iterator> p2){
+                return p1.first->timestamp < p2.first->timestamp;
+            }
+        };
+        int timelabel = 0;
+        unordered_map<int, unordered_set<int>> follower_dict;
+        unordered_map<int, list<tweet>> twitter_dict;
+    public:
+        /** Initialize your data structure here. */
+        Twitter() {}
+        
+        /** Compose a new tweet. */
+        void postTweet(int userId, int tweetId) {
+            follower_dict[userId].insert(userId);
+            twitter_dict[userId].push_front(tweet(userId, tweetId, timelabel));
+            timelabel++;
+        }
+        
+        /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+        vector<int> getNewsFeed(int userId) {
+            vector<int> res;
+            if(follower_dict.find(userId) == follower_dict.end()) return res;
+            priority_queue< pair<list<tweet>::iterator, list<tweet>::iterator>, vector<pair<list<tweet>::iterator, list<tweet>::iterator>>, mycompare> pq;
+            for(auto it = follower_dict[userId].begin(); it != follower_dict[userId].end(); it++){
+                if(twitter_dict[*it].begin() != twitter_dict[*it].end()){
+                    pq.push(make_pair(twitter_dict[*it].begin(), twitter_dict[*it].end()));
+                }
+            }
+            int index = 0;
+            while(!pq.empty() && index < 10){
+                auto tmp = pq.top();
+                pq.pop();
+                res.push_back(tmp.first->tweetId);
+                if(++tmp.first != tmp.second){
+                    pq.push(tmp);
+                }
+                index++;
+            }
+            return res;
+        }
+        
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        void follow(int followerId, int followeeId) {
+            follower_dict[followerId].insert(followerId);
+            follower_dict[followerId].insert(followeeId);
+        }
+        
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        void unfollow(int followerId, int followeeId) {
+            if(follower_dict.find(followerId) != follower_dict.end() && followerId != followeeId){
+                follower_dict[followerId].erase(followeeId);
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ solution with max heap
+Use two hash tables to keep track of the friends relationship and the tweets, respectively. For getting the news feed, first use a separate variable "time" to keep track of the time order when posting, then use a max heap to get the most recent ones, since the heap will do the sorting for us.
+
+Any suggestion is welcome!
+
+    class Twitter {
+    private:    
+       unordered_map<int, set<int>> fo;
+       unordered_map<int, vector<pair<int, int>>> t;
+       long long time; 
+
+    public:
+    /** Initialize your data structure here. */
+    Twitter() {
+        time = 0;
+    }
+    
+    /** Compose a new tweet. */
+    void postTweet(int userId, int tweetId) {
+        t[userId].push_back({time++, tweetId});
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    vector<int> getNewsFeed(int userId) {
+        priority_queue<pair<int, int>> maxHeap; 
+        for (auto it=t[userId].begin();it!=t[userId].end();++it)
+            maxHeap.push(*it);
+        for (auto it1=fo[userId].begin();it1!=fo[userId].end();++it1){
+            int usr = *it1; // get target user
+            for (auto it2=t[usr].begin();it2!=t[usr].end();++it2)
+                maxHeap.push(*it2);
+        }   
+        vector<int> res;
+        while(maxHeap.size()>0) {
+            res.push_back(maxHeap.top().second);
+            if (res.size()==10) break;
+            maxHeap.pop();
+        }
+        return res;
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    void follow(int followerId, int followeeId) {
+        if (followerId != followeeId)
+            fo[followerId].insert(followeeId);
+    }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    void unfollow(int followerId, int followeeId) {
+        fo[followerId].erase(followeeId);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Short c++ solution
+    class Twitter {
+	unordered_map<int, unordered_set<int>> following;	// follower, followee
+	unordered_map<int, map<int, int>> tweets;			// userId, [sn, tweetId]
+	long long sn;
+
+    public:
+	/** Initialize your data structure here. */
+	Twitter() {
+		sn = 0;
+	}
+
+	/** Compose a new tweet. */
+	void postTweet(int userId, int tweetId) {
+		follow(userId, userId);
+		tweets[userId].insert(make_pair(sn++, tweetId));
+	}
+
+	/** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+	vector<int> getNewsFeed(int userId) {
+		vector<int> res;
+		map<int, int> top10;
+		for (auto iter = following[userId].begin(); iter != following[userId].end(); ++iter) {
+			int followee = *iter;
+			for (auto iter = tweets[followee].begin(); iter != tweets[followee].end(); ++iter) {
+
+				if (top10.size() > 0 && top10.begin()->first > iter->first && top10.size() > 10)
+					break;
+				top10.insert(make_pair(iter->first, iter->second));
+				if (top10.size() > 10)
+					top10.erase(top10.begin());
+			}
+		}
+
+		for (auto iter = top10.rbegin(); iter != top10.rend(); ++iter)
+			res.push_back(iter->second);
+		
+		return res;
+	}
+
+	/** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+	void follow(int followerId, int followeeId) {
+		following[followerId].insert(followeeId);
+	}
+
+	/** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+	void unfollow(int followerId, int followeeId) {
+		if(followerId != followeeId)
+			following[followerId].erase(followeeId);
+	 }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java 164ms solution (97%) using head for merging one tweet at a time instead of sorting the entire tweets
+Key points: 
+ 1. Maintaining a sorted tweets list of each user with O(1) time by adding to the tail each time.
+ 2. Customized a comparator class which traverses a list from its tail to its head.
+ 3. The heap, first, store all the tail of those tweet lists followed by a user.
+ 4. Poll the list contains the latest tweet and then moves its index to the next tweet. If this list has next tweet, put it back to the heap.
+
+
+    public class Twitter {
+        Map<Integer, Set<Integer>> follows; // store one user's follows
+        Map<Integer, List<Integer>> userTweets; // store index of one user's tweets 
+        List<Integer> tweets; // store every tweets and use its index as the sequence id or timestamp 
+        
+        // the wrapper class of one user's tweets, which is similar to an itertor to read from backward 
+        class UserTweetList{
+            List<Integer> list;
+            int idx;
+            UserTweetList(List<Integer> list) {
+                this.list = list;
+                if (list == null || list.isEmpty() ) idx = -1;
+                else idx = list.size()-1; // initial the index from the tail of a list
+            }
+            // check the timestamp of current index
+            Integer peek(){ 
+                if (idx < 0) return null;
+                return list.get(idx);
+            }
+            // get the tweet ID from the tweet list and then move the index to the next one
+            Integer getVal(){
+                if (idx < 0) return null;
+                int id = list.get(idx--); 
+                return tweets.get(id);
+            }
+        }
+        // Comparator class for max-heap ordered by timestamp
+        class UTLComp implements Comparator<UserTweetList>{ 
+            public int compare(UserTweetList ut1, UserTweetList ut2) {
+                if (ut1.peek()==null && ut2.peek()==null) return 0;
+                if (ut1.peek()==null) return 1;
+                if (ut2.peek()==null) return -1;
+                return ut2.peek()-ut1.peek();
+            }
+        }
+    
+        /** Initialize your data structure here. */
+        public Twitter() {
+            follows = new HashMap<Integer, Set<Integer>>();
+            userTweets = new HashMap<Integer, List<Integer>>();
+            tweets = new ArrayList<Integer>();
+        }
+        
+        /** Compose a new tweet. */
+        public void postTweet(int userId, int tweetId) { // O(1)
+            tweets.add(tweetId);
+            if (! follows.containsKey(userId) ) {
+                follows.put(userId, new HashSet<Integer>() );
+            }
+            follows.get(userId).add(userId);
+            if (! userTweets.containsKey(userId) ) { 
+                userTweets.put(userId, new ArrayList<Integer>());
+            }
+            // add to the end of user's tweet list so it is also sorted
+            userTweets.get(userId).add(tweets.size()-1);
+        }
+        
+        /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+        public List<Integer> getNewsFeed(int userId) {
+            List<Integer> ret = new ArrayList<Integer>();
+            PriorityQueue<UserTweetList> heap = new PriorityQueue<UserTweetList>(1, new UTLComp() );
+            if (! follows.containsKey(userId) ) return ret;
+            // gather the following users' list. k*O(k), k is the number of follows
+            for(int follow: follows.get(userId)) {   
+                if (userTweets.containsKey(follow)) {
+                    List<Integer> list = userTweets.get(follow);
+                    if (! list.isEmpty() )
+                        heap.offer( new UserTweetList(list));
+                }
+            }
+            // similar to merge sort, 
+            // take the largest one from a list and then poll the next one in this list into the queue
+            while ( (ret.size() < 10) && ! heap.isEmpty() ) { // O ( 10*2*log(k)) 
+                UserTweetList ut = heap.poll(); // poll the list containing the latest tweet
+                ret.add(ut.getVal()); // add the latest tweet to returning list
+                // if the list has next one, put back to the heap
+                if (ut.peek() != null) heap.offer(ut); // 
+            }
+            return ret;
+        }
+        
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        public void follow(int followerId, int followeeId) { // O(1)
+            if (! follows.containsKey(followerId) ) {
+                follows.put(followerId, new HashSet<Integer>());
+            }
+            follows.get(followerId).add(followeeId);
+        }
+        
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        public void unfollow(int followerId, int followeeId) { //O(1)
+            if ( (followerId != followeeId) && (follows.containsKey(followerId)  ) ) {
+                follows.get(followerId).remove(followeeId);
+            } 
+        }
+    }
+     
+
+
+
+----------------------------------------------------------------------------------------------------
+146 ms Java Solution. Treat getNewsFeed as Merge k Sorted Lists problem
+public class Twitter {
+    private class Tweet {
+        int time;
+        int tweetId;
+        public Tweet(int time, int tweetId) {
+            this.time = time;
+            this.tweetId = tweetId;
+        }
+    }
+    
+    int currentTime = 0;
+    HashMap<Integer, List<Tweet>> tweetMap;  // (userId, tweetList)
+    HashMap<Integer, Set<Integer>> followeeMap;  // (userId, followeeSet)
+
+    /** Initialize your data structure here. */
+    public Twitter() {
+        tweetMap = new HashMap<>();
+        followeeMap = new HashMap<>();
+    }
+    
+    /** Compose a new tweet. */
+    public void postTweet(int userId, int tweetId) {
+        Tweet tweet = new Tweet(currentTime++, tweetId);
+        if (tweetMap.containsKey(userId)) {
+            tweetMap.get(userId).add(0, tweet);
+        } else {
+            List<Tweet> list = new ArrayList<>();
+            list.add(tweet);
+            tweetMap.put(userId, list);
+        }
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    public List<Integer> getNewsFeed(int userId) {
+        // Treat this problem as merging k sorted lists
+        List<Integer> idList = new ArrayList<>();
+        Set<Integer> followeeSet = followeeMap.get(userId);
+        // k sorted tweet list
+        List<List<Tweet>> listOfTweetList = new ArrayList<>();
+        // add tweet list of current user
+        if (tweetMap.containsKey(userId)) {
+            listOfTweetList.add(tweetMap.get(userId));
+        }
+        
+        // add tweet list of followed users
+        if (followeeMap.containsKey(userId)) {
+            for (Integer followeeId : followeeSet) {
+                if (tweetMap.containsKey(followeeId)) {
+                    listOfTweetList.add(tweetMap.get(followeeId));
+                }
+            }
+        }
+        
+        if (listOfTweetList.size() == 0) {
+            return idList;
+        }
+
+        // tracking the index of each list
+        int[] indices = new int[listOfTweetList.size()];
+        for (int i = 0; i < 10; i++) {
+            Tweet nextTweet = null;
+            int nextId = 0;
+            // choose the nextTweet which has the max id (means it is the newest one)
+            for (int j = 0; j < listOfTweetList.size(); j++) {
+                if (indices[j] < listOfTweetList.get(j).size()) {
+                    if (nextTweet == null || listOfTweetList.get(j).get(indices[j]).time > nextTweet.time) {
+                        nextTweet = listOfTweetList.get(j).get(indices[j]);
+                        nextId = j;
+                    }
+                }
+            }
+            if (nextTweet == null) {
+                break;
+            } else {
+                idList.add(nextTweet.tweetId);
+                indices[nextId]++;
+            }
+        }
+        return idList;
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    public void follow(int followerId, int followeeId) {
+        if (followerId == followeeId) {
+            return;
+        }
+        if (followeeMap.containsKey(followerId)) {
+            followeeMap.get(followerId).add(followeeId);
+        } else {
+            Set<Integer> set = new HashSet<>();
+            set.add(followeeId);
+            followeeMap.put(followerId, set);
+        }
+    }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    public void unfollow(int followerId, int followeeId) {
+        if (followerId == followeeId) {
+            return;
+        }
+        if (followeeMap.containsKey(followerId)) {
+            Set<Integer> set = followeeMap.get(followerId);
+            if (set.contains(followeeId)) {
+                set.remove(followeeId);
+                if (set.size() == 0) {
+                    followeeMap.remove(followerId);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Your Twitter object will be instantiated and called as such:
+ * Twitter obj = new Twitter();
+ * obj.postTweet(userId,tweetId);
+ * List<Integer> param_2 = obj.getNewsFeed(userId);
+ * obj.follow(followerId,followeeId);
+ * obj.unfollow(followerId,followeeId);
+ */
+
+
+----------------------------------------------------------------------------------------------------
+My accepted Python code
+class Twitter(object):
+
+    def __init__(self):
+
+        # Global timestamp
+        self.timestamp = 1  
+        # Users table
+        self.user_data = {}
+
+    def postTweet(self, userId, tweetId):
+
+        if userId not in self.user_data:         
+            # Each userId has a tweets list (10 items at most) and a set of followees (include itself)
+            self.user_data[userId] = collections.deque(), {userId} 
+        
+        # Discard outdated tweet    
+        if len(self.user_data[userId][0]) == 10:
+            self.user_data[userId][0].pop()
+            
+        self.user_data[userId][0].appendleft((-self.timestamp, tweetId))
+        self.timestamp += 1
+
+    def getNewsFeed(self, userId):
+       
+        # Use a heap to store all tweets from followees and pick the 10 most recent ones
+        if userId not in self.user_data:
+            return []
+            
+        heap = []
+        for uid in self.user_data[userId][1]:
+            if uid in self.user_data:
+                for tweet in self.user_data[uid][0]:
+                    heapq.heappush(heap, tweet)
+                    
+        res = []
+        while len(res) < 10 and heap:
+            res.append(heapq.heappop(heap)[1])
+        return res
+        
+
+    def follow(self, followerId, followeeId):
+
+        if followerId not in self.user_data:
+            self.user_data[followerId] = collections.deque(), {followerId} 
+            
+        self.user_data[followerId][1].add(followeeId)
+        
+
+    def unfollow(self, followerId, followeeId):
+
+        if followerId not in self.user_data:
+            return
+        
+        if followerId != followeeId:
+            self.user_data[followerId][1].discard(followeeId)
+
+----------------------------------------------------------------------------------------------------
+Use python heapq.merge
+    from collections import defaultdict
+    from heapq import merge
+    
+    
+    class Twitter(object):
+        def __init__(self):
+            """
+            Initialize your data structure here.
+            """
+            self.follower_followees_map = defaultdict(set)
+            self.user_tweets_map = defaultdict(list)
+            self.time_stamp = 0
+    
+        def postTweet(self, userId, tweetId):
+            """
+            Compose a new tweet.
+            :type userId: int
+            :type tweetId: int
+            :rtype: void
+            """
+            self.user_tweets_map[userId].append((self.time_stamp, tweetId))
+            self.time_stamp -= 1
+    
+        def getNewsFeed(self, userId):
+            """
+            Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent.
+            :type userId: int
+            :rtype: List[int]
+            """
+            followees = self.follower_followees_map[userId]
+            followees.add(userId)
+            
+            # reversed(.) returns a listreverseiterator, so the complexity is O(1) not O(n)
+            candidate_tweets = [reversed(self.user_tweets_map[u]) for u in followees]
+    
+            tweets = []
+            # complexity is 10lg(n), n is twitter's user number in worst case
+            for t in merge(*candidate_tweets):
+                tweets.append(t[1])
+                if len(tweets) == 10:
+                    break
+            return tweets
+    
+        def follow(self, followerId, followeeId):
+            """
+            Follower follows a followee. If the operation is invalid, it should be a no-op.
+            :type followerId: int
+            :type followeeId: int
+            :rtype: void
+            """
+            self.follower_followees_map[followerId].add(followeeId)
+    
+        def unfollow(self, followerId, followeeId):
+            """
+            Follower unfollows a followee. If the operation is invalid, it should be a no-op.
+            :type followerId: int
+            :type followeeId: int
+            :rtype: void
+            """
+            self.follower_followees_map[followerId].discard(followeeId)
+
+----------------------------------------------------------------------------------------------------
+Java solution - easy to follow
+This solution takes O(n) for getNewsFeed() and O(1) for all other operations. I believe it's not so cool, but may be used as a starting point.
+
+    public class Twitter {
+    
+    private static class Tweet {
+        int tweetId;
+        int userId;
+        Tweet(int tweetId, int userId) {
+            this.tweetId = tweetId;
+            this.userId = userId;
+        }
+    }
+    
+    private static final int NEWS_FEED_SIZE = 10;
+    private Deque<Tweet> tweets = new ArrayDeque<>();
+    private Map<Integer, Set<Integer>> followeesByFollower = new HashMap<>();
+    
+    public Twitter() {
+    }
+    
+    public void postTweet(int userId, int tweetId) {
+        tweets.add(new Tweet(tweetId, userId));
+    }
+    
+    public List<Integer> getNewsFeed(int userId) {
+        List<Integer> newsFeed = new ArrayList<>(NEWS_FEED_SIZE);
+        Set<Integer> followees = followeesByFollower.get(userId);
+        for (Iterator<Tweet> it = tweets.descendingIterator(); it.hasNext() && newsFeed.size() < NEWS_FEED_SIZE; ) {
+            Tweet tweet = it.next();
+            if (tweet.userId == userId || (followees != null && followees.contains(tweet.userId))) {
+                newsFeed.add(tweet.tweetId);
+            }
+        }
+        return newsFeed;
+    }
+    
+    public void follow(int followerId, int followeeId) {
+        if(followeesByFollower.containsKey(followerId)) {
+            followeesByFollower.get(followerId).add(followeeId);
+        } else {
+            Set<Integer> followees = new HashSet<>();
+            followees.add(followeeId);
+            followeesByFollower.put(followerId, followees);
+        }
+    }
+    
+    public void unfollow(int followerId, int followeeId) {
+        if (followeesByFollower.containsKey(followerId)) {
+            Set<Integer> followees = followeesByFollower.get(followerId);
+            if (followees.contains(followeeId)) {
+                followees.remove(followeeId);
+            }
+        }
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Object Oriented Solution
+    public static class User{
+    		int userID;
+    		Set<Integer> userIFollow;
+    		List<Tweet> myTweets;
+    		public User(int userID) {
+    			this.userID = userID;
+    			this.myTweets = new ArrayList<Tweet>();
+    			this.userIFollow = new HashSet<>();
+    		}
+    		
+    		/**Always add tweet to the zeroth position.
+    		 * Since we need a maximum of 10 tweets in the news feed. Remove others.
+    		 */
+    		public void postTweet(int tweetID, int clock){
+    			if(this.myTweets.size() == 10) myTweets.remove(9);
+    			myTweets.add(0,new Tweet(this.userID, tweetID, clock));
+    		}
+    	}
+    	
+    	public static class Tweet{
+    		int user;
+    		int tweetID;
+    		int clock;
+    		public Tweet(int user, int tweetID, int clock) {
+    			super();
+    			this.user = user;
+    			this.tweetID = tweetID;
+    			this.clock = clock;
+    		}
+    		
+    	}
+        /** Initialize your data structure here. */
+    	//Map userID vs User
+    	Map<Integer, User> mapUsers;
+    	//Time each tweet arrives
+    	int clock;
+        public Twitter() {
+        	mapUsers = new HashMap<>();
+        	clock = 0;
+        }
+        
+        /** Compose a new tweet. */
+        public void postTweet(int userId, int tweetId) {
+            if(!mapUsers.containsKey(userId)) mapUsers.put(userId, new User(userId));
+            mapUsers.get(userId).postTweet(tweetId, this.clock++);
+        }
+        
+        /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+        /**Work similar to merge K sorted list and stop when result size == 10.
+         * @param userId
+         * @return
+         */
+        public List<Integer> getNewsFeed(int userId) {
+            if(!mapUsers.containsKey(userId)) return Collections.emptyList();
+            List<Integer> result = new ArrayList<>();
+            List<Integer> folUsers = new ArrayList<>(mapUsers.get(userId).userIFollow);
+            folUsers.add(userId);
+            
+            Queue<Tweet> top10 = new PriorityQueue<>(10, (a,b) -> Integer.compare(b.clock, a.clock));
+            Map<Integer,Integer> usIndex = new HashMap<>();
+            IntStream.range(0, folUsers.size()).forEach(i -> usIndex.put(folUsers.get(i),0));
+            
+            for(Integer user : folUsers){
+            	if(mapUsers.get(user).myTweets.size() != 0){
+            		top10.add(mapUsers.get(user).myTweets.get(usIndex.get(user)));
+            		usIndex.put(user,usIndex.get(user)+1);
+            	}
+            }
+            
+            while(!top10.isEmpty() && result.size() < 10){
+            	Tweet topTw = top10.poll();
+            	result.add(topTw.tweetID);
+            	if(mapUsers.get(topTw.user).myTweets.size() > usIndex.get(topTw.user)){
+            		top10.add(mapUsers.get(topTw.user).myTweets.get(usIndex.get(topTw.user)));
+            		usIndex.put(topTw.user,usIndex.get(topTw.user)+1);
+            	}
+            }
+            return result;
+            
+        }
+        
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        public void follow(int followerId, int followeeId) {
+            if(followeeId == followerId) return;
+            if(!mapUsers.containsKey(followerId)) mapUsers.put(followerId, new User(followerId));
+            if(!mapUsers.containsKey(followeeId)) mapUsers.put(followeeId, new User(followeeId));
+            
+            mapUsers.get(followerId).userIFollow.add(followeeId);
+        }
+        
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        public void unfollow(int followerId, int followeeId) {
+            if(!mapUsers.containsKey(followeeId) || !mapUsers.containsKey(followerId))return;
+        	mapUsers.get(followerId).userIFollow.remove(followeeId);
+        }
+    
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Fast getNewsFeed()
+The idea is to maintain a newsFeed set for each user. The assumption is that getNewsFeed() is called much more frequently than the other functions. I guess most users expect fast loading of home page, but can tolerate reasonable delays in tweeting / following / unfollowing (they can be ajax with some tricks anyway). Not sure whether it is the case for Twitter though.
+
+
+    public class Twitter {
+    
+        int seed = 0;
+        Map<Integer, Deque<Tweet>> tweetMap;
+        Map<Integer, Set<Integer>> followerMap;
+        Map<Integer, Set<Tweet>> newsFeedMap;
+        
+        /** Initialize your data structure here. */
+        public Twitter() {
+            tweetMap = new HashMap<>();
+            followerMap = new HashMap<>();
+            newsFeedMap = new HashMap<>();
+        }
+        
+        /** Compose a new tweet. */
+        public void postTweet(int userId, int tweetId) {
+            Tweet tweet = new Tweet(seed++, tweetId);
+            Deque<Tweet> tweets = tweetMap.get(userId);
+            if (tweets == null) {
+                tweets = new ArrayDeque<>();
+                tweetMap.put(userId, tweets);
+            }
+            tweets.push(tweet);
+            
+            Set<Tweet> selfNews = newsFeedMap.get(userId);
+            if (selfNews == null) {
+                selfNews = new TreeSet<>((t1, t2) -> t2.seq - t1.seq);
+                newsFeedMap.put(userId, selfNews);
+            }
+            selfNews.add(tweet);
+    
+            Set<Integer> followers = followerMap.get(userId);
+            if (followers != null) {
+                for (Integer follower : followers) {
+                    Set<Tweet> news = newsFeedMap.get(follower);
+                    if (news == null) {
+                        news = new TreeSet<>((t1, t2) -> t2.seq - t1.seq);
+                        newsFeedMap.put(follower, news);
+                    }
+                    news.add(tweet);
+                }
+            }
+        }
+        
+        /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+        public List<Integer> getNewsFeed(int userId) {
+            
+            Set<Tweet> news = newsFeedMap.get(userId);
+            List<Integer> res = new ArrayList<>();
+            if (news == null || news.isEmpty()) {
+                return res;
+            }
+            
+            int i = 0;
+            Iterator<Tweet> it = news.iterator();
+            while (it.hasNext() && i < 10) {
+                res.add(it.next().tweetId);
+                i++;
+            }
+            return res;
+        }
+        
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        public void follow(int followerId, int followeeId) {
+            
+            if (followerId == followeeId) {
+                return;
+            }
+            
+            Set<Integer> followers = followerMap.get(followeeId);
+            if (followers == null) {
+                followers = new HashSet<>();
+                followerMap.put(followeeId, followers);
+            } else if (followers.contains(followerId)) {
+                return;
+            }
+            followers.add(followerId);
+    
+            Deque<Tweet> tweets = tweetMap.get(followeeId);
+            if (tweets == null || tweets.isEmpty()) {
+                return;
+            }
+    
+            Set<Tweet> news = newsFeedMap.get(followerId);
+            if (news == null) {
+                news = new TreeSet<>((t1, t2) -> t2.seq - t1.seq);
+                newsFeedMap.put(followerId, news);
+            }
+            for (Tweet t : tweets) {
+                news.add(t);
+            }
+        }
+        
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        public void unfollow(int followerId, int followeeId) {
+            
+            Set<Integer> followers = followerMap.get(followeeId);
+            if (followers == null || followers.isEmpty()
+                || !followers.contains(followerId)) {
+                return;
+            }
+            followers.remove(Integer.valueOf(followerId));
+    
+            Deque<Tweet> tweets = tweetMap.get(followeeId);
+            if (tweets == null || tweets.isEmpty()) {
+                return;
+            }
+    
+            Set<Tweet> news = newsFeedMap.get(followerId);
+            for (Tweet t : tweets) {
+                news.remove(t);
+            }
+        }
+    }
+    
+    class Tweet {
+        int seq;
+        int tweetId;
+        Tweet(int seq, int tweetId) {
+            this.seq = seq;
+            this.tweetId = tweetId;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java - 2 map - 1 heap
+    public class Twitter {
+    
+    // Who need thread-safety in Twitter :)
+    
+    private final Map<Integer, LinkedList<Tweet>> feeds = new HashMap<>(); 
+    private final Map<Integer, Set<Integer>> relations = new HashMap<>(); 
+    
+    private final PriorityQueue<Tweet> queue = new PriorityQueue<>(10);
+    
+    /** Compose a new tweet. */
+    public void postTweet(int userId, int tweetId) {
+        LinkedList<Tweet> feed = feeds.get(userId);
+        if (feed == null) { 
+            feed = new LinkedList<>();
+            feed.add(new Tweet(tweetId));
+            feeds.put(userId, feed);
+            follow(userId, userId);
+        } else {
+            feed.add(new Tweet(tweetId));
+            if (feed.size() > 10) {
+                feed.removeFirst();
+            }
+        }
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    public List<Integer> getNewsFeed(int userId) {
+        Set<Integer> follow = relations.get(userId);
+        if (follow != null) {
+            queue.clear();
+            for (Integer f : follow) {
+                LinkedList<Tweet> feed = feeds.get(f);
+                if (feed != null) {
+                    queue.addAll(feed);
+                }
+            }
+            if (queue.size() > 0) {
+                List<Integer> res = new ArrayList<>(Math.min(10, queue.size()));
+                int i = 0;
+                while(!queue.isEmpty() && i < 10) {
+                    res.add(queue.poll().id);
+                    i++;
+                }
+                return res;
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            return Collections.emptyList();
+        }
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    public void follow(int followerId, int followeeId) {
+        Set<Integer> followers = relations.get(followerId);
+        if (followers == null) { 
+            followers = new HashSet<>();
+            relations.put(followerId, followers);
+        }
+        followers.add(followeeId);
+    }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    public void unfollow(int followerId, int followeeId) {
+        if(followerId != followeeId) {
+            Set<Integer> followers = relations.get(followerId);
+            if (followers != null) { 
+                followers.remove((Integer) followeeId);
+            }
+        }
+    }
+    
+    private static class Tweet implements Comparable<Tweet> {
+        
+        private static int TIME_INDEX = 0;
+
+        private final int id;
+        private final int time;
+        
+        public Tweet(int id) {
+           this.id = id;
+           this.time = TIME_INDEX++;
+        }
+        
+        public int compareTo(Tweet other) {
+            return other.time - time;
+        }
+
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+90 ms c++ solution.
+
+typedef struct tweet {
+    int id;
+    int timeline;
+    tweet() {}
+    tweet(int i, int j): id(i), timeline(j) {}
+} TWEET;
+
+
+typedef struct User {
+    int id;
+    vector<TWEET> tweets;
+    unordered_set<int> to;
+    unordered_set<int> from;
+} USER;
+
+namespace std {
+    template <>
+    struct hash<USER>{
+        size_t operator()(const USER& u) const{
+            return hash<int>()(u.id);
+        }
+    };
+}
+
+bool static compare(TWEET& t1, TWEET& t2) {
+    return t1.timeline > t2.timeline;
+}
+
+class Twitter {
+    unordered_map<int, USER> users;
+    int timeline;
+public:
+    /** Initialize your data structure here. */
+    Twitter() {
+        timeline = 0;
+    }
+    
+    /** Compose a new tweet. */
+    void postTweet(int userId, int tweetId) {
+        if(users.find(userId) == users.end()) {
+            USER u;
+            u.id = userId;
+            
+            u.tweets.push_back(TWEET(tweetId, timeline++));
+            users[userId] = u;
+        } else {
+            users[userId].tweets.push_back(TWEET(tweetId, timeline++));
+        }
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    vector<int> getNewsFeed(int userId) {
+        if(users.find(userId) == users.end())
+            return vector<int>();
+        vector<TWEET> ret;
+        int cnt = 0;
+        for(unordered_set<int>::iterator u = users[userId].to.begin(); u != users[userId].to.end(); u++) {
+            cnt = 0;
+            for(int i = users[*u].tweets.size() - 1; i >= 0 && cnt < 10; --i) {
+                ret.push_back(users[*u].tweets[i]);
+                cnt++;
+            }
+        }
+        cnt = 0;
+        for(int i = users[userId].tweets.size() - 1; i >= 0 && cnt < 10; --i) {
+            ret.push_back(users[userId].tweets[i]);
+            cnt++;
+        }
+        sort(ret.begin(), ret.end(), compare);
+        vector<int> res;
+        unordered_set<int> st;
+        for(int i = 0; i < ret.size() && res.size() < 10; ++i)
+            if(st.find(ret[i].id) == st.end()) {
+                st.insert(ret[i].id);
+                res.push_back(ret[i].id);
+            }
+        return res;
+        
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    void follow(int followerId, int followeeId) {
+        users[followerId].to.insert(followeeId);
+        users[followeeId].from.insert(followerId);
+    }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    void unfollow(int followerId, int followeeId) {
+        users[followerId].to.erase(followeeId);
+        users[followeeId].from.erase(followerId);
+    }
+};
+
+/**
+ * Your Twitter object will be instantiated and called as such:
+ * Twitter obj = new Twitter();
+ * obj.postTweet(userId,tweetId);
+ * vector<int> param_2 = obj.getNewsFeed(userId);
+ * obj.follow(followerId,followeeId);
+ * obj.unfollow(followerId,followeeId);
+ */
+
+
+----------------------------------------------------------------------------------------------------

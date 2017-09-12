@@ -1,0 +1,637 @@
+Python solution with detailed mathematical explanation and derivation
+import math
+class Solution(object):
+    def smallestGoodBase(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        n = int(n)
+        max_m = int(math.log(n,2)) # Refer [7]
+        for m in range(max_m,1,-1):
+            k = int(n**m**-1)  # Refer [6]
+            if (k**(m+1)-1)//(k-1) == n:
+                # Refer [3]
+                return str(k)
+        
+        return str(n-1)  
+
+
+----------------------------------------------------------------------------------------------------
+3ms, AC, C++, long long int + binary search
+class Solution {
+public:
+    string smallestGoodBase(string n) {
+    unsigned long long tn=(unsigned long long)stoll(n);
+    unsigned long long x=1;
+    for (int i=62;i>=1;i--) {
+        if ((x<<i)<tn) {
+            unsigned long long cur=mysolve(tn,i);
+            if (cur!=0) return to_string(cur);
+        }
+    }
+    return to_string(tn-1);
+    }
+    
+unsigned long long mysolve(unsigned long long n,int d) {
+    double tn=(double) n;
+    unsigned long long right=(unsigned long long)(pow(tn,1.0/d)+1);
+    unsigned long long left=1;
+    while (left<=right){
+        unsigned long long mid=left+(right-left)/2;
+        unsigned long long sum=1,cur=1;
+        for (int i=1;i<=d;i++) {
+            cur*=mid;
+            sum+=cur;
+        }
+        if (sum==n) return mid;
+        if (sum>n) right=mid-1;
+        else left=mid+1;
+    }
+    return 0;
+}
+
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with hand-writing explain
+public String smallestGoodBase(String nn) {
+  long n = Long.parseLong(nn);
+  long res = 0;
+  for(int k = 60; k >= 2; k--){
+    long s = 2, e = n;
+    while(s < e){
+        long m = s + (e - s) / 2;   
+        
+        BigInteger left = BigInteger.valueOf(m);
+        left = left.pow(k).subtract(BigInteger.ONE);
+        BigInteger right = BigInteger.valueOf(n).multiply(BigInteger.valueOf(m).subtract(BigInteger.ONE));
+        int cmr = left.compareTo(right);
+        if(cmr == 0){
+            res =  m;
+            break;
+        } else if(cmr < 0){
+            s = m + 1;
+        } else {
+            e = m;
+        }
+    }
+    
+    if(res != 0) break;
+  }
+  
+  return "" + res;
+}
+
+----------------------------------------------------------------------------------------------------
+Short Python O(log(N))
+class Solution(object):
+    def smallestGoodBase(self, N):
+        n = int(N);
+        
+        for k in xrange(int(math.log(n, 2)), 1 , -1):
+            a = int(n ** k ** -1)                  # kth-root of n
+            if (1 - a ** (k + 1)) // (1 - a) == n: # [a^0 + a^1 + ... + a^k] == n
+                return str(a)
+        
+        return str(n - 1)
+
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;C# binary search solutions with detailed explanation
+import java.math.*;
+
+public class Solution {
+
+    public String smallestGoodBase(String n) {
+        BigInteger N = new BigInteger(n);
+        long base = Long.MAX_VALUE;
+
+        for (int k = 2; k < 66; k++) {
+
+            long l = 2, r = Long.MAX_VALUE - 5;
+            while (l <= r) {
+                long mid = l + (r - l) / 2;
+
+                BigInteger cb = BigInteger.valueOf(mid).pow(k).subtract(BigInteger.ONE);
+                BigInteger wb = N.multiply(BigInteger.valueOf(mid).subtract(BigInteger.ONE));
+
+                int cmp = cb.compareTo(wb);
+                if (cmp == 0) {
+                    base = Math.min(base, mid);
+                    break;
+                } else if (cmp < 0) {
+                    l = mid + 1;
+                } else {
+                    r = mid - 1;
+                }
+            }
+        }
+
+        return "" + base;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Binary Search solution, 9 ms
+public class Solution {
+    public String smallestGoodBase(String n) {
+        long num = 0;
+        for (char c : n.toCharArray()) num = num * 10 + c - '0';
+        
+        long x = 1;
+        for (int p = 64; p >= 1; p--) {
+            if ((x << p) < num) {
+                long k = helper(num, p);
+                if (k != -1) return String.valueOf(k);
+            }
+        }
+        return String.valueOf(num - 1);
+    }
+    
+    private long helper(long num, int p) {
+        long l = 1, r = (long)(Math.pow(num, 1.0/p) + 1);
+        while (l < r) {
+            long mid = l + (r - l) / 2;
+            long sum = 0, cur = 1;
+            for (int i = 0; i <= p; i++) {
+                sum += cur;
+                cur *= mid;
+            }
+            if (sum == num) return mid;
+            else if (sum > num) r = mid;
+            else l = mid + 1;
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+5-liner 3ms really TIGHT search bounds with time complexity analysis O((logN)^2) (detailed explanation)
+O((log N)^2)
+
+----------------------------------------------------------------------------------------------------
+Java O((logn)^2) binary search solution
+public String smallestGoodBase(String n) {
+    long num = Long.valueOf(n);
+        
+    for (int m = (int)(Math.log(num + 1) / Math.log(2)); m >= 2; m--) {
+        long l = (long)(Math.pow(num + 1, 1.0 / m));
+        long r = (long)(Math.pow(num, 1.0 / (m - 1)));
+        	
+        while (l <= r) {
+            long k = l + ((r - l) >> 1);
+            long f = 0L;
+            for (int i = 0; i < m; i++, f = f * k + 1);
+        		
+            if (num == f) {
+        	return String.valueOf(k);
+            } else if (num < f) {
+        	r = k - 1;
+            } else {
+        	l = k + 1;
+            }
+        }
+    }
+        
+    return String.valueOf(num - 1);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java accepted answer, 11ms
+    public String smallestGoodBase(String n) {
+        long nl = 0, cur = 1;
+        for (int i=n.length()-1;i>=0;i--){
+            nl+=(n.charAt(i)-'0')*cur;
+            cur*=10;
+        }
+        for (long i=2;i<10;i++){
+            long s = 0;
+            cur = 1;
+            for (int j=0;j<nl;j++){
+                s+=cur;
+                cur*=i;
+                if (s == nl) return Long.toString(i);
+                if (s > nl) break;
+            }
+        }
+        long res = nl-1;
+        for (int i=2;i<1000;i++){
+        	int r = (int)Math.pow(nl,1.0/i);
+        	if (r<5) break;
+        	if (helper(r,i,nl)&&res>r)
+        		res = r;
+        }
+        return Long.toString(res);
+    }
+    boolean helper(int r, int i, long nl){
+    	long res = 0;
+    	long cur = 1; 
+    	for(int j=0;j<=i;j++){
+    		res+=cur;
+    		cur*=r;
+    		if (cur>1000000000)
+    			cur%=1000000000;
+    	}
+    	if (res%1000000000 == nl%1000000000) return true;
+    	else return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Binary Search solution
+class Solution {
+public:
+    string smallestGoodBase(string n) {
+        typedef unsigned long long ll;
+        ll num = stol(n);
+        for (ll p = log(num+1) / log(2); p >= 2; --p) {
+            ll lk = 2, rk = pow(num, 1.0 / (p-1))+1;
+            while (lk <= rk) {
+                ll mk = lk + (rk - lk) / 2, sum = 0;
+                for (ll i = 0, f = 1; i < p; ++i, f *= mk)
+                    sum += f;
+                if (sum < num) lk = mk+1;
+                else if (sum > num) rk = mk-1;
+                else return to_string(mk);
+            }
+        }
+        return to_string(num-1);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution in Python
+from math import log
+class Solution(object):
+    def tryout(self,n,k):
+        l = 2
+        r = n
+        while(l<=r):
+            m = (l+r)/2
+            x  = pow(m,k)-1
+            x/=(m-1)
+            if(x == n):
+                return m
+            elif(x>n):
+                r = m-1
+            else:
+                l = m+1
+        return n-1
+    def smallestGoodBase(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        n = int(n)
+        ans = n-1
+        for i in xrange(2,71):
+            ans = min(ans,self.tryout(n,i))
+        return str(ans)
+        
+
+
+----------------------------------------------------------------------------------------------------
+483. Smallest Good Base - CPP - Solution
+// 483. Smallest Good Base
+// https://leetcode.com/problems/smallest-good-base/
+#include <iostream>
+#include <cmath>
+#include <cfloat>
+#include <cctype>
+#include <cassert>
+#include <limits>
+#include <string>
+#include <algorithm>
+#include <iterator>
+using namespace std;
+
+// BEGIN: https://discuss.leetcode.com/topic/76368/python-solution-with-detailed-mathematical-explanation-and-derivation
+class Solution {
+public:
+	string smallestGoodBase(string n) {
+		if (n == "0") {
+			return "0";
+		}
+		if (n == "1") {
+			return "1";
+		}
+		size_t y = stoull(n);
+		for (size_t i = 1 + ceil((long double)(log(y)) / (long double)(log(2))); i > 1; i--) {
+			size_t j = floor(pow((long double)(y), 1.0 / (i - 1)));
+			if (j > 1) {
+				size_t x = round((pow((long double)j, (long double)i) - 1) / (long double)(j - 1));
+				if (x == y) {
+					return to_string(j);
+				}
+			}
+		}
+		return to_string(y - 1);
+	}
+};
+// END: https://discuss.leetcode.com/topic/76368/python-solution-with-detailed-mathematical-explanation-and-derivation
+
+// BEGIN: Time Limit Exceeded
+// class Solution {
+// public:
+// 	string smallestGoodBase(string n) {
+// 		const size_t val = stoull(n);
+// 		for (size_t k = 2; k < val; k++) {
+// 			if (validate(k, val)) {
+// 				return to_string(k);
+// 			}
+// 		}
+// 		return "";
+// 	}
+// private:
+// 	bool validate(const size_t k, size_t val) {
+// 		while (val > 1) {
+// 			if ((val % k) != 1) {
+// 				return false;
+// 			}
+// 			val /= k;
+// 		}
+// 		return val == 1;
+// 	}
+// };
+// END: Time Limit Exceeded
+
+int main(void) {
+	Solution solution;
+	string n;
+	string result;
+	string answer;
+
+	n = "470988884881403701";
+	answer = "686286299";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "16035713712910627";
+	answer = "502";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "14919921443713777";
+	answer = "496";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "2251799813685247";
+	answer = "2";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "3";
+	answer = "2";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "15";
+	answer = "2";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "13";
+	answer = "3";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "4681";
+	answer = "8";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	n = "1000000000000000000";
+	answer = "999999999999999999";
+	result = solution.smallestGoodBase(n);
+	assert(answer == result);
+
+	cout << "\nPassed All\n";
+	return 0;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Brute Force beats 3%
+public String smallestGoodBase(String n) {
+    long remainder = 0;
+    long len = Long.parseLong(n);
+    for(int i=2; i<Math.pow(len,1.0/3);i++)
+    {
+        long num = len;
+        while(num>i)
+        {
+            remainder = num%i;
+            num /= i;
+            if(remainder != 1) break;
+            if(num<i && num == 1)  return i+"";
+        }
+    }
+    return threeOne(len)>0?String.valueOf(threeOne(len)):String.valueOf(len-1);
+}
+
+public long threeOne(long num){
+    long begin = (long)Math.pow(num,1.0/3)+1;
+    long end = (long)Math.pow(num,1.0/2);
+    while(begin<=end){
+        long mid = (begin+end)/2;
+        long sum = mid*mid+mid+1;
+        if(sum == num)  return mid;
+        else if(sum>num){
+            end = mid-1;
+        }else{
+            begin = mid+1;
+        }
+    }
+    return -1;
+}
+
+----------------------------------------------------------------------------------------------------
+Python O(logN) Binary search on &quot;111...111&quot; solution
+class Solution(object):
+    def smallestGoodBase(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+
+        n = int(n)
+        max_len = len(bin(n)) - 2     # the longest possible representation "11111....1" based on k
+        for m in range(max_len, 1, -1):
+            lo = 2
+            hi = n - 1     # or hi = int(pow(n, pow(m - 1, -1))) and only need check hi
+            while lo <= hi:
+                mid = (lo + hi) / 2
+                num = (pow(mid, m) - 1) // (mid - 1)
+                if num < n:
+                    lo = mid + 1
+                elif num > n:
+                    hi = mid - 1
+                else:
+                    return str(mid)
+        return str(n - 1)
+
+
+----------------------------------------------------------------------------------------------------
+Java O((logn)^2) solution practice
+public class Solution {
+    public String smallestGoodBase(String n) {
+        long nlongval = Long.parseLong(n);
+        assert 3 <= nlongval && nlongval <= (long) Math.pow(10, 18);
+        int mindigits = 2;
+        int maxdigits = (int) (Math.log(nlongval + 1) / Math.log(2));
+        for (int digits = maxdigits; digits >= mindigits; digits--) {
+            long minbase = (long)(Math.pow(nlongval + 1, 1D / digits));
+            long maxbase = (long)(Math.pow(nlongval, 1D / (digits - 1)));
+            while (minbase <= maxbase) {
+                long base = minbase + (maxbase - minbase) / 2;
+                long candidate = 0L;
+                for (int i = 0; i < digits; i++) {
+                    candidate = candidate * base + 1;
+                }
+                if (candidate == nlongval) {
+                    return Long.toString(base);
+                } else if (candidate < nlongval) {
+                    minbase = base + 1;
+                } else {
+                    maxbase = base - 1;
+                }
+            }
+        }
+        return String.valueOf(nlongval - 1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Not sure if this solution is strictly correct, but it passes all tests...
+class Solution {
+    public String smallestGoodBase(String n) {
+        long num = Long.valueOf(n);
+        num--;
+        long res = -1;
+        for (int i = 1; i < 64; i++) {
+            long base = (i == 1 ? num : (long) Math.pow(num, 1. / i));
+            if (base <= 1) break;
+            long val = compute(base, i);
+            if (val == num + 1) {
+                res = base;
+            }
+        }
+        return "" + res;
+    }
+
+    private long compute(long base, int ones) {
+        long val = 1;
+        while (ones-- > 0) {
+            val = val * base + 1; 
+        }
+        return val;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+How to reduce the search space for the base?
+<p>I used to get timeout all the time. I just did linear search for the base from 2 up.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Why TLE? Java O(10^6) or O(n^(1&#x2F;3)) solution. Less than 100ms for TLE case.
+public class Solution {
+    public String smallestGoodBase(String n) {
+        long num = Long.valueOf(n);
+        for (int i = 2; i < num / i / i; ++i) {
+            if (check(num, i)) {
+                return "" + i;
+            }
+        }
+        long p = solveEquation(num);
+        if (p > 0) {
+            return "" + p;
+        } else {
+            return "" + (num - 1);
+        }
+    }
+    
+    // solve equation:
+    // x^2 + x + 1 = n, return x if exists.
+    public long solveEquation(long n) {
+        long l = 2;
+        long r = (long)Math.sqrt((double)n);
+        while (l <= r) {
+            long mid = (l - r) / 2 + r;
+            long left = mid * mid;
+            long right = n - 1 - mid;
+            if (left == right) {
+                return mid;
+            } else if (left > right) {
+                r = mid - 1;
+            } else {
+                l = mid + 1;
+            }
+        }
+        return -1;
+    }
+    
+    // Check if the base is the answer.
+    public boolean check(long n, long base) {
+        long k = 1;
+        while (k < n) {
+            if (base >= (Long.MAX_VALUE - 1) / k) {
+                break;
+            }
+            k = base * k + 1;
+        }
+        return k == n;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Python Code
+class Solution(object):
+    def smallestGoodBase(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        n = int(n)
+        for m in range(int(math.log(n, 2)), 1, -1):
+            k = int(n ** (1.0 / m))
+            if sum(k ** i for i in range(m + 1)) == n:
+                return str(k)
+        return str(n - 1)
+
+
+----------------------------------------------------------------------------------------------------
+a swift solution 20 line
+class Solution {
+    func smallestGoodBase(_ n: String) -> String {
+        let n = Int64( n )!
+        if n < 3 {
+            return String( n + 1 )
+        }
+        let maxm = Int64( ceil(log2(Double(n))) )
+        for m in (3...maxm).reversed() {
+            let maxk = Int64( ceil (pow( Double( n ), 1 / Double( m - 1 ) ) ))
+            for k in max(2, maxk - 1 )...maxk{
+                let m1 =  log( Double( n ) * Double( k - 1 ) + 1  , forBase:   Double(k) )
+                if abs( Double(m) - m1 ) < 0.00000000000001 {
+                    return String( k )
+                }
+            }
+        }
+        return String( n - 1 )
+    }
+}
+func log( _ val: Double, forBase base: Double) -> Double {
+    return log(val)/log(base)
+}
+
+----------------------------------------------------------------------------------------------------

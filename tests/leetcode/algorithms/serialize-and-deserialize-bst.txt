@@ -1,0 +1,443 @@
+Simple Reservoir Sampling solution
+public class Solution {
+
+    int[] nums;
+    Random rnd;
+
+    public Solution(int[] nums) {
+        this.nums = nums;
+        this.rnd = new Random();
+    }
+    
+    public int pick(int target) {
+        int result = -1;
+        int count = 0;
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] != target)
+                continue;
+            if (rnd.nextInt(++count) == 0)
+                result = i;
+        }
+        
+        return result;
+    }
+}```
+
+----------------------------------------------------------------------------------------------------
+What on earth is meant by too much memory?
+<p>Because I&#39;ve made a rather naive map-of-index-lists Java solution and it was happily accepted by the OJ. So far I see three types of solutions:</p>
+<ol>
+<li>
+<p>Like mine, O(N) memory, O(N) init, O(1) pick.</p>
+</li>
+<li>
+<p>Like <a class="plugin-mentions-a" href="https://discuss.leetcode.com/uid/53346">&#64;dettier</a>&#39;s <a href="https://discuss.leetcode.com/topic/58301/simple-reservoir-sampling-solution">Reservoir Sampling</a>. O(1) init, O(1) memory, but O(N) to pick.</p>
+</li>
+<li>
+<p>Like <a class="plugin-mentions-a" href="https://discuss.leetcode.com/uid/8501">&#64;chin-heng</a>&#39;s <a href="https://discuss.leetcode.com/topic/58295/share-my-c-solution-o-lg-n-to-pick-o-nlg-n-for-sorting">binary search</a>: O(N) memory, O(N lg N) init, O(lg N) pick.</p>
+</li>
+</ol>
+<p>Are all three kinds acceptable?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Clean, understandable, O(1) momery, O(n) time, JAVA solution
+public class Solution {
+    int[] nums;
+    Random rand;
+    public Solution(int[] nums) {
+        this.nums = nums;
+        this.rand = new Random();
+    }
+    public int pick(int target) {
+        int total = 0;
+        int res = -1;
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == target) {
+                // randomly select an int from 0 to the nums of target. If x equals 0, set the res as the current index. The probability is always 1/nums for the latest appeared number. For example, 1 for 1st num, 1/2 for 2nd num, 1/3 for 3nd num (1/2 * 2/3 for each of the first 2 nums).
+                int x = rand.nextInt(++total); 
+                res = x == 0 ? i : res;
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++_Time: O(n), Space: O(n)_116ms_96.41%_with clear explanation by probability
+class Solution {
+vector<int> _nums;
+public:
+Solution(vector<int> nums) {
+    _nums = nums;
+}
+
+int pick(int target) {
+    int n = 0, ans = -1;
+    for(int i = 0 ; i < _nums.size(); i++){
+        if(_nums[i] != target) continue;
+        if(n == 0){ans = i; n++;}
+        else{
+            n++;
+            if(rand() % n == 0){ans = i;}// with prob 1/(n+1) to replace the previous index
+        }
+    }
+    return ans;
+}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Share C++ O(n) Time Solution
+class Solution {
+public:
+    vector<int> n;
+    Solution(vector<int> nums) 
+    {
+        n = nums;
+    }
+    
+    int pick(int target) 
+    {
+        int count = 0, res = -1;
+        for (int i = 0; i < n.size(); ++i)
+        {
+            if(n[i] != target) continue;
+            if(++count == 1) res = i;
+            else
+                if(!(rand()%count)) res = i;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution
+class Solution(object):
+
+    def __init__(self, nums):
+        self.nums = nums
+        
+
+    def pick(self, target):
+        return random.choice([k for k, v in enumerate(self.nums) if v == target])
+
+
+----------------------------------------------------------------------------------------------------
+Share my C++ solution, O(lg(n)) to pick, O(nlg(n)) for sorting
+class Solution {
+public:
+    typedef pair<int, int> pp; // <value, index>
+
+    static bool comp(const pp& i, const pp& j) { return (i.first < j.first); }
+
+    vector<pp> mNums;
+
+    Solution(vector<int> nums) {
+        for(int i = 0; i < nums.size(); i++) {
+            mNums.push_back(pp({nums[i], i}));
+        }
+        sort(mNums.begin(), mNums.end(), comp);
+    }
+
+    int pick(int target) {
+        pair<vector<pp>::iterator, vector<pp>::iterator> bounds = equal_range(mNums.begin(), mNums.end(), pp({target,0}), comp);
+        int s = bounds.first - mNums.begin();
+        int e = bounds.second - mNums.begin();
+        int r = e - s;
+        return mNums[s + (rand() % r)].second;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n) constructor, O(1) pick, two ways
+startstop
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution
+class Solution {
+    vector<int> nums;
+    
+public:
+    Solution(vector<int> nums) {
+        this->nums = nums;
+        srand(time(NULL));
+    }
+    
+    int pick(int target) {
+        int cnt = 0;
+        int index = -1;
+        for(int i = 0; i<nums.size(); i++) {
+            if (nums[i] == target) {
+                cnt++;
+                if (index == -1)
+                    index = i;
+                else {
+                    if(rand()%cnt == 0) 
+                        index = i;
+                }
+            }
+        }
+        
+        return index;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Why Memory Limit Exceeded?
+<p>In test case : Array &#91;1,2,3,3,3&#93; with a long list of &#91;3&#93;.<br/>
+I used C++. And I used a map&lt;&lt;int, vector&lt;int&gt;&gt; to do a map from value to it&#39;s indexes. As far as I understand, in constructor I built a very small map, with only a few numbers. Then this small structure is queried many times. The huge answer vector is constructed outside my function. And I used none of those memory. So why there is a MLE problem?</p>
+
+
+----------------------------------------------------------------------------------------------------
+o(1) Memory with Reservoir Sampling, JAVA
+public int pick(int target) {
+        int count = 0, index = -1;
+        for(int i = 0; i<n.length; i++){
+            if(n[i] == target&&Math.random()*(++count)<1.0) index = i;
+        }
+        return index;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my simple Java solution
+public class Solution {
+    int[] nums;
+    Random r;
+    public Solution(int[] nums) {
+        this.nums = nums;
+        r = new Random();
+    }
+    
+    public int pick(int target) {
+        int size = nums.length;
+        int i = r.nextInt(size);
+        while (nums[i] != target) {
+            i = r.nextInt(size);
+        }
+        
+        return i;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python reservoir sampling solution.
+def __init__(self, nums):
+    self.nums = nums
+    
+def pick(self, target):
+    res = None
+    count = 0
+    for i, x in enumerate(self.nums):
+        if x == target:
+            count += 1
+            chance = random.randint(1, count)
+            if chance == count:
+                res = i
+    return res
+
+----------------------------------------------------------------------------------------------------
+My easy and simple solution beating 99.53%
+public class Solution {
+    int[] nums;
+    Random myrand;
+    public Solution(int[] nums) {
+        this.nums = nums;
+        myrand = new Random();
+    }
+    public int pick(int target) {
+        int count = 0;
+        int ret = -1;
+        for(int i=0;i<nums.length;i++){
+            if(nums[i]==target){
+                count++;
+                ret = myrand.nextInt(count)==0?i:ret;
+            }
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(log n) pick solution with binary search
+class Solution {
+public:
+    // Solution: 
+    //  * initialization: keep array of (val, index) pairs. Sort the array by val.
+    //  * pick: find lower and upper bound of target in the array; pick random element from the range
+    
+    struct data
+    {
+        int val;
+        int ind;
+    };
+    
+    std::default_random_engine generator;
+    
+    vector<data> counters;
+    Solution(vector<int> nums) {
+        srand (time(NULL));
+        counters.resize(nums.size());
+        for(int i=0; i < nums.size(); ++i)
+            counters[i] = data{nums[i], i};
+        sort(counters.begin(), counters.end(), [](const data &l, const data &r){return l.val < r.val;});
+    }
+    
+    int pick(int target) {
+        int lo = 0;
+        int hi = counters.size()-1;
+        while(hi>lo+1)
+        {
+            int mid = (hi + lo)/2;
+            if(counters[mid].val < target)
+                lo=mid+1;
+            else
+                hi=mid;
+        }
+        if(counters[lo].val != target)
+            ++lo;
+        
+        int low_bound = lo;
+        
+        lo = 0, hi = counters.size()-1;
+        while(hi>lo+1)
+        {
+            int mid = (hi + lo)/2;
+            if(counters[mid].val > target)
+                hi=mid-1;
+            else
+                lo=mid;
+        }        
+        if(counters[hi].val != target)
+            --hi;
+        int up_bound = hi;
+        //std::uniform_int_distribution<int> distribution(low_bound,up_bound);
+        int range = up_bound - low_bound;
+        int ind = low_bound + (range != 0 ? rand() % (range+1) : 0 );// distribution(generator);
+        
+        return counters[ind].ind;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple java solution with O(n) time and O(1) space
+public Solution(int[] nums) {
+    this.nums = nums;
+}
+
+public int pick(int target) {
+    int index = -1;
+    double maxResult = 0;
+    
+    for (int i = 0; i < nums.length; i++) {
+        if (nums[i] == target) {
+            double cur = Math.random();
+            if (cur >= maxResult) {
+                maxResult = cur;
+                index = i;
+            }
+        }
+    }
+    
+    return index;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Reservoir Sampling Solution
+public Solution(int[] nums) {
+	this.nums=nums;
+	this.rand = new Random();
+}
+
+public int pick(int target) {
+	int index = -1;
+	int count = 1;
+	for(int i=0;i<nums.length;i++) {
+		if(nums[i]==target && rand.nextInt(count++)==0) {
+			index = i;
+		}
+	}
+	return index;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using Reservoir Sampling
+public class Solution {
+    private int[] nums;
+    private Random random;
+
+    public Solution(int[] nums) {
+        this.nums = nums;
+        random = new Random();
+    }
+
+    public int pick(int target) {
+        int result = -1;
+        int count = 0;
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == target && random.nextInt(++count) == 0) {
+                result = i;
+            }
+        }
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) 8 lines uisng Reservoir Sampling
+class Solution {
+private:
+    vector<int> nums;
+    
+public:
+    Solution(vector<int> nums) {
+        this->nums = nums;
+        srand(time(0));
+    }
+    
+    int pick(int target) {
+        int ans;
+        
+        for (int i = 0, cnt = 1; i < nums.size(); i++) {
+            if (nums[i] == target && ((rand() % cnt++) == 0)) { ans = i; }
+        }
+        
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Several Python solutions
+    def __init__(self, nums):
+        """
+        
+        :type nums: List[int]
+        :type numsSize: int
+        """
+        self.listnums = collections.defaultdict(list)
+        for i in range(len(nums)):
+            self.listnums[nums[i]].append(i)
+        import random
+
+    def pick(self, target):
+        """
+        :type target: int
+        :rtype: int
+        """
+        index = random.randint(0,len(self.listnums[target])-1)
+        return self.listnums[target][index]
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,591 @@
+Backtracking Solution Java
+        public static List<List<Integer>> combine(int n, int k) {
+    		List<List<Integer>> combs = new ArrayList<List<Integer>>();
+    		combine(combs, new ArrayList<Integer>(), 1, n, k);
+    		return combs;
+    	}
+    	public static void combine(List<List<Integer>> combs, List<Integer> comb, int start, int n, int k) {
+    		if(k==0) {
+    			combs.add(new ArrayList<Integer>(comb));
+    			return;
+    		}
+    		for(int i=start;i<=n;i++) {
+    			comb.add(i);
+    			combine(combs, comb, i+1, n, k-1);
+    			comb.remove(comb.size()-1);
+    		}
+    	}
+
+----------------------------------------------------------------------------------------------------
+A short recursive Java solution based on C(n,k)=C(n-1,k-1)+C(n-1,k)
+Basically, this solution follows the idea of the mathematical formula C(n,k)=C(n-1,k-1)+C(n-1,k).
+
+Here C(n,k) is divided into two situations. Situation one, number n is selected, so we only need to select k-1 from n-1 next. Situation two, number n is not selected, and the rest job is selecting k from n-1.
+
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            if (k == n || k == 0) {
+                List<Integer> row = new LinkedList<>();
+                for (int i = 1; i <= k; ++i) {
+                    row.add(i);
+                }
+                return new LinkedList<>(Arrays.asList(row));
+            }
+            List<List<Integer>> result = this.combine(n - 1, k - 1);
+            result.forEach(e -> e.add(n));
+            result.addAll(this.combine(n - 1, k));
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Short Iterative C++ Answer 8ms
+    class Solution {
+    public:
+    	vector<vector<int>> combine(int n, int k) {
+    		vector<vector<int>> result;
+    		int i = 0;
+    		vector<int> p(k, 0);
+    		while (i >= 0) {
+    			p[i]++;
+    			if (p[i] > n) --i;
+    			else if (i == k - 1) result.push_back(p);
+    			else {
+    			    ++i;
+    			    p[i] = p[i - 1];
+    			}
+    		}
+    		return result;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+My shortest c++ solution,using dfs
+my idea is using backtracking ,every time I push a number into vector,then I push a bigger one into it;
+then  i pop the latest one,and push a another bigger one...
+and if I has push k number into vector,I push this into result;
+
+**this solution take 24 ms.**
+
+
+
+    class Solution {
+    public:
+        vector<vector<int> > combine(int n, int k) {
+            vector<vector<int> >res;
+            if(n<k)return res;
+            vector<int> temp(0,k);
+            combine(res,temp,0,0,n,k);
+            return res;
+        }
+        
+        void combine(vector<vector<int> > &res,vector<int> &temp,int start,int num,int n ,int k){
+            if(num==k){
+                res.push_back(temp);
+                return;
+            }
+            for(int i = start;i<n;i++){
+                temp.push_back(i+1);
+                combine(res,temp,i+1,num+1,n,k);
+                temp.pop_back();
+                }
+            }
+    };
+
+----------------------------------------------------------------------------------------------------
+1-liner, 3-liner, 4-liner
+**Library - AC in 64 ms**
+
+First the obvious solution - Python already provides this functionality and it's not forbidden, so let's take advantage of it.
+
+    from itertools import combinations
+    
+    class Solution:
+        def combine(self, n, k):
+            return list(combinations(range(1, n+1), k))
+
+---
+
+**Recursive - AC in 76 ms**
+
+But doing it yourself is more interesting, and not that hard. Here's a recursive version.
+
+    class Solution:
+        def combine(self, n, k):
+            if k == 0:
+                return [[]]
+            return [pre + [i] for i in range(1, n+1) for pre in self.combine(i-1, k-1)]
+
+---
+
+**Iterative - AC in 76 ms**
+
+And here's an iterative one. 
+
+    class Solution:
+        def combine(self, n, k):
+            combs = [[]]
+            for _ in range(k):
+                combs = [[i] + c for c in combs for i in range(1, c[0] if c else n+1)]
+            return combs
+
+---
+
+**Reduce - AC in 76 ms**
+
+Same as that iterative one, but using `reduce` instead of a loop:
+
+    class Solution:
+      def combine(self, n, k):
+        return reduce(lambda C, _: [[i]+c for c in C for i in range(1, c[0] if c else n+1)],
+                      range(k), [[]])
+
+
+----------------------------------------------------------------------------------------------------
+DP for the problem
+I didn't see any DP solution for this problem, so I share mine:
+The idea is simple, if the combination k out of n (select k elements from [1,n]) is combine(k, n).
+
+Let's consider how can we get combine(k, n) by adding the last element n to something we already have (combine(k - 1, n - 1) and combine(k, n - 1)). Actually, the combine(k, n) has two parts, one part is all combinations without n, it's combine(k, n - 1), another is all combinations with n, which can be gotten by appending n to every element in combine(k - 1, n - 1). Note, the combine(i, i) is what we can get directly.
+
+Below is my code:
+
+
+    public class Solution
+    {
+        // Combine(n, n).
+        private List<Integer> allContain(int n)
+        {
+            final List<Integer> result = new ArrayList<>();
+            for (int i = 1; i <= n; ++i)
+            {
+                result.add(i);
+            }
+            
+            return result;
+        }
+        
+        public List<List<Integer>> combine(int n, int k)
+        {
+            List<List<List<Integer>>> previous = new ArrayList<>();
+            
+            for (int i = 0; i <= n; ++i)
+            {
+                previous.add(Collections.singletonList(Collections.<Integer>emptyList()));
+            }
+            
+            for (int i = 1; i <= k; ++i)
+            {
+                final List<List<List<Integer>>> current = new ArrayList<>();
+                current.add(Collections.singletonList(allContain(i)));
+                
+                // Combine(i, j).
+                for (int j = i + 1; j <= n; ++j)
+                {
+                    final List<List<Integer>> list = new ArrayList<>();
+                    
+                    // Combine(i, j - 1).
+                    list.addAll(current.get(current.size() - 1));
+                    
+                    // Comine(i - 1, j - 1).
+                    for (final List<Integer> item : previous.get(current.size()))
+                    {
+                        final List<Integer> newItem = new ArrayList<>(item);
+                        newItem.add(j);
+                        list.add(newItem);
+                    }
+                    
+                    current.add(list);
+                }
+                
+                previous = current;
+            }
+            
+            return (previous.size() == 0) ? Collections.<List<Integer>>emptyList() : previous.get(previous.size() - 1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Iterative Java solution
+Hi guys!
+
+The idea is to iteratively generate combinations for all lengths from 1 to k. We start with a list of all numbers <= n as combinations for k == 1. When we have all combinations of length k-1, we can get the new ones for a length k with trying to add to each one all elements that are <= n and greater than the last element of a current combination. 
+
+I think the code here will be much more understandable than further attempts to explain. :) See below.
+
+Hope it helps!
+
+----------
+
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            if (k == 0 || n == 0 || k > n) return Collections.emptyList();
+            List<List<Integer>> combs = new ArrayList<>();
+            for (int i = 1; i <= n; i++) combs.add(Arrays.asList(i));
+            for (int i = 2; i <= k; i++) {
+                List<List<Integer>> newCombs = new ArrayList<>();
+                for (int j = i; j <= n; j++) {
+                    for (List<Integer> comb : combs) {
+                        if (comb.get(comb.size()-1) < j) {
+                            List<Integer> newComb = new ArrayList<>(comb);
+                            newComb.add(j);
+                            newCombs.add(newComb);
+                        }
+                    }
+                }
+                combs = newCombs;
+            }
+            return combs;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Python backtracking iterative solution 60 ms
+    def combine(self, n, k):
+        ans = []
+        stack = []
+        x = 1
+        while True:
+            l = len(stack)
+            if l == k:
+                ans.append(stack[:])
+            if l == k or x > n - k + l + 1:
+                if not stack:
+                    return ans
+                x = stack.pop() + 1
+            else:
+                stack.append(x)
+                x += 1
+
+    # 26 / 26 test cases passed.
+    # Status: Accepted
+    # Runtime: 60 ms
+    # 98.51%
+
+
+Combinations is typical application for backtracking. Two conditions for back track: (1) the stack length is already k (2) the current value is too large for the rest slots to fit in since we are using ascending order to make sure the uniqueness of each combination.
+
+----------------------------------------------------------------------------------------------------
+Perhaps the simplest solution using recursion(backtracing).
+The idea is that C(n,k) = C(n-1, k-1) U n + C(n-1,k), do you get this?
+
+    class Solution {
+    public:
+        vector<vector<int> > combine(int n, int k) {
+            
+            vector<vector<int> > result;
+            if (n < 1 || k <1 || k > n)
+            {
+                return result;
+            }
+            
+            result = combine(n-1, k-1);
+            
+            if(result.empty())
+            {
+                result.push_back(vector<int>{n});
+            }
+            else
+            {
+                for (vector<vector<int> >::iterator it = result.begin();
+                        it!= result.end(); it++)
+                {
+                    it->push_back(n);
+                }
+            }
+            vector<vector<int> > result2 = combine(n-1, k);
+            result. insert(result.end(), result2.begin(), result2.end());
+            
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ concise recursive solution  C(n,k) -&gt;C(n-1,k-1) &#x2F; 8ms
+    class Solution {
+    public:
+        vector<vector<int>> combine(int n, int k) {
+            vector<vector<int>> ans;
+            vector<int> temp;
+            combine(1,n,k,ans,temp); //call fuction to get combination of k numbers which range is 1-n
+            return ans;
+        }
+    private:
+           void combine(int begin,int n, int k, vector<vector<int>> &ans, vector<int>& temp){
+                if(k==0){ 
+                    ans.push_back(temp);
+                    return;
+                } 
+                //condition : n-i+1 is the range, range must greater than k
+                for(int i=begin;n-i+1>=k;i++){ // for the ith iteration, get the combination of i and k-1 numbers differ from i.
+                    temp.push_back(i); 
+                    combine(i+1,n,k-1,ans,temp);// get the combination of k-1 numbers which range is(i+1,n) 
+                    temp.pop_back();
+                }
+            }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+3 ms Java Solution
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            List<List<Integer>> result = new ArrayList<List<Integer>>();
+            if (k > n || k < 0) {
+                return result;
+            }
+            if (k == 0) {
+                result.add(new ArrayList<Integer>());
+                return result;
+            }
+            result = combine(n - 1, k - 1);
+            for (List<Integer> list : result) {
+                list.add(n);
+            }
+            result.addAll(combine(n - 1, k));
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Fast &amp; simple python code . recursive
+    def combine(self, n, k):
+        if k==1:
+            return [[i] for i in range(1,n+1)]
+        elif k==n:
+            return [[i for i in range(1,n+1)]]
+        else:
+            rs=[]
+            rs+=self.combine(n-1,k)
+            part=self.combine(n-1,k-1)
+            for ls in part:
+                ls.append(n)
+            rs+=part
+            return rs
+
+----------------------------------------------------------------------------------------------------
+2ms beats 90% Java solution, a small trick to end search early
+    public List<List<Integer>> combine(int n, int k) {
+        List<List<Integer>> results = new ArrayList<>();
+        dfs(1, n, k, new ArrayList<Integer>(), results);
+        return results;
+    }
+    
+    private void dfs(int crt, int n, int level, List<Integer> comb, List<List<Integer>> results) {
+        if (level == 0) {
+            List<Integer> newComb = new ArrayList<>(comb);
+            results.add(newComb);
+            return;
+        }
+        int size = comb.size();
+        for (int i = crt, max = n - level + 1; i <= max; i++) { 
+        //end search when its not possible to have any combination
+            comb.add(i);
+            dfs(i + 1, n, level - 1, comb, results);
+            comb.remove(size);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+DFS recursive Java Solution
+A DFS idea with back-trace. Very straightforward.
+
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            List<List<Integer>> rslt = new ArrayList<List<Integer>>();
+            dfs(new Stack<Integer>(), 1, n, k, rslt);
+            return rslt;
+        }
+        
+        private void dfs(Stack<Integer> path, int index, int n, int k, List<List<Integer>> rslt){
+            // ending case
+            if(k==0){
+                List<Integer> list = new ArrayList<Integer>(path);
+                rslt.add(list);
+                return;
+            }
+            // recursion case
+            for(int i = index;i <= n;i++){
+                path.push(i);
+                dfs(path, i+1, n, k-1, rslt);
+                path.pop();
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Iterative Version
+    class Solution {
+    public:
+        vector<vector<int> > combine(int n, int k) {
+            int cur=0;
+            vector<int> v(k,0);
+            vector<vector<int> > ans;
+            while (cur>=0) {
+                if (cur==k) {
+                    ans.push_back(v);
+                    --cur;
+                    continue;
+                }
+                int val=v[cur]+1;
+                if (cur>0) {
+                    val=max(val,v[cur-1]+1);
+                }
+                if (val<=n) {
+                    v[cur++]=val;
+                } else {
+                    v[cur--]=0;
+                }
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java recursive solution
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            return combine(n,1,k);
+        }
+    
+        public List<List<Integer>> combine(int n,int current,int k){
+            List<List<Integer>> result = new LinkedList<List<Integer>>();
+            
+            if(k==0) {
+                result.add(new LinkedList<Integer>());
+                return result;
+            }
+            
+            if(current>n) return result;
+    
+            for(List<Integer> res:combine(n,current+1,k)){
+                result.add(res);
+            }
+            for(List<Integer> res:combine(n,current+1,k-1)){
+                res.add(0,current);
+                result.add(res);
+            }
+    
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution
+    class Solution:
+        # @return a list of lists of integers
+        # 9:14
+        def __init__(self):
+            self.output = []
+    
+        def combine(self, n, k, pos=0, temp=None):
+            temp = temp or []
+            
+            if len(temp) == k:
+                self.output.append(temp[:])
+                return
+    
+            for i in range(pos, n):
+                temp.append(i+1)
+                self.combine(n, k, i+1, temp)
+                temp.pop()
+            
+            return self.output
+            
+
+----------------------------------------------------------------------------------------------------
+12ms recursive c++
+    class Solution {
+    public:
+        vector<vector<int> > combine(int n, int k) {
+            vector<vector<int> > rslt;
+            vector<int> path(k, 0);
+            combine(n, k, rslt, path);
+            return rslt;
+        }
+    private:
+        void combine(int n, int k, vector<vector<int> > &rslt, vector<int> &path) {
+            if (k == 0) {
+                rslt.push_back(path);
+                return;
+            }
+            for (int i = n; i >= 1; i--) {
+                path[k - 1] = i;
+                combine(i - 1, k - 1, rslt, path);
+            }
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, easy understood
+    public class Solution {
+        public List<List<Integer>> combine(int n, int k) {
+            List<List<Integer>> lists = new LinkedList<List<Integer>>();
+            List<Integer> list = new LinkedList<Integer>();
+            if(n <= 0 || k <= 0){
+                return lists;
+            }
+            combine(n, k, lists, list, 1);
+            return lists;
+        }
+        
+        static void combine(int n, int k, List<List<Integer>> lists, List<Integer> list, int start){
+            if(list.size() > k){
+                return;
+            }
+            if(list.size() == k){
+                if(!lists.contains(list)){
+                    lists.add(new LinkedList<Integer>(list));
+                    return;
+                }
+            }
+            if(start > n || start < 1){
+                return;
+            }
+            
+            for(int i = start; i <= n; i++){
+                list.add(i);
+                combine(n, k, lists, list, i + 1);
+                list.remove(list.size() - 1);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms  simple C++ code
+    class Solution {
+    public:
+        vector<vector<int>> combine(int n, int k) 
+        {
+           vector<vector<int>> ret;
+           if(n==0||k==0)return ret;
+           vector<int> stack;
+           combine(n, k,stack,ret, 1);
+           return ret;
+        }
+        
+        
+        
+    private:
+        void combine(int n, int k,vector<int> &stack,vector<vector<int>> &ret,int start) 
+        {
+            if(0==k) 
+            {
+                ret.push_back(stack);
+                return;
+            }
+            for(int i=start;i<=n-k+1;i++)
+            {
+                stack.push_back(i);
+                combine(n, k-1,stack,ret, i+1);
+                stack.pop_back();
+            }
+        }
+    
+    
+    };
+
+----------------------------------------------------------------------------------------------------

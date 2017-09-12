@@ -1,0 +1,445 @@
+clear and easy java solution
+public class Solution {
+    public int islandPerimeter(int[][] grid) {
+        int islands = 0, neighbours = 0;
+
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[i].length; j++) {
+                if (grid[i][j] == 1) {
+                    islands++; // count islands
+                    if (i < grid.length - 1 && grid[i + 1][j] == 1) neighbours++; // count down neighbours
+                    if (j < grid[i].length - 1 && grid[i][j + 1] == 1) neighbours++; // count right neighbours
+                }
+            }
+        }
+
+        return islands * 4 - neighbours * 2;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python
+def islandPerimeter(self, grid):
+    return sum(sum(map(operator.ne, [0] + row, row + [0]))
+               for row in grid + map(list, zip(*grid)))
+
+----------------------------------------------------------------------------------------------------
+Java 9 line solution, add 4 for each land and remove 2 for each internal edge
+public static int islandPerimeter(int[][] grid) {
+        if (grid == null || grid.length == 0 || grid[0].length == 0) return 0;
+        int result = 0;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                if (grid[i][j] == 1) {
+                    result += 4;
+                    if (i > 0 && grid[i-1][j] == 1) result -= 2;
+                    if (j > 0 && grid[i][j-1] == 1) result -= 2;
+                }
+            }
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with explanation
+int islandPerimeter(vector<vector<int>>& grid) {
+        int count=0, repeat=0;
+        for(int i=0;i<grid.size();i++)
+        {
+            for(int j=0; j<grid[i].size();j++)
+                {
+                    if(grid[i][j]==1)
+                    {
+                        count ++;
+                        if(i!=0 && grid[i-1][j] == 1) repeat++;
+                        if(j!=0 && grid[i][j-1] == 1) repeat++;
+                    }
+                }
+        }
+        return 4*count-repeat*2;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Why the tag is &quot;Hash Table&quot;? Is there a hash table solution?
+<p>Why the tag is &#34;Hash Table&#34;? Is there a hash table solution?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Easy DFS solution + explaination without visited array
+void dfs(vector<vector<int>>& b, int *ans, int i, int j) {
+        if (i < 0 || i >= b.size() || j < 0 || j >= b[0].size() || b[i][j] != 1)
+            return;
+        b[i][j] = -1; // mark it as visited
+        *ans += (j + 1 >= b[0].size() || b[i][j+1] == 0) /* right */ +
+                (i - 1 < 0            || b[i-1][j] == 0) /* top */ +
+                (j - 1 < 0            || b[i][j-1] == 0) /* left */ +
+                (i + 1 >= b.size()    || b[i+1][j] == 0) /* bottom */;
+        dfs(b, ans, i, j + 1);
+        dfs(b, ans, i - 1, j);
+        dfs(b, ans, i, j - 1);
+        dfs(b, ans, i + 1, j);
+        return;
+    }
+    int islandPerimeter(vector<vector<int>>& grid) {
+        int ans = 0, i, j;
+        for (i = 0; i < grid.size(); i++) {
+            for (j = 0; j < grid[0].size(); j++) {
+                if (grid[i][j]) {
+                    dfs(grid, &ans, i, j);
+                    return ans;
+                }
+            }
+        }
+        return 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy to read Python solution
+class Solution(object):
+    def islandPerimeter(self, grid):
+        """
+        :type grid: List[List[int]]
+        :rtype: int
+        """
+        if not grid:
+            return 0
+
+        def sum_adjacent(i, j):
+            adjacent = (i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1),
+            res = 0
+            for x, y in adjacent:
+                if x < 0 or y < 0 or x == len(grid) or y == len(grid[0]) or grid[x][y] == 0:
+                    res += 1
+            return res
+
+        count = 0
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] == 1:
+                    count += sum_adjacent(i, j)
+        return count
+
+
+----------------------------------------------------------------------------------------------------
+Python short &amp; efficient solution with explanation: O(mn) time and O(1) space
+xrange
+
+----------------------------------------------------------------------------------------------------
+Clean java solution O(mn)
+Idea: Every side of a land-cell exposed to water-cell will be part of perimeter.
+
+public int islandPerimeter(int[][] grid) {
+    int[][] d = new int[][] {{0,-1}, {-1,0}, {0,1}, {1,0}};
+    
+    int perimeter = 0;
+    for(int i=0; i<grid.length; i++) {
+        for(int j=0; j<grid[0].length; j++) {
+            if(grid[i][j] == 0)
+                continue;
+            
+            for(int k=0; k<d.length; k++) {
+                int x=i+d[k][0], y=j+d[k][1];
+                if(x<0 || x>=grid.length || y<0 || y>=grid[0].length || grid[x][y] == 0)
+                    perimeter++;
+            }
+        }
+    }
+    
+    return perimeter;
+}
+
+Time complexity:  O(mn)
+Space complexity: O(1)
+
+----------------------------------------------------------------------------------------------------
+C++ - Easy to Understand (Find edges)
+    int n = grid.size(); //num_rows
+    int m = grid[0].size(); //num_cols
+    int sum = 0,i,j;
+    for(i=0;i<n;i++)
+    {
+        for(j=0;j<m-1;j++)
+        {
+            sum += abs(grid[i][j+1]-grid[i][j]); //find vertical edges
+        }
+        sum = sum+grid[i][j]+grid[i][0]; //account for 2 corner blocks
+    }
+    
+    for(j=0;j<m;j++)
+    {
+        for(i=0;i<n-1;i++)
+        {
+            sum += abs(grid[i+1][j]-grid[i][j]); //find horizontal edges
+        }
+        sum = sum + grid[i][j] + grid[0][j]; //account for 2 corner blocks
+    }
+    return sum;
+
+----------------------------------------------------------------------------------------------------
+Concise java solution without recursion
+public int islandPerimeter(int[][] grid) {
+        if (   grid           == null
+            || grid.length    == 0
+            || grid[0]        == null
+            || grid[0].length == 0){
+            return 0;    
+        }
+        
+        int[][] directions = new int[][]{
+            new int[]{+1, 0},
+            new int[]{-1, 0},
+            new int[]{0, +1},
+            new int[]{0, -1}
+        };
+        
+        int ret = 0;
+        for (int i = 0; i < grid.length; i++){
+            for (int j = 0; j < grid[0].length; j++){
+                ret += grid[i][j] == 1? helper(grid, i, j, directions): 0;
+            }
+        }
+        return ret;
+    }
+
+    private int helper(int[][] grid, int i, int j, int[][] directions){
+        int ret = 0;
+        for (int[] direction: directions){
+            int ii = i + direction[0];
+            int jj = j + direction[1];
+            
+            ret += (0 <= ii && ii < grid.length && 0 <= jj && jj < grid[0].length && grid[ii][jj] == 1)? 0: +1;
+        }
+        return ret;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(mn) time and O(1) space - Java Solution
+int rn ;
+int cn ;
+public int islandPerimeter(int[][] grid) {
+    if(grid==null || grid.length<1 || grid[0].length<1){
+        return 0;
+    }
+    rn = grid.length-1;
+    cn = grid[0].length-1;
+    int perimeter=0;
+    for(int i=0;i<=rn;i++){
+        for(int j=0;j<=cn;j++){
+                if(grid[i][j]==1)
+                    perimeter+=findCount(grid,i,j);
+            }
+        }
+        return perimeter;
+    }
+    int findCount(int[][] grid, int i, int j){
+        int sum=0;
+        //top
+        if(i!=0){
+            sum+= grid[i-1][j]==0?1:0;
+        }
+        else{sum+=1;}
+        //bottom
+        if(i!=rn){
+            sum+= grid[i+1][j]==0?1:0;
+        }
+        else{sum+=1;}
+        //left
+         if(j!=0){
+            sum+= grid[i][j-1]==0?1:0;
+        }
+        else{sum+=1;}
+        //right
+        if(j!=cn){
+            sum+= grid[i][j+1]==0?1:0;
+        }
+        else{sum+=1;}
+        return sum;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution with explanation
+public class Solution {
+    public int islandPerimeter(int[][] grid) {
+        if(grid.length == 0 || grid[0].length == 0) return 0;
+        int res = 0;
+        for(int i = 0;i<grid.length;i++){
+            for(int j = 0;j<grid[i].length;j++){
+                if(grid[i][j] != 1) continue;
+                res = Math.max(res, getIslande(grid, i, j));
+            }
+        }
+        return res;
+    }
+    
+    public int getIslande(int [][] grid, int i, int j){
+        int ans = 0;
+        int n = grid.length;
+        int m = grid[i].length;
+        grid[i][j] = 2;
+        if(j<m-1 && grid[i][j+1] == 1){
+             ans+=getIslande(grid, i, j+1);
+        }
+        
+        if(i<n-1 && grid[i+1][j] == 1){
+            ans+=getIslande(grid, i+1, j);
+        }
+        
+        if(j>0 && grid[i][j-1] == 1){
+            ans+=getIslande(grid, i, j-1);
+        }
+        if(i>0 && grid[i-1][j] == 1){
+            ans+=getIslande(grid, i-1, j);
+        }
+        if(j == m-1 || grid[i][j+1] == 0) ans++;
+        if(i == n-1 || grid[i+1][j] == 0) ans++;
+        if(i == 0   || grid[i-1][j] == 0) ans++;
+        if(j == 0   || grid[i][j-1] == 0) ans++;
+        return ans;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(mn) simple 15 line java solution of traversing the matrix
+public class Solution {
+    public int islandPerimeter(int[][] grid) {
+        int perimeter = 0;
+        for(int i=0; i<grid.length; i++){
+            for(int j=0; j<grid[0].length; j++){
+                if(grid[i][j]==1){
+                    perimeter+=4;
+                    if(j-1>=0 && grid[i][j-1]==1)  perimeter -=2;
+                    if(i-1>=0 && grid[i-1][j]==1)  perimeter-= 2;
+                }
+            }
+        }
+        return perimeter;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+2 lines in Python
+class Solution(object):
+    def islandPerimeter(self, grid):
+        res, m, n = 0, len(grid), len(grid[0]) if grid else 0
+        return sum([(r - 1 < 0  or grid[r-1][c] == 0) +\
+                    (c - 1 < 0  or grid[r][c-1] == 0) +\
+                    (r + 1 >= m or grid[r+1][c] == 0) +\
+                    (c + 1 >= n or grid[r][c+1] == 0)
+                    for r in range(m) 
+                    for c in range(n) 
+                    if grid[r][c] == 1]
+                    )
+
+
+----------------------------------------------------------------------------------------------------
+Share my clean java solution
+public int islandPerimeter(int[][] grid) {
+    int ret = 0, coverEdge = 0;
+    for(int i = 0; i < grid.length; i++)
+        for(int j = 0; j < grid[0].length; j++){
+            ret += grid[i][j];
+            coverEdge += grid[i][j] == 0 ? 0 : getNeibor(grid, i - 1, j) + getNeibor(grid, i + 1, j) + getNeibor(grid, i, j - 1) + getNeibor(grid, i, j + 1);
+        }
+    return 4 * ret - coverEdge;
+}
+private int getNeibor(int[][] grid, int row, int col){
+    return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length ? grid[row][col] : 0;
+}
+
+----------------------------------------------------------------------------------------------------
+StraightForward  O(mn)  C# with Explanation
+                if ((j + 1 < grid.GetLength(1)) && (grid[i, j] & grid[i, j + 1]) == 1)
+                {
+                    pairs++;
+                }
+
+                if ((i + 1 < grid.GetLength(0)) && (grid[i, j] & grid[i + 1, j]) == 1)
+                {
+                    pairs++;
+                }
+            }
+        }
+
+        return (k * 4 - pairs * 2);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My easy java solution O(m*n) time O(1) space
+
+    public int islandPerimeter(int[][] grid) {
+        int raw = grid.length;
+        int col = grid[0].length;
+        int count = 0;
+        int neighber = 0;
+        for(int i = 0; i < raw; i++){
+            for(int j = 0; j < col; j++){
+                if(grid[i][j] == 1){
+                    count++;
+                    if(i > 0 && grid[i-1][j] == 1){
+                        neighber++;
+                    }
+                    if(j > 0 && grid[i][j-1] == 1){
+                        neighber++;
+                    }
+                }
+            }
+        }
+        return count*4 - neighber*2;
+    }
+
+``
+
+----------------------------------------------------------------------------------------------------
+6 lines C++ Solution O(mn) time, O(1) space
+int islandPerimeter(vector<vector<int>>& grid) {
+    int count=0;
+    for (int i=0;i<grid.size();i++)
+        for (int j=0;j<grid[0].size();j++)
+            count+=(grid[i][j]==1)*((!i || !grid[i-1][j])+(i==grid.size()-1 || !grid[i+1][j])+(!j || !grid[i][j-1])+(j==grid[0].size()-1 || !grid[i][j+1]));
+    return count;
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution with DFS
+public class Solution {
+    public int islandPerimeter(int[][] grid) {
+        if (grid == null) return 0;
+        for (int i = 0 ; i < grid.length ; i++){
+            for (int j = 0 ; j < grid[0].length ; j++){
+                if (grid[i][j] == 1) {
+                    return getPerimeter(grid,i,j);
+                }
+            }
+        }
+        return 0;
+    }
+    
+    public int getPerimeter(int[][] grid, int i, int j){
+        if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length) {return 1;}
+        if (grid[i][j] == 0) {
+            return 1;
+        }
+        if (grid[i][j] == -1) return 0;
+        
+        int count = 0;
+        grid[i][j] = -1;
+        
+        count += getPerimeter(grid, i-1, j);
+        count += getPerimeter(grid, i, j-1);
+        count += getPerimeter(grid, i, j+1);
+        count += getPerimeter(grid, i+1, j);
+        
+        return count;
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

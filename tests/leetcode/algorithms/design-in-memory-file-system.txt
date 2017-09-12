@@ -1,0 +1,563 @@
+Simple Java solution (4ms) with explanation.
+public class Solution {
+    public int nextGreaterElement(int n) {
+        char[] number = (n + "").toCharArray();
+        
+        int i, j;
+        // I) Start from the right most digit and 
+        // find the first digit that is
+        // smaller than the digit next to it.
+        for (i = number.length-1; i > 0; i--)
+            if (number[i-1] < number[i])
+               break;
+
+        // If no such digit is found, its the edge case 1.
+        if (i == 0)
+            return -1;
+            
+         // II) Find the smallest digit on right side of (i-1)'th 
+         // digit that is greater than number[i-1]
+        int x = number[i-1], smallest = i;
+        for (j = i+1; j < number.length; j++)
+            if (number[j] > x && number[j] <= number[smallest])
+                smallest = j;
+        
+        // III) Swap the above found smallest digit with 
+        // number[i-1]
+        char temp = number[i-1];
+        number[i-1] = number[smallest];
+        number[smallest] = temp;
+        
+        // IV) Sort the digits after (i-1) in ascending order
+        Arrays.sort(number, i, number.length);
+        
+        long val = Long.parseLong(new String(number));
+        return (val <= Integer.MAX_VALUE) ? (int) val : -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 4 lines (next_permutation)
+int nextGreaterElement(int n) {
+    auto digits = to_string(n);
+    next_permutation(begin(digits), end(digits));
+    auto res = stoll(digits);
+    return (res > INT_MAX || res <= n) ? -1 : res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution like Next Permutation Problem O(n)
+public class Solution {
+    public int nextGreaterElement(int n) {
+        char[] a=(""+n).toCharArray();
+        int i = a.length - 2;
+        while (i >= 0 && a[i + 1] <= a[i]) {
+            i--;
+        }
+        if(i<0)
+            return -1;
+        int j = a.length - 1;
+        while (j >= 0 && a[j] <= a[i]) {
+            j--;
+        }
+        swap(a, i, j);
+        reverse(a, i + 1);
+        try{
+           return Integer.parseInt(new String(a));
+        }
+        catch(Exception e){
+           return -1;
+        }
+    }
+    private void reverse(char[] a, int start) {
+        int i = start, j = a.length - 1;
+        while (i < j) {
+            swap(a, i, j);
+            i++;
+            j--;
+        }
+    }
+    private void swap(char[] a, int i, int j) {
+        char temp = a[i];
+        a[i] = a[j];
+        a[j] = temp;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Solution with explanation
+/**
+ * 1. a max number has the property of decreasing in every digit: 9876
+ * 2. find the first non-max substring from the right; ex. in 1234(59876), 59876 is the first non-max substring from the right
+ * 3. sort the max part of 5(9876), by reverse, becames 5(6789);
+ * 4. flip 5,6, becames 65789; because 6 is the next smallest digit than 5, in 56789;
+ * 5. incase of 66789, you got flip 6 with 7 to make it 76689, to make it bigger.
+ */
+class Solution {
+public:
+    int nextGreaterElement(int n) {
+        string s = to_string(n);
+        if (s.length() == 1) {
+            return -1;
+        }
+        /* find the first decreasing digit from the right, eg: 59876, 5 is the first decreasing digit */
+        int i = s.length() - 2; // 21 -> i = 0; 59876 -> i = 3
+        for (; i >= 0 && s[i] >= s[i + 1]; i--) { }
+        if (i == -1) {  // if a decreasing digit cannot be find, the number cannot be larger.
+            return -1;
+        }
+        reverse(s.begin() + i + 1, s.end());
+        for (int j = i + 1; j < s.length(); j++) {
+            if (s[j] > s[i]) {
+                swap(s[i], s[j]);
+                break;
+            }
+        }
+        long next = stol(s);
+        return next == n || next > INT_MAX ? -1 : next;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java(5ms) - Find - Swap - Sort Solution
+public int nextGreaterElement(int n) {
+    char[] num = (n + "").toCharArray();
+    for(int i = num.length-2; i >= 0; i--) {
+        // find min number greater than num(i)
+        int minIdx = i;
+        for(int j = i+1; j < num.length; j++) {
+            minIdx = num[j] > num[i] ? j : minIdx;
+        }
+        if(minIdx != i) {
+            char temp = num[i]; //swap minIdx and i;
+            num[i] = num[minIdx];
+            num[minIdx] = temp;
+            
+            Arrays.sort(num, i+1, num.length);
+
+            long val = Long.parseLong(new String(num));
+            return (val <= Integer.MAX_VALUE) ? (int) val : -1;
+        }
+    }
+    return -1;
+}
+
+----------------------------------------------------------------------------------------------------
+Concise Java Solution - Equivalent to Next Greater Permutation
+public int nextGreaterElement(int num) {
+    String n = Integer.toString(num);
+    for (int i=n.length()-2;i>=0;i--) {
+        if (n.charAt(i) >= n.charAt(i+1)) continue;
+        for (int j=n.length()-1;j>i;j--) {
+            if (n.charAt(i) >= n.charAt(j)) continue;
+            try {
+                return Integer.parseInt(n.substring(0,i) + n.charAt(j) 
+                       + new StringBuilder(n.substring(i+1, j) + n.charAt(i) + n.substring(j+1)).reverse().toString()); 
+            } catch(Exception e) { return -1; }
+        }
+    }
+    return -1;
+}
+
+
+----------------------------------------------------------------------------------------------------
+This problem is the same to Next Permutation, algorithm only.
+<p>Here is one simple example.<br/>
+index:  012345<br/>
+given:  124651<br/>
+ans :      125146<br/>
+procedure:<br/>
+Starting from the rightmost digit, going to left. Find the first digit which is smaller than the previous digit.<br/>
+In this example, 4 is smaller than 6.  Remember 4 and its index 2.<br/>
+Going from rightmost again. This time, find the first digit which is bigger than 4. It is 5 here.<br/>
+Swap 4 and 5. The number becomes 125641.<br/>
+Reverse all the digits which are right to 4&#39;s original index (That is 2), 641 should be reversed to 146 here.<br/>
+And the answer is reached which is 125146.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Clear Python Solution
+class Solution(object):
+    def nextGreaterElement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        num = str(n)
+        for i in range(len(num)-2, -1, -1):
+            if num[i] < num[i+1]:
+                t = list(num[i:])
+                for j in range(len(t)-1, 0, -1):
+                    if t[j]>t[0]:
+                        first = t.pop(j)
+                        rest = sorted(t)
+                        res = int(num[:i] + first + ''.join(rest)) 
+                        return res if res <= (2**31-1) else -1 
+                #print t
+                #raise ValueError('Error: cannot find bigger value!')
+        return -1
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution with in-line explanation
+public class Solution {
+    public int nextGreaterElement(int n) {
+        char[] chars = (n + "").toCharArray();
+        
+        int l = chars.length;
+        if (l < 2) return -1;
+        int[] nums = new int[l];
+        
+        for (int i = 0; i < l; i++) nums[i] = chars[i] - '0';
+        
+        //Start from its last element, traverse backward to find the first one with index i that satisfy
+       // nums[i-1] < nums[i]. So, elements from nums[i] to nums[l-1] is reversely sorted.
+        int index = l - 1;
+        while (index > 0) {
+            if (nums[index - 1] < nums[index]) break;
+            index--;
+        }
+        
+        //To find the next permutation, we have to swap some numbers at different positions, 
+        //to minimize the increased amount, we have to make the highest changed position
+        // as high as possible. Notice that index larger than or equal to i is not possible as
+        // nums[i,l-1] is reversely sorted. So, we want to increase the number at index i-1,
+        // clearly, swap it with the smallest number between nums[i,l-1] that is larger than nums[i-1].
+        // For example, original number is 121543321, we want to swap the '1' at position 2 with '2' at position 7.
+        if (index == 0) {
+            return -1;
+        }
+        else {
+            //The last step is to make the remaining higher position part as small as possible,
+           // we just have to reversely sort the nums[i,l-1]
+            int val = nums[index - 1];
+            int j = l - 1;
+            while (j >= index){
+                if (nums[j] > val) break;
+                j--;
+            }
+            swap(nums, j, index - 1);
+            
+            reverse(nums, index, l - 1);
+        }
+        
+        long result = 0;
+        for (int i = 0; i < l; i++) {
+            result = result * 10 + nums[i];
+        }
+        
+        return result <= Integer.MAX_VALUE ? (int)result : -1;
+    }
+    
+    public void swap(int[] nums, int i, int j){
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+    
+    public void reverse(int[] nums, int start, int end){   
+        if (start > end) return;
+        for (int i = start; i <= (end + start) / 2; i++)
+            swap(nums, i, start + end - i);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python 39ms O(n)
+    def nextGreaterElement(self, n):
+        if not n: return -1
+        s = str(n)
+        arr = [c for c in s]
+        i = len(arr)-1
+        while i > 0:
+            prev = int(arr[i-1])
+            if int(arr[i]) > prev:
+                j = i
+                # looking for right position to swap
+                while j < len(arr) and int(arr[j]) > prev:
+                    j += 1
+                arr[i-1], arr[j-1], j = arr[j-1], arr[i-1], len(arr)-1
+                # reverse array from pivot point til end
+                while i < j:
+                    arr[i], arr[j] = arr[j], arr[i]
+                    i += 1; j -= 1
+                res = int(''.join(arr))
+                # check 32 bit constraint
+                return -1 if res > 2147483647 else res
+            i -= 1
+        return -1
+
+
+----------------------------------------------------------------------------------------------------
+C++ STL 2-line self-comment solution
+class Solution {
+public:
+    int nextGreaterElement(int n) {
+        string s = to_string(n);
+        return next_permutation(s.begin(), s.end()) && stoll(s) <= numeric_limits<int>::max() ? stoi(s) : -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution with explanation in comments (3ms)
+    public int nextGreaterElement(int n) {
+
+        char[] cArr = String.valueOf(n).toCharArray();
+
+        // i is the leftmost digit that should be exchanged
+        int i = cArr.length - 1;
+        while (i > 0 && cArr[i] <= cArr[i-1]) i--;
+
+        if (i <= 0) return -1;
+
+        // j is the digit that should be exchanged with digit at i
+        int j = cArr.length - 1;
+        while (j >= i && cArr[j] <= cArr[i-1]) j--;
+
+        // Exchange the digits at location i and j
+        char tmp = cArr[j];
+        cArr[j] = cArr[i-1];
+        cArr[i-1] = tmp;
+
+        // Sort the digits from location i to the end
+        Arrays.sort(cArr, i, cArr.length);
+
+        try {
+           return Integer.parseInt(String.valueOf(cArr));
+        } catch (Exception e) {
+            // Intentionally left blank
+        }
+        return -1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python solution, like next_permutation
+class Solution(object):
+    def nextGreaterElement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        str_val=str(n)
+        found=False
+        for i in range(len(str_val)-1,0,-1):
+            if str_val[i]>str_val[i-1]:
+                found = True
+                break
+        if not found: return -1
+
+        # find the smallest letter bigger than char i-1 after i-1
+        latter=str_val[i:]
+        ch=min(ltr for ltr in latter if ltr>str_val[i-1])
+
+        ret=str_val[:i-1]+ch
+        latter=''.join(sorted(str_val[i:].replace(ch,str_val[i-1],1)))
+        ret=int(ret+latter)
+        return -1 if ret>0x7FFFFFFF else ret
+
+
+----------------------------------------------------------------------------------------------------
+Next permutation solution with python
+class Solution(object):
+    def nextGreaterElement(self, n):
+        s = list(str(n))
+        for i in range(len(s) - 1, 0, -1):
+            if s[i-1] < s[i]:
+                s[i:len(s)] = reversed(s[i:len(s)])
+                t = bisect.bisect_right(s, s[i-1], i, len(s))
+                s[i-1], s[t] = s[t], s[i-1]
+                break
+        nn = int("".join(s))
+        return nn if nn > n and nn < (1 << 31) else -1
+
+
+----------------------------------------------------------------------------------------------------
+python easy peasy
+class Solution(object):
+    def nextGreaterElement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        s = str(n)[::-1]
+        
+        for i,a in enumerate(s):
+            for j,b in enumerate(s[:i:]):
+                if eval(b) > eval(a):
+                    ans = ''
+                    for k,c in enumerate(s):
+                        if k == i:
+                            ans += s[j]
+                        elif k == j:
+                            ans += s[i]
+                        else:
+                            ans += s[k]
+                    
+                    res = eval((''.join(sorted(list(ans[:i]), reverse = True)) + ans[i:])[::-1])
+                    return res if res < 2147483647 else -1
+                        
+        
+        return -1
+                    
+
+
+----------------------------------------------------------------------------------------------------
+Python Easy AC Solution
+class Solution(object):
+    def nextGreaterElement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        def swap(s, i, j):
+            temp = s[i]
+            s[i] = s[j]
+            s[j] = temp
+            return s
+        
+        s = list(str(n))
+        for i in range(len(s) - 1, -1, -1):
+            for j in range(len(s) - 1, i, -1):
+                if s[j] > s[i]:
+                    swap(s, i, j)
+                    right = s[i+1:]
+                    right.sort()
+                    ans = s[:i+1] + right
+                    if int("".join(ans)) > 2**31-1:
+                        return -1
+                    return int(''.join(ans))
+        return -1
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution focusing on next permutation with elegant overflow detection
+    int nextGreaterElement(int n) {
+        string s = to_string(n);
+        
+        // 1. find from right to left the first number less than it's right neighbor
+        int left = s.size() - 1;
+        while(left >=0 && s[left] >= s[left+1]) --left;
+        
+        if(left < 0) return -1;
+        
+        // 2. find from right to left the first number greater than the char at position left 
+        int right = s.size() - 1;
+        while(s[right] <= s[left]) --right;
+        
+        // 3. swap these 2 number
+        swap(s[left], s[right]);
+        
+        // 4. reverse [left+1, end]
+        reverse(s.begin()+left+1, s.end());
+        
+        // 5. convert to int and check overflow
+        int num;
+        try {
+            num = stoi(s);
+        } catch (out_of_range& e) {
+            num = -1;
+        }
+        
+        return num;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;JAVA&#93; 3 rules for next number &#x2F; T : O(N), S : O(N)
+class Solution {
+    
+    //12345 -> 12354 -> 12435 -> 12453 -> 12534 -> 12543 -> 13245 -> 13254 ->13425 -> 13452 -> 13524
+    
+    public int nextGreaterElement(int n) {
+        char[] chs = String.valueOf(n).toCharArray();
+        int pivot = -1;
+        for(int i = chs.length-1; i > 0; i--) { // O(N)
+            if(chs[i] > chs[i-1]){
+                pivot = i;
+                break;
+            }
+        }
+        
+        // Descending order, 
+        if(pivot == -1){
+            return -1;
+        }
+        
+        // Find smallest great number for chs[pivot - 1], O(N)
+        int smallest = pivot;
+        int smallest_last = pivot;
+        for(int i = pivot; i < chs.length; i++){
+            if(chs[i] > chs[pivot-1]){
+                if(chs[smallest] > chs[i]){
+                    smallest = i;
+                    smallest_last = i;
+                }
+                else if(chs[smallest] == chs[i])
+                    smallest_last = i;
+            }
+        }
+        
+        char temp = chs[pivot-1];
+        chs[pivot-1] = chs[smallest];
+        chs[smallest] = temp;
+        
+        // Reverse below numbers 
+        reverse(chs, smallest, smallest_last); // Consider 333 => 233 => 332
+        reverse(chs, pivot, chs.length-1);
+        
+        // If number is bigger than Integer.MAX_VALUE
+        String result = String.valueOf(chs);
+        if(Long.parseLong(result) > Integer.MAX_VALUE)
+            return -1;
+            
+        
+        return Integer.parseInt(result);
+    }
+    
+    public void reverse(char[] chs, int i, int j){
+        while(i < j){
+            char temp = chs[i];
+            chs[i] = chs[j];
+            chs[j] = temp;
+            i++; j--;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Help : why  I pass 32&#x2F;34
+class Solution(object):
+    def nextGreaterElement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        work,index=[ele for ele in str(n)],-1
+        for i in range(len(work)-1,0,-1):
+            if int(work[i-1])<int(work[i]):
+                index=i-1
+                break
+        else:
+            return -1
+        key=index
+        for i in range(len(work)-1,index,-1):
+            if int(work[i])>int(work[index]):
+                key=i
+                break
+        #print(work)
+        #print("%d %d" %(index,key))
+        
+        return int(''.join(work[:index]+[work[key]]+sorted(work[index:key]+work[key+1:])))
+                
+
+
+
+
+----------------------------------------------------------------------------------------------------

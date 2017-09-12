@@ -1,0 +1,540 @@
+Java solution, 8 lines, extendPalindrome
+public class Solution {
+    int count = 0;
+    
+    public int countSubstrings(String s) {
+        if (s == null || s.length() == 0) return 0;
+        
+        for (int i = 0; i < s.length(); i++) { // i is the mid point
+            extendPalindrome(s, i, i); // odd length;
+            extendPalindrome(s, i, i + 1); // even length
+        }
+        
+        return count;
+    }
+    
+    private void extendPalindrome(String s, int left, int right) {
+        while (left >=0 && right < s.length() && s.charAt(left) == s.charAt(right)) {
+            count++; left--; right++;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation (Bonus O(N) solution)
+def countSubstrings(self, S):
+    def manachers(S):
+        A = '@#' + '#'.join(S) + '#$'
+        Z = [0] * len(A)
+        center = right = 0
+        for i in xrange(1, len(A) - 1):
+            if i < right:
+                Z[i] = min(right - i, Z[2 * center - i])
+            while A[i + Z[i] + 1] == A[i - Z[i] - 1]:
+                Z[i] += 1
+            if i + Z[i] > right:
+                center, right = i, i + Z[i]
+        return Z
+
+    return sum((v+1)/2 for v in manachers(S))
+
+
+----------------------------------------------------------------------------------------------------
+Very Simple Java Solution with Detail Explanation
+int count =1;
+public int countSubstrings(String s) {
+    if(s.length()==0) 
+        return 0;
+    for(int i=0; i<s.length()-1; i++){
+        checkPalindrome(s,i,i);     //To check the palindrome of odd length palindromic sub-string
+        checkPalindrome(s,i,i+1);   //To check the palindrome of even length palindromic sub-string
+    }
+    return count;
+}    
+
+private void checkPalindrome(String s, int i, int j) {
+    while(i>=0 && j<s.length() && s.charAt(i)==s.charAt(j)){    //Check for the palindrome string 
+        count++;    //Increment the count if palindromin substring found
+        i--;    //To trace string in left direction
+        j++;    //To trace string in right direction
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#x2F;C++&#93; 6 lines solution - NO DP
+    public int countSubstrings(String s) {
+        int res = 0, n = s.length();
+        for(int i = 0; i<n ;i++ ){
+            for(int j = 0; i-j >= 0 && i+j < n && s.charAt(i-j) == s.charAt(i+j); j++)res++; //substring s[i-j, ..., i+j]
+            for(int j = 0; i-1-j >= 0 && i+j < n && s.charAt(i-1-j) == s.charAt(i+j); j++)res++; //substring s[i-1-j, ..., i+j]
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution based on longest palindromic substring
+public int countSubstrings(String s) {
+    int n = s.length();
+    int res = 0;
+    boolean[][] dp = new boolean[n][n];
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = i; j < n; j++) {
+            dp[i][j] = s.charAt(i) == s.charAt(j) && (j - i < 3 || dp[i + 1][j - 1]);
+            if(dp[i][j]) ++res;
+        }
+    }
+    return res;
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) time O(1) space solution with comments.
+public int countSubstrings(String s) {
+    int sum = 0;
+    // Loop across different middle points.
+    for (int i = 0; i < s.length(); i++) {
+      // Find all odd length palindrome with i as middle point.
+      sum += findPalindromic(s, i, i);
+      // Find all even length palindrome with i and i+1 as middle point.
+      sum += findPalindromic(s, i, i + 1);
+    }
+    return sum;
+  }
+
+  // Expend from the current mid point to all of its low and high positions.
+  private int findPalindromic(String s, int left, int right) {
+    int count = 0;
+    // Increase count if the substring is a validate palindrome.
+    while (left >= 0 && right < s.length() && s.charAt(left--) == s.charAt(right++))
+      count++;
+    return count;
+  }
+
+
+----------------------------------------------------------------------------------------------------
+O(N*N) DP solution w&#x2F; Python &amp; C++
+class Solution {
+public:
+    int countSubstrings(string s) {
+        int n = s.size(), count = 0;
+        vector<vector<int>> dp(n, vector<int> (n));
+        for ( int end = 0; end < n; ++end ) {
+            dp[end][end] = 1;
+            ++count;
+            for ( int start = 0; start < end; ++start ) {
+                if ( s[start] == s[end] && (start+1 >= end-1 || dp[start+1][end-1])) {
+                    dp[start][end] = 1;
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+};
+
+// 130 / 130 test cases passed.
+// Runtime: 25 ms
+
+
+----------------------------------------------------------------------------------------------------
+Oneliner Python
+def countSubstrings(self, s):
+    return sum(s[i:j] == s[i:j][::-1] for j in range(len(s) + 1) for i in range(j))
+
+----------------------------------------------------------------------------------------------------
+Java Concise O(n^2) Time O(1) Space DP Solution
+public int countSubstrings(String s) {
+    int count = 0; 
+    for (int i=0;i<s.length();i++) count += getCount(s, i, 0) + getCount(s, s.length() - 1, i + 1);
+    return count;
+}
+
+public int getCount(String s, int l, int r) {
+    int count = 0;
+    while (l >= 0 && r < s.length()) {
+      if (l >= r || s.charAt(l) == s.charAt(r)) count += l-- <= r++ ? 1 : 0;
+      else break;
+    }        
+    return count;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution
+class Solution(object):
+    def countSubstrings(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        res = 0
+        for i in range(len(s)):
+            for j in range(i, len(s)):
+                if s[i:j+1] == s[i:j+1][::-1]:
+                    res += 1
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) DP solution
+public class Solution {
+    public int countSubstrings(String s) {
+        
+        int sLen = s.length();
+        char[] cArr = s.toCharArray();
+        
+        int totalPallindromes = 0;
+        
+        boolean[][] dp = new boolean[sLen][sLen];
+        
+        // Single length pallindroms
+        for (int i = 0; i < sLen; i++) {
+            dp[i][i] = true;
+            totalPallindromes++;
+        }
+        
+        // 2 length pallindromes
+        for (int i = 0; i < sLen - 1; i++) {
+            if (cArr[i] == cArr[i + 1]) {
+                dp[i][i + 1] = true;
+                totalPallindromes++;
+            }
+        }
+
+        // Lengths > 3
+        
+        for (int subLen = 2; subLen < sLen; subLen++) {
+            
+            for (int i = 0; i < sLen - subLen; i++) {
+                
+                int j = i + subLen;
+                
+                if (dp[i + 1][j - 1] && cArr[i] == cArr[j]) {
+                    dp[i][j] = true;
+                    totalPallindromes++;
+                }
+            }
+        }        
+        return totalPallindromes;
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+25 ms Java DP. Space - O(n^2)
+    int len = s.length();
+    boolean[][] dp = new boolean[len][len];
+    int count = 0;
+    
+    for(int i = 0; i < len; i++)
+        Arrays.fill(dp[i], true);
+    
+    for(int i = len - 1; i >= 0; i--){
+        for(int j = i; j < len; j++){
+            if(i == j){
+                count++;
+                continue;
+            }
+            
+            dp[i][j] = (s.charAt(i) == s.charAt(j)) && dp[i+1][j-1];
+            if(dp[i][j])
+                count++;
+        }
+    }
+    
+    return count;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) Faster than 100% of other Java submissions
+        //Two cases:
+    	//substring length:
+    	// 		Even :    aa
+    	//		Odd:      aba
+
+    	char[] string = s.toCharArray();
+    	int minIndex = 0;
+    	int maxIndex = string.length-1;
+    	
+    	//get indices of Even (size 2):
+    	ArrayList<Integer> even = new ArrayList<Integer>();
+    	for(int i = 0; i <= string.length-2; i++)
+    	{
+    		if(string[i] == string[i+1])
+    		{
+    			even.add(i);
+    		}
+    	}
+    	
+    	//get indices of Odd (size 3):
+    	ArrayList<Integer> odd = new ArrayList<Integer>();
+    	for(int i = 0; i <= string.length-3; i++)
+    	{
+    		if(string[i] == string[i+2])
+    		{
+    			odd.add(i+1);
+    		}
+    	}
+      
+    	int ans = 0;
+    	
+    	//every single char is a palindrome
+    	ans = ans + string.length;
+    	
+    	//palindrome of size 2
+    	ans = ans + even.size();
+    
+    	//palindrome of size 3
+    	ans = ans + odd.size();
+    	
+    	
+    	for(Integer mid : even)
+    	{
+    		int size = 1;
+    		while(mid-size >= minIndex && mid + 1 + size <= maxIndex)
+    		{
+    			if(string[mid-size] == string[mid+1+size])
+    			{
+    				ans++;
+    				size ++;
+    			}
+    			else break;
+    		}
+    	}  	
+    	
+    	for(Integer mid : odd)
+    	{
+    		int size = 2;
+    		while(mid-size >= minIndex && mid + size <= maxIndex)
+    		{
+    			if(string[mid-size] == string[mid+size])
+    			{
+    				ans++;
+    				size ++;
+    			}
+    			else break;
+    		}
+    	}
+    	
+    	return ans;
+    '''
+
+----------------------------------------------------------------------------------------------------
+Share 3 methods, DP method and extend method, Java
+// ------------- DP method 1: O(N^3)------------------
+public class Solution {
+    public int countSubstrings(String s) {
+        if(s==null || s.isEmpty()) return 0;
+        final int N = s.length();
+        int[][] dp = new int[N][N];
+        for(int i=0; i<N; i++){
+            dp[i][i] = 1;
+        }
+        for(int i=N-2; i>=0; i--){
+            for(int j=i+1; j<N; j++){
+                int self = isPalindrom(s, i, j) ? 1 : 0;
+                dp[i][j] = self + dp[i+1][j] + dp[i][j-1] - dp[i+1][j-1];
+            }
+        }
+        return dp[0][N-1];
+    }
+    
+    private boolean isPalindrom(String s, int left, int right){
+        while(left<right){
+            if(s.charAt(left)!=s.charAt(right)) return false;
+            left++;
+            right--;
+        }
+        return true;
+    }
+}
+
+// ------------- DP method 2: O(N^2) (about N^2/2) ------------------
+public class Solution {
+    public int countSubstrings(String s) {
+        if(s==null || s.isEmpty()) return 0;
+        final int N = s.length();
+        boolean[][] dp = new boolean[N][N];
+        for(int i=0; i<N; i++){
+            dp[i][i] = true;
+        }
+        int count = N;
+        for(int i=N-2; i>=0; i--){
+            for(int j=i+1; j<N; j++){
+                if(s.charAt(i)==s.charAt(j) && (j-i<=2 || dp[i+1][j-1])){
+                    dp[i][j] = true;
+                    count ++;
+                }
+            }
+        }
+        return count;
+    }
+}
+
+// ------------- extend method: O(N^2) (about N^2/4)------------------
+public class Solution {
+    public int countSubstrings(String s) {
+        if(s==null || s.isEmpty()) return 0;
+        int count = 0;
+        for(int i=0; i<s.length(); i++){
+            count += extendPalindrom(s, i, i) + extendPalindrom(s, i, i+1);
+        }
+        return count;
+    }
+    
+    private int extendPalindrom(String s, int left, int right){
+        int count = 0;
+        while(left>=0 && right<s.length() && s.charAt(left)==s.charAt(right)){
+            count++;
+            left--;
+            right++;
+        }
+        return count;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code 8 lines
+public class Solution {
+    public int countSubstrings(String s) {
+        int cnt = 0;
+        int n = s.length();
+        char[] ca = s.toCharArray();
+        boolean[][] isp = new boolean[n][n];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = i; j < n; j++) {
+                cnt += (isp[i][j] = i == j || ca[i] == ca[j] && (i + 1 == j || isp[i + 1][j - 1])) ? 1 : 0;
+            }
+        }
+        return cnt; 
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple implementation in python (brute force and dynamic programming)
+class Solution(object):
+    def countSubstrings(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        cnt = 0  # count of pallindromes encountered 
+        if s:
+            n   = len(s) 
+            # a dynamic programming table, dp[i][j] = True if s[i:j+1] is pallindrome
+            dp = [ [ True for j in range(n) ] for i in range(n) ] 
+            
+            # each character is pallindrome, so dp[i][i] = True
+            # also counting pallindromes of length 1
+            for i in range(n):
+                dp[i][i]  = True
+                cnt      += 1
+            
+            for length in range(2,n+1): # length ranges from 2 to n
+                for start in range(n):  # start index ranges from 0 to n-1
+                    i =  start          
+                    j  = start + length - 1    # end index for a string of length "length" starting at index start 
+                    if 0 <= i < j < n:         # if indices are within string under consideration
+                        dp[i][j] =  False
+                        if s[i] == s[j] and dp[i+1][j-1] == True: # if s[i] == s[j] and s[i+1:j] is pallindrome
+                            dp[i][j] = True
+                            cnt += 1
+            
+        return cnt
+
+----------------------------------------------------------------------------------------------------
+share O(n^2) solution using Java!
+public class Solution {
+    private int sum=0;
+    public int countSubstrings(String s) {
+        if(s==null || s.length()<1) return 0;
+        char[] array=s.toCharArray();
+        
+        for(int i=0;i<s.length();i++){
+            expand(array,i,i);
+            if(i+1<array.length){
+                expand(array,i,i+1);
+            }
+        }
+        return sum;
+    }
+    
+    public void expand(char[] array,int left,int right){
+        while(left>=0&&right<array.length){
+            if(array[left]==array[right]){
+                sum++;
+                left--;
+                right++;
+            }else{
+                break;
+            }
+        }   
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# code, easy to understand
+        public int CountSubstrings(string s)
+        {
+            if (s.Length == 0) return 0;
+            int count = 1;
+            for (int i = 1; i < s.Length; i++)
+            {
+                // check the palindromic string in the format of aba. Of course, it will include the current char itself
+                int left = i, right = i;
+                while (left >= 0 && right <= s.Length - 1)
+                {
+                    if (s[left] == s[right]) count++;
+                    else break;
+                    left--;
+                    right++;
+                }
+                // check the palindromic string in the format of abba
+                left = i - 1; right = i;
+                while (left >= 0 && right <= s.Length - 1)
+                {
+                    if (s[left] == s[right]) count++;
+                    else break;
+                    left--;
+                    right++;
+                }
+            }
+            return count;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+Scala Iterative solution
+object Solution {
+    def countSubstrings(s: String): Int = {
+        var res = 0
+        for(i <- 0 to s.length - 1; j <- i + 1 to s.length)
+            s.substring(i, j) match {
+                case p if isPalindrome(p) => res += 1
+                case _ => 
+            }
+        res
+    }    
+    
+    def isPalindrome(s: String): Boolean = {
+        for(i <- 0 to s.length / 2)
+            s.charAt(i) == s.charAt(s.length - 1 - i) match {
+                case false => return false
+                case _ =>
+            }
+        true
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

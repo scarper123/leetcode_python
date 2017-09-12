@@ -1,0 +1,1232 @@
+&#91;Java&#93; Hashtable + Double linked list (with a touch of pseudo nodes)
+The problem can be solved with a hashtable that keeps track of the keys and its values in the double linked list. One interesting property about double linked list is that the node can remove itself without other reference. In addition, it takes constant time to add and remove nodes from the head or tail.
+
+One particularity about the double linked list that I implemented is that I create a pseudo head and tail to mark the boundary, so that we don't need to check the NULL node during the update. This makes the code more concise and clean, and also it is good for the performance as well. 
+
+Voila, here is the code. 
+
+    class DLinkedNode {
+		int key;
+		int value;
+		DLinkedNode pre;
+		DLinkedNode post;
+	}
+	
+	/**
+	 * Always add the new node right after head;
+	 */
+	private void addNode(DLinkedNode node){
+		node.pre = head;
+		node.post = head.post;
+		
+		head.post.pre = node;
+		head.post = node;
+	}
+	
+	/**
+	 * Remove an existing node from the linked list.
+	 */
+	private void removeNode(DLinkedNode node){
+		DLinkedNode pre = node.pre;
+		DLinkedNode post = node.post;
+		
+		pre.post = post;
+		post.pre = pre;
+	}
+	
+	/**
+	 * Move certain node in between to the head.
+	 */
+	private void moveToHead(DLinkedNode node){
+		this.removeNode(node);
+		this.addNode(node);
+	}
+	
+	// pop the current tail. 
+	private DLinkedNode popTail(){
+		DLinkedNode res = tail.pre;
+		this.removeNode(res);
+		return res;
+	}
+	
+	private Hashtable<Integer, DLinkedNode> 
+		cache = new Hashtable<Integer, DLinkedNode>();
+	private int count;
+	private int capacity;
+	private DLinkedNode head, tail;
+	
+    public LRUCache(int capacity) {
+    	this.count = 0;
+    	this.capacity = capacity;
+    
+    	head = new DLinkedNode();
+    	head.pre = null;
+    	
+    	tail = new DLinkedNode();
+    	tail.post = null;
+    	
+    	head.post = tail;
+    	tail.pre = head;
+    }
+    
+    public int get(int key) {
+        
+    	DLinkedNode node = cache.get(key);
+    	if(node == null){
+    		return -1; // should raise exception here.
+    	}
+    	
+    	// move the accessed node to the head;
+    	this.moveToHead(node);
+    	
+    	return node.value;
+    }
+    
+    
+    public void set(int key, int value) {
+    	DLinkedNode node = cache.get(key);
+    	
+    	if(node == null){
+    		
+			DLinkedNode newNode = new DLinkedNode();
+			newNode.key = key;
+			newNode.value = value;
+			
+			this.cache.put(key, newNode);
+			this.addNode(newNode);
+			
+			++count;
+			
+    		if(count > capacity){
+    			// pop the tail
+    			DLinkedNode tail = this.popTail();
+    			this.cache.remove(tail.key);
+    			--count;
+    		}
+    	}else{
+    		// update the value.
+    		node.value = value;
+    		this.moveToHead(node);
+    	}
+    	
+    }
+    
+
+
+----------------------------------------------------------------------------------------------------
+C++11 code 74ms - Hash table + List
+There is a similar example in Java, but I wanted to share my solution using the new C++11 unordered\_map and a list. The good thing about lists is that iterators are never invalidated by modifiers (unless erasing the element itself). This way, we can store the iterator to the corresponding LRU queue in the values of the hash map. Since using erase on a list with an iterator takes constant time, all operations of the LRU cache run in constant time.
+
+    class LRUCache {
+    public:
+        LRUCache(int capacity) : _capacity(capacity) {}
+        
+        int get(int key) {
+            auto it = cache.find(key);
+            if (it == cache.end()) return -1;
+            touch(it);
+            return it->second.first;
+        }
+        
+        void set(int key, int value) {
+            auto it = cache.find(key);
+            if (it != cache.end()) touch(it);
+            else {
+    			if (cache.size() == _capacity) {
+    				cache.erase(used.back());
+    				used.pop_back();
+    			}
+                used.push_front(key);
+            }
+            cache[key] = { value, used.begin() };
+        }
+        
+    private:
+        typedef list<int> LI;
+        typedef pair<int, LI::iterator> PII;
+        typedef unordered_map<int, PII> HIPII;
+        
+        void touch(HIPII::iterator it) {
+            int key = it->first;
+            used.erase(it->second.second);
+            used.push_front(key);
+            it->second.second = used.begin();
+        }
+        
+        HIPII cache;
+        LI used;
+        int _capacity;
+    };
+
+----------------------------------------------------------------------------------------------------
+Laziest implementation: Java&#x27;s LinkedHashMap takes care of everything
+    import java.util.LinkedHashMap;
+    public class LRUCache {
+        private LinkedHashMap<Integer, Integer> map;
+        private final int CAPACITY;
+        public LRUCache(int capacity) {
+            CAPACITY = capacity;
+            map = new LinkedHashMap<Integer, Integer>(capacity, 1.0f, true){
+                protected boolean removeEldestEntry(Map.Entry eldest) {
+                    return size() > CAPACITY;
+                }
+            };
+        }
+        public int get(int key) {
+            return map.getOrDefault(key, -1);
+        }
+        public void set(int key, int value) {
+            map.put(key, value);
+        }
+    }
+Several points to mention:<br>
+1. In the constructor, the third boolean parameter specifies the ordering mode. If we set it to true, it will be in access order. (https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html#LinkedHashMap-int-float-boolean-)<br>
+2. By overriding removeEldestEntry in this way, we do not need to take care of it ourselves. It will automatically remove the least recent one when the size of map exceeds the specified capacity.(https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html#removeEldestEntry-java.util.Map.Entry-)
+
+
+----------------------------------------------------------------------------------------------------
+JAVA-----------Easy Version To Understand!!!!
+1.The key to solve this problem is using a double linked list which enables us to quickly move nodes.
+2.The LRU cache is a hash table of keys and double linked nodes. The hash table makes the time of get() to be O(1). The list of double linked nodes make the nodes adding/removal operations O(1).
+
+class Node {
+	int key;
+	int value;
+	Node pre;
+	Node next;
+
+	public Node(int key, int value) {
+		this.key = key;
+		this.value = value;
+	}
+}
+public class LRUCache {
+    
+ HashMap<Integer, Node> map;
+	int capicity, count;
+	Node head, tail;
+
+	public LRUCache(int capacity) {
+		this.capicity = capacity;
+		map = new HashMap<>();
+		head = new Node(0, 0);
+		tail = new Node(0, 0);
+		head.next = tail;
+		tail.pre = head;
+		head.pre = null;
+		tail.next = null;
+		count = 0;
+	}
+
+	public void deleteNode(Node node) {
+		node.pre.next = node.next;
+		node.next.pre = node.pre;
+	}
+
+	public void addToHead(Node node) {
+		node.next = head.next;
+		node.next.pre = node;
+		node.pre = head;
+		head.next = node;
+	}
+
+	public int get(int key) {
+		if (map.get(key) != null) {
+			Node node = map.get(key);
+			int result = node.value;
+			deleteNode(node);
+			addToHead(node);
+			return result;
+		}
+		return -1;
+	}
+
+	public void set(int key, int value) {
+		if (map.get(key) != null) {
+			Node node = map.get(key);
+			node.value = value;
+			deleteNode(node);
+			addToHead(node);
+		} else {
+			Node node = new Node(key, value);
+			map.put(key, node);
+			if (count < capicity) {
+				count++;
+				addToHead(node);
+			} else {
+				map.remove(tail.pre.key);
+				deleteNode(tail.pre);
+				addToHead(node);
+			}
+		}
+	}
+
+}
+
+----------------------------------------------------------------------------------------------------
+Clean Short Standard C++ solution -- NOT writing C in C++ like all other lengthy ones
+I saw so many (or all) "C++" solutions posted here were not written in C++ at all. For those 200-line solutions, I don't see the point in implementing a double-linked-list by themselves. 
+
+**If you are writing C++, please use STL!** 
+
+The code below is way cleaner, shorter and easier to read than most other C++ solutions posted here.
+And above all, it was written in a standard C++ way.
+
+    class LRUCache{
+        size_t m_capacity;
+        unordered_map<int,  list<pair<int, int>>::iterator> m_map; //m_map_iter->first: key, m_map_iter->second: list iterator;
+        list<pair<int, int>> m_list;                               //m_list_iter->first: key, m_list_iter->second: value;
+    public:
+        LRUCache(size_t capacity):m_capacity(capacity) {
+        }
+        int get(int key) {
+            auto found_iter = m_map.find(key);
+            if (found_iter == m_map.end()) //key doesn't exist
+                return -1;
+            m_list.splice(m_list.begin(), m_list, found_iter->second); //move the node corresponding to key to front
+            return found_iter->second->second;                         //return value of the node
+        }
+        void set(int key, int value) {
+            auto found_iter = m_map.find(key);
+            if (found_iter != m_map.end()) //key exists
+            {
+                m_list.splice(m_list.begin(), m_list, found_iter->second); //move the node corresponding to key to front
+                found_iter->second->second = value;                        //update value of the node
+                return;
+            }
+            if (m_map.size() == m_capacity) //reached capacity
+            {
+               int key_to_del = m_list.back().first; 
+               m_list.pop_back();            //remove node in list;
+               m_map.erase(key_to_del);      //remove key in map
+            }
+            m_list.emplace_front(key, value);  //create new node in list
+            m_map[key] = m_list.begin();       //create correspondence between key and node
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Dict + Double LinkedList
+    class Node:
+    def __init__(self, k, v):
+        self.key = k
+        self.val = v
+        self.prev = None
+        self.next = None
+
+    class LRUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.dic = dict()
+        self.head = Node(0, 0)
+        self.tail = Node(0, 0)
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def get(self, key):
+        if key in self.dic:
+            n = self.dic[key]
+            self._remove(n)
+            self._add(n)
+            return n.val
+        return -1
+
+    def set(self, key, value):
+        if key in self.dic:
+            self._remove(self.dic[key])
+        n = Node(key, value)
+        self._add(n)
+        self.dic[key] = n
+        if len(self.dic) > self.capacity:
+            n = self.head.next
+            self._remove(n)
+            del self.dic[n.key]
+
+    def _remove(self, node):
+        p = node.prev
+        n = node.next
+        p.next = n
+        n.prev = p
+
+    def _add(self, node):
+        p = self.tail.prev
+        p.next = node
+        self.tail.prev = node
+        node.prev = p
+        node.next = self.tail
+
+----------------------------------------------------------------------------------------------------
+Probably the &quot;best&quot; Java solution - extend LinkedHashMap
+I didn't check all 9 pages that are in this forum already, so it's likely someone already posted a solution like this. The easiest solution and maybe most elegant is to just use the LinkedHashMap with the access-order flag set to true. The official documentation on it even mentions LRU caches and offers a method to overwrite specifically for a purpose like this. 
+
+
+    import java.util.LinkedHashMap;
+    
+    public class LRUCache {
+        
+        private Map<Integer, Integer> map;
+        
+        public LRUCache(int capacity) {
+            map = new LinkedCappedHashMap<>(capacity);
+        }
+        
+        public int get(int key) {
+            if(!map.containsKey(key)) { return -1; }
+            return map.get(key);
+        }
+        
+        public void set(int key, int value) {
+            map.put(key,value);
+        }
+    
+        private static class LinkedCappedHashMap<K,V> extends LinkedHashMap<K,V> {
+            
+            int maximumCapacity;
+            
+            LinkedCappedHashMap(int maximumCapacity) {
+                super(16, 0.75f, true);
+                this.maximumCapacity = maximumCapacity;
+            }
+            
+            protected boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > maximumCapacity;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ solution, 296 ms
+Solution is unusual - combination of 2 data structures - hash map and linked list.
+Algorithm:
+
+ 1. hash map holds iterators to linked list
+ 2. linked list holds key and value, key to access hash map items
+ 3. when item is accessed, it's promoted - moved to the tail of the list - O(1) operation
+ 4. when item should be removed, we remove head of the list - O(1) operation
+ 5. when item is not promoted long time, it's moved to the head of the list automatically
+ 6. get() - O(1) performance, set() - O(1) performance
+
+       {
+    
+        class LRUCache{
+        private:
+        	struct item_t{
+        		int key, val;
+        		item_t(int k, int v) :key(k), val(v){}
+        	};
+        	typedef list<item_t> list_t;
+        	typedef unordered_map<int, list_t::iterator> map_t;
+        
+        	map_t   m_map;
+        	list_t  m_list;
+        	int     m_capacity;
+        public:
+        	LRUCache(int capacity) : m_capacity(capacity) {
+        	}
+        	int get(int key) {
+        		map_t::iterator i = m_map.find(key);
+        		if (i == m_map.end()) return -1;
+        		m_map[key] = promote(i->second);
+        		return m_map[key]->val;
+        	}
+        	void set(int key, int value) {
+        		map_t::iterator i = m_map.find(key);
+        		if (i != m_map.end()){
+        			m_map[key] = promote(i->second);
+        			m_map[key]->val = value;
+        		}
+        		else {
+        			if (m_map.size() < m_capacity){
+        				m_map[key] = m_list.insert(m_list.end(), item_t(key, value));
+        			}
+        			else {
+        				m_map.erase(m_list.front().key);
+        				m_list.pop_front();
+        				m_map[key] = m_list.insert(m_list.end(), item_t(key, value));
+        			}
+        		}
+        	}
+        	list_t::iterator promote(list_t::iterator i){
+        		list_t::iterator inew = m_list.insert(m_list.end(), *i);
+        		m_list.erase(i);
+        		return inew;
+        	}
+        };
+    }
+
+
+btw LeetCode, it was really hard to insert this code, after pressing {} button, class was improperly formatted. I inserted additional braces around class. 
+
+----------------------------------------------------------------------------------------------------
+O(1) unordered_map + list + splice
+    class LRUCache {
+    private:
+        // A list of (key, value) pairs
+        list<pair<int, int>> items;
+        // Map items to iterators (pointers) to list nodes
+        unordered_map<int, list<pair<int, int>>::iterator> cache;
+        // The capacity of the list
+        int capacity;
+
+    public:
+        LRUCache(int capacity) : capacity(capacity) {}
+
+        int get(int key) {
+            // If key is not found in hash map, return -1
+            if (cache.find(key) == cache.end())
+                return -1;
+            // Move the (key, value) pair to the beginning of the list
+            items.splice(items.begin(), items, cache[key]);
+            return cache[key]->second;
+        }
+
+        void set(int key, int value) {
+            // The key is not in the hash table
+            if (cache.find(key) == cache.end()) {
+                // If the cache is full then delete the least recently
+                // used item, which is at the end of the list
+                if (items.size() == capacity) {
+                    cache.erase(items.back().first);
+                    items.pop_back();
+                }
+                items.push_front(make_pair(key, value));
+                cache[key] = items.begin();
+            } else {
+                // Update the value associated with the key
+                cache[key]->second = value;
+                // Move the (key, value) pair to the beginning of the list
+                items.splice(items.begin(), items, cache[key]);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+&quot;Least Recently Used&quot;, let&#x27;s pay attention to the word &quot;Recently&quot;, don&#x27;t be confused.
+Just want to emphasize the word "Recently". It is not the most visited. So thinking using priority queue or double linked list can be helpful. Don't waste time implementing codes based on wrong understanding... like me...
+For example,
+
+    capacity = 2
+    set(2,1)
+    set(2,2)
+    get(2)
+    set(1,1)
+    set(4,1)
+    get(2)
+
+So what happened when set(4,1) is executed?
+2 is deleted, 1 is still there, because 1 is more "Recently" than 2.
+
+Hope this can help someone has misunderstanding on this problem.
+
+----------------------------------------------------------------------------------------------------
+Python concise solution with comments (Using OrderedDict).
+    
+    def __init__(self, capacity):
+        self.dic = collections.OrderedDict()
+        self.remain = capacity
+
+    def get(self, key):
+        if key not in self.dic:
+            return -1
+        v = self.dic.pop(key) 
+        self.dic[key] = v   # set key as the newest one
+        return v
+
+    def set(self, key, value):
+        if key in self.dic:    
+            self.dic.pop(key)
+        else:
+            if self.remain > 0:
+                self.remain -= 1  
+            else:  # self.dic is full
+                self.dic.popitem(last=False) 
+        self.dic[key] = value 
+
+----------------------------------------------------------------------------------------------------
+My easy to understand Java solution with HashMap and Doubly Linked List
+    class ListNode {
+        int key;
+        int val;
+        ListNode prev;
+        ListNode next;
+        public ListNode(int k, int v) { key = k; val = v; }
+    }
+    
+    class DoublyLinkedList {
+        private ListNode head = null;
+        private ListNode tail = null;
+        
+        public void addFirst(ListNode node) {
+            if (head == null) {
+                head = node;
+                tail = node;
+                return;
+            }
+    
+            head.prev = node;
+            node.next = head;
+            node.prev = null;
+            head = node;
+        }
+    
+        public ListNode removeLast() {
+            ListNode node = tail;
+    
+            if (tail.prev != null) {
+                tail.prev.next = null;
+                tail = tail.prev;
+            } else {
+                head = null;
+                tail = null;
+            }
+    
+            return node;
+        }
+        
+        public void promote(ListNode node) {
+            if (node.prev == null) {
+                return;
+            }
+    
+            node.prev.next = node.next;
+            if (node.next == null) {
+                tail = node.prev;
+            } else {
+                node.next.prev = node.prev;
+            }
+    
+            head.prev = node;
+            node.next = head;
+            node.prev = null;
+            head = node;
+        }
+    }
+    
+    public class LRUCache {
+        private final Map<Integer, ListNode> cachedMap = new HashMap<>();
+        private final DoublyLinkedList cachedList = new DoublyLinkedList();
+        private final int capacity;
+    
+        public LRUCache(int capacity) {
+            this.capacity = capacity;
+        }
+    
+        public int get(int key) {
+            if (!cachedMap.containsKey(key)) {
+                return -1;
+            }
+    
+            ListNode targetNode = cachedMap.get(key);
+            cachedList.promote(targetNode);
+    
+            return targetNode.val;
+        }
+    
+        public void set(int key, int value) {
+            ListNode targetNode;
+    
+            if (cachedMap.containsKey(key)) {
+                targetNode = cachedMap.get(key);
+                targetNode.val = value;
+                cachedList.promote(targetNode);
+                return;
+            }
+    
+            if (cachedMap.size() == capacity) {
+                ListNode node = cachedList.removeLast();
+                cachedMap.remove(node.key);
+            }
+    
+            targetNode = new ListNode(key, value);
+            cachedList.addFirst(targetNode);
+            cachedMap.put(targetNode.key, targetNode);
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+O(1) Java Solution
+    public class LRUCache {
+        private HashMap <Integer,Node>map;
+        private int cap;
+        private int number;
+        Node head;
+        Node tail;
+        public LRUCache(int capacity) {
+            cap=capacity;
+            number=0;
+            head=new Node(-1,-1);
+            head.pre=null;
+            head.next=null;
+            tail=head;
+            map=new HashMap<Integer,Node>(capacity);
+        }
+        
+        public int get(int key) {
+            Node ret=map.get(new Integer(key));
+            if(ret==null) return -1;
+            refresh(ret);
+            return ret.value;
+           
+        }
+        public void refresh(Node node){
+            if(node==head.next) return ;
+            Node temp=head.next ; //head node in the map;
+            Node nodePre=node.pre;
+            Node nodeNext=node.next; //save
+            head.next=node;
+            node.pre=head;
+            temp.pre=node;
+            node.next=temp;
+            nodePre.next=nodeNext;
+            if(nodeNext!=null)   nodeNext.pre=nodePre;
+                else tail=nodePre;
+            
+        }
+        
+        public void set(int key, int value) {
+            Node ret=map.get(new Integer(key));
+            if(ret!=null) {
+                refresh(ret);
+                ret.value=value;
+            }
+            else {
+                //check and delete 
+                if(number==cap){
+                    Node temp=tail;
+                    tail=tail.pre;
+                    tail.next=null;
+                    map.remove(new Integer(temp.key));
+                    number--;
+                }
+                number++;
+                //add in the last and refresh
+                Node node=new Node(key,value);
+                node.pre=tail;
+                node.next=null;
+                tail.next=node;
+                tail=node;
+                map.put(key,node);
+                refresh(node);
+            }
+            
+        }
+        class Node{
+            int key;
+            int value;
+            Node pre;
+            Node next;
+            public Node(int k,int v){
+                value=v;
+                key=k;
+            }
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very short solution using Python&#x27;s OrderedDict
+Here is a simple fast solution using Python's OrderedDict. Original credits to http://www.kunxi.org/blog/2014/05/lru-cache-in-python/ . It could be even shorter if python 3.2 was supported with `move_to_end`.
+
+    class LRUCache:
+    
+        # @param capacity, an integer
+        def __init__(self, capacity):
+            self.capacity = capacity
+            self.cache = collections.OrderedDict()
+    
+        # @return an integer
+        def get(self, key):
+            if not key in self.cache:
+                return -1
+            value = self.cache.pop(key)
+            self.cache[key] = value
+            return value
+    
+        # @param key, an integer
+        # @param value, an integer
+        # @return nothing
+        def set(self, key, value):
+            if key in self.cache:
+                self.cache.pop(key)
+            elif len(self.cache) == self.capacity:
+                self.cache.popitem(last=False)
+            self.cache[key] = value
+
+
+----------------------------------------------------------------------------------------------------
+An elegant  C++ solution
+    class LRUCache {
+    private:
+        int capacity;
+        list<int> recent;
+        unordered_map<int, int> cache;
+        unordered_map<int, list<int>::iterator> pos;
+        void use(int key) {
+            if (pos.find(key) != pos.end()) {
+                recent.erase(pos[key]);
+            } else if (recent.size() >= capacity) {
+                int old = recent.back();
+                recent.pop_back();
+                cache.erase(old);
+                pos.erase(old);
+            }
+            recent.push_front(key);
+            pos[key] = recent.begin();
+        }
+    public:
+        LRUCache(int capacity): capacity(capacity) {}
+        int get(int key) {
+            if (cache.find(key) != cache.end()) {
+                use(key);
+                return cache[key];
+            }
+            return -1;
+        }
+        void set(int key, int value) {
+            use(key);
+            cache[key] = value;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Please define least recently used, does insertion to cache count as used?
+Please define what "used" means in this least recently used.  Does insertion to cache for the very first time count as being used once?  Please clarify the following 2 case: 
+
+1) I keep on inserting different key-value pairs to the cache by calling set, then eventually cache reaches its capacity, and I need to invalidate.   
+set(1, 1)
+set (2, 1)
+....
+set(100, 1) --> capacity is 99, capacity limit reached need to invalidate.  So far, I never called get, so does it matter which entry I invalidate?
+
+
+2) I have a bunch of key-value pairs in the cache, the last entry before cache hits its capacity is a new entry.  The next insertion to cache exceeds the capacity so cache needs to be invalidated, do I invalidate the most recently inserted entry because it was never used?  Imagine I call get twice after inserting each new entry like this 
+
+set(1, 1)
+get(1)
+get(1)
+set (2, 1)
+get(2)
+get(2)
+....
+set(99, 1) --> capacity is 99, the next call is NOT get(99) 
+set(100,1) -->  which entry should be invalidated?  (99,1) or (1, 1)?   
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with doubly linked list, hash map
+    /**
+     * LRU cache. When cache is full, evict stalest entry.
+     * 
+     * Phones - cache of files...a cache miss could mean an expensive network call. 
+     * 
+     * The cache itself is a doubly linked list where items at the tail get evicted first.
+     * So new items are inserted into the head of the list.
+     * 
+     * Need a hash table mapping keys to Nodes for quick lookup.
+     * 
+     * Can't use java's LinkedList because for efficient removal we must update pointers
+     * directly on Nodes returned from the map.
+     * 
+     * If thread-safety is required and list scans can be tolerated, use Java's 
+     * ConcurrentLinkedQueue and HashTable.
+     */
+    public class LRUCache {
+    	private Map<Integer, Node> map;
+    	private Node head; // dummy "fence" head
+    	private Node tail; // dummy "fence" tail
+    	private int capacity;
+    
+    	public LRUCache(int capacity) {
+    		this.capacity = capacity;
+    		map = new HashMap<Integer, Node>();
+    		head = new Node(-1, -1);
+    		tail = new Node(-1, -1);
+    		head.next = tail; 
+    		tail.prev = head; 
+    	}
+    	
+    	public int get(int key) {
+    		if( !map.containsKey(key) ) {
+    			return -1;
+    		}
+    		Node n = map.get(key);
+    		promoteToHead(n);
+    		return n.val;
+    	}
+    	
+    	public void set(int key, int value) {
+    		Node n;
+    		// update existing Node; does not alter cache size
+    		if( map.containsKey(key) ) {
+    			n = map.get(key);
+    			n.val = value;   // map.get(n.key) will now return node with new val
+    			promoteToHead(n);
+    			
+    			return;
+    		}
+    		if( map.size() == capacity ) {
+    			Node last = tail.prev;
+    			map.remove(last.key);
+    			remove(last);
+    		}
+    		n = new Node(key, value);
+    		addFirst(n);
+    		map.put(key, n);
+    	}
+    
+    	/**
+    	 * Move given Node to head of queue.
+    	 */
+    	private void promoteToHead(Node n) {
+    		if( head != n ) {
+    			remove(n);
+    			addFirst(n);
+    		}
+    	}
+    
+    	/**
+    	 * Remove given Node from queue.
+    	 */
+    	private void remove(Node n) {
+    		n.prev.next = n.next;
+    		n.next.prev = n.prev;
+    	}
+    
+    	/**
+    	 * Insert given Node to head of queue.
+    	 */
+    	private void addFirst(Node n) {
+    		// first insert looks like:
+    		//  -1 <-> -1
+    		//  -1 <-> n <-> -1
+    		Node temp = head.next;
+    		head.next = n;
+    		n.prev = head;
+    		n.next = temp;
+    		n.next.prev = n;
+    	}
+    	
+    	public void printCache() throws Exception {
+    		if( head.next == tail ) {
+    			throw new Exception("empty cache!");
+    		}
+    		Node n = head.next;
+    		System.out.print("[ ");
+    		while( n != tail ) {
+    			System.out.print(n.val + " ");
+    			n = n.next;
+    		}
+    		System.out.println("]");
+    	}
+    	
+    	public class Node {
+        	int key;
+        	int val;
+        	Node prev;
+        	Node next;
+        		
+        	public Node(int key, int val) {
+        		this.key = key;
+        		this.val = val;
+        	}
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution using LinkedHashMap
+    import java.util.*;
+    
+    public class LRUCache {
+        LinkedHashMap<Integer, Integer> cache;
+        public LRUCache(int capacity) {
+          cache = new LinkedHashMap<Integer, Integer>(){
+          
+          @Override
+          protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {
+            if(cache.size() > capacity) {
+              return true;
+            }
+            return false;
+          }
+        };
+       }
+        
+        public int get(int key) {
+          if(cache.containsKey(key)) {
+            int value = cache.get(key);
+            moveToFront(key);
+            return value;
+          }
+          return -1;
+        }
+        
+        void moveToFront(int key) {
+     
+          int val = cache.get(key);
+          cache.remove(key);
+          cache.put(key,val);
+        }
+        
+        public void set(int key, int value) { 
+          cache.put(key, value);
+          moveToFront(key);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My O(1) solution in java
+    //Approach is to maintain a doubly link list  of key value pair (this will act as data structure for cache) and a Map which will store a reference to a node in the DLL corresponding to each key. 
+    //In get operation, we will check for the key in the Map. If it is there , get reference to the Node from the Map and extract its value  and place it at the start of the list.Otherwise, return -1
+    // For put operation, we need to put the the new node at the start of the list. If the capacity of cache is already met, remove the last node from the list(and its corresponding entry from the map).
+    //Take care of the edge cases where cache capacity is only 1.
+    
+    
+    
+    
+    public class LRUCache {
+        //Node to store the key-value pairs.
+         class Node
+            {
+                int key;
+                int value;
+                Node next;
+                Node prev;
+                public Node(int x , int y, Node n , Node p)
+                {
+                    key=x;
+                    value=y;
+                    next=n;
+                    prev=p;
+                }
+                
+            }
+            
+        // Doubly link list of type Node.    
+        class DoublyLL
+        {
+           
+            Node first;
+            Node last;
+            int size;
+            int count;
+            public DoublyLL(int c)
+            {
+                size=c;
+                count=0;
+                first=null;
+                last=null;
+                
+            }
+        }
+        HashMap<Integer,Node> map;      //The map will store a reference to the Node in DLL corresponding to each key.
+        DoublyLL dll;
+        public LRUCache(int capacity) {
+            
+           
+          dll=new DoublyLL(capacity);
+            
+            map=new HashMap <Integer,Node> ();
+            
+           
+            
+        }
+        
+        public int get(int key) {
+            
+            if(map.containsKey(key))
+            {
+                Node n=map.get(key);
+                if(n.prev!=null)
+                {
+                if(dll.last==n)
+                dll.last=n.prev;
+                n.prev.next=n.next;
+                if(n.next!=null)
+                n.next.prev=n.prev;
+                n.prev=null;
+                n.next=dll.first;
+                
+                dll.first.prev=n;
+                dll.first=n;
+                }
+                
+               
+                
+                return n.value;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+       
+        
+        public void set(int key, int value) {
+             Node n;
+          
+             if(!map.containsKey(key))
+            {
+                n=new Node(key,value,null,null);
+                if(dll.size!=dll.count)
+                {
+                         n.next=dll.first;
+                        if(dll.count!=0)
+                        {
+                            dll.first.prev=n;
+                        }
+                        else
+                        {
+                            dll.last=n;
+                            
+                        }
+                       
+                        dll.first=n;
+                        dll.count++; 
+                }
+                else
+                {
+                
+                    if(dll.count!=1)
+                         {
+                            map.remove(dll.last.key);
+                            dll.last.prev.next=null;
+                            dll.last=dll.last.prev;
+                            dll.first.prev=n;
+                            n.next=dll.first;
+                            dll.first=n;
+                             
+                         }
+                    else
+                    {   map.remove(dll.first.key);
+                        dll.first=n;
+                        dll.last=n;
+                    }
+                
+                }
+                  map.put(key,n);
+                 
+            }
+            else
+            {
+                n=map.get(key);
+                n.value=value;
+                if(n.prev!=null)
+                {
+                if(dll.last==n)
+                dll.last=n.prev;
+                n.prev.next=n.next;
+                if(n.next!=null)
+                n.next.prev=n.prev;
+                n.prev=null;
+                n.next=dll.first;
+                
+                dll.first.prev=n;
+                dll.first=n;
+                }
+            }
+                
+             
+        }
+        
+    }`
+
+----------------------------------------------------------------------------------------------------
+My solution (O(1) complexity for both) for your reference
+I used the following hash table:
+key->next younger key, next older key, value
+
+If you think about it, you will see that it enjoys the convenience of both a hash table and a linked list.
+ 
+  
+
+     class LRUCache{
+        public:
+            struct triple{
+                int older;
+                int younger;
+                int value;
+            };
+            
+            bool debug;
+            int capacity;
+            unordered_map<int, triple> cache;  //key, next younger key, next older key, value
+            int o_key;//oldest key, valid only if cache is non-empty
+            int y_key;//youngest key, valid only if cache is non-empty
+            LRUCache(int capacity) { //assume capacity>0
+                this->capacity=capacity;
+                cache.clear();
+                debug=0;
+            }
+            
+            void print(){
+                if (cache.empty()) cout<<"Empty!"<<endl;
+                else{
+                    int current_key=y_key;
+                    while (true){
+                        cout<<current_key<<':'<<cache[current_key].value<<' ';
+                        if (current_key==o_key) break;
+                        current_key=cache[current_key].older;
+                    }
+                    cout<<endl;
+                }
+            }
+            
+            int get(int key) {
+                if (cache.count(key)>0){
+                    
+                    if (key!=y_key){  //need to update the ordering 
+                        if (key==o_key){  //accessed key is the oldest one
+                            o_key=cache[key].younger;
+                            cache[key].older=y_key;
+                            cache[y_key].younger=key;
+                            y_key=key;
+                        }
+                        else{
+                            cache[cache[key].younger].older=cache[key].older;
+                            cache[cache[key].older].younger=cache[key].younger;
+                            cache[key].older=y_key;
+                            cache[y_key].younger=key;
+                            y_key=key;
+                        }
+                    }
+                    if (debug) print();
+                    return cache[key].value;
+                }
+                if (debug) print();
+                return -1;
+            }
+            
+            void set(int key, int value) {
+                if (cache.empty()){
+                    o_key=key;
+                    y_key=key;
+                    cache[key].value=value;
+                    if (debug) print();
+                    return;
+                }
+                if (cache.count(key)>0){ //already present
+                    cache[key].value=value;  //update value
+                    bool temp_debug=debug;
+                    debug=0;
+                    get(key);
+                    debug=temp_debug;
+                }else{
+                    cache[key].value=value;  //insert entry
+                    cache[key].older=y_key;
+                    cache[y_key].younger=key;
+                    y_key=key;
+                    if (cache.size()>capacity){ //delete the oldest one
+                        o_key=cache[o_key].younger;
+                        cache.erase(cache[o_key].older);
+                    }
+                }
+                if (debug) print();
+            }
+        };
+
+----------------------------------------------------------------------------------------------------

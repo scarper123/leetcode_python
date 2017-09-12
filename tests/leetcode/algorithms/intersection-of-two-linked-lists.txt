@@ -1,0 +1,768 @@
+A simple C++ solution in only 20 lines
+    class Solution {
+    public:
+        void recursion(vector<int> num, int i, int j, vector<vector<int> > &res) {
+            if (i == j-1) {
+                res.push_back(num);
+                return;
+            }
+            for (int k = i; k < j; k++) {
+                if (i != k && num[i] == num[k]) continue;
+                swap(num[i], num[k]);
+                recursion(num, i+1, j, res);
+            }
+        }
+        vector<vector<int> > permuteUnique(vector<int> &num) {
+            sort(num.begin(), num.end());
+            vector<vector<int> >res;
+            recursion(num, 0, num.size(), res);
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Really easy Java solution, much easier than the solutions with very high vote
+Use an extra boolean array " boolean[] used"  to indicate whether the value is added to list. 
+
+Sort the array "int[] nums" to make sure we can skip the same value.
+
+when a number has the same value with its previous, we can use this number only if his previous is used
+ 
+
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] nums) {
+            List<List<Integer>> res = new ArrayList<List<Integer>>();
+            if(nums==null || nums.length==0) return res;
+            boolean[] used = new boolean[nums.length];
+            List<Integer> list = new ArrayList<Integer>();
+            Arrays.sort(nums);
+            dfs(nums, used, list, res);
+            return res;
+        }
+    
+        public void dfs(int[] nums, boolean[] used, List<Integer> list, List<List<Integer>> res){
+            if(list.size()==nums.length){
+                res.add(new ArrayList<Integer>(list));
+                return;
+            }
+            for(int i=0;i<nums.length;i++){
+                if(used[i]) continue;
+                if(i>0 &&nums[i-1]==nums[i] && !used[i-1]) continue;
+                used[i]=true;
+                list.add(nums[i]);
+                dfs(nums,used,list,res);
+                used[i]=false;
+                list.remove(list.size()-1);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A non-recursive C++ implementation with O(1) space cost
+    class Solution {
+    public:
+    	vector<vector<int> > permuteUnique(vector<int> &S) {
+    		// res.clear();
+    		sort(S.begin(), S.end());		
+    		res.push_back(S);
+    		int j;
+    		int i = S.size()-1;
+    		while (1){
+    			for (i=S.size()-1; i>0; i--){
+    				if (S[i-1]< S[i]){
+    					break;
+    				}
+    			}
+    			if(i == 0){
+    				break;
+    			}
+    
+    			for (j=S.size()-1; j>i-1; j--){
+    				if (S[j]>S[i-1]){
+    					break;
+    				}
+    			}					
+    			swap(S[i-1], S[j]);
+    			reverse(S, i, S.size()-1);
+    			res.push_back(S);
+    		}
+    		return res;
+        }
+    	void reverse(vector<int> &S, int s, int e){		
+    		while (s<e){
+    			swap(S[s++], S[e--]);
+    		}
+    	}
+    	
+    	vector<vector<int> > res;
+    };
+
+Basically, assume we have "1234", the idea is to increase the number in ascending order, so next is "1243", next is "1324", and so on.
+
+----------------------------------------------------------------------------------------------------
+9-line python solution with 1 line to handle duplication, beat 99% of others :-)
+Very similar to Permutation I, see explanations in https://leetcode.com/discuss/19510/my-ac-simple-iterative-java-python-solution. To handle duplication, just avoid inserting a number before any of its duplicates.
+
+    def permuteUnique(self, nums):
+        ans = [[]]
+        for n in nums:
+            new_ans = []
+            for l in ans:
+                for i in xrange(len(l)+1):
+                    new_ans.append(l[:i]+[n]+l[i:])
+                    if i<len(l) and l[i]==n: break              #handles duplication
+            ans = new_ans
+        return ans
+
+----------------------------------------------------------------------------------------------------
+Accepted backtracking C++ solution by using map (28ms)
+I see most solutions are using next permutation. That's great and only uses O(1) space.
+
+Anyway I am sharing backtracking solution which uses O(n) space. This is actually a typical backtracking problem. We can use hash map to check whether the element was already taken. However, we could get TLE if we check vector<int> num every time. So we iterate the hash map instead.
+
+    class Solution {
+    public:
+    vector<vector<int> > permuteUnique(vector<int> &num) {
+        vector<vector<int>> v;
+        vector<int> r;
+        map<int, int> map;
+        for (int i : num)
+        {
+            if (map.find(i) == map.end()) map[i] = 0;
+            map[i]++;
+        }
+        permuteUnique(v, r, map, num.size());
+        return v;
+    }
+    
+    void permuteUnique(vector<vector<int>> &v, vector<int> &r, map<int, int> &map, int n)
+    {
+        if (n <= 0)
+        {
+            v.push_back(r);
+            return;
+        }
+        for (auto &p : map)
+        {
+            if (p.second <= 0) continue;
+            p.second--;
+            r.push_back(p.first);
+            permuteUnique(v, r, map, n - 1);
+            r.pop_back();
+            p.second++;
+        }
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my Java code with detailed explanantion
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] nums) {
+            List<List<Integer>> ans = new ArrayList<>();
+            if (nums==null || nums.length==0) { return ans; }
+            permute(ans, nums, 0);
+            return ans;
+        }
+        
+        private void permute(List<List<Integer>> ans, int[] nums, int index) {
+            if (index == nums.length) { 
+                List<Integer> temp = new ArrayList<>();
+                for (int num: nums) { temp.add(num); }
+                ans.add(temp);
+                return;
+            }
+            Set<Integer> appeared = new HashSet<>();
+            for (int i=index; i<nums.length; ++i) {
+                if (appeared.add(nums[i])) {
+                    swap(nums, index, i);
+                    permute(ans, nums, index+1);
+                    swap(nums, index, i);
+                }
+            }
+        }
+        
+        private void swap(int[] nums, int i, int j) {
+            int save = nums[i];
+            nums[i] = nums[j];
+            nums[j] = save;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my recursive solution
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] num) {
+            Arrays.sort(num);
+            List<List<Integer>> result = new ArrayList<List<Integer>>();
+            List<Integer> current = new ArrayList<Integer>();
+            boolean[] visited = new boolean[num.length];
+            permute(result, current, num, visited);
+            return result;
+        }
+        
+        private void permute(List<List<Integer>> result, List<Integer> current, int[] num, boolean[] visited) {
+            if (current.size() == num.length) {
+                result.add(new ArrayList<Integer>(current));
+                return;
+            }
+            for (int i=0; i<visited.length; i++) {
+                if (!visited[i]) {
+                    if (i > 0 && num[i] == num[i-1] && visited[i-1]) {
+                        return;
+                    }
+                    visited[i] = true;
+                    current.add(num[i]);
+                    permute(result, current, num, visited);
+                    current.remove(current.size()-1);
+                    visited[i] = false;
+                }
+            }
+        }
+    }
+
+The idea to resolve duplicate is to ensure that for elements with the same value, we make sure that they are picked up in the ascending order of index. To implement this, every time we try to pick up some value, we just check if the previous element has the same value and is visited or not. If so, we just return!
+
+----------------------------------------------------------------------------------------------------
+Short iterative Java solution
+Hi guys!
+
+Here's an iterative solution which doesn't use nextPermutation helper. It builds the permutations for i-1 first elements of an input array and tries to insert the ith element into all positions of each prebuilt i-1 permutation. I couldn't come up with more effective controling of uniqueness than just using a Set.
+
+See the code below!
+
+----------
+
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] num) {
+            LinkedList<List<Integer>> res = new LinkedList<>();
+            res.add(new ArrayList<>());
+            for (int i = 0; i < num.length; i++) {
+                Set<String> cache = new HashSet<>();
+                while (res.peekFirst().size() == i) {
+                    List<Integer> l = res.removeFirst();
+                    for (int j = 0; j <= l.size(); j++) {
+                        List<Integer> newL = new ArrayList<>(l.subList(0,j));
+                        newL.add(num[i]);
+                        newL.addAll(l.subList(j,l.size()));
+                        if (cache.add(newL.toString())) res.add(newL);
+                    }
+                }
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Iterative Python solution without using set, 111ms
+Duplication happens when we insert the duplicated element before and after the same element, to eliminate duplicates, just insert only after the same element.
+
+    
+    def permuteUnique(self, num):
+        if not num:
+            return []
+        num.sort()
+        ret = [[]]
+        for n in num:
+            new_ret = []
+            l = len(ret[-1])
+            for seq in ret:
+                for i in range(l, -1, -1):
+                    if i < l and seq[i] == n:
+                        break
+                    new_ret.append(seq[:i] + [n] + seq[i:])
+            ret = new_ret
+        return ret
+
+----------------------------------------------------------------------------------------------------
+Short and Fast Recursive Java solution Easy to understand with Explaination
+The idea is to try to put every number at the beginning of the array, and then do the same thing for the rest of the array.
+
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] nums) {
+            List<List<Integer>> res = new ArrayList<List<Integer>>();
+            Arrays.sort(nums);
+            LinkedList<Integer> list = new LinkedList<Integer>();
+            for (int num : nums) list.add(num);
+            permute(list, 0, res);
+            return res;
+        }
+        private void permute(LinkedList<Integer> nums, int start, List<List<Integer>> res){
+            if (start == nums.size() - 1){
+                res.add(new LinkedList<Integer>(nums));
+                return;
+            }
+            for (int i = start; i < nums.size(); i++){
+                if (i > start && nums.get(i) == nums.get(i - 1)) continue;
+                nums.add(start, nums.get(i));
+                nums.remove(i + 1);
+                permute(nums, start + 1, res);
+                nums.add(i + 1, nums.get(start));
+                nums.remove(start);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy solution using code in nextPermutation
+Well, have you solved the [Next Permutation][1] problem? If so and you have handled the cases of duplicates at that problem, your code can be used in this problem. The idea is fairly simple: 
+
+ 1. sort `nums` in ascending order, add it to `res`; 
+ 2. generate the next permutation of `nums` using `nextPermutation()`, and add it to `res`;
+ 3. repeat 2 until the next permutation of `nums` returns to the sorted condition in 1.
+ 
+The code is as follows. For more about the idea of `nextPermutation()`, please visit [this solution][2].
+
+        bool nextPermutation(vector<int>& nums) { 
+            int k = -1;
+            for (int i = nums.size() - 2; i >= 0; i--) {
+                if (nums[i] < nums[i + 1]) {
+                    k = i;
+                    break;
+                }
+            }
+            if (k == -1) {
+                sort(nums.begin(), nums.end());
+                return false;
+            }
+            int l = -1;
+            for (int i = nums.size() - 1; i > k; i--) {
+                if (nums[i] > nums[k]) {
+                    l = i;
+                    break;
+                }
+            }
+            swap(nums[k], nums[l]);
+            reverse(nums.begin() + k + 1, nums.end());
+            return true;
+        }
+        vector<vector<int>> permuteUnique(vector<int>& nums) {
+            vector<vector<int> > res;
+            sort(nums.begin(), nums.end());
+            res.push_back(nums);
+            while (nextPermutation(nums))
+                res.push_back(nums);
+            return res;
+        }
+
+
+  [1]: https://leetcode.com/problems/next-permutation/
+  [2]: https://leetcode.com/discuss/38247/classic-simple-algorithm-from-wikipedia-implementation-12ms
+
+----------------------------------------------------------------------------------------------------
+My C++ recursive DFS + backtracking solutions
+Using an unordered_map to get all the distinct elements and the number of their occurence so that we don't need to do sorting. Then do dfs and backtracking to generate all the permutations: for each iteration, put each available distinct element (i.e. numMap->second >0) into path, update numMap, and do DFS at the next level. Once path has a length of len, then we get a new permutation and just add path to res.
+
+    class Solution {
+    private: 
+        void  dfsHelper(vector<vector<int>>  &res, vector<int> &path, unordered_map<int, int> &numMap, int len)
+        {
+            if(path.size()==len) {res.push_back(path); return;}
+            for(auto it = numMap.begin(); it != numMap.end(); ++it)
+            {
+                if(it->second)
+                {
+                    path.push_back(it->first); // update the current path
+                    --(it->second); // and map
+                    dfsHelper(res, path, numMap, len); // then do dfs at the next level
+                    path.pop_back(); // backtracking by recovering path and map
+                    ++(it->second);
+                }
+            }
+        }
+    
+    public:
+        vector<vector<int>> permuteUnique(vector<int>& nums) {
+            int i,len = nums.size();
+            vector<vector<int>> res;
+            if(len>0)
+            {
+                vector<int> path;
+
+                unordered_map<int, int> numMap; //generate a map
+                for(i=0; i<len; ++i) ++numMap[nums[i]];
+
+                dfsHelper(res, path, numMap, len);
+            }
+            return res;
+            
+            
+        }
+    };
+
+If we do soring, then the unordered_map is not needed.
+
+    class Solution {
+    private:
+        void dfs(vector<vector<int>> &res, vector<int> &cur, vector<int> canVec, int len)
+        {
+            if(cur.size()==len)
+            {
+                res.push_back(cur);
+            }
+            else
+            {
+                for(auto i=0; i<canVec.size(); ++i)
+                {
+                    if(i>0 && canVec[i] == canVec[i-1] ) continue;
+                    cur.push_back(canVec[i]);
+                    vector<int> temp = canVec;
+                    temp.erase(temp.begin()+i);
+                    dfs(res, cur, temp, len);
+                    cur.pop_back();
+                }
+            }
+        }
+    
+    public:
+        vector<vector<int>> permuteUnique(vector<int>& nums) {
+            
+            vector<vector<int>> res;    
+            int  len = nums.size();
+            if(len>0)
+            {
+                vector<int> cur;
+                std::sort(nums.begin(), nums.end());
+                dfs(res, cur, nums, len);
+            }
+            return res;
+            
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Small modification of Permutation I , using a set
+    public static List<List<Integer>> permuteUnique(int[] nums) {
+        Arrays.sort(nums);
+        List<List<Integer>> res = new ArrayList<List<Integer>>();
+        permute(nums,0,nums.length,res);
+        return res;
+    }
+    public static void permute(int[] nums, int i, int j, List<List<Integer>> res){
+        
+        if(i == j-1){
+            ArrayList<Integer> list = new ArrayList<Integer>();
+            for(int x:nums) list.add(x);
+            res.add(list);
+            return;
+        }
+        HashSet<Integer> visited= new HashSet<Integer>();
+        for(int k=i;k<j;k++){
+            if(!visited.contains(nums[k])){
+                swap(nums,i,k);
+                permute(nums,i+1,j,res);
+                swap(nums,i,k);
+                visited.add(nums[k]);
+            }
+            
+        }
+    }
+    public static void swap(int[] nums, int i,int j){
+        int tmp = nums[j];
+        nums[j] = nums[i];
+        nums[i] = tmp;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Iterative solution, no Set needed!
+In each iteration, put the new number to all possible place. 
+To avoid duplicate we also have to:
+1) For duplicate numbers in a row, only add same number in in front of them.
+2) Break when same number exists in the permutation.
+
+
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] nums) {
+            LinkedList<List<Integer>> r = new LinkedList<>();
+            r.add(new ArrayList<Integer>());
+            for(int i=0; i<nums.length; i++){
+                int n = r.size();
+                for(int j=0; j<n; j++){
+                    List<Integer> list = r.poll();
+                    for(int k=0; k<=list.size(); k++){
+                        if(k > 0 && list.get(k-1) == nums[i])
+                            break;
+                        ArrayList<Integer> t = new ArrayList<>(list);
+                        t.add(k, nums[i]);
+                        r.offer(t);
+                    }
+                }
+            }
+            return r;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Short 40ms C++ solution similar to Permutation I solution
+This is like the Permutation I solution, but we use an unordered_set to avoid swapping elements that are the same (which would generate identical permutations).
+
+    class Solution {
+    public:
+    
+        void permuteUniqueHelper(int i, vector<int>& nums, vector<vector<int> >& result) {
+            if (i == nums.size()) { result.emplace_back(nums); return; }
+            unordered_set<int> st;
+            for (int j = i; j < nums.size(); ++j) {
+                if (st.count(nums[j]) == 1) { continue; }
+                st.insert(nums[j]);
+                std::swap(nums[i], nums[j]);
+                permuteUniqueHelper(i + 1, nums, result);
+                std::swap(nums[i], nums[j]);
+            }
+        }
+        
+        vector<vector<int>> permuteUnique(vector<int>& nums) {
+            vector<vector<int> > result;
+            permuteUniqueHelper(0, nums, result);
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+6 lines Python &#x2F; Ruby
+Build the list of permutations one number at a time, insert the number into each already built permutation but only **before** other instances of the same number, never after. Inspired by [cbmbbz's already good solution](https://leetcode.com/discuss/77245/line-python-solution-with-line-handle-duplication-beat-others), though I then saw others had used the idea earlier.
+
+---
+
+Python solution
+-
+
+To find the last index for inserting new number `n` into old permutation `p`, I search for previous instances of `n` in `p`. But because `index` throws an exception if unsuccessful, I add a [sentinel](https://en.wikipedia.org/wiki/Sentinel_value) `n` at the end (which is the appropriate last insertion index then).
+
+    def permuteUnique(self, nums):
+        perms = [[]]
+        for n in nums:
+            perms = [p[:i] + [n] + p[i:]
+                     for p in perms
+                     for i in xrange((p + [n]).index(n) + 1)]
+        return perms
+
+Or as "one-liner" using `reduce`:
+
+    def permuteUnique(self, nums):
+        return reduce(lambda perms, n: [p[:i] + [n] + p[i:]
+                                        for p in perms
+                                        for i in xrange((p + [n]).index(n) + 1)],
+                      nums, [[]])
+
+---
+
+Ruby solution
+-
+
+    def permute_unique(nums)
+      nums.reduce([[]]) { |perms, n|
+        perms.flat_map { |p|
+          last = p.index(n) || p.size
+          (0..last).map { |i| p[0,i] + [n] + p[i..-1] }
+        }
+      }
+    end
+
+----------------------------------------------------------------------------------------------------
+TLE on {-1, -1, 3, -1}, please help
+public List<List<Integer>> permuteUnique(int[] num) `{`
+        ArrayList<List<Integer>> rst = new ArrayList<List<Integer>>();
+        Arrays.sort(num);
+        getPermute(num, 0, rst);
+        return rst;
+    }
+    
+    public void getPermute(int[] num, int start, ArrayList<List<Integer>> rst){
+        
+        if(start == num.length){
+            ArrayList<Integer> list = new ArrayList<Integer>();
+            for(int i : num){
+                list.add(i);
+            }
+            rst.add(list);
+            return;
+        }
+        
+        for(int i = start; i < num.length; i++){
+            if(i > start && num[i] == num[start]){
+                continue;
+            }
+            swap(num, i, start);
+            getPermute(num, start + 1, rst);
+            swap(num, i, start);
+        }
+    }
+    
+    private void swap(int[] num, int i, int j){
+        int temp = num[i];
+        num[i] = num[j];
+        num[j] = temp;
+    }
+
+
+Anyone has a clue why this code will cause TLE? It runs pretty will on my eclipse
+
+----------------------------------------------------------------------------------------------------
+For those who get TLE&#91;3,3,0,0,2,3,2&#93;
+    #include<vector>
+    #include<iostream>
+    using namespace std;
+    
+    class Solution {
+    public:
+        /* methods 1: no sort, swap twice, use reference */
+        void recur(vector<int> &nums, int begin, vector< vector<int> > &res){
+            if(begin == nums.size()){
+                res.push_back(nums);
+                return;
+            }
+            for(int i = begin; i < nums.size(); i++){
+                if(begin != i && nums[begin] == nums[i])
+                    continue;
+                swap(nums[begin], nums[i]);
+                recur(nums, begin + 1, res);
+                swap(nums[begin], nums[i]);
+            }
+        }
+        vector< vector<int> > permuteUnique(vector<int>& nums) {
+            vector< vector<int> > res;
+            recur(nums, 0, res);
+            return res;
+        }
+    
+        /*methods 2: sorted, pass value */
+        void recursion(vector<int> num, int i, int j, vector<vector<int> > &res) {
+            if (i == j-1) {
+                res.push_back(num);
+                return;
+            }
+            for (int k = i; k < j; k++) {
+                if (i != k && num[i] == num[k]) continue;
+                swap(num[i], num[k]);
+                recursion(num, i+1, j, res);
+            }
+        }
+        vector<vector<int> > permuteUnique2(vector<int> &num) {
+            sort(num.begin(), num.end());
+            vector<vector<int> >res;
+            recursion(num, 0, num.size(), res);
+            return res;
+        }
+    };
+    
+    int main(){
+        class Solution a;
+        int n[] = {3,3,0,0,2,3,2};
+        vector<int> nums;
+        for(int i = 0; i < sizeof(n) / sizeof(int); i++)
+            nums.push_back(n[i]);
+        vector< vector<int> > res = a.permuteUnique(nums);
+        vector< vector<int> > res2 = a.permuteUnique2(nums);
+        cout << "size of methods 1: " << res.size() << endl << "size of methods 2: " << res2.size() << endl;
+        return 0;
+    }
+
+At first I use the first method and run into the problem and couldn't figure out why,then I find the answer at 
+[https://leetcode.com/discuss/25279/a-simple-c-solution-in-only-20-lines?state=edit-66279&show=61784#a61784][1] (in the first answer).
+
+Before I figured it out, I also inplement this two methods to see the difference of the output, and it's really vivid; )
+After you run it, res.size() is much bigger than res2.size() because it contains duplicate answers!
+Let's take this array (1,2,2,3) for example, now pos(start) = 0 and i = 0;
+
+(1,2,2,3) (pos = 0, i = 0)
+
+(2,1,2,3) (pos = 0, i = 1)
+
+(2,2,1,3) (pos = 0, i =2)
+
+(3,2,2,1) (pos = 0, i =3)
+
+In the second case and third case,the permutations of subsets (1,2,3) and (2,1,3) are exactly the same, so it generates duplicate answers as it continues recursion.
+
+REALLY appreciate BarneyZhao and TonyLic for pointing it out for me!
+
+
+  [1]: https://leetcode.com/discuss/25279/a-simple-c-solution-in-only-20-lines
+
+----------------------------------------------------------------------------------------------------
+Accepted iterative solution in java
+Here's my iterative solution in java:
+
+
+    public class Solution {
+        public List<List<Integer>> permuteUnique(int[] num) {
+            Set<List<Integer>> permutations = new HashSet<List<Integer>>();
+            
+            if(num.length > 0){
+                permutations.add(Arrays.asList(num[0]));
+                
+                for(int index = 1; index < num.length; index++) {
+                  
+                    Set<List<Integer>> newPermutations = new HashSet<List<Integer>>();
+                    for(List<Integer> list : permutations){
+    
+                        for(int innerIndex = 0; innerIndex <= list.size(); innerIndex++){
+                            List<Integer> newList = new ArrayList(list);
+                            newList.add(innerIndex, num[index]);
+                            newPermutations.add(newList);
+                        }
+                    }
+                    
+                    permutations = newPermutations;
+                }
+            }
+            return new ArrayList<List<Integer>>(permutations);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Recursive Solution with Minimal Extra Space
+The idea is to directly modify the order of original array using a swap method instead of creating new list saving the results of every recursive call.
+
+    public class Solution {
+    public List<List<Integer>> permuteUnique(int[] nums) {
+
+        List<List<Integer>> result = new ArrayList();
+        if(nums.length==0) return result;
+        backTrack(nums, result, 0, nums.length-1);
+        return result;
+        
+    }
+    
+    public void backTrack(int[] nums, List<List<Integer>> result, int begin, int end){
+        if(begin>end){
+            //changing int[] to arraylist and save into final result list
+            result.add(new ArrayList<Integer>() {{ for (int i : nums) add(i); }});
+        }
+        
+        else{
+            for(int i=begin; i<=end; i++){
+               
+                if(!isDuplicate(nums, begin, i)){
+                    swap(nums,i,begin);
+                    backTrack(nums, result, begin+1, end); 
+                    swap(nums,i,begin);
+                }
+                
+            }
+        
+        }
+        
+    }
+    
+    //check whether the current number has appeared in the subarray. if same number appears, we do not need to move this number again
+
+    public boolean isDuplicate(int[] nums, int begin, int i){
+        for(int a=begin; a<i; a++){
+            if(nums[a]==nums[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public void swap(int[] nums, int i, int j){
+        int buf = nums[i];
+        nums[i] = nums[j];
+        nums[j] = buf;
+    }
+}
+
+----------------------------------------------------------------------------------------------------

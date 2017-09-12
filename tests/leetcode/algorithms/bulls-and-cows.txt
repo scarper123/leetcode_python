@@ -1,0 +1,499 @@
+Clean Java solution (hashmap + bits manipulation)
+    public List<String> findRepeatedDnaSequences(String s) {
+        Set<Integer> words = new HashSet<>();
+        Set<Integer> doubleWords = new HashSet<>();
+        List<String> rv = new ArrayList<>();
+        char[] map = new char[26];
+        //map['A' - 'A'] = 0;
+        map['C' - 'A'] = 1;
+        map['G' - 'A'] = 2;
+        map['T' - 'A'] = 3;
+
+        for(int i = 0; i < s.length() - 9; i++) {
+            int v = 0;
+            for(int j = i; j < i + 10; j++) {
+                v <<= 2;
+                v |= map[s.charAt(j) - 'A'];
+            }
+            if(!words.add(v) && doubleWords.add(v)) {
+                rv.add(s.substring(i, i + 10));
+            }
+        }
+        return rv;
+    }
+
+----------------------------------------------------------------------------------------------------
+7 lines simple Java, O(n)
+    public List<String> findRepeatedDnaSequences(String s) {
+        Set seen = new HashSet(), repeated = new HashSet();
+        for (int i = 0; i + 9 < s.length(); i++) {
+            String ten = s.substring(i, i + 10);
+            if (!seen.add(ten))
+                repeated.add(ten);
+        }
+        return new ArrayList(repeated);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+I did it in 10 lines of C++
+The main idea is to store the substring as int in map to bypass the memory limits.
+
+There are only four possible character A, C, G, and T, but I want to use 3 bits per letter instead of 2.
+
+Why? It's easier to code.
+
+A is 0x41, C is 0x43, G is 0x47, T is 0x54. Still don't see it? Let me write it in octal.
+
+A is 0101, C is 0103, G is 0107, T is 0124. The last digit in octal are different for all four letters. That's all we need!
+
+We can simply use `s[i] & 7` to get the last digit which are just the last 3 bits, it's much easier than lookup table or switch or a bunch of if and else, right?
+
+We don't really need to generate the substring from the int. While counting the number of occurrences, we can push the substring into result as soon as the count becomes 2, so there won't be any duplicates in the result.
+
+    vector<string> findRepeatedDnaSequences(string s) {
+        unordered_map<int, int> m;
+        vector<string> r;
+        int t = 0, i = 0, ss = s.size();
+        while (i < 9)
+            t = t << 3 | s[i++] & 7;
+        while (i < ss)
+            if (m[t = t << 3 & 0x3FFFFFFF | s[i++] & 7]++ == 1)
+                r.push_back(s.substr(i - 10, 10));
+        return r;
+    }
+
+BTW, the OJ doesn't seems to have test cases which the given string length is smaller than 9, so I didn't check it to make the code simpler.
+
+Any suggestions?
+
+Update:
+
+I realised that I can use `s[i] >> 1 & 3` to get 2 bits, but then I won't be able to remove the first loop as 1337c0d3r suggested.
+
+----------------------------------------------------------------------------------------------------
+Short Java &quot;rolling-hash&quot; solution
+Hi guys!
+
+The idea is to use [rolling hash][1] technique or in case of string search also known as [Rabin-Karp algorithm][2]. As our alphabet A consists of only 4 letters we can be not afraid of collisions. The hash for a current window slice could be found in a constant time by subtracting the former first character times size of the A in the power of 9 and updating remaining hash by the standard rule: hash = hash*A.size() + curr_char.
+
+Check out the Java code below.
+
+Hope it helps!
+
+----------
+
+    public class Solution {
+        private static final Map<Character, Integer> A = new HashMap<>();
+        static { A.put('A',0); A.put('C',1); A.put('G',2); A.put('T',3); }
+        private final int A_SIZE_POW_9 = (int) Math.pow(A.size(), 9);
+    
+        public List<String> findRepeatedDnaSequences(String s) {
+            Set<String> res = new HashSet<>();
+            Set<Integer> hashes = new HashSet<>();
+            for (int i = 0, rhash = 0; i < s.length(); i++) {
+                if (i > 9) rhash -= A_SIZE_POW_9 * A.get(s.charAt(i-10));
+                rhash = A.size() * rhash + A.get(s.charAt(i));
+                if (i > 8 && !hashes.add(rhash)) res.add(s.substring(i-9,i+1));
+            }
+            return new ArrayList<>(res);
+        }
+    }
+
+  [1]: http://en.wikipedia.org/wiki/Rolling_hash
+  [2]: http://en.wikipedia.org/wiki/Rabin%E2%80%93Karp_algorithm
+
+----------------------------------------------------------------------------------------------------
+10 lines C++ code, 8 ms passed!
+    vector<string> findRepeatedDnaSequences(string s) {
+        char  hashMap[1048576] = {0};
+        vector<string> ans;
+        int len = s.size(),hashNum = 0;
+        if (len < 11) return ans;
+        for (int i = 0;i < 9;++i)
+            hashNum = hashNum << 2 | (s[i] - 'A' + 1) % 5;
+        for (int i = 9;i < len;++i)
+            if (hashMap[hashNum = (hashNum << 2 | (s[i] - 'A' + 1) % 5) & 0xfffff]++ == 1)
+                ans.push_back(s.substr(i-9,10));
+        return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Am I understanding the problem wrongly? What about AAAACCCCCA?
+Am I understanding the problem wrongly? In the example given in the problem, 
+Aren't AAAACCCCCA, AAACCCCCAA, AACCCCCAAA and ACCCCCAAAA valid repetition of sequences as well?
+
+----------------------------------------------------------------------------------------------------
+20 ms solution (C++) with explanation
+One obvious way to do this is to use a hash table mapping strings to counts.  (e.g. H["AAAAAAAAAA"] represents the number of times we have seen AAAAAAAAAA.  This will work in O(n) time, but its useful to discuss why this is not a good solution:
+
+ - Runtime constant (from hashing): When using a hash table, there is a runtime hit for hashing the string.  In this case, converting the string to a table index.  That will presumably mean looking at each character of the string. Since each character is part of 10 different substrings (other than the end characters), that means 10n character reads.  Still linear, but we can do better on the constant.
+ - Memory (values): There isn't any reason to store a count. Each
+   possible string has only 3 states we need to track: "never been
+   seen", "been seen once", and "been seen more than once".  This
+   requires only two bits to track -- not the 4-8 bytes needed for an
+   integer.
+ - Memory (keys): A hash table needs to store each key (to resolve collisions).  At 10 bytes per key, thats 10*n bytes -- a potential problem if n is every large, and completely unnecessary.
+
+Here is how we address the three problems:
+
+**Hashing**: We compute the hash ourselves, but take advantage of the overlapping.  We treat each letter as a two-bit number.  (Arbitrarily, A=0, C=1, G=2, T=3.) We treat ten consecutive letters as a 20-bit integer.  We can calculate the first one with:
+
+        int val = 0;
+        for (int i=0; i < 10; i++)
+            val = (val << 2) | char2val(s[i]);
+
+Now, to compute the next string:
+
+       val = ((val << 2) & mask) | char2val(s[10]);
+
+Where:
+
+ 1. mask: 20 consecutive bits ((1 << 21) -1).  
+ 2. ((val << 2) & mask: shift everything over two bits, and get rid of the most significant bits.
+ 3. ((val << 2) & mask) | char2val(s[10]): Replace the right-most two bits with the character code.
+
+Much faster than looking at every character 10 times.
+
+
+**Hash table**: We instead use two bit-sets.  There are 2^{21}-1 possible strings.  We need a bit in each set for each possible string. The first set (S1) tells us if the string has been seen once or not.  The second set (S2) tell us whether the string has been seen more than once.
+
+ 
+Code:
+
+    vector<string> findRepeatedDnaSequences(string s) {
+        if (s.size() <= 10)
+            return vector<string>();
+            
+        vector<string> R;
+        bitset<1<<20> S1;
+        bitset<1<<20> S2;
+        
+        int val = 0;
+        for (int i=0; i < 10; i++)   // Calc. the has value for the first string.
+            val = (val << 2) | char2val(s[i]);
+        S1.set(val);
+        cout << val << " | ";
+        
+        int mask = (1 << 20) - 1;
+        for (int i=10; i < s.size(); i++) {
+            // Calc the hash value for the string ending at position i.
+            val = ((val << 2) & mask) | char2val(s[i]);  
+            if (S2[val])
+                continue;
+            if (S1[val]) {
+                R.push_back(s.substr(i-10+1, 10));
+                S2.set(val);
+            }
+            else
+                S1.set(val);
+        }
+        return R;
+    }
+    
+    int char2val(char c) {
+        switch (c) {
+            case 'A': return 0;
+            case 'C': return 1;
+            case 'G': return 2;
+            case 'T': return 3;
+        }
+     }
+   
+
+----------------------------------------------------------------------------------------------------
+~11ms Solution with Unified Hash Fxn
+Appricate for advice.
+
+    vector<string> findRepeatedDnaSequences(string s)
+    {
+        vector<string> ret;
+        if ( s.length() < 11 )
+        {
+        	return ret;
+        }
+        
+        char table[1048576] = "";
+        unsigned int hash = 0U;
+        
+        for ( size_t i = 0; i < 10; ++i )
+        {
+        	/** 'A' - 'A' + 1 = 1  = 1 (mod 5)
+        	 *  'C' - 'A' + 1 = 3  = 3 (mod 5)
+        	 *  'G' - 'A' + 1 = 7  = 2 (mod 5)
+        	 *  'T' - 'A' + 1 = 20 = 0 (mod 5)
+        	 */
+        	hash = ( hash << 2 ) | ( ( s[i] - 'A' + 1 ) % 5 );
+        }
+        	
+        table[hash] = 1;
+        
+        for ( size_t i = 10; i < s.length(); ++i )
+        {
+        	hash = ( ( hash << 2 )
+                 ^ ( ( s[ i - 10 ] - 'A' + 1 ) % 5 ) << 20 )
+                 | ( ( s[i] - 'A' + 1 ) % 5 );
+        	         
+        	if ( table[hash] == 0 )
+        	{
+        		table[hash] = 1;
+        	}
+        	else if ( table[hash] == 1 )
+        	{
+        		table[hash] = 2;
+        		ret.push_back( string( s, i - 9, 10 ) );
+        	}
+        }
+        
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+Just 7 lines of code!
+I am too lazy to design my own hash function; Hence I just used the one provided by C++.
+
+
+
+ 
+
+    vector<string> findRepeatedDnaSequences(string s) {
+            
+            unordered_map<size_t,int> MP;
+            hash<string> hash_fn;
+            vector<string> ret;
+            
+            for(int i = 0; i < int(s.size()) - 9; ++i)
+                if(MP[hash_fn(s.substr(i,10))]++ == 1 )
+                   ret.push_back(s.substr(i,10));
+                   
+          return ret;
+        }
+
+----------------------------------------------------------------------------------------------------
+Easy understand and straightforward java solution
+    public class Solution {
+        public List<String> findRepeatedDnaSequences(String s) {
+            List<String> res = new ArrayList<String>();
+            Set<String> resset = new HashSet<String>();
+            if(s == null || s.length() <= 10){
+                return res;
+            }
+            Set<String> set = new HashSet<String>();
+            int len = s.length();
+            for(int i = 0; i <= len - 10; i++){
+                String sub = s.substring(i, i + 10);
+                if(!set.add(sub)){
+                    resset.add(sub);
+                }
+            }
+            res.addAll(resset);
+            return res;
+        }
+    }
+
+
+my idea is to get all the possible 10 letter long sequences and put them into set, it the operation failed, it means there are duplicates. so put the sequence into another set("AAAAAAAAAAAA" could have three "AAAAAAAAAA" sequences, so this set will remove the duplicates) then add all the set to the final list.
+
+----------------------------------------------------------------------------------------------------
+Beating 100%-submission in C, well explained and commented.
+Since there are only 4 different letters we need to distinguish, so enumeration or something similar can perfectly handle this case;
+
+<font color="#ff0000"> Given the ASCII Code for them are A - 65, C - 67, G - 71, T - 84 </font>
+
+(X - 'A' + 1)%5 will be A -> 1, C -> 3, G -> 2, T -> 0 and can be represented by only two-bits!
+10 letters can be represented by 20-bits which is smaller than 32 bits of an integer; so we can just use a integer to represent the 10-letter-length substring.
+
+> the basic idea has been presented, do not be too lazy to read code -> reading effectively is quite essential.
+
+We can now handle it using bit manipulation and hash table by just traversing one single round. 
+
+> hashTable[hashNum = (hashNum << 2 | (s[i] - 'A' + 1) % 5) & 0xfffff]
+
+Bang! End of Story!
+
+- space cost O(2^20)
+- time cost O(n)
+
+
+----------
+
+
+    char** findRepeatedDnaSequences(char*s, int* returnSize)
+    {
+        int size = strlen(s);
+        if(size < 11) return NULL; //at least 11 letters;
+        char hashTable[1<<21] = {0}; //allocate a hash map array for 20-bit key;
+        int hashNum = 0;
+        int index = 0;
+        char** sArray = (char**)malloc(sizeof(char*) * size);
+        for(int i = 0; i < 9; i++) //the head of the first key;
+            hashNum = hashNum << 2 | (*(s+i) - 'A' + 1) % 5;
+        for(int i = 9; i < size; i++) //one step forward, one different string will be covered by the key simply;
+        {
+            if(hashTable[hashNum = (hashNum << 2 | (*(s+i) - 'A' + 1) % 5) & 0xfffff]++ == 1) //each repeated substring will only be collected once;
+            {
+                sArray[index] = (char*)malloc(11 * sizeof(char));
+                strncpy(sArray[index], s+i-9, 10);
+                sArray[index++][10] = '\0';
+            }
+        }
+        *returnSize = index;
+        return sArray;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand java solution with well commented code.
+This solution is inspired. I worked to understand it myself and commented the code.
+
+    public List<String> findRepeatedDnaSequences(String s) {
+            Set<Integer> firstTime = new HashSet<Integer>();
+            Set<Integer> secondTime = new HashSet<Integer>();
+            List<String> list = new ArrayList<String>();
+            
+            char[] map = new char[26];
+            int len = s.length();
+            
+            // Hashing function. We have only 4 letters which we can represent by 2 bits.
+            map['A' - 'A'] = 0; // A = 00
+            map['C' - 'A'] = 1; // B = 01
+            map['G' - 'A'] = 2; // C = 10
+            map['T' - 'A'] = 3; // D = 11
+            
+            for(int i=0; i<= len - 10; i++)
+            {
+                int sequence = 0;
+                for(int j=i; j< i+10; j++)
+                {
+                    // Shift existing sequence by two to make space for the new character coming
+                    sequence = sequence << 2;
+                    
+                    // Copy the character from the map and paste those two bits in the newly created space. Read bit wise OR.
+                    sequence = sequence | map[s.charAt(j) - 'A'];
+                }
+                
+                // For this number to be added in the list, this should be the second time this number is appearing
+                // For this if condition to be true, firstTime.add() should be false.
+                // firstTime.add() will be false when there is already the same number present.
+                // How it will behave?
+                // First time - firstTime.add(sequence) will return T
+                // !firstTime.add(sequence) will become F
+                // secondTime.add(sequence) will NOT be executed
+                
+                // Second time addition: 
+                // First time - firstTime.add(sequence) will return F
+                // !firstTime.add(sequence) will become T
+                // secondTime.add(sequence) will be executed
+                if(!firstTime.add(sequence) && secondTime.add(sequence))
+                {
+                    list.add(s.substring(i, i+10));
+                }
+            }
+            
+            return list;
+        }
+
+----------------------------------------------------------------------------------------------------
+Java 28ms Solution Beats 100% of Java Submissions
+The idea is inspired by @crazyirontoiletpaper's solution.
+
+    public class Solution {
+        public List<String> findRepeatedDnaSequences(String DNA) {
+            ArrayList<String> res = new ArrayList<String>();
+            if(DNA.length()<10)    return res;
+            HashSet<Integer> once = new HashSet<Integer>();
+            HashSet<Integer> twice = new HashSet<Integer>();
+            int[] map = new int[26];
+            map['A'-'A'] = 0;
+            map['C'-'A'] = 1;
+            map['G'-'A'] = 2;
+            map['T'-'A'] = 3;
+            int enc = 0;
+            for(int i=0; i<9; ++i){
+                enc <<=2;
+                enc |= map[DNA.charAt(i)-'A'];
+            }
+            for(int j=9; j<DNA.length(); ++j){
+                enc <<=2;
+                enc &= 0xfffff;
+                enc |= map[DNA.charAt(j)-'A'];
+                if(!once.add(enc) && twice.add(enc))
+                    res.add(DNA.substring(j-9,j+1));
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+4 lines Python solution
+I use a defauldict to initialize as 0 the dictionary of integers, then I check the dictionary for substrings seen more than once.
+
+    class Solution:
+        # @param s, a string
+        # @return a list of strings
+        def findRepeatedDnaSequences(self, s):
+            sequences = collections.defaultdict(int) #set '0' as the default value for non-existing keys
+            for i in range(len(s)):
+                sequences[s[i:i+10]] += 1#add 1 to the count
+            return [key for key, value in sequences.iteritems() if value > 1] #extract the relevant keys
+
+----------------------------------------------------------------------------------------------------
+Accepted Java easy to understand solution
+    public List<String> findRepeatedDnaSequences(String s) {
+        List<String> list = new ArrayList<String>();
+        if (s == null || s.length() < 10) return list;
+        HashMap<Integer, Boolean> map = new HashMap<Integer, Boolean>();
+        
+        for (int i = 0; i + 10 <= s.length(); i++ ) {
+            int hash = stringToHash(s.substring(i, i + 10));
+            if (map.containsKey(hash)) {
+                if (!map.get(hash)) {
+                    list.add(s.substring(i, i + 10));
+                    map.put(hash, true);
+                }
+            } else {
+                map.put(hash, false);
+            }
+        }
+        return list;
+    }
+    
+    private int stringToHash (String s) {
+        String numberBuilder = "";
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == 'A') numberBuilder += "0";
+            if (s.charAt(i) == 'C') numberBuilder += "1";
+            if (s.charAt(i) == 'G') numberBuilder += "2";
+            if (s.charAt(i) == 'T') numberBuilder += "3";
+        }
+        return Integer.parseInt(numberBuilder, 4);
+    }
+
+Thanking for the suggestions by TWiStErRob at el. the stringToHash function can be implemented to be more efficient.
+Here TWiStErRob's code for it
+
+    private int stringToHash(String s) {
+        int numberBuilder = 0;
+        for (int i = 0; i < s.length(); i++) {
+            numberBuilder *= 4;
+                 if (s.charAt(i) == 'A') numberBuilder += 0;
+            else if (s.charAt(i) == 'C') numberBuilder += 1;
+            else if (s.charAt(i) == 'G') numberBuilder += 2;
+            else if (s.charAt(i) == 'T') numberBuilder += 3;
+        }
+        return numberBuilder;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean python code
+    class Solution(object):
+        def findRepeatedDnaSequences(self, s):
+            r, record = set(), set()
+            for i in xrange(len(s) - 9):
+                substring = s[i:i + 10]
+                [record, r][substring in record].add(substring)
+            return list(r)
+
+
+
+----------------------------------------------------------------------------------------------------
+Use unordered set to solve this question(C++)

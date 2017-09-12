@@ -1,0 +1,600 @@
+Java NLogN Solution with Explanation
+ 1. Sort the array. Ascend on width and descend on height if width are same.
+ 2. Find the [longest increasing subsequence][1] based on height. 
+
+
+----------
+
+ - Since the width is increasing, we only need to consider height. 
+ - [3, 4] cannot contains [3, 3], so we need to put [3, 4] before [3, 3] when sorting otherwise it will be counted as an increasing number if the order is [3, 3], [3, 4]
+
+
+----------
+
+
+    public int maxEnvelopes(int[][] envelopes) {
+        if(envelopes == null || envelopes.length == 0 
+           || envelopes[0] == null || envelopes[0].length != 2)
+            return 0;
+        Arrays.sort(envelopes, new Comparator<int[]>(){
+            public int compare(int[] arr1, int[] arr2){
+                if(arr1[0] == arr2[0])
+                    return arr2[1] - arr1[1];
+                else
+                    return arr1[0] - arr2[0];
+           } 
+        });
+        int dp[] = new int[envelopes.length];
+        int len = 0;
+        for(int[] envelope : envelopes){
+            int index = Arrays.binarySearch(dp, 0, len, envelope[1]);
+            if(index < 0)
+                index = -(index + 1);
+            dp[index] = envelope[1];
+            if(index == len)
+                len++;
+        }
+        return len;
+    }
+
+
+  [1]: https://leetcode.com/problems/longest-increasing-subsequence/
+
+----------------------------------------------------------------------------------------------------
+Simple DP solution
+    public int maxEnvelopes(int[][] envelopes) {
+        if (   envelopes           == null
+            || envelopes.length    == 0
+            || envelopes[0]        == null
+            || envelopes[0].length == 0){
+            return 0;    
+        }
+        
+        Arrays.sort(envelopes, new Comparator<int[]>(){
+            @Override
+            public int compare(int[] e1, int[] e2){
+                return Integer.compare(e1[0], e2[0]);
+            }
+        });
+        
+        int   n  = envelopes.length;
+        int[] dp = new int[n];
+        
+        int ret = 0;
+        for (int i = 0; i < n; i++){
+            dp[i] = 1;
+            
+            for (int j = 0; j < i; j++){
+                if (   envelopes[i][0] > envelopes[j][0]
+                    && envelopes[i][1] > envelopes[j][1]){
+                    dp[i] = Math.max(dp[i], 1 + dp[j]);    
+                }
+            }
+            
+            ret = Math.max(ret, dp[i]);
+        }
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+&lsqb;&lsqb;1,3&#93;,&#91;3,5&#93;,&#91;6,7&#93;,&#91;6,8&#93;,&#91;8,4&#93;,&#91;9,5&rsqb;&rsqb; should be 4 not 3
+<p>&#91;1,3&#93; -&gt; &#91;3,5&#93; -&gt; &#91;8,4&#93; -&gt; &#91;9,5&#93;</p>
+<p>Don&#39;t tell me that you can&#39;t rotate the envelope...coz that is silly.</p>
+<p>However, if the rotation is allowed, the O(n) algorithm will not work. You have to solve the longest path in the DAG.</p>
+<p>The question should clearly say the rotation is not allowed.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python O(nlogn) O(n) solution, beats 97%, with explanation
+    class Solution(object):
+        def maxEnvelopes(self, envs):
+            def liss(envs):
+                def lmip(envs, tails, k):
+                    b, e = 0, len(tails) - 1
+                    while b <= e:
+                        m = (b + e) >> 1
+                        if envs[tails[m]][1] >= k[1]:
+                            e = m - 1
+                        else:
+                            b = m + 1
+                    return b
+                
+                tails = []
+                for i, env in enumerate(envs):
+                    idx = lmip(envs, tails, env)
+                    if idx >= len(tails):
+                        tails.append(i)
+                    else:
+                        tails[idx] = i
+                return len(tails)
+            
+            
+            def f(x, y):
+                return -1 if (x[0] < y[0] or x[0] == y[0] and x[1] > y[1]) else 1
+                
+            envs.sort(cmp=f)
+            return liss(envs)
+
+    # Runtime: 100ms
+
+The idea is to order the envelopes and then calculate the longest increasing subsequence (LISS). We first sort the envelopes by width, and we also make sure that when the width is the same, the envelope with greater height comes first. Why? This makes sure that when we calculate the LISS, we don't have a case such as [3, 4] [3, 5] (we could increase the LISS but this would be wrong as the width is the same. It can't happen when [3, 5] comes first in the ordering).
+
+We could calculate the LISS using the standard DP algorithm (quadratic runtime), but we can just use the tails array method with a twist: we store the index of the tail, and we do leftmost insertion point as usual to find the right index in `nlogn` time. Why not rightmost? Think about the case [1, 1], [1, 1], [1, 1]. 
+
+
+
+----------------------------------------------------------------------------------------------------
+Short and simple Java solution (15 lines)
+ 
+    public int maxEnvelopes(int[][] envelopes) {
+        Arrays.sort(envelopes, (a, b) -> a[0] - b[0]);
+        int max = 0;
+        int dp [] = new int [envelopes.length];
+        for(int i = 0; i < envelopes.length; i++){
+            dp[i] = 1;
+            for(int j = 0; j < i; j++){
+                if(envelopes[j][0] < envelopes[i][0] && envelopes[j][1] < envelopes[i][1])
+                    dp[i] = Math.max(dp[i], dp[j] + 1);
+            }
+            max = Math.max(dp[i], max);
+        }
+        return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean and short nlogn solution
+See more explanation in [Longest Increasing Subsequence Size (N log N)][1]
+
+    def maxEnvelopes(self, envelopes):
+        def bin_search(A, key):
+            l, r = 0, len(A)
+            while l < r:
+                mid = (l+r)/2
+                if A[mid][1] < key[1]:
+                    l = mid + 1
+                else:
+                    r = mid
+            return l
+        envelopes.sort(
+            cmp = lambda x,y: x[0]-y[0] if x[0] != y[0] else y[1]-x[1])
+        n = len(envelopes)
+        tails = []
+        for i in range(n):
+            e = envelopes[i]
+            p = bin_search(tails, e)
+            if p == len(tails):
+                tails.append(e)
+            else:
+                tails[p] = e
+        return len(tails)
+
+
+  [1]: http://www.geeksforgeeks.org/longest-monotonically-increasing-subsequence-size-n-log-n/
+
+----------------------------------------------------------------------------------------------------
+C++ 9-line Short and Clean O(nlogn) solution (plus classic O(n^2) dp solution).
+    ///O(nlogn)
+
+    struct Solution {
+        int maxEnvelopes(vector<pair<int, int>>& es) {
+            sort(es.begin(), es.end(), [](pair<int, int> a, pair<int, int> b){
+                return a.first < b.first || (a.first == b.first && a.second > b.second);});
+            vector<int> dp;
+            for (auto e : es)
+            {
+                auto iter = lower_bound(dp.begin(), dp.end(), e.second);
+                if (iter == dp.end())
+                    dp.push_back(e.second);
+                else if (e.second < *iter)
+                    *iter = e.second;
+            }
+            return dp.size();
+        }
+    };
+
+    ///DP
+    
+    struct Solution {
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            if (envelopes.empty()) return 0;
+            sort(envelopes.begin(), envelopes.end());
+            vector<int> dp(envelopes.size(), 1);
+            for (int i = 0; i < envelopes.size(); ++i)
+                for (int j = 0; j < i; ++j)
+                    if (envelopes[j].first < envelopes[i].first && envelopes[j].second < envelopes[i].second)
+                        dp[i]  = max(dp[i] , dp[j] + 1);
+            return *max_element(dp.begin(), dp.end());
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP version, Time O(N^2) Space O(N)
+       bool cmp (pair<int, int> i, pair<int, int> j) {
+            if (i.first == j.first)
+                return i.second < j.second;
+            return i.first < j.first;
+        }
+        
+        class Solution {
+        public:
+            int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+                int N = envelopes.size();
+                vector<int> dp(N, 1);
+                int mx = (N == 0) ? 0 : 1;
+                sort(envelopes.begin(), envelopes.end(), cmp);
+                for (int i = 0; i < N; i++) {
+                    for (int j = i - 1; j >= 0; j--) {
+                        if (envelopes[i].first > envelopes[j].first && envelopes[i].second > envelopes[j].second) {
+                            dp[i] = max(dp[i], dp[j] + 1);
+                            mx = max(dp[i], mx);
+                        }
+                    }
+                }
+                return mx;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Two solutions in C++, well-explained
+practical
+
+----------------------------------------------------------------------------------------------------
+A Trick to solve this problem.
+<p>You can solve this problem in this way :</p>
+<p>let&#39;s suppose the values are given as...<br/>
+&#91;2,3&#93;<br/>
+&#91;4,6&#93;<br/>
+&#91;3,7&#93;<br/>
+&#91;4,8&#93;</p>
+<p>If we <strong>Sort</strong> this envelopes in a tricky way that <em>Sort the envelopes according to width BUT when the values of height are same, we can sort it in reverse way</em> like this :</p>
+<p>&#91;2,3&#93;<br/>
+&#91;3,7&#93;<br/>
+<strong>&#91;4,8&#93;<br/>
+&#91;4,6&#93;</strong></p>
+<p>Now just <strong>Do LIS on the all height values, you will get the answer</strong></p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ Time O(NlogN) Space O(N) , similar to LIS nlogn solution
+    bool cmp (pair<int, int> i, pair<int, int> j) {
+        if (i.first == j.first)
+            return i.second > j.second;
+        return i.first < j.first;
+    }
+    
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            int N = envelopes.size();
+            vector<int> candidates;
+            sort(envelopes.begin(), envelopes.end(), cmp);
+            for (int i = 0; i < N; i++) {
+                int lo = 0, hi = candidates.size() - 1;
+                while (lo <= hi) {
+                    int mid = lo + (hi - lo)/2;
+                    if (envelopes[i].second > envelopes[candidates[mid]].second)
+                        lo = mid + 1;
+                    else
+                        hi = mid - 1;
+                }
+                if (lo == candidates.size())
+                    candidates.push_back(i);
+                else
+                    candidates[lo] = i;
+            }
+            return candidates.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+10 lines Python code beats %96.
+class Solution(object):
+    def maxEnvelopes(self, envelopes):
+        des_ht = [a[1] for a in sorted(envelopes, key = lambda x: (x[0], -x[1]))]
+        dp, l = [0] * len(des_ht), 0
+        for x in des_ht:
+            i = bisect.bisect_left(dp, x, 0, l)
+            dp[i] = x
+            if i == l:
+                l+=1
+        return l
+
+
+----------------------------------------------------------------------------------------------------
+My Three C++ Solutions: DP, Binary Search and Lower_bound
+Solution One:
+
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            int res = 0, n = envelopes.size();
+    		vector<int> dp(n, 1);
+    		sort(envelopes.begin(), envelopes.end());
+    		for (int i = 0; i < n; ++i) {
+    			for (int j = 0; j < i; ++j) {
+    				if (envelopes[i].first > envelopes[j].first && envelopes[i].second > envelopes[j].second) {
+    					dp[i] = max(dp[i], dp[j] + 1);
+    				}
+    			}
+    			res = max(res, dp[i]);
+    		}
+    		return res;
+        }
+    };
+
+Solution Two:
+
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            vector<int> dp;
+    		sort(envelopes.begin(), envelopes.end(), [](const pair<int, int> &a, const pair<int, int> &b){
+    			if (a.first == b.first) return a.second > b.second;
+    			return a.first < b.first;
+    		});
+    		for (int i = 0; i < envelopes.size(); ++i) {
+    			int left = 0, right = dp.size(), t= envelopes[i].second;
+    			while (left < right) {
+    				int mid = left + (right - left) / 2;
+    				if (dp[mid] < t) left = mid + 1;
+    				else right = mid;
+    			}
+    			if (right >= dp.size()) dp.push_back(t);
+    			else dp[right] = t;
+    		}
+    		return dp.size();
+        }
+    };
+
+Solution Three:
+
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            vector<int> dp;
+    		sort(envelopes.begin(), envelopes.end(), [](const pair<int, int> &a, const pair<int, int> &b){
+    			if (a.first == b.first) return a.second > b.second;
+    			return a.first < b.first;
+    		});
+    		for (int i = 0; i < envelopes.size(); ++i) {
+    			auto it = lower_bound(dp.begin(), dp.end(), envelopes[i].second);
+    			if (it == dp.end()) dp.push_back(envelopes[i].second);
+    			else *it = envelopes[i].second;
+    		}
+    		return dp.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean C++ 11 Implementation with Explaination refered from &#64;kamyu104
+It is easy to relate this problem with the previous LIS problem. But how to solve it under the 2 dimensional cases. The key ideas lay at that how we deal with the equal width but different hight cases.  
+
+A clever solution is to sort the pair<int,int> array according the width, if the width is equal, just sort by the height reversely.  
+
+Then we can get the following solutions :  
+
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            int size_ = envelopes.size();
+            if(size_ < 2)  return size_; 
+            sort(envelopes.begin(), envelopes.end(), 
+                [](const pair<int, int>& a, const pair<int, int>& b) {
+                    if(a.first == b.first) {
+                        return a.second > b.second;
+                    }
+                    else {
+                        return a.first < b.first;
+                    }
+                });
+            /** find the LIS of the height, as we have filtered the width equal cases **/
+            vector<int> result;
+            for (const auto& iter : envelopes) {
+                const auto target = iter.second;
+                auto cur = lower_bound(result.begin(), result.end(), target);
+                if (cur == result.end()) {
+                    result.emplace_back(target);
+                } else {
+                    *cur = target;
+                }
+            }
+            return result.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ DP Solution with O(n^2) Time complexity O(n) Space complexity
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            int ans = 0;
+            vector<int> dp;
+            if(!envelopes.size())
+                return ans;
+            sort(envelopes.begin(), envelopes.end(), cmpfunc);
+            dp.resize(envelopes.size());
+            dp[0] = 1;
+            ans = 1;
+            for(int i = 1; i < envelopes.size(); ++ i){
+                dp[i] = 0;
+                for(int j = 0; j < i; ++ j){
+                    if(envelopes[j].first < envelopes[i].first && envelopes[j].second < envelopes[i].second)
+                        dp[i] = max(dp[i], dp[j]);
+                }
+                ++ dp[i];
+                ans = max(ans, dp[i]);
+            }
+            return ans;
+        }
+    private:
+        struct cmp{
+    	   bool operator() (const pair<int, int> &a, const pair<int, int> &b){
+    	        return a.first*a.second < b.first*b.second; 
+    	   }
+    	}cmpfunc;
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solution based on LIS
+def maxEnvelopes(self, envelopes):
+    """
+    :type envelopes: List[List[int]]
+    :rtype: int
+    """
+    if not envelopes:
+        return 0
+    
+    l = len(envelopes)
+    if l == 1:
+        return 1
+    
+    envelopes.sort(
+        cmp = lambda x, y: x[0] - y[0] if x[0] != y[0] else y[1] - x[1]) 
+    # sort the envelopes by width because they need to be inorder before consider the heigths or versa
+    
+    width = []
+    for i in envelopes:
+        width.append(i[1])
+        
+    res = self.longestSubsequence(width)
+    # the problem became LIS after sort(width)
+    
+    return res
+    
+    
+
+def longestSubsequence(self, nums):
+    """
+    return type: int (number of longest subsequence)
+    """
+    if not nums:
+        return 0
+    l = len(nums)
+    res = []
+    
+    for num in nums:
+        pos = self.binarySearch(num, res)
+        if pos >= len(res):
+            res.append(num)
+        else:
+            res[pos] = num
+    
+    return len(res)
+    
+    
+
+def binarySearch(self, target, nums):
+    """
+    return type: int (ceiling of the insert position)
+    """
+    if not nums:
+        return 0
+    
+    l = len(nums)
+    start = 0
+    end = l - 1
+    
+    while start <= end:
+        half = start + (end - start) // 2
+        if nums[half] == target:
+            return half
+        elif nums[half] < target:
+            start = half + 1
+        else:
+            end = half - 1
+        
+    return start
+
+
+----------------------------------------------------------------------------------------------------
+Clean Java solution
+    public class Solution {
+        public int maxEnvelopes(int[][] envelopes) {
+            if(envelopes.length == 0) return 0;
+            Arrays.sort(envelopes,(int[] a,int[] b) -> (a[0] - b[0] == 0 ? a[1] - b[1] : a[0] - b[0]));
+            int m = envelopes.length;
+            // max end in index i
+            int[] A = new int[m];
+            int res = 1;
+            Arrays.fill(A,1);
+            for(int i=1;i<m;i++){
+                for(int j = 0; j<i;j++) {
+                    if(envelopes[i][0] > envelopes[j][0] && envelopes[i][1] > envelopes[j][1]) {
+                        A[i] = Math.max(A[i],A[j]+1);
+                    }
+                }
+                res = Math.max(res,A[i]);
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ Answer n*ln(n) time
+    class Solution {
+      public:
+    int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+        sort(envelopes.begin(), envelopes.end());
+        vector<int> res;
+        res.reserve(envelopes.size());
+        int i=0;
+        while(i<envelopes.size()){
+            deque<vector<int>::iterator> todo;
+            int current = envelopes[i].first;
+            while(i<envelopes.size() && envelopes[i].first == current){
+                todo.push_front(std::lower_bound(res.begin(), res.end(), envelopes[i++].second));
+            }
+                
+            for(int j=0; j<todo.size(); j++){
+                if(todo[j]==res.end()) res.push_back(envelopes[i-j-1].second);
+                else *(todo[j]) = envelopes[i-j-1].second;
+            }
+        }
+        return res.size();
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ nlogn solution
+    class Solution {
+    public:
+        int maxEnvelopes(vector<pair<int, int>>& envelopes) {
+            auto Cmp = [](const pair<int, int> &a, const pair<int, int> &b) { 
+                if(a.first < b.first) return true;
+                if(a.first == b.first && a.second > b.second) return true;
+                return false;
+            };
+            auto Cmp2 = [](const pair<int, int> &a, const pair<int, int> &b) { 
+                return a.second < b.second;
+            };
+            sort(envelopes.begin(), envelopes.end(), Cmp);
+            
+            vector<pair<int, int>> res;
+            for(int i=0; i<envelopes.size(); i++) {
+                auto it = std::lower_bound(res.begin(), res.end(), envelopes[i], Cmp2);
+                if(it == res.end()) res.push_back(envelopes[i]);
+                else *it = envelopes[i];
+            }
+            return res.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+6 lines O(nlogn) Ruby
+Idea from [TianhaoSong's solution](https://leetcode.com/discuss/106946/java-nlogn-solution-with-explanation).
+
+    def max_envelopes(envelopes)
+      ends = []
+      envelopes.sort_by { |w, h| [w, -h] }.each { |_, h|
+        i = (0...ends.size).bsearch { |i| ends[i] >= h }
+        ends[i || ends.size] = h
+      }
+      ends.size
+    end
+
+If we had Ruby 2.3 here, this should also work and would be nicer:
+
+        i = ends.bsearch_index { |x| x >= h }
+
+----------------------------------------------------------------------------------------------------

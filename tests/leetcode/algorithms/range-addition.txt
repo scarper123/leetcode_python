@@ -1,0 +1,788 @@
+Short Java solution using DP O(n log n)
+    public class Solution {
+        public int lengthOfLIS(int[] nums) {            
+            int[] dp = new int[nums.length];
+            int len = 0;
+    
+            for(int x : nums) {
+                int i = Arrays.binarySearch(dp, 0, len, x);
+                if(i < 0) i = -(i + 1);
+                dp[i] = x;
+                if(i == len) len++;
+            }
+    
+            return len;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python Binary search O(nlogn) time with explanation
+`tails` is an array storing the smallest tail of all increasing subsequences with length `i+1` in `tails[i]`.
+For example, say we have `nums = [4,5,6,3]`, then all the available increasing subsequences are:
+    
+    len = 1   :      [4], [5], [6], [3]   => tails[0] = 3
+    len = 2   :      [4, 5], [5, 6]       => tails[1] = 5
+    len = 3   :      [4, 5, 6]            => tails[2] = 6
+
+We can easily prove that tails is a increasing array. Therefore it is possible to do a binary search in tails array to find the one needs update.
+
+Each time we only do one of the two:
+
+    (1) if x is larger than all tails, append it, increase the size by 1
+    (2) if tails[i-1] < x <= tails[i], update tails[i]
+
+Doing so will maintain the tails invariant. The the final answer is just the size.
+
+**Java**
+
+    public int lengthOfLIS(int[] nums) {
+        int[] tails = new int[nums.length];
+        int size = 0;
+        for (int x : nums) {
+            int i = 0, j = size;
+            while (i != j) {
+                int m = (i + j) / 2;
+                if (tails[m] < x)
+                    i = m + 1;
+                else
+                    j = m;
+            }
+            tails[i] = x;
+            if (i == size) ++size;
+        }
+        return size;
+    }
+    // Runtime: 2 ms
+
+**Python**
+
+    def lengthOfLIS(self, nums):
+        tails = [0] * len(nums)
+        size = 0
+        for x in nums:
+            i, j = 0, size
+            while i != j:
+                m = (i + j) / 2
+                if tails[m] < x:
+                    i = m + 1
+                else:
+                    j = m
+            tails[i] = x
+            size = max(i + 1, size)
+        return size
+
+    # Runtime: 48 ms
+
+
+
+
+    
+
+----------------------------------------------------------------------------------------------------
+9 lines C++ code with O(NlogN) complexity
+Inspired by http://www.geeksforgeeks.org/longest-monotonically-increasing-subsequence-size-n-log-n/
+
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> res;
+        for(int i=0; i<nums.size(); i++) {
+            auto it = std::lower_bound(res.begin(), res.end(), nums[i]);
+            if(it==res.end()) res.push_back(nums[i]);
+            else *it = nums[i];
+        }
+        return res.size();
+    }
+
+----------------------------------------------------------------------------------------------------
+My easy to understand O(n^2) solution using DP with video explanation
+This solution is taken from this great guy - 
+https://www.youtube.com/watch?v=CE2b_-XfVDk   
+
+        public int lengthOfLIS(int[] nums) 
+    	{
+    		// Base case
+    		if(nums.length <= 1) 
+    			return nums.length;
+    
+    		// This will be our array to track longest sequence length
+    		int T[] = new int[nums.length];
+    
+    		// Fill each position with value 1 in the array
+    		for(int i=0; i < nums.length; i++)
+    			T[i] = 1;
+    
+    
+    		// Mark one pointer at i. For each i, start from j=0.
+    		for(int i=1; i < nums.length; i++)
+    		{
+    			for(int j=0; j < i; j++)
+    			{
+    				// It means next number contributes to increasing sequence.
+    				if(nums[j] < nums[i])
+    				{
+    					// But increase the value only if it results in a larger value of the sequence than T[i]
+    					// It is possible that T[i] already has larger value from some previous j'th iteration
+    					if(T[j] + 1 > T[i])
+    					{
+    						T[i] = T[j] + 1;
+    					}
+    				}
+    			}
+    		}
+    
+    		// Find the maximum length from the array that we just generated 
+    		int longest = 0;
+    		for(int i=0; i < T.length; i++)
+    			longest = Math.max(longest, T[i]);
+    
+    		return longest;
+    	}
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Typical DP N^2 solution and NLogN solution from GeekForGeek
+This is a classic problem and here is a DP solution for reference 
+Please note a NLogN solution can be found in the following link
+[Geek for Geek ][1]
+
+    class Solution {
+    public:
+        // There's a typical DP solution with O(N^2) Time and O(N) space 
+        // DP[i] means the result ends at i
+        // So for dp[i], dp[i] is max(dp[j]+1), for all j < i and nums[j] < nums[i]
+        int lengthOfLIS(vector<int>& nums) {
+            const int size = nums.size();
+            if (size == 0) { return 0; } 
+            vector<int> dp(size, 1);
+            int res = 1;
+            for (int i = 1; i < size; ++i) {
+                for (int j = 0; j < i; ++j) {
+                    if (nums[j] < nums[i]) {
+                        dp[i] = max(dp[i], dp[j]+1);
+                    }
+                }
+                res = max (res, dp[i]);
+            }
+            return res;
+        }
+    };
+
+
+  [1]: http://www.geeksforgeeks.org/longest-monotonically-increasing-subsequence-size-n-log-n/
+
+----------------------------------------------------------------------------------------------------
+Fast Java Binary Search Solution with detailed explanation
+This solution uses Binary Search + DP
+
+    1, traverse from 0 to len-1, the DP array keep the longest sequence.
+    2, if the val is bigger than largest in the dp array, add it to the end;
+    3, if it is among the sequence, return the pos that bigger than pres, update the array with this position if val is smaller than dp[pos];
+    This is to keep the sequence element with the smallest number.
+
+For example:
+
+    10, 9, 2, 5, 3, 7, 101, 18
+    
+    10 
+    9
+    2
+    2,5
+    2,3
+    2,3,7
+    2,3,7,101
+    2,3,7,18
+The follow is the solution:
+
+    public class Solution {
+        public int lengthOfLIS(int[] nums) {
+            if (nums == null || nums.length == 0) {
+                return 0;
+            }
+            int[] dp = new int[nums.length];
+            dp[0] = nums[0];
+            int len = 0;
+            for (int i = 1; i < nums.length; i++) {
+                int pos = binarySearch(dp,len,nums[i]);
+                if (nums[i] < dp[pos]) dp[pos] = nums[i];
+                if (pos > len) {
+                    len = pos;
+                    dp[len] = nums[i];
+                }
+            }
+            return len+1;
+        }
+        private int binarySearch(int[] dp, int len, int val) {
+            int left = 0;
+            int right = len;
+            while(left+1 < right) {
+                int mid = left + (right-left)/2;
+                if (dp[mid] == val) {
+                    return mid;
+                } else {
+                    if (dp[mid] < val) {
+                        left = mid;
+                    } else {
+                        right = mid;
+                    }
+                }
+            }
+            if (dp[right] < val) return len+1;
+            else if (dp[left] >= val) return left;
+            else return right;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple java O(nlogn) solution
+    public int lengthOfLIS(int[] nums) 
+    {
+        List<Integer> sequence = new ArrayList();
+        for(int n : nums) update(sequence, n);
+        
+        return sequence.size();
+    }
+    
+    private void update(List<Integer> seq, int n)
+    {
+        if(seq.isEmpty() || seq.get(seq.size() - 1) < n) seq.add(n);
+        else
+        {
+            seq.set(findFirstLargeEqual(seq, n), n);
+        }
+    }
+
+    private int findFirstLargeEqual(List<Integer> seq, int target)
+    {
+        int lo = 0;
+        int hi = seq.size() - 1;
+        while(lo < hi)
+        {
+            int mid = lo + (hi - lo) / 2;
+            if(seq.get(mid) < target) lo = mid + 1;
+            else hi = mid;
+        }
+        
+        return lo;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+JAVA--------------Easy Version To Understand!!!!!!!!
+    public static int findPositionToReplace(int[] a, int low, int high, int x) {
+		int mid;
+		while (low <= high) {
+			mid = low + (high - low) / 2;
+			if (a[mid] == x)
+				return mid;
+			else if (a[mid] > x)
+				high = mid - 1;
+			else
+				low = mid + 1;
+		}
+		return low;
+	}
+
+	public static int lengthOfLIS(int[] nums) {
+		if (nums == null | nums.length == 0)
+			return 0;
+		int n = nums.length, len = 0;
+		int[] increasingSequence = new int[n];
+		increasingSequence[len++] = nums[0];
+		for (int i = 1; i < n; i++) {
+			if (nums[i] > increasingSequence[len - 1])
+				increasingSequence[len++] = nums[i];
+			else {
+				int position = findPositionToReplace(increasingSequence, 0, len - 1, nums[i]);
+				increasingSequence[position] = nums[i];
+			}
+		}
+		return len;
+	}
+
+----------------------------------------------------------------------------------------------------
+Java solution, dp, simple
+    public int lengthOfLIS(int[] nums) {
+        if(nums==null || nums.length==0){
+            return 0;
+        }
+        int[] dp = new int[nums.length];
+        int max = 1;
+        for(int index=0; index<nums.length;index++){
+            dp[index]=1;
+            for(int dpIndex=0; dpIndex<index; dpIndex++){
+                if(nums[dpIndex]<nums[index]){
+                    dp[index]=Math.max(dp[index],dp[dpIndex]+1);
+                    max=Math.max(dp[index],max);
+                }
+            }
+        }
+        return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Short C++ STL-based solution: O(n log n) time, O(1) space, with explanation
+This solution can be viewed as d.p., but I find it easier not to think of it that way.
+
+**Runtime**: To get an O(n log n ) runtime, I'm going to create a second list S.  (Stick with me for now -- I'll get rid of it in a minute to get O(1) space.)  I'll do a single pass through **nums**, and as I look at each element:
+
+* The length of S will be equal to the length of the longer subsequence I've found to that point.
+* The last element of S will be the last element of that subsequence.  (However, the earlier elements may no longer be part of that sequence -- S is not actually the subsequence itself.)
+
+At the end, the *length* of S will be our solution.
+
+S will be sorted at all times.  Each new element is inserted into S, replacing the smallest element in S that is not smaller than it (which we can find with a binary search). If that element is larger than the last element of S, then we extend S by one -- maintaining both properties.
+
+For example, if 
+
+    nums = [5,6,7,1,2,8,3,4,0,5,9]
+
+then after we prcoess the 7:
+ 
+    S = [5,6,7]
+
+after w process the 2:
+ 
+    S = [1,2,7]
+
+after we process the 8:
+
+    S = [1,2,7,8]
+
+Then we process the 3:
+
+    S = [1,2,3,8]
+
+We process the 4:
+
+    S = [1,2,3,4]
+
+and now the next three lements:
+
+    S = [0,2,3,4,5,9]
+
+S is not the actual subsequence, but it is the right length (end ends in the right number).
+
+We are making **n** passes, and doing a binary search each time.  So **O(n log n)** time.
+
+**Space**: Assuming we are allowed to destroy the list, we don't need S.  Since S will never be larger then the number of elements we have looked at, and we only need to look at each element once, we can just use the beginning of **nums** for S (keeping track of the size of "S" in a separate variable.
+
+Make using of the STL lower_bound function (find the smallest element in a sorted list that is not smaller than the target):
+
+    int lengthOfLIS(vector<int>& nums) {
+        if (nums.size() == 0)
+            return nums.size();
+
+        vector<int>::iterator m = nums.begin();  // m will mark the virtual "S.end()".
+        for (int& val : nums) {
+            auto it = lower_bound(nums.begin(), m, val);
+            *it = val;
+            if (it == m)
+                m++;
+        }
+        
+        return m - nums.begin();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) Clean and easy Java DP + Binary Search solution with detailed explanation
+I use an array dp[] to store the largest elements in the increasing subsequences and the array's index is the length of the subsequence (since this, we can make sure that the array dp[] is in-order). The idea is keep checking if nums[i] is bigger than dp[len] or not: nums[i] > dp[len] means we can retrieve a longer subsequence by adding the current element nums[i] into the result, so we just increase the pointer 'len' by one and put the current element into the new index; otherwise we need to do a binary search to find out the index of the largest element st. dp[index] < nums[i] && dp[index + 1] > nums[i] and update the dp[index] with value nums[i]. 
+
+Let's see an example:
+intput: 2 4 9 3 7 8
+
+The array 'dp' looks like these in first two iterations:
+
+2 4 0 0 0 (len = 1)
+
+2 4 9 0 0 (len = 2)
+
+In the third iteration, we notice that dp[len] ('9' here) > nums[i] ('3' here), so we update the dp[index] with value '3', then we got:
+
+2 3 9 0 0 (len = 2) <---- **Attention here**, this array doesn't mean we can retrieve subsequence [2,3,9], it only means the largest element in a length 1 subsequence is '2' ([2]), the largest element in a length 2 subsequence is '3' ([2,3]) and the largest element in a length 3 subsequence is '9' ([2,4,9]) by far.
+
+In next iteration, we update the dp[index] with value '7' again and we got:
+2 3 7 0 0 (len = 2)
+
+In the final round, obviously dp[len] (7) < nums[i] (8) so we increase the 'len' by one and put '8' into dp[3] then we got:
+2 3 7 8 0 (len = 3)
+
+Clearly len + 1 = 4 is our result : )
+
+PS: Keep in mind that 'len' always indicate the length of the longest increasing subsequence in each iteration.
+
+    public int lengthOfLIS(int[] nums) {
+        if(nums == null || nums.length == 0) {
+            return 0;
+        }
+        int[] dp = new int[nums.length];
+        dp[0] = nums[0];
+        int len = 0;
+        for(int i = 1; i < nums.length; i++) {
+            if(nums[i] > dp[len]) {
+                dp[++len] = nums[i];
+            }
+            else {
+                int index = search(dp, len, nums[i]);
+                dp[index] = nums[i];
+            }
+        }
+        return len + 1;
+    }
+
+    private int search(int[] dp, int len, int val) {
+        int start = 0;
+        while(start <= len) {
+            int mid = start + (len - start) / 2;
+            if(dp[mid] == val) {
+                return mid;
+            }
+            else if(dp[mid] < val) {
+                start = mid + 1;
+            }
+            else {
+                len = mid - 1;
+            }
+        }
+        return start;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) with explanation and references
+**Explanation**
+
+`tails[i]` stores the Longest Increasing Subsequence of length `i+1`, of which the last element is `tails[i]`. If `tails[i]` can be of multiple values, the minimum will be taken.
+
+So that we have `tails[0] <= tails[1] <= tails[2] <= ... <= tails[N - 1]`.
+
+Scan the array from beginning to the end. When an new element is met, either of following cases will happen: (And this is how we construct the `tails` array)
+
+1. The new element is larger than the tail of the longest LIS, i.e., `n > tails.back()`, then we have found a longer LIS which tail is `n`;
+
+2. The new element is no larger than the tail of the longest LIS, but it's smaller than the tail of a "not-so-long" subsequence, then we update the tail of the "not-so-long" subsequence to the smaller one. Because the tail has become smaller, this will allow us to extend the subsequence longer later if we find a value `n <= current_tail && n > new_tail`.
+
+So the entire problem becomes searching for a value in a sorted array. The best way? Binary search.
+
+**Code**
+
+    #include <vector>
+    #include <algorithm>
+    
+    using namespace std;
+    
+    class Solution {
+    public:
+      int lengthOfLIS(const vector<int>& nums) {
+        if (nums.empty())
+          return 0;
+        vector<int> tails;
+        tails.reserve(nums.size());
+        tails.push_back(nums.front());
+    
+        for (size_t i = 1; i < nums.size(); ++i) {
+          const int& n = nums[i];
+          auto iter = lower_bound(tails.begin(), tails.end(), n);
+          if (iter == tails.end())
+            tails.push_back(n);
+          else if (n < *iter)
+            *iter = n;
+        }
+        return tails.size();
+      }
+    };
+
+
+**Reference**
+
+You can find many external links on [Longest increasing subsequence from Wikipedia](https://en.wikipedia.org/wiki/Longest_increasing_subsequence), but the explanation is not easy to understand.
+
+[Longest Increasing Subsequence on Algorithmist](http://www.algorithmist.com/index.php/Longest_Increasing_Subsequence) gives better explanation. Take a look if you need help.
+
+----------------------------------------------------------------------------------------------------
+O(1) space, O(n log n) time, short solution without additional memory, Java
+    public class Solution {
+        public int lengthOfLIS(int[] nums) {
+            int N = 0, idx, x;
+            for(int i = 0; i < nums.length; i++) {
+                x = nums[i];
+                if (N < 1 || x > nums[N-1]) {
+                    nums[N++] = x;
+                } else if ((idx = Arrays.binarySearch(nums, 0, N, x)) < 0) {
+                    nums[-(idx + 1)] = x;
+                }
+            }
+            return N;
+        }
+    }
+
+Re-use the array given as input for storing the tails.
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) and O(n^2) Java Solutions
+   
+
+     public class Solution {
+        // O(n^2) Solution
+        public int lengthOfLIS(int[] nums) {
+            int N = nums.length;
+            if (N == 0) return 0;
+            int[] dp = new int[N];
+            Arrays.fill(dp, 1);
+            int res = 1;
+            for (int i = 1; i < N; i++) {
+                for (int j = 0; j < i; j++) {
+                    if (nums[j] < nums[i]) {
+                        dp[i] = Math.max(dp[j] + 1, dp[i]);
+                    }
+                }
+                res = Math.max(res, dp[i]);
+            }
+            return res;
+        }
+        // O(n^log(n)) Solution.
+        // http://www.geeksforgeeks.org/longest-monotonically-increasing-subsequence-size-n-log-n/
+        public int lengthOfLIS(int[] nums) {
+            if (nums.length == 0) return 0;
+            int len = 0, N = nums.length;
+            int[] tailTable = new int[N];   
+            tailTable[len++] = nums[0];
+            for (int i = 1; i < N; i++) {
+                if (nums[i] < tailTable[0]) tailTable[0] = nums[i];
+                else if (nums[i] > tailTable[len - 1]) tailTable[len++] = nums[i];
+                else {
+                    tailTable[binarySearch(tailTable, 0, len - 1, nums[i])] = nums[i];
+                }
+            }
+            return len;
+        }
+        private int binarySearch(int[] tails, int start, int end, int target) {
+            while (start < end) {
+                int mid = start + (end - start)/2;
+                if (tails[mid] >= target) end = mid;
+                else start = mid + 1;
+            }
+            return end;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ o(nlogn) solution with explainations, 4ms
+The solution is building a ladder for numbers, with level number labels the max sequence for all numbers on that level; 
+when a new number comes in, compare it with the smallest number in each level--starting from the highest level, if larger than the (smallest) number in that level, the new number is insert into level+1  
+else compare with the smallest number in second highest level ...
+
+e.g.  [10, 9, 2, 5, 3, 7, 101, 18]
+
+level: numbers
+ 
+4: 101, **18**
+
+3: **7**
+
+2: 5, **3**
+
+1: 10, 9, **2**
+
+Since we only use the **smallest number** in each level, we do not need save the others, an extra vector<int> of size m(=max level) would be enough 
+
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> ladder(1);
+        if(nums.empty()) return 0;
+        ladder[0]=nums[0];
+        for(int i=1; i<nums.size(); ++i){
+            int m=int(ladder.size());
+            bool foundless=false;
+            for(int j=m-1;j>=0;--j){
+                if(nums[i] > ladder[j]){
+                    if(j+1==ladder.size()){
+                        ladder.push_back(nums[i]);
+                    }
+                    else{
+                        ladder[j+1]=min(ladder[j+1],nums[i]);
+                    }
+                    foundless=true;
+                    break;
+                }
+            }
+            if(!foundless) ladder[0]=min(ladder[0],nums[i]);
+        }
+        return ladder.size();
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean O(nlogn) code using binary search
+    class Solution {
+    public:
+        int lengthOfLIS(vector<int>& nums) {
+            vector<int> LIS;
+            for (int i = 0; i < nums.size(); i++) {
+                if (LIS.size() == 0 || LIS[LIS.size() - 1] < nums[i]) {
+                    LIS.push_back(nums[i]);
+                }
+                else {
+                    int l = 0, r = LIS.size() - 1;
+                    while (l < r) {
+                        int m = (l + r) / 2;
+                        if (LIS[m] >= nums[i]) {
+                            r = m;
+                        }
+                        else {
+                            l = m + 1;
+                        }
+                    }
+                    LIS[l] = nums[i];
+                }
+            }
+            return LIS.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python: dp with O(n^2), binary search with O(nlogn)
+    class Solution(object):
+    #using dP
+    def lengthOfLIS1(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        if not nums:
+            return 0
+        dp = [1]*len(nums)
+        for i in range (1, len(nums)):
+            for j in range(i):
+                if nums[i] >nums[j]:
+                    dp[i] = max(dp[i], dp[j]+1)
+        return max(dp)
+    #using binary search
+    def lengthOfLIS(self, nums):
+        def search(temp, left, right, target):
+            if left == right:
+                return left
+            mid = left+(right-left)/2
+            return search(temp, mid+1, right, target) if temp[mid]<target else search(temp, left, mid, target)
+        temp = []
+        for num in nums:
+            pos = search(temp, 0, len(temp), num)
+            if pos >=len(temp):
+                temp.append(num)
+            else:
+                temp[pos]=num
+        return len(temp)
+
+----------------------------------------------------------------------------------------------------
+Share Java DP solution
+`dp[i]` represents the the length of the LIS till `nums[i]`.
+
+For each `nums[i]`, we need to compare all the `nums[j]` where `0` <= `j` < `i`, if `nums[i]` > `nums[j]`, then `dp[i]` = `dp[j]` + `1`, that means we have found a potential LIS. 
+
+Let `i` go through the `nums[]` array, eventually we will get the longest length of LIS. 
+
+Time complexity is `O(n^2)`.
+
+    public int lengthOfLIS(int[] nums) {
+      if (nums.length == 0) return 0;
+      
+      int n = nums.length, max = 0;
+      int[] dp = new int[n];
+      
+      for (int i = 0; i < n; i++) {
+        dp[i] = 1;
+        
+        for (int j = 0; j < i; j++) {
+          if (nums[i] > nums[j] && dp[j] + 1 > dp[i]) {
+            dp[i] = dp[j] + 1;
+          }
+        }
+        
+        max = Math.max(max, dp[i]);
+      }
+      
+      return max;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+4ms O(nlogn) non-recursive easy to understand java solution
+ 
+    public int lengthOfLIS(int[] nums) {
+        List<Integer> seq = new ArrayList<>(nums.length);     
+
+        for(int num: nums){
+            if(   seq.size()              == 0
+               || seq.get(seq.size() - 1) <  num  ){                
+               seq.add(num);
+            }else{
+                seq.set(binarySearch(seq, num - 0.5), num);
+            }
+        }      
+
+        return seq.size();
+    }
+    
+    private int binarySearch(List<Integer> seq, double target){
+        int st  = 0;
+        int ed  = seq.size() - 1;
+        int mid = 0;    
+
+        while(st <= ed){
+            mid = st + (ed - st)/2;
+            
+            if(seq.get(mid) > target){
+                ed = mid - 1;
+            }else{
+                st = mid + 1;
+            }
+        }
+        
+        return st;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java simple and easy understanding Nlogn solution
+    public class Solution {
+    public int lengthOfLIS(int[] nums) {
+        if(nums == null || nums.length == 0) {
+            return 0;
+        }
+        int[] res = new int[nums.length];
+        int len = 0;
+        res[len] = nums[0];
+        len++;
+        for(int i = 1; i < nums.length; i++) {
+            if(nums[i] < res[0]) {
+                res[0] = nums[i];
+            }
+            else if(nums[i] > res[len - 1]) {
+                res[len] = nums[i];
+                len++;
+            }
+            else {
+                int index = doBinarySearch(res, 0, len - 1, nums[i]);
+                res[index] = nums[i];
+            }
+        }
+        return len;
+    }
+    private int doBinarySearch(int[] nums, int start, int end, int target) {
+        while(start + 1 < end) {
+            int mid = start + (end - start)/2;
+            if(nums[mid] == target) {
+                return mid;
+            }
+            else if(nums[mid] < target) {
+                start = mid;
+            }
+            else {
+                end = mid;
+            }
+        }
+        if(nums[start] == target) {
+            return start;
+        }
+        else {
+            return end;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------

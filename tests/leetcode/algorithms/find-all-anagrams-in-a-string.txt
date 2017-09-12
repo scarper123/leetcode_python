@@ -1,0 +1,398 @@
+9 lines 4ms Java solution
+public int lengthLongestPath(String input) {
+    String[] paths = input.split("\n");
+    int[] stack = new int[paths.length+1];
+    int maxLen = 0;
+    for(String s:paths){
+        int lev = s.lastIndexOf("\t")+1, curLen = stack[lev+1] = stack[lev]+s.length()-lev+1;
+        if(s.contains(".")) maxLen = Math.max(maxLen, curLen-1);
+    }
+    return maxLen;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution
+def lengthLongestPath(self, input):
+    maxlen = 0
+    pathlen = {0: 0}
+    for line in input.splitlines():
+        name = line.lstrip('\t')
+        depth = len(line) - len(name)
+        if '.' in name:
+            maxlen = max(maxlen, pathlen[depth] + len(name))
+        else:
+            pathlen[depth + 1] = pathlen[depth] + len(name) + 1
+    return maxlen
+
+----------------------------------------------------------------------------------------------------
+This problem is not well-defined. It should state that 4-space is considered as a TAB under certain situation.
+<p>After many try-and-error, I finally figured out the solution is required to handle the blank spaces in a special way. I think it should be stated in the problem statement, not just let people guess this from the expected answers. This will waste many people a lot of time....</p>
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ O(n) Solution,0ms
+public:
+    int lengthLongestPath(string input) {
+        int maxi=0,count=0,ln=1;
+        bool isFile=false;
+        vector<int> level(200);
+        level[0]=0;
+        for(int i=0,fin=input.size();i<fin;++i){
+            //find which level
+            while(input[i]=='\t'){
+                ++ln;++i;
+            }
+            //read file name
+            while(input[i]!='\n'&&i<fin){
+                if(input[i]=='.')isFile=true;
+                ++count;++i;
+            }
+            //calculate
+            if(isFile){
+                maxi=max(maxi,level[ln-1]+count);
+            }
+            else{
+                level[ln]=level[ln-1]+count+1;// 1 means '/'
+            }
+            //reset
+            count=0;ln=1;isFile=false;
+        }
+        return maxi;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Solution Using Stack
+public class Solution {
+    public int lengthLongestPath(String input) {
+        String[] tokens = input.split("\n");
+        int result = 0;
+        int curLen = 0;
+        Stack<Integer> stack = new Stack<>();
+
+        for (String s : tokens) {
+            int level = countLevel(s);
+
+            // if current directory/file depth is lower that the top directory/file on the stack, pop from stack 
+            while (stack.size() > level) {
+                curLen -= stack.pop();
+            }
+
+            // +1 here because a "/" needs to be counted following each diretory
+            int len = s.replaceAll("\t", "").length() + 1;
+            curLen += len;
+
+            // if s contains ".", we have found a file!
+            if (s.contains(".")) {
+                result = curLen - 1 > result ? curLen - 1 : result;
+            }
+            stack.add(len);
+        }
+        return result;
+    }
+    
+    private int countLevel(String s) {
+        String cur = s.replaceAll("\t", "");
+        return s.length() - cur.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Two different solutions in java using stack and hashmap
+    public int lengthLongestPath(String input) {
+        HashMap<Integer, Integer> hashMap = new HashMap<>();
+        hashMap.put(0, 0);
+        int result = 0;
+        for (String s : input.split("\n")) {
+            int level = s.lastIndexOf('\t') + 1;
+            int len = s.length() - level;
+            if (s.contains(".")) {
+                result = Math.max(result, hashMap.get(level) + len);
+            } else {
+                hashMap.put(level + 1, hashMap.get(level) + len + 1);
+            }
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very concise 5-liner in Python, 52ms
+class Solution(object):
+    def lengthLongestPath(self, input):
+        path, maxLen = [], 0
+        for s in input.split('\n'):
+            path[s.count('\t'):] = [len(s.strip('\t'))]
+            maxLen = max(maxLen, sum(path)+len(path)-1 if '.' in s else 0)
+        return maxLen
+
+
+----------------------------------------------------------------------------------------------------
+What is purpose of weird test cases?
+"dir\n file.txt"
+
+----------------------------------------------------------------------------------------------------
+If you&#x27;re getting &quot;ValueError: Unterminated string&quot;, here&#x27;s why
+\t
+
+----------------------------------------------------------------------------------------------------
+4-space considered as a TAB is totally confusing, which makes the string ambiguous and test case wrong.
+<p>There are two test cases in OJ: &#34;dir\n(4-space)file.txt&#34; and &#34;dir\n(4-space)(4-space)file.txt&#34;. In the first case, the 4-space is considered as a tab, so that the official answer should be 12. In the second case, the first 4-space is considered as a tab and the second 4-space is considered parts of the file name, so that it should return 16.</p>
+<p>Here comes a problem. Suggest the input String is &#34;dir\n\tsubdir\n(4-space)(4-space)file.txt&#34;.Should I consider the String &#34;dir\n\tsubdir\n\t(4-space)file.txt&#34; or &#34;dir\n\tsubdir\n\t\tfile.txt&#34;? Actually, the funniest part is, the OJ treats it neither of them. OJ will only return the length of &#34;(4-space)(4-space)file.txt&#34;, which is 16. That means, if there is a input String &#34;dirrrrrrrrrrrrrrrrrr\n\tsubdir\n(4-space)(4-space)file.txt&#34;, it also returns 16.</p>
+<p>That is why I think 4-space considered as a TAB is totally confusing. It seems the author only consider &#34;dir\n(4-space)file.txt&#34; and &#34;dir\n(4-space)(4-space)file.txt&#34; those 2 conditions without sub-dir.</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) Solution with hashmap
+class Solution {
+public:
+    int lengthLongestPath(string input) {
+        istringstream ss(input);
+        string token;
+        size_t max_len = 0;
+        unordered_map<int, int> path_len;
+        path_len[0] = 0;
+        while (getline(ss, token)) {
+            auto pos = token.find_last_of("\t");
+            string name = (pos != std::string::npos) ? token.substr(pos + 1) : token;
+            
+            int depth = token.size() - name.size();
+            if (token.find(".") != std::string::npos) {
+                max_len = max(max_len, path_len[depth] + name.size());
+            } else {
+                path_len[depth + 1] = path_len[depth] + name.size() + 1;
+            }
+        }
+        return max_len;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Very concise C++ solution 0ms
+class Solution {
+public:
+    int lengthLongestPath(string input) {
+        if (input.empty()) return 0;
+ 
+        vector<int> depLen;
+        int result = 0, count = 0, depth = 0, isDir = 1;
+        
+        for (int i = 0; i < input.length() + 1; ++i) {
+            switch (input[i]) {
+                /* No need for extra code after whole loop */
+                case '\0':
+                case '\n':
+                    count = !depth ? count + isDir : depLen[depth - 1] + count + isDir;
+                    if (depLen.size() > depth) depLen[depth] = count;
+                    else depLen.push_back(count);
+
+                    if (!isDir) result = count > result ? count : result;
+
+                    depth = count = 0;
+                    isDir = 1;
+                    break;
+                case '\t':
+                    ++depth;
+                    break;
+                case '.':
+                    isDir = 0;
+                default:
+                    ++count;
+            }
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Just traversing once and retrieving the longest in C++, well-explained
+practical
+
+----------------------------------------------------------------------------------------------------
+6ms Java Solution using Wrapper Class and DFS
+public class Solution {
+    public int lengthLongestPath(String input) {
+        if(input == null || input.length() == 0) return 0;
+        int[] res = new int[]{0};
+        FileNode root = parseString(input);
+        outputLongestPath(root, res);
+        return res[0] == 0 ? 0 : res[0] - 1;
+    }
+
+    private FileNode parseString(String input) {
+        FileNode root = new FileNode(null, null, 0, -1, true), curr = root;
+        String[] files = input.split("\n");
+        for(String file: files) {
+            int index = 0, level = 0;
+            FileNode newFile;
+
+            // calculate the level
+            while(index < file.length() && file.substring(index, index + 1).equals("\t")) {
+                level++;
+                index++;
+            }
+
+            // decide if it is a file
+            boolean isFile = file.contains(".");
+
+            // decide it is the children or brother
+            if(level == curr.level) {       // brother
+                newFile = new FileNode(file.substring(index, file.length()),
+                        curr.parent, file.length() - index + 1, level, isFile);
+                curr.parent.children.add(newFile);
+            } else {                        // children
+                while(level != curr.level + 1) curr = curr.parent;
+                newFile = new FileNode(file.substring(index, file.length()),
+                        curr, file.length() - index + 1, level, isFile);
+                curr.children.add(newFile);
+            }
+            curr = newFile;
+        }
+        return root;
+    }
+
+    private void outputLongestPath(FileNode root, int[] res) {
+        if(!root.children.isEmpty()) {
+            for(FileNode child: root.children) {
+                outputLongestPath(child, res);
+            }
+        } else {
+            if(!root.isFile) return;
+            int count = root.count;
+            while(root.parent != null) {
+                count += root.parent.count;
+                root = root.parent;
+            }
+            res[0] = Math.max(res[0], count);
+        }
+    }
+
+    class FileNode {
+        String fileName;
+        FileNode parent;
+        List<FileNode> children;
+        int count, level;
+        boolean isFile;
+
+        public FileNode(String fileName, FileNode parent, int count, int level, boolean isFile) {
+            this.fileName = fileName;
+            this.parent = parent;
+            this.children = new ArrayList<>();
+            this.count = count;
+            this.level = level;
+            this.isFile = isFile;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+4-line&#x2F;10-line concise C++ O(N) solution with stringstream (detailed explanation)
+    int lengthLongestPath(string input) {
+      int lev, maxL = 0; stringstream ss(input); unordered_map<int,int> L;    
+      for(string s; getline(ss,s,'\n'); maxL = max(maxL,(s.find('.')<s.size())*L[lev+1]-1))
+        L[(lev = s.rfind('\t')+1)+1] = L[lev]+s.size()-lev+1;
+      return maxL;      
+    }
+
+
+----------------------------------------------------------------------------------------------------
+simple 13-line 3ms Java solution with explanation
+public class Solution {
+    public int lengthLongestPath(String input) {
+        int max = 0, len = input.length(), idx = 0, curDepth = 0;
+        int[] table = new int[len/2 + 1];
+        while(idx < len){
+            int curLen = 0;
+            boolean isFile = false;
+            for(;idx < len && input.charAt(idx)!='\n';idx++, curLen++) if(input.charAt(idx)=='.') isFile = true;
+            
+            table[curDepth] = (curDepth==0?0:table[curDepth-1]) + curLen + 1;
+            
+            if(isFile) max = Math.max(max, table[curDepth]-1);
+            
+            idx++; curDepth = 0;
+            for(;idx < len && input.charAt(idx)=='\t'; idx++) curDepth++;           
+        }
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise Java O(n) Solution use map
+public int lengthLongestPath(String input) {
+    String[] strs = input.split("\n");
+    int max = 0;
+    Map<Integer,Integer> map = new HashMap<>();
+    map.put(-1, 0);
+    for(int i = 0; i < strs.length; i++){
+        int level =  strs[i].lastIndexOf('\t')  + 1;
+        int length = map.get(level - 1) + strs[i].length() - level + (level > 0 ? 1 : 0);
+        if(strs[i].indexOf('.') == -1){
+            map.put(level, length);
+        }else{
+            max = Math.max(length, max);
+        }
+    }
+    return max;
+}
+
+----------------------------------------------------------------------------------------------------
+8 line JavaScript solution with stack
+function lengthLongestPath(input) {
+	var stack = [];
+
+	return input.split('\n').reduce((max, p) => {
+		var level = p.lastIndexOf('\t') + 1;
+		stack[level] = p.length - level + (level ? stack[level - 1] : 0);
+		return p.indexOf('.') === -1 ? max : Math.max(max, stack[level] + level);
+	}, 0);
+}
+
+
+----------------------------------------------------------------------------------------------------
+13-line 0ms c++ solution using string stream
+class Solution {
+public:
+    int lengthLongestPath(string input) {
+        vector<int> rec;
+        int max_val = 0;
+        stringstream ss(input);
+        string cur;
+        while(getline(ss, cur, '\n')){
+            int i = 0;
+            while(cur[i] == '\t')++i;
+            if(i+1 > rec.size())
+                rec.push_back(0);
+            rec[i] = (i ? rec[i-1] : 0) + cur.size()-i+1;
+            if(cur.find('.') != string::npos)max_val = max(max_val, rec[i]-1);
+        }
+        return max_val;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java simple solution
+public int lengthLongestPath(String input) {
+    int longest = 0;
+    String[] lines = input.split("\n");
+    int[] lens = new int[lines.length+1];
+    for(String line: lines) {
+        String[] subs = line.split("\t");
+        String cur = subs[subs.length-1];
+        int len = lens[subs.length-1] + cur.length() + 1;
+        if(cur.contains(".")) longest = Math.max(longest, len-1);
+        else lens[subs.length] = len;
+    }
+    return longest;
+}
+
+
+
+----------------------------------------------------------------------------------------------------

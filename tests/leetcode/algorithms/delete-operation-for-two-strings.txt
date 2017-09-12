@@ -1,0 +1,498 @@
+Easy to understand simple O(n) solution with explanation
+class Solution {
+public:
+    string optimalDivision(vector<int>& nums) {
+        string ans;
+        if(!nums.size()) return ans;
+        ans = to_string(nums[0]);
+        if(nums.size()==1) return ans;
+        if(nums.size()==2) return ans + "/" + to_string(nums[1]);
+        ans += "/(" + to_string(nums[1]);
+        for(int i = 2; i < nums.size();++i)
+            ans += "/" + to_string(nums[i]);
+        ans += ")";
+        return ans;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Backtracking
+public class Solution {
+    class Result {
+        String str;
+        double val;
+    }
+    
+    public String optimalDivision(int[] nums) {
+        int len = nums.length;
+        return getMax(nums, 0, len - 1).str;
+    }
+    
+    private Result getMax(int[] nums, int start, int end) {
+        Result r = new Result();
+        r.val = -1.0;
+        
+        if (start == end) {
+            r.str = nums[start] + "";
+            r.val = (double)nums[start];
+        }
+        else if (start + 1 == end) {
+            r.str = nums[start] + "/" + nums[end];
+            r.val = (double)nums[start] / (double)nums[end];
+        }
+        else {
+            for (int i = start; i < end; i++) {
+                Result r1 = getMax(nums, start, i);
+                Result r2 = getMin(nums, i + 1, end);
+                if (r1.val / r2.val > r.val) {
+                    r.str = r1.str + "/" + (end - i >= 2 ? "(" + r2.str + ")" : r2.str);
+                    r.val = r1.val / r2.val;
+                }
+            }
+        }
+        
+        //System.out.println("getMax " + start + " " + end + "->" + r.str + ":" + r.val);
+        return r;
+    }
+    
+    private Result getMin(int[] nums, int start, int end) {
+        Result r = new Result();
+        r.val = Double.MAX_VALUE;
+        
+        if (start == end) {
+            r.str = nums[start] + "";
+            r.val = (double)nums[start];
+        }
+        else if (start + 1 == end) {
+            r.str = nums[start] + "/" + nums[end];
+            r.val = (double)nums[start] / (double)nums[end];
+        }
+        else {
+            for (int i = start; i < end; i++) {
+                Result r1 = getMin(nums, start, i);
+                Result r2 = getMax(nums, i + 1, end);
+                if (r1.val / r2.val < r.val) {
+                    r.str = r1.str + "/" + (end - i >= 2 ? "(" + r2.str + ")" : r2.str);
+                    r.val = r1.val / r2.val;
+                }
+            }
+        }
+        
+        //System.out.println("getMin " + start + " " + end + "->" + r.str + ":" + r.val);
+        return r;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) very easy Java solution.
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(nums[0]);
+        for (int i = 1; i < nums.length; i++) {
+            if (i == 1 && nums.length > 2) {
+                builder.append("/(").append(nums[i]);
+            } else {
+                builder.append("/").append(nums[i]);
+            }
+        }
+        
+        return nums.length > 2 ? builder.append(")").toString() : builder.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Brute force with memory in case of your interviewer forbid tricky solution
+// by fallcreek
+public class Solution {
+
+    public String optimalDivision(int[] nums) {
+        Map<String, pair> memory = new HashMap<>();
+        pair sol = divid(nums,0,nums.length-1, memory);
+        return sol.maxS;
+    }
+    
+    public pair divid(int[] nums, int start, int end, Map<String, pair> memory){
+        String key = start + " " + end;
+        if(memory.containsKey(key)) return memory.get(key);
+        if(start == end)    return new pair(nums[start], "" + nums[start],nums[start], "" + nums[start]);
+        
+        pair sol = new pair(0,"",0,"");
+        
+        for(int i = start; i < end; i++){
+            pair left = divid(nums, start, i, memory);
+            pair right = divid(nums, i + 1, end, memory);
+            
+            double min = left.min / right.max;
+            String minS = left.minS + "/" + (i + 1 == end ? right.maxS : "(" + right.maxS + ")"); 
+            double max = left.max / right.min;
+            String maxS = left.maxS + "/" + (i + 1 == end ? right.minS : "(" + right.minS + ")"); 
+            if(sol.min == 0 || min < sol.min){
+                sol.min = min;
+                sol.minS = minS;
+            }
+            if(max > sol.max){
+                sol.max = max;
+                sol.maxS = maxS;
+            }
+        }
+        memory.put(key, sol);
+        return sol;
+    }
+}
+
+class pair{
+    double min;
+    String minS;
+    double max;
+    String maxS;
+    
+    public pair(double min, String minS, double max, String maxS){
+        this.min = min;
+        this.minS = minS;
+        this.max = max;
+        this.maxS = maxS;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation (Insightful Approach)
+def optimalDivision(self, A):
+    A = map(str, A)
+    if len(A) <= 2: return '/'.join(A)
+    return '{}/({})'.format(A[0], '/'.join(A[1:]))
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        if (nums.length == 1)
+            return nums[0] + "";
+        if (nums.length == 2)
+            return nums[0] + "/" + nums[1];
+        String res = nums[0] + "/(" + nums[1];
+        for (int i = 2; i < nums.length; i++) {
+            res += "/" + nums[i];
+        }
+        return res + ")";
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        int n = nums.length;
+        String expr = "";
+        for (int i = 0; i < n; i++) {
+            if (i > 0) {
+                expr += "/";
+            }
+            if (i == 1 && n > 2) {
+                expr += "(";
+            }
+            expr += nums[i];
+            if (i == n - 1 && n > 2) {
+                expr += ")";
+            }
+        }
+        return expr;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;553. Optimal Division&#93; C++_O(n)
+class Solution {
+public:
+ string optimalDivision(vector<int>& nums) {
+    if(nums.empty()) return "";
+    string res = to_string(nums[0]);
+    if(nums.size() > 2){
+        res += "/(";
+        for(int i = 1; i < nums.size(); ++i){
+            res += to_string(nums[i]) + '/';
+        }
+        res.pop_back();
+        res += ')';
+    }else if(nums.size() == 2){
+        res += '/' + to_string(nums[1]);
+    }
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+5 lines Tricky Python
+class Solution(object):
+    def optimalDivision(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: str
+        """
+        nums = list(map(str, nums))
+        if len(nums) > 2:
+            nums[1] = "(" + nums[1]
+            nums[-1] = nums[-1] + ")"
+        return "/".join(nums)
+
+
+----------------------------------------------------------------------------------------------------
+Once you understand that first number has to go top, second has to go bottom, it is easy
+class Solution {
+public:
+    string optimalDivision(vector<int>& nums) {
+        int n = nums.size();
+        if(n==0) return "";
+        if(n==1) return to_string(nums[0]);
+        if(n==2) return to_string(nums[0])+"/"+to_string(nums[1]);
+        string ret = to_string(nums[0])+"/(";
+        for(int k = 1;k<nums.size();k++) {
+            if(k<nums.size()-1) ret += to_string(nums[k])+"/";
+            else ret += to_string(nums[k])+")";
+        }
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+my easy solution in java
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        if (nums.length == 1)
+            return String.valueOf(nums[0]);
+        if (nums.length == 2)
+            return nums[0] + "/" + nums[1];
+        String res = nums[0] + "/" + "(";
+        for (int i = 1; i < nums.length - 1; i++)
+            res += nums[i] + "/";
+        return res + nums[nums.length - 1] + ")";
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java Backtrack Solution using DP 13ms
+public class Solution {
+    
+    class Tuple {
+        String s;
+        double v;
+        public Tuple(String _s, double _v) {
+            s = _s;
+            v = _v;
+        }
+    }
+    
+    Tuple[][][] mem;
+    
+    public Tuple helper(int[] nums, int i, int j, boolean isMax) {
+        if(i==j)
+            return new Tuple(""+nums[i], 1.0*nums[i]);
+        if(mem[i][j][isMax?0:1]!=null)
+            return mem[i][j][isMax?0:1];
+        if(isMax) {
+            Tuple maxT = new Tuple("",0);
+            for(int k=i; k<j; k++) {
+                Tuple t1 = helper(nums, i, k, true);
+                Tuple t2 = helper(nums, k+1, j, false);
+                if(t1.v/t2.v > maxT.v) {
+                    maxT.v = t1.v/t2.v;
+                    maxT.s = t1.s + (k+1==j ? ("/" + t2.s) : ("/(" + t2.s + ")"));
+                }
+            }
+            mem[i][j][0] = maxT;
+            return maxT;
+        } else {
+            Tuple minT = new Tuple("",Double.MAX_VALUE);
+            for(int k=i; k<j; k++) {
+                Tuple t1 = helper(nums, i, k, false);
+                Tuple t2 = helper(nums, k+1, j, true);
+                if(t1.v/t2.v < minT.v) {
+                    minT.v = t1.v/t2.v;
+                    minT.s = t1.s + (k+1==j ? ("/" + t2.s) : ("/(" + t2.s + ")"));
+                }
+            }
+            mem[i][j][1] = minT;
+            return minT;
+        }
+    }
+    
+    public String optimalDivision(int[] nums) {
+        mem = new Tuple[nums.length][nums.length][2];
+        return helper(nums, 0, nums.length-1, true).s;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Is this question a joke?  &#91;7ms easy java solution&#93;
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        String str = "";
+        if(nums.length == 0){
+            return str;
+        }
+        str = str + nums[0];
+        if(nums.length == 1){
+            return str;
+        }
+        str = str + "/";
+        if(nums.length == 2){
+            return str + nums[1];
+        }
+        str = str + "(" + nums[1];
+        for(int i = 2; i < nums.length; i++){
+            str = str + "/" + nums[i];
+        }
+        str = str + ")";
+        return str;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# Code
+public class Solution {
+    public string OptimalDivision(int[] nums) {
+        if (nums.Length==1) return nums[0].ToString();
+        string str=String.Join("/",nums);
+        if (nums.Length==2) return str;
+        int x=str.IndexOf("/");
+        return str.Substring(0,x+1)+"("+str.Substring(x+1,str.Length-x-1)+")";
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+LOL what is the point of this question, there is only 1 fixed answer
+<p>&#91;a,b,c,d,f,g&#93;, answer is always &#91;a/(b/c/d/f/g)&#93;, no exception.</p>
+<p>This question is dumb</p>
+
+
+----------------------------------------------------------------------------------------------------
+simple java solution
+public class Solution {
+    public String optimalDivision(int[] nums) {
+        int len = nums.length;
+        if (len == 1) return "" + nums[0];
+        if (len == 2) return nums[0] + "/" + nums[1];
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < len; i++) {
+            if (i == 0) {
+                sb.append("" + nums[i] + "/(");
+            } else if (i == len-1) {
+                sb.append(nums[i] + ")");
+            } else {
+                sb.append(nums[i] + "/");
+            }
+        }
+        return sb.toString();
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java simple solution
+public String optimalDivision(int[] nums) {
+        if (nums == null || nums.length == 0) {
+            return "";
+        }
+        int n = nums.length;
+        if (n == 1) {
+            return String.valueOf(nums[0]);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(nums[0] + "/");
+        if (n == 2) {
+            sb.append(nums[1]);
+            return sb.toString();
+        }
+        sb.append("(");
+        for (int i = 1; i < n - 1; i++) {
+            sb.append(nums[i]);
+            sb.append("/");
+        }
+        sb.append(nums[n - 1]);
+        sb.append(")");
+        return sb.toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy python solution with interpretation
+def optimalDivision(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: str
+        """
+        if len(nums)<3:
+            result=''.join([str(num)+'/' for num in nums])
+            return result[:-1]
+        result=[]
+        result.append(str(nums[0])+'/(')
+        for i in range(1,len(nums)):
+            result.append(str(nums[i]))
+            result.append('/')
+        result=result[:-1]
+        result.append(')')
+        return ''.join(result)
+
+
+----------------------------------------------------------------------------------------------------
+JavaScript Solution using some Math
+var optimalDivision = function(nums) {
+    var result = nums[0] + '';
+    var len = nums.length;
+    
+    if(len === 1) {
+       return result;       
+    } else {
+        for(var i = 1; i < len; i++) {
+            if(i === 1 && len > 2) {
+                result += '/(' +  nums[i];                  
+            } else {
+                result += '/' +  nums[i]; 
+            }
+        }
+    }
+    
+    return (len > 2) ? result += ')' : result;
+    
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java simple solution with explanation
+public class Solution {
+    /*There is a trick of this question: the biggest arrangement must be a[0]/(a[1]/a[2]/.../a[n])
+    Because this could be alterd to a[0]*a[2]*a[3]*...*a[n]/a[1].
+    Every num is bigger than 2 and a[1] must be a part of denominator, so this formular is smallest denominator
+    and the largest numerator.
+    */
+    public String optimalDivision(int[] nums) {
+        String output = String.valueOf(nums[0]);
+        if(nums.length>=2){
+            output += "/";
+            if(nums.length >= 3){
+                output+="(";
+                output+=String.valueOf(nums[1]);
+                for(int i = 2; i < nums.length; i++){
+                    output += "/"+String.valueOf(nums[i]);
+                }
+                output+=")";
+            }
+            else{
+                output+=String.valueOf(nums[1]);
+            }
+        }
+        return output;
+    }
+}
+
+----------------------------------------------------------------------------------------------------

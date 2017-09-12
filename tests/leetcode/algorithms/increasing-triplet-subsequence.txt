@@ -1,0 +1,540 @@
+Accepted JAVA solution--easy to understand
+    List<String> list=new ArrayList();
+    	if(nums.length==1){
+    		list.add(nums[0]+"");
+    		return list;
+    	}
+        for(int i=0;i<nums.length;i++){
+        	int a=nums[i];
+        	while(i+1<nums.length&&(nums[i+1]-nums[i])==1){
+        		i++;
+        	}
+        	if(a!=nums[i]){
+        		list.add(a+"->"+nums[i]);
+        	}else{
+        		list.add(a+"");
+        	}
+        }
+        return list;
+
+----------------------------------------------------------------------------------------------------
+6 lines in Python
+Three versions of the same algorithm, all take O(n) time.
+
+---
+
+**Solution 1**
+
+Just collect the ranges, then format and return them.
+
+    def summaryRanges(self, nums):
+        ranges = []
+        for n in nums:
+            if not ranges or n > ranges[-1][-1] + 1:
+                ranges += [],
+            ranges[-1][1:] = n,
+        return ['->'.join(map(str, r)) for r in ranges]
+
+---
+
+**Solution 2**
+
+A variation of solution 1, holding the current range in an extra variable `r` to make things easier. Note that `r` contains at most two elements, so the `in`-check takes constant time.
+
+    def summaryRanges(self, nums):
+        ranges, r = [], []
+        for n in nums:
+            if n-1 not in r:
+                r = []
+                ranges += r,
+            r[1:] = n,
+        return ['->'.join(map(str, r)) for r in ranges]
+
+---
+
+**Solution 3**
+
+A tricky short version.
+
+    def summaryRanges(self, nums):
+        ranges = r = []
+        for n in nums:
+            if `n-1` not in r:
+                r = []
+                ranges += r,
+            r[1:] = `n`,
+        return map('->'.join, ranges)
+
+---
+
+**About the commas :-)**
+
+Three people asked about them in the comments, so I'll also explain it here as well. I have these two basic cases:
+
+    ranges += [],
+    r[1:] = n,
+
+Why the trailing commas? Because it turns the right hand side into a tuple and I get the same effects as these more common alternatives:
+
+    ranges += [[]]
+    or
+    ranges.append([])
+
+    r[1:] = [n]
+
+Without the comma, ...
+
+ - `ranges += []` wouldn't add `[]` itself but only its elements, i.e., nothing.
+ - `r[1:] = n` wouldn't work, because my `n` is not an iterable.
+
+Why do it this way instead of the more common alternatives I showed above? Because it's shorter and faster (according to tests I did a while back).
+
+----------------------------------------------------------------------------------------------------
+10 line c++ easy understand
+       vector<string> summaryRanges(vector<int>& nums) {
+        const int size_n = nums.size();
+        vector<string> res;
+        if ( 0 == size_n) return res;
+        for (int i = 0; i < size_n;) {
+            int start = i, end = i;
+            while (end + 1 < size_n && nums[end+1] == nums[end] + 1) end++;
+            if (end > start) res.push_back(to_string(nums[start]) + "->" + to_string(nums[end]));
+            else res.push_back(to_string(nums[start]));
+            i = end+1;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+My concise Java solution
+    public List<String> summaryRanges(int[] nums) {
+
+        int length = nums.length;
+
+        List<String> result = new ArrayList<String>(length);
+
+        for (int i = 0; i < length; i++) {
+            int num = nums[i];
+
+            while (i < length - 1 && nums[i] + 1 == nums[i + 1]) {
+                i++;
+            }
+
+            if (num != nums[i]) {
+                result.add(num + "->" + nums[i]);
+            } else {
+                result.add(num + "");
+            }
+        }
+
+        return result;
+
+    }
+
+----------------------------------------------------------------------------------------------------
+Idea + 1-Liner: Group by number-index
+**The Idea**
+
+The difference between a number and its index identifies the range. Consider the given example input:
+
+    numbers:  [0, 1, 2, 4, 5, 7]
+    indexes:  [0, 1, 2, 3, 4, 5]
+    subtract: [0, 0, 0, 1, 1, 2]
+
+You can see I have three differences (0, 1 and 2), corresponding to the three ranges. That can then be used to group the elements.
+
+---
+
+**Solution 1**
+
+Ruby and Python can exploit it particularly well, thanks to their groupby functions:
+
+Ruby:
+
+    def summary_ranges(nums)
+      nums.each_with_index.group_by{|n,i| n-i}.map{|d,r| [r[0][0], r[-1][0]].uniq.join('->')}
+    end
+
+Python:
+
+    def summaryRanges(self, nums):
+        return [re.sub('->.*>', '->', '->'.join(`n` for i, n in g))
+                for _, g in itertools.groupby(enumerate(nums), lambda (i, n): n-i)]
+
+---
+
+**Solution 2**
+
+Here I build two dicts, telling me the first and last number of each range. For the given example I get:
+
+    first = {0: 0, 1: 4, 2: 7}
+    last  = {0: 2, 1: 5, 2: 7}
+
+The code:
+
+    def summaryRanges(self, nums):
+        diff = [(n-i, n) for i, n in enumerate(nums)]
+        first, last = dict(diff[::-1]), dict(diff)
+        return [`n` + ('->'+`last[d]`)*(n<last[d]) for d, n in sorted(first.items())]
+
+---
+
+**Solution 3**
+
+Storing `[first, last]` for each range in a dict (`last` being optional).
+
+    def summaryRanges(self, nums):
+        ranges = collections.defaultdict(list)
+        for i, n in enumerate(nums):
+            ranges[n-i][1:] = n,
+        return ['->'.join(map(str, r)) for r in sorted(ranges.values())]
+
+
+----------------------------------------------------------------------------------------------------
+9 lines, c++, 0ms solution
+     vector<string> summaryRanges(vector<int>& nums) {
+        int i = 0, size = nums.size();
+        vector<string> result; 
+        while(i < size){
+            int j = 1; 
+            while(i + j < size && nums[i + j] - nums[i] == j) ++j;
+            result.push_back(j <= 1 ? to_string(nums[i]) : to_string(nums[i]) + "->" + to_string(nums[i + j - 1]));
+            i += j; 
+        }
+        return result; 
+    }
+
+----------------------------------------------------------------------------------------------------
+My java 0ms(not always Luckily !You are here! Your runtime beats 97.90% of java submissions.)
+    public class Solution {
+        public List<String> summaryRanges(int[] nums) {
+    		List<String> list = new ArrayList<>();
+    		for (int i = 0, len = nums.length, k; i < len; i = k + 1) {
+    			k = help(nums, i, len);
+    			if (i != k)
+    				list.add("" + nums[i] + "->" + nums[k]);
+    			else
+    				list.add("" + nums[i]);
+    		}
+    		return list;
+    	}
+    
+    	private int help(int[] nums, int l, int r) {
+    		while (l + 1 < r) {
+    			int m = (l + r) / 2;
+    			if (nums[m] - nums[l] == m - l)
+    				l = m;
+    			else
+    				r = m;
+    		}
+    		return l;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+My easy to understand Python solution
+    def summaryRanges(self, nums):
+        if not nums:
+            return []
+        res, i, start = [], 0, 0
+        while i < len(nums)-1:
+            if nums[i]+1 != nums[i+1]:
+                res.append(self.printRange(nums[start], nums[i]))
+                start = i+1
+            i += 1
+        res.append(self.printRange(nums[start], nums[i]))
+        return res
+    
+    def printRange(self, l, r):
+        if l == r:
+            return str(l)
+        else:
+            return str(l) + "->" + str(r)
+
+----------------------------------------------------------------------------------------------------
+Share my Accepted JavaScript Solution
+Use a '#' to mark the end of the array, similar to Leetcode 38 Count and Say.
+
+    var summaryRanges = function(nums) {
+        var t = 0
+        var ans = []
+        nums.push('#')
+        for(var i=1;i<nums.length;i++)
+            if(nums[i]-nums[t] !== i-t){
+                if(i-t>1)
+                    ans.push(nums[t]+'->'+(nums[i-1]))
+                else
+                    ans.push(nums[t].toString())
+                t = i
+            }
+        return ans
+    }
+
+----------------------------------------------------------------------------------------------------
+My c++ solution using only one for loop
+    class Solution {
+    public:
+        vector<string> summaryRanges(vector<int>& nums) {
+            vector<string> ret;
+            int s = 0;
+            for(int i = 0; i < nums.size(); i++){
+                if(i + 1 == nums.size() || nums[i] + 1 != nums[i+1]){
+                    string tmp = to_string(nums[s]);
+                    if(i != s) tmp += "->" + to_string(nums[i]);
+                    ret.push_back(tmp);
+                    s = i + 1;
+                }
+            }
+            
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Can someone explain this question to me plz?
+I don't really understand what this question is asking. It says return the summary of its ranges but the what does this mean?
+
+----------------------------------------------------------------------------------------------------
+Using binary search but worst case O(n)
+    public class Solution {
+    
+    class Range {
+        int start;
+        int end;
+        
+        Range(int s, int e) {
+            start = s;
+            end = e;
+        }
+    }
+    
+    public List<String> summaryRanges(int[] nums) {
+        
+        List<String> resStr = new ArrayList<>();
+        
+        if (nums.length == 0) {
+            return resStr;
+        }
+        
+        List<Range> res = new ArrayList<>();
+        helper(nums, 0, nums.length - 1, res);
+        
+        for (Range r : res) {
+            if (r.start == r.end) {
+                resStr.add(Integer.toString(r.start));
+            } else {
+                resStr.add(r.start + "->" + r.end);
+            }
+        }
+        
+        return resStr;
+    }
+    
+    private void helper(int[] nums, int i, int j, List<Range> res) {
+        if (i == j || nums[j] - nums[i] == j - i) {
+            add2res(nums[i], nums[j], res);
+            return;
+        }
+        
+        int m = (i + j) / 2;
+        
+        helper(nums, i, m, res);
+        helper(nums, m + 1, j, res);
+    }
+    
+    private void add2res(int a, int b, List<Range> res) {
+        if (res.isEmpty() || res.get(res.size() - 1).end != a - 1) {
+            res.add(new Range(a, b));
+        } else {
+            res.get(res.size() - 1).end = b;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+7-line Python implementation
+Thoughts are simple O(n) solution, just share my implementation!
+
+
+    def summaryRanges(self, nums):
+        begin, res = 0, []
+        strout = lambda b, e: str(b) + "->" + str(e) if b != e else str(b)
+        for i in range(1, len(nums)+1):
+            if i == len(nums) or nums[i] - nums[i-1] != 1:
+                res.append(strout(nums[begin], nums[i-1]))
+                begin = i
+        return res
+
+
+
+----------------------------------------------------------------------------------------------------
+Easy java solution 9 lines
+    public List<String> summaryRanges(int[] nums){
+        List<String> list = new ArrayList<>();
+        int n = nums.length;
+        for(int i = 0, j = 1; j <= n; j++){
+            if(j == n || nums[j] > nums[j-1] + 1){
+              list.add(Integer.toString(nums[i]) + (i == j-1 ? "" : "->" + Integer.toString(nums[j-1])));
+              i = j;
+            }
+        }
+        return list;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to Understand C++ Code
+    vector<string> summaryRanges(vector<int>& nums) {
+            vector<string> ret;
+            string str;
+            if(nums.size()==0)
+                return ret;
+            int start = nums[0];   
+            int end=0;
+            for(int i=1;i<nums.size();i++){
+                str = to_string(start);
+                if(nums[i]==nums[i-1]+1)
+                    end = nums[i];
+                if(nums[i]!=nums[i-1]+1){
+                    if(end != 0)
+                        str = str + "->" + to_string(end);
+                    ret.push_back(str);
+                    start = nums[i];
+                    end = 0;
+                }
+            }
+            if(end!=0)
+                str = to_string(start) + "->" + to_string(end);
+            if(end==0)
+                str = to_string(start);
+            ret.push_back(str);
+            return ret;
+        }
+
+----------------------------------------------------------------------------------------------------
+Share my Java Accepted solution
+   
+    public List<String> summaryRanges(int[] nums) {
+        List<String> res = new ArrayList<String>();
+        if(nums == null || nums.length == 0)
+            return res;
+        int start = 0;
+        int end = 0;
+        
+        while(end < nums.length){
+            StringBuilder sb = new StringBuilder();
+            while(end < nums.length - 1 && nums[end] == nums[end + 1] - 1){
+                end ++;
+            }
+            if(start == end){
+                sb.append(nums[start]);
+                res.add(sb.toString());
+            }else{
+                sb.append(nums[start]);
+                sb.append("->");
+                sb.append(nums[end]);
+                res.add(sb.toString());
+            }
+            end++;
+            start = end;
+        }
+        
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+14 line one pass c++ answer, easy to understand
+    vector<string> summaryRanges(vector<int>& nums) {
+        int n = nums.size();
+        vector<string> res;
+        int i = 0;
+        while(i<n){
+            res.push_back(to_string(nums[i]));
+            int j = i+1;
+            while(j<n && nums[j]==nums[j-1]+1)++j;
+            if(j>i+1){//more than one consecutive number
+                res.back()+="->"+to_string(nums[j-1]);
+            }//else just single number
+            i=j;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution
+Add a dummy number in the end, which will not be printed out
+
+    def summaryRanges(self, nums):
+        if not nums:
+            return []
+        
+        nums = nums + [nums[-1]+2]
+        res = []
+        head = nums[0]
+        for i in range(1,len(nums)):
+            if nums[i] - nums[i-1] > 1:
+                if head == nums[i-1]:
+                    res.append(str(head))
+                else:
+                    res.append(str(head) + "->" + str(nums[i-1]))
+                head = nums[i]
+        return res
+
+same idea, a bit cleaner, use two dummy numbers..
+
+    def summaryRanges(self, nums):
+        start, end, res = -2**31, -2**31, []
+        for i in nums+[2**31-1]:
+            if i - end == 1:
+                end = i
+            else:
+                res += [str(start)] if start == end else [str(start) + "->" + str(end)]
+                start = end = i
+        return res[1:]
+
+----------------------------------------------------------------------------------------------------
+A 7-Line C# plain Solution
+    public IList<string> SummaryRanges(int[] nums) {
+        List<string> result = new List<string>();
+        for(int i = 0, wall = 0; i < nums.Length; wall = ++i){
+            while(i + 1 < nums.Length && nums[i + 1] - nums[i] == 1) i++;
+            if(wall == i) result.Add(nums[wall].ToString());
+            else result.Add(nums[wall] + "->" + nums[i]);
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+7-9 lines in C++
+**Solution 1**
+
+Go through the numbers, `i0` is the index where the current range starts and `i` is the current index. At the end of a range, recognized by `i == nums.size()-1 || nums[i+1] > nums[i]+1`, add the range to the output and update `i0` for the next range.
+
+    vector<string> summaryRanges(vector<int>& nums) {
+        vector<string> ranges;
+        for (int i=0, i0=0; i<nums.size(); i++) {
+            if (i == nums.size()-1 || nums[i+1] > nums[i]+1) {
+                ranges.push_back(to_string(nums[i0]));
+                if (i > i0) ranges.back() += "->" + to_string(nums[i]);
+                i0 = i + 1;
+            }
+        }
+        return ranges;
+    }
+
+**Solution 2**
+
+I saw [lestrois's solution](https://leetcode.com/discuss/42198/a-7-line-c%23-plain-solution) and then wrote that approach myself in C++. For each range, find its end and then add the range to the output.
+
+    vector<string> summaryRanges(vector<int>& nums) {
+        vector<string> ranges;
+        for (int i=0, i0=0; i<nums.size(); i0=++i) {
+            while (i+1<nums.size() && nums[i+1]==nums[i]+1) i++;
+            ranges.push_back(to_string(nums[i0]));
+            if (i > i0) ranges.back() += "->" + to_string(nums[i]);
+        }
+        return ranges;
+    }
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,698 @@
+&#91;C++&#93; &#91;Java&#93; 10 line Solution - no helper
+class Solution {
+public:
+    TreeNode* addOneRow(TreeNode* root, int v, int d) {
+        if (d == 1) {
+            TreeNode* newroot = new TreeNode(v);
+            newroot->left = root;
+            return newroot;
+        }
+        else if (d == 0) {
+            TreeNode* newroot = new TreeNode(v);
+            newroot->right = root;
+            return newroot;
+        }
+
+        if (!root) {
+            return nullptr;
+        }
+        else if (d == 2) {
+            root->left  = addOneRow(root->left,  v, 1);
+            root->right = addOneRow(root->right, v, 0);
+            return root;
+        }
+        else if (d > 2) {
+            root->left  = addOneRow(root->left,  v, d - 1);
+            root->right = addOneRow(root->right, v, d - 1);
+        }
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java, three methods, one BFS and two DFS
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+        if (d < 2) {
+            TreeNode newroot = new TreeNode(v);
+            if (d == 0) newroot.right = root;
+            else newroot.left = root;
+            return newroot;
+        }
+        if (root == null) return null;
+        root.left = addOneRow(root.left, v, d == 2 ? 1 : d-1);
+        root.right = addOneRow(root.right, v, d == 2 ? 0 : d-1);
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution - O(N)
+
+public class Solution {
+	public TreeNode addOneRow(TreeNode root, int v, int d) {
+		if (d == 1) {
+			TreeNode newRoot = new TreeNode(v);
+			newRoot.left = root;
+			return newRoot;
+		}
+		add(root, v, d, 1);
+		return root;
+	}
+
+	private void add(TreeNode node, int v, int d, int currentDepth) {
+		if (node == null) {
+			return;
+		}
+
+		if (currentDepth == d - 1) {
+			TreeNode temp = node.left;
+			node.left = new TreeNode(v);
+			node.left.left = temp;
+
+			temp = node.right;
+			node.right = new TreeNode(v);
+			node.right.right = temp;
+			return;
+		}
+
+		add(node.left, v, d, currentDepth + 1);
+		add(node.right, v, d, currentDepth + 1);
+	}
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Short Python BFS
+def addOneRow(self, root, v, d):
+    dummy, dummy.left = TreeNode(None), root
+    row = [dummy]
+    for _ in range(d - 1):
+        row = [kid for node in row for kid in (node.left, node.right) if kid]
+    for node in row:
+        node.left, node.left.left = TreeNode(v), node.left
+        node.right, node.right.right = TreeNode(v), node.right
+    return dummy.left
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution
+class Solution {
+public:
+    void addOneRowR(TreeNode* root, int v, int d, int cd) {
+        if (!root) return;
+        
+        if (cd == d) {
+            TreeNode *savLeft = root->left;
+            root->left = new TreeNode(v);
+            root->left->left = savLeft;
+            
+            TreeNode *savRight = root->right;
+            root->right = new TreeNode(v);
+            root->right->right = savRight;
+            return;
+        }
+        addOneRowR(root->left, v, d, cd + 1);
+        addOneRowR(root->right, v, d, cd + 1);
+    }
+    TreeNode* addOneRow(TreeNode* root, int v, int d) {
+        if (d == 1) {
+            TreeNode *newRoot = new TreeNode(v);
+            newRoot->left = root;
+            return newRoot;
+        }
+        addOneRowR(root, v, d, 2);
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java: O(n): time O(n): space Queue - BFS - Easy solution
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+    
+        int level = 1;
+        
+        // Handle edge case.
+        if(d == 1) {
+           TreeNode newRoot = new TreeNode(v);
+            newRoot.left = root;
+            
+            return newRoot;
+        }
+        
+        Queue<TreeNode> queue = new LinkedList<>();
+        
+        queue.add(root);
+        
+        // Iterate over the rows. Find the row, after which changes have to be made.
+        for(int row = 1; row < d - 1; row++) {
+            
+            int size = queue.size();
+
+            for(int i = 0; i < size; i++) {
+
+                TreeNode top = queue.poll();
+
+                if(top.left != null) {
+                    queue.offer(top.left);
+                }
+
+                if(top.right != null) {
+                    queue.offer(top.right);
+                }
+            }
+            
+        }
+        
+        while(!queue.isEmpty()){
+            
+            TreeNode node = queue.poll();
+            
+            TreeNode left = node.left;
+            TreeNode right = node.right;
+            
+            TreeNode newLeft = new TreeNode(v);
+            TreeNode newRight = new TreeNode(v);
+            
+            node.left = newLeft;
+            newLeft.left = left;
+            
+            node.right = newRight;
+            newRight.right = right;
+            
+        }
+        
+        return root;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Easy java solution
+public TreeNode addOneRow(TreeNode root, int v, int d) {
+        if (d == 1) {
+            TreeNode newT = new TreeNode(v);
+            newT.left = root;
+            return newT;
+        }
+        dfs(root, d - 1, 1, v);
+        return root;
+    }
+    
+    public TreeNode dfs(TreeNode root, int depth, int index, int v) {
+        if (root == null) {
+            return null;
+        }
+        if (index == depth) {
+            TreeNode newLeft = new TreeNode(v);
+            TreeNode newRight = new TreeNode(v);
+            TreeNode left = dfs(root.left, depth, index + 1, v);
+            TreeNode right = dfs(root.right, depth, index + 1, v);
+            root.left = newLeft;
+            root.right = newRight;
+            newLeft.left = left;
+            newRight.right = right;
+        } else {
+            dfs(root.left, depth, index + 1, v);
+            dfs(root.right, depth, index + 1, v);
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Golang solution
+func addOneRowR(root *TreeNode, v, d, cd int) {
+    if (root == nil) {
+        return;
+    }
+        
+    if (cd == d) {
+        savLeft := root.Left
+        root.Left = &TreeNode{Val : v}
+        root.Left.Left = savLeft
+            
+        savRight := root.Right
+        root.Right = &TreeNode{Val : v}
+        root.Right.Right = savRight
+        return
+    }
+    addOneRowR(root.Left, v, d, cd + 1)
+    addOneRowR(root.Right, v, d, cd + 1)
+}
+    
+func addOneRow(root *TreeNode, v int, d int) *TreeNode {
+    if (d == 1) {
+        newRoot := &TreeNode{Val : v, Left : root }
+        return newRoot;
+    }
+    addOneRowR(root, v, d, 2);
+    return root;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Tree preOrder traversal
+public class Solution {
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+        return preOrder(root, v, d, 1, 0);
+    }
+    
+    private TreeNode preOrder(TreeNode root, int v, int d, int level, int direction) {
+        if (d == level) {
+            TreeNode newNode = new TreeNode(v);
+            if (direction == 0) {
+                newNode.left = preOrder(root, v, d, level + 1, 0);
+            }
+            else {
+                newNode.right = preOrder(root, v, d, level + 1, 1);
+            }
+            return newNode;
+        }
+        
+        if (root == null) return null;
+        
+        root.left = preOrder(root.left, v, d, level + 1, 0);
+        root.right = preOrder(root.right, v, d, level + 1, 1);
+        
+        return root;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ recursive
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* addOneRow(TreeNode* root, int v, int d) {
+        if(d == 1)
+        {
+            TreeNode* node = new TreeNode(v);
+            node -> left = root;
+            return node;
+        }
+        addOneRow(root, true, v, d-1);
+        addOneRow(root, false, v, d-1);
+        return root;
+    }
+    
+    void addOneRow(TreeNode* root, bool left, int v, int d)
+    {
+        if(!root) return;
+        if(d == 1)
+        {
+            TreeNode* node = new TreeNode(v);
+            if(left)
+            {
+                node -> left = root -> left;
+                root -> left = node;
+            }
+            else
+            {
+                node -> right = root -> right;
+                root -> right = node;
+            }
+        }
+        else
+        {
+            auto child = root -> right;
+            if(left) child = root -> left;
+            addOneRow(child, true, v, d-1);
+            addOneRow(child, false, v, d-1);
+            
+        }
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ BFS and DFS Solution
+class Solution {
+public:
+    TreeNode* addOneRow(TreeNode* root, int v, int d) {
+        if (d == 1) {
+            TreeNode *newRoot = new TreeNode(v);
+            newRoot->left = root;
+            return newRoot;
+        }
+        --d;
+        queue<TreeNode*> q;
+        TreeNode *t = nullptr;
+        q.push(root);
+        while (!q.empty()) {
+            int size = q.size();
+            if (--d == 0) {
+                while (size--) {
+                    t = q.front(); q.pop();
+                    TreeNode *l = new TreeNode(v);
+                    TreeNode *r = new TreeNode(v);
+                    l->left = t->left; t->left = l;
+                    r->right = t->right; t->right = r;
+                }
+                break;
+            }
+            while (size--) {
+                t = q.front(); q.pop();
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+        }
+        return root;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python BFS using queue
+class Solution(object):
+    def addOneRow(self, root, v, d):
+        """
+        :type root: TreeNode
+        :type v: int
+        :type d: int
+        :rtype: TreeNode
+        """
+        if d == 1:
+            node = TreeNode(v)
+            node.left = root
+            return node
+        queue = collections.deque([(root, 1)])
+        level = 0
+        while queue and level < d:
+            node, level = queue.popleft()
+            if level == d-1:
+                left, right = node.left, node.right
+                node.left = TreeNode(v)
+                node.right = TreeNode(v)
+                node.left.left, node.right.right = left, right
+            else:
+                if node.left: queue.append((node.left, level+1))
+                if node.right: queue.append((node.right, level+1))
+        return root
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward  AC Java DFS Solution with Explanation
+public class Solution {
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+        return helper(root,d,1,v,true);
+    }
+    //t is current node,d is target depth, c is current depth l means whether its on left or right
+    public TreeNode helper(TreeNode t,int d,int c,int v,boolean l){
+        if(d!=c&&t==null) return null; //if current depth is not the target depth and current node is null, then return
+        if(d==c){
+        TreeNode node = new TreeNode(v);
+            if(l){
+                // if currrent node is on the left, make it left subtree of inserted node 
+                node.left = t;
+            }else{
+                //if current node is on right, make current node right subtree of inserted node
+                node.right = t;
+            }
+            return node;
+        }
+        // if current depth does not reach the target depth , continue to do dfs
+        t.left = helper(t.left,d,c+1,v,true);
+        t.right = helper(t.right,d,c+1,v,false);
+        return t;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n): Adding Nodes similar to LL
+public TreeNode addOneRow(TreeNode root, int v, int d) {
+	if (d == 1) {
+		TreeNode newRoot = new TreeNode(v);
+		newRoot.left = root;
+		return newRoot;
+	}
+	addNodeHelper(root, v, d);
+	return root;
+}
+
+private void addNodeHelper(TreeNode root, int v, int d) {
+	if (d == 2) {
+		TreeNode newNode = new TreeNode(v);
+		newNode.left = root.left;
+		root.left = newNode;
+
+		newNode = new TreeNode(v);
+		newNode.right = root.right;
+		root.right = newNode;
+	}
+
+	if (root.left != null) {
+		addNodeHelper(root.left, v, d - 1);
+	}
+	if (root.right != null) {
+		addNodeHelper(root.right, v, d - 1);
+	}
+}
+
+----------------------------------------------------------------------------------------------------
+JAVA, Iterative
+public TreeNode addOneRow(TreeNode root, int v, int d) {
+        if(d == 1) {
+            TreeNode new_root = new TreeNode(v);
+            new_root.left = root;
+            return new_root;
+        }
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        int level = 1;
+        while(++level < d) {
+            int size = queue.size();
+            while(size-- > 0) {
+                TreeNode cur = queue.poll();
+                if(cur.left != null) queue.add(cur.left);
+                if(cur.right != null) queue.add(cur.right);
+            }
+        }
+        while(!queue.isEmpty()) {
+            TreeNode cur = queue.poll();
+            TreeNode temp_left = cur.left;
+            TreeNode temp_right = cur.right;
+            cur.left = new TreeNode(v);
+            cur.left.left = temp_left;
+            cur.right = new TreeNode(v);
+            cur.right.right = temp_right;
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed inline comments
+def __init__(self):
+    
+    self.insert_here = []
+
+def addOneRow(self, root, v, d):
+    """
+    :type root: TreeNode
+    :type v: int
+    :type d: int
+    :rtype: TreeNode
+    """
+    #
+    #  If depth d is 1 that means there is no depth d-1 at all,
+    # then create a tree node with value v as the new root of the whole original tree,
+    # and the original tree is the new root's left subtree.
+    #
+    if d == 1:
+        new_tree = TreeNode(v)
+        new_tree.left = root
+        return new_tree
+    
+    #
+    # recursively traverse the tree,
+    # and include nodes to be updated
+    # in the insert_here list
+    #
+    self.addOneRowHelper(root, v, d, curr_depth=1)
+    
+    #
+    # go through the insert_here list and
+    # add the value to insert
+    #
+    for node in self.insert_here:
+        
+        #
+        # left
+        #
+        temp = node.left
+        node.left = TreeNode(v)
+        node.left.left = temp
+        
+        #
+        # right
+        #
+        temp = node.right
+        node.right = TreeNode(v)
+        node.right.right = temp
+    
+    #
+    # return the modified tree
+    #
+    return root
+
+
+def addOneRowHelper(self, node, v, d, curr_depth):
+
+    #
+    # end recursion when there are no more nodes to traverse till depth d-1
+    #
+    if node is None:
+        return
+
+    #
+    # end recursion at depth d-1
+    #
+    if curr_depth == d - 1:
+            
+        self.insert_here.append(node)
+    
+    #
+    # recursively check left and right nodes in the next depth down
+    #
+    elif curr_depth < d:
+        
+        self.addOneRowHelper(node.left, v, d, curr_depth+1) 
+        self.addOneRowHelper(node.right, v, d, curr_depth+1)
+
+
+----------------------------------------------------------------------------------------------------
+Simple dfs Java solution
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+        return dfs(root,v,d, true);
+    }
+    private TreeNode dfs(TreeNode root, int v, int d, boolean dir){
+        if(d==1){
+            TreeNode newRoot=new TreeNode(v);
+            if(dir) newRoot.left=root;
+            else newRoot.right=root;
+            return newRoot;
+        }
+        if(root==null) return root;
+        root.left=dfs(root.left, v, d-1,true);
+        root.right=dfs(root.right, v, d-1,false);
+        return root;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution without helper
+    public TreeNode addOneRow(TreeNode root, int v, int d) {
+        if(root == null) return d == 1 ? new TreeNode(v) : null;
+        // exception when d == 1, the root will be left node of new tree
+        if(d == 1) {
+            TreeNode tmp = new TreeNode(v);
+            tmp.left = root;
+            return tmp;
+        }
+        // when d == 2 it will be added as left and right of root
+        if(d == 2) {
+            TreeNode left = root.left;
+            TreeNode right = root.right;
+            root.left = new TreeNode(v);
+            root.right= new TreeNode(v);
+            root.left.left = left;
+            root.right.right = right;
+            return root;
+        }
+        // dfs when d > 2
+        addOneRow(root.left, v, d - 1);
+        addOneRow(root.right, v, d - 1);
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS Iterative
+public TreeNode addOneRow(TreeNode root, int v, int d) {
+        if (d==1) {
+            TreeNode newRoot = new TreeNode(v);
+            newRoot.left = root;
+            return newRoot;
+        }
+        Queue<TreeNode> queue = new LinkedList<>();
+        int depth = 0;
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            depth ++;
+            int size = queue.size();
+            for (int i=0;i<size;i++){
+                TreeNode cur = queue.poll();
+                if (depth == d-1){
+                    TreeNode oldLeft = cur.left;
+                    cur.left = new TreeNode(v);
+                    cur.left.left = oldLeft;
+                    TreeNode oldRight = cur.right;
+                    cur.right = new TreeNode(v);
+                    cur.right.right = oldRight;
+                }
+                if (cur.left != null) queue.offer(cur.left);
+                if (cur.right != null) queue.offer(cur.right);
+            }
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+public class Solution {
+public TreeNode addOneRow(TreeNode root, int v, int d) {
+    if(d == 1) {
+        TreeNode newRoot = new TreeNode(v);
+        newRoot.left = root;
+        return newRoot;
+    }
+    if(root == null)
+        return root;
+    if(d == 2) {
+        TreeNode left = new TreeNode(v);
+        TreeNode right = new TreeNode(v);
+        left.left = root.left;
+        right.right = root.right;
+        root.left = left;
+        root.right = right;
+    } else {
+        addOneRow(root.left, v, d - 1);
+        addOneRow(root.right, v, d - 1);
+    }
+     return root;
+}
+
+
+----------------------------------------------------------------------------------------------------

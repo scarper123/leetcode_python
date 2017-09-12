@@ -1,0 +1,456 @@
+Java DP O(nk) solution
+    public static int kInversePairs(int n, int k) {
+        int mod = 1000000007;
+        if (k > n*(n-1)/2 || k < 0) return 0;
+        if (k == 0 || k == n*(n-1)/2) return 1;
+        long[][] dp = new long[n+1][k+1];
+        dp[2][0] = 1;
+        dp[2][1] = 1;
+        for (int i = 3; i <= n; i++) {
+            dp[i][0] = 1;
+            for (int j = 1; j <= Math.min(k, i*(i-1)/2); j++) {
+                dp[i][j] = dp[i][j-1] + dp[i-1][j];
+                if (j >= i) dp[i][j] -= dp[i-1][j-i];
+                dp[i][j] = (dp[i][j]+mod) % mod;
+            }
+        }
+        return (int) dp[n][k];
+    }
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def kInversePairs(self, N, K):
+    MOD = 10**9 + 7
+    ds = [0] + [1] * (K + 1)
+    for n in xrange(2, N+1):
+        new = [0]
+        for k in xrange(K+1):
+            v = ds[k+1]
+            v -= ds[k-n+1] if k >= n else 0
+            new.append( (new[-1] + v) % MOD )
+        ds = new
+    return (ds[K+1] - ds[K]) % MOD
+
+
+----------------------------------------------------------------------------------------------------
+Shared my C++ O(n * k) solution with explanation
+class Solution {
+public:
+    int kInversePairs(int n, int k) {
+        vector<vector<int>> dp(n+1, vector<int>(k+1));
+        dp[0][0] = 1;
+        for(int i = 1; i <= n; ++i){
+            dp[i][0] = 1;
+            for(int j = 1; j <= k; ++j){
+                dp[i][j] = (dp[i][j-1] + dp[i-1][j]) % mod;
+                if(j - i >= 0){
+                    dp[i][j] = (dp[i][j] - dp[i-1][j-i] + mod) % mod; 
+                    //It must + mod, If you don't know why, you can check the case 1000, 1000
+                }
+            }
+        }
+        return dp[n][k];
+    }
+private:
+    const int mod = pow(10, 9) + 7;
+};
+
+
+----------------------------------------------------------------------------------------------------
+java,DP.Thank you so much &#64;GardenAAA for your advice.
+public int kInversePairs(int n, int k) {
+        long[][] dp = new long[n][k+1];
+        dp[0][0]=1;
+        for(int i=1;i<n;i++){
+            for(int j=0;j<=k;j++){
+                if(j>0){
+                    dp[i][j]=dp[i][j-1]+dp[i-1][j];
+                    dp[i][j]=j-i>0?(dp[i][j]-dp[i-1][j-i-1]):dp[i][j];
+                }
+                else{
+                    for(int m=j;m>=0&&m>=(j-i);m--){
+                        dp[i][j]+=dp[i-1][m];
+                    }
+                }
+                dp[i][j]=dp[i][j]>0?dp[i][j]%1000000007:(dp[i][j]+1000000007)%1000000007;
+            }
+        }
+        return (int)dp[n-1][k];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python concise solution
+def kInversePairs(self, n, k):
+        dp = [1] + [0] * k
+        for i in range(2, n + 1):
+            for j in range(1, k + 1): dp[j] += dp[j - 1]
+            for j in range(k, 0, -1): dp[j] -= j - i >= 0 and dp[j - i]
+        return dp[k] % (10**9 + 7)
+
+----------------------------------------------------------------------------------------------------
+Java O(nk) Time O(k) Space DP Solution
+public static int kInversePairs(int n, int k) {   
+  int[] dp = new int[k+1];
+  dp[0] = 1; int mod = 1000000007;
+  for (int i=1;i<=n;i++) {
+      int[] temp = new int[k+1];
+      for (int j=0;j<=k;j++) {
+          if (j==0) temp[j] = 1;
+          else {
+            temp[j] = temp[j-1] + dp[j]; 
+            temp[j] %= mod;
+            if (j >= 1 + Math.min(i-1, j))  temp[j] += mod - dp[j-1-Math.min(i-1, j)];
+            temp[j] %= mod;
+          }
+      }
+      dp = temp;
+  }
+  return dp[k];
+}
+
+
+----------------------------------------------------------------------------------------------------
+share O(nK) solution using Java with some explanation !
+public class Solution {
+    public int kInversePairs(int n, int k) {
+         long mod=(long)(1e9+7);
+         
+         long[] res=new long[k+1];
+         long[] sum=new long[k+1];
+         res[0]=1;
+         Arrays.fill(sum,1);
+         
+         for(int i=2;i<=n;i++){
+            //long[] temp=sum.clone();
+            for(int j=0;j<=k;j++){
+                if(j==0){
+                    res[0]=1;
+                }else{
+                    res[j]=(j-i)>=0 ? ((sum[j]-sum[j-i]+mod)%mod) : ((sum[j]+mod)%mod);
+                }
+            }
+            
+            for(int j=1;j<=k;j++){
+                sum[j]=(res[j]+sum[j-1]+mod)%mod;
+            }
+         }
+         
+         return (int)res[k];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+I did&#x27;t understand this problem and the example
+<p>In example 2: n = 3, k = 1, there are two different arrays, but the output is 1.<br/>
+Is there anyone can give me some explanation?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Share my DP O(n* k) solution
+public class Solution {
+    public int KInversePairs(int n, int k) {
+        if(k > n*(n-1)/2)
+            return 0;
+            
+        int mod = 1000000007;
+        var dp = new long[k+1];
+        var sums = new long[k+1];
+        dp[0] = 1;
+        
+        for(int i = 0;i<=k;i++){
+            sums[i] = 1;    
+        }
+        
+        for(int i = 2;i<=n;i++){
+            for(int j = k;j>=1;j--){
+                int minIndex = Math.Max(0,j-(i-1));
+                //Console.WriteLine(i+" --- "+j+" --- "+minIndex);
+                dp[j]=(sums[j]-sums[minIndex]+mod)%mod+dp[minIndex];
+                dp[j]%=mod;
+            }
+            long sum = 0;
+            for(int j = 0;j<=k;j++){
+                sum+=dp[j];
+                sum %=mod;
+                sums[j]=sum;
+            }
+            
+            //Console.WriteLine(string.Join(",",dp));
+        }
+        
+        return (int)dp[k];   
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+beat 100% 22ms java solution
+public class Solution {
+    public int kInversePairs(int n, int k) {
+        int[] d = new int[k+1];
+        d[0] = 1;
+        for(int i = 2;i <= n;i++){
+           for(int j = 1;j <= k;j++){
+                d[j] = (d[j] + d[j-1]) % 1000000007;
+           }
+           for(int j = k;j >= i;j--){
+                d[j] = (d[j] - d[j-i] + 1000000007) % 1000000007;
+           }
+        }
+        return d[k];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+share my code, explain later
+#include <iostream>
+#include <cstdio>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+const int maxn = 1e3 + 5;
+const int maxk = 1e3 + 5;
+const int MOD = 1e9 + 7;
+
+int dp[maxn][maxk];
+
+class Solution {
+public:
+    int kInversePairs(int n, int k) {
+        for(int i = 1; i <= n; i++)
+            dp[i][0] = 1;
+        
+        for(int i = 2; i <= n; i++){
+            for(int j = 1; j <= k; j++){
+               dp[i][j] = (dp[i][j - 1] - (j- i >= 0 ? dp[i - 1][j - i] : 0) % MOD 
+                            + dp[i - 1][j]) % MOD;
+               if(dp[i][j] < 0)
+                    dp[i][j] = dp[i][j] + MOD;
+            }
+        }
+
+        return dp[n][k];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python O(nk) time solution from O(nk) space to O(k) space with explanation.
+class Solution(object):
+    def kInversePairs(self, n, k):
+        """
+        :type n: int
+        :type k: int
+        :rtype: int
+        """
+        MOD = 10**9 + 7
+        upper = n * (n - 1) / 2
+        if k == 0 or k == upper:
+            return 1
+        if k > upper:
+            return 0
+        dp = [0] * (k + 1)
+        dp[0] = 1
+        for i in range(1, n + 1):
+            temp =[1] + [0] * k
+            for j in range(k + 1):
+                temp[j] = (temp[j-1] + dp[j]) % MOD
+                if j - i >= 0:
+                    temp[j] = (temp[j] - dp[j - i]) % MOD
+            dp = temp
+        return dp[k]
+
+
+----------------------------------------------------------------------------------------------------
+C++ Clean &amp; Clear O(k) Space, O(nk) Time DP Solution
+class Solution {
+    long long base = 1000000007;
+public:
+    int kInversePairs(int n, int k) {
+        vector<int> dp0 (k + 1), dp1(k + 1);
+        dp0[0] = dp1[0] = 1;
+        for (int i = 1; i <= n; ++ i)
+        {
+            for (int j = 1; j <= k; ++ j)
+                dp1[j] = (dp1[j - 1] + dp0[j] + base - (j - i >= 0 ? dp0[j - i] : 0)) % base; 
+            swap(dp0, dp1); //swap costs O(1) in C++
+        }
+        return dp0.back();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Share my O(n*k) time, O(k) space solution in C++
+class Solution {
+public:
+    int kInversePairs(int n, int k) {
+        // how to solve using DP?
+        // by change the position of the largest number (the last number 'n')
+        // it's not hard to see: f[n][k] = f[n-1][k] + f[n-1][k-1] + ... + f[n-1][0]
+        // since we only need the f[n-1][:], we don't need to store everything
+        // f[0] = 1, since there is only one number at the beginning
+        vector<int> f(k+1, 0);
+        f[0] = 1;
+        int MOD = 1000000007;
+        for (int i=2; i<=n; i++) {
+        // given i distinct numbers, there can be at most i*(i-1)/2 inverse pairs, so we don't need to update everything
+            int index = min(i*(i-1)/2, k); 
+            for (int j=1; j<=index; j++)
+                f[j] = (f[j] + f[j-1]) % MOD;
+            // fix the problem of max(0, j-i+1)
+            for (int j=index; j>i-1; j--)
+                f[j] = ((f[j]-f[j-i])%MOD + MOD) % MOD;
+        }
+        return f[k];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n * k) with Explanation
+class Solution {
+  const int mod = 1000000007;
+public:
+  int kInversePairs(int n, int k) {
+    if (n == 1)
+      return k == 0 ? 1 : 0;
+    vector<vector<int>> dp(n + 1, vector<int>(k + 1, 0));
+    for (int i = 0; i <= k; i++)
+        dp[1][i] = 1;
+    // for n numbers
+    for (int i = 2; i <= n; i++) {
+      // for k combines
+      for (int j = 0; j <= k; j++) {
+        dp[i][j] = (j - 1 >= 0 ? dp[i][j - 1] : 0);
+        int val = (dp[i - 1][j] - (j - i >= 0 ? dp[i - 1][j - i] : 0) + mod) % mod;
+        dp[i][j] = (dp[i][j] + val) % mod;
+      }
+    }
+    return (dp[n][k] - dp[n][k - 1] + mod) % mod;
+  }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n*K) C++ &#91;Bottom Up from 0 inversions to K&#93;
+    for(int i=0;i<=k;i++){
+        for(int j=0;j<=n;j++){
+           dp[i][j] = 0;
+           if(i == 0){
+               dp[i][j] = 1;
+           }
+           
+        }
+    }
+    dp[0][0] = 0;
+    for(int i=1;i<=k;i++){
+        for(int j=1;j<=n;j++){
+            int64_t x = 0;
+            if(i-j >= 0){
+                x = dp[i-j][j-1];
+            }
+            dp[i][j] = ((dp[i-1][j]%mod + dp[i][j-1]%mod)%mod - x + mod)%mod;
+           
+        }
+    }
+    int64_t y = 0;
+    if(k>0){
+        y = dp[k-1][n];
+    }
+    return (dp[k][n]-y+mod)%mod;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Please help with weird behavior of Modulo.
+public class Solution {
+    
+    //equation: T[n,k] = Sum(i= k-n+1 ~ k){T[n-1, i]}
+    //T[n,k-1] = Sum(i=0~n-1){T[n-1,k-1-i]}
+    
+    //recursion: T[n,k] = T[n,k-1] - d(k-n >=0)*T[n-1, k-n] + T[n-1, k]
+    //base case: T[*, 0]=1; T[0,*]=0; T[1,*]=0;
+    //0<=k<=n*(n-1)
+    
+    static final long MOD = 1000000007L;
+    public int kInversePairs(int n, int k) {
+        
+        long[][] T = new long[n+1][k+1];
+        
+        for(int t=0; t<=n; t++){
+            T[t][0] = 1;
+        }
+        
+        for(int r=2; r<=n; r++){
+            for(int c=1; c<=k ; c++){
+                T[r][c] =   T[r-1][c]
+                            - ((c >=r) ? T[r-1][c-r] : 0)
+                            + T[r][c-1];
+                    
+                T[r][c] = (T[r][c] + MOD) % MOD;
+            }
+        }
+        
+        return (int) T[n][k];
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+THIS SHOULD BE A HARD QUESTION
+<p>If this question appeared two years ago, it would probably end up being a hard question. Coming up with the O(NK) time DP solution is not something you can always expect.</p>
+<p><a class="plugin-mentions-a" href="https://discuss.leetcode.com/groups/administrators">&#64;administrators</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n*k) Solution with O(k) space
+class Solution {
+public:
+    int kInversePairs(int n, int k) {
+        static const int kMod = 1e9 + 7;
+        // n k ?
+        // 2 0 1   : 12
+        // 2 1 1   : 21
+        // ---------------------
+        // 3 0 1   : 123
+        // 3 1 2   : 132 213
+        // 3 2 2   : 312 231
+        // 3 3 1   : 321
+        // ---------------------
+        // 4 0 ?   : 1234
+        // 4 1     : 1243(from 0);  1324 2134(from 1)
+        // 4 2     : 1423(from 0);  1342 2143(from 1);  3124 2314(from 2)
+        // 4 3     : 4123(from 0);  1432 2413(from 1);  3142 2341(from 2);  3214(from 3)
+        // 4 4     : 4132 4213(from 1);  3412 2431(from 2);  3241(from 3);
+        vector<int> count(k + 1, 0);
+        count[0] = 1;
+        int end = 0;
+        for (int i = 2; i <= n; ++i) {
+            vector<int> tmp(k + 1, 0);
+            end = min(k, end + i - 1);
+            tmp[0] = 1;
+            for (int head = 1, tail = 0; head <= end; ++head) {
+                tmp[head] = (tmp[head - 1] + count[head]) % kMod;
+                if (head - tail >= i) {
+                    tmp[head] -= count[tail];
+                    ++tail;
+                    if (tmp[head] < 0) {
+                        tmp[head] += kMod;
+                    }
+                }
+            }
+            swap(tmp, count);
+        }
+        return count.back();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

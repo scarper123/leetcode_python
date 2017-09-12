@@ -1,0 +1,619 @@
+My concise O(m+n) Java solution
+We start search the matrix from top right corner, initialize the current position to top right corner, if the target is greater than the value in current position, then the target can not be in entire row of current position because the row is sorted, if the target is less than the value in current position, then the target can not in the entire column because the column is sorted too. We can rule out one row or one column each time, so the time complexity is O(m+n).
+
+    public class Solution {
+        public boolean searchMatrix(int[][] matrix, int target) {
+            if(matrix == null || matrix.length < 1 || matrix[0].length <1) {
+                return false;
+            }
+            int col = matrix[0].length-1;
+            int row = 0;
+            while(col >= 0 && row <= matrix.length-1) {
+                if(target == matrix[row][col]) {
+                    return true;
+                } else if(target < matrix[row][col]) {
+                    col--;
+                } else if(target > matrix[row][col]) {
+                    row++;
+                }
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ with O(m+n) complexity
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int m = matrix.size();
+        if (m == 0) return false;
+        int n = matrix[0].size();
+
+        int i = 0, j = n - 1;
+        while (i < m && j >= 0) {
+            if (matrix[i][j] == target)
+                return true;
+            else if (matrix[i][j] > target) {
+                j--;
+            } else 
+                i++;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+*Java* an easy-to-understand divide and conquer method
+The coding seems to be much more complex than those smart methods such as [this one][1], but the idea behind is actually quite straightforward. `Unfortunately, it is not as fast as the smart ones.`
+
+First, we divide the matrix into four quarters as shown below:
+
+      zone 1      zone 2
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+    -----------------------
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+    *  *  *  * | *  *  *  *
+      zone 3      zone 4
+
+We then compare the element in the center of the matrix with the target. There are three possibilities:
+
+
+ - center < target. In this case, we discard zone 1 because all elements in zone 1 are less than target.
+
+ - center > target. In this case, we discard zone 4.
+
+ - center == target. return true.
+
+For time complexity, if the matrix is a square matrix of size `nxn`, then for the worst case, 
+
+    T(nxn) = 3T(n/2 x n/2)
+
+which makes 
+  
+    T(nxn) = O(n^log3)
+
+Code in Java:
+
+     public boolean searchMatrix(int[][] matrix, int target) {
+        int m = matrix.length;
+        if(m<1) return false;
+        int n = matrix[0].length;
+        
+        return searchMatrix(matrix, new int[]{0,0}, new int[]{m-1, n-1}, target);
+    }
+    
+    private boolean searchMatrix(int[][] matrix, int[] upperLeft, int[] lowerRight, int target) {
+    	if(upperLeft[0]>lowerRight[0] || upperLeft[1]>lowerRight[1]
+    			|| lowerRight[0]>=matrix.length || lowerRight[1]>=matrix[0].length) 
+    		return false;
+    	if(lowerRight[0]-upperLeft[0]==0 && lowerRight[1]-upperLeft[1]==0)
+    		return matrix[upperLeft[0]][upperLeft[1]] == target;
+    	int rowMid = (upperLeft[0] + lowerRight[0]) >> 1;
+    	int colMid = (upperLeft[1] + lowerRight[1]) >> 1;
+    	int diff = matrix[rowMid][colMid] - target;
+    	if(diff > 0) {
+    		return searchMatrix(matrix, upperLeft, new int[]{rowMid, colMid}, target)
+    				|| searchMatrix(matrix, new int[]{upperLeft[0],colMid+1}, new int[]{rowMid, lowerRight[1]}, target)
+    				|| searchMatrix(matrix, new int[]{rowMid+1,upperLeft[1]}, new int[]{lowerRight[0], colMid}, target);
+    	}
+    	else if(diff < 0) {
+     		return searchMatrix(matrix, new int[]{upperLeft[0], colMid+1}, new int[]{rowMid, lowerRight[1]}, target)
+    				|| searchMatrix(matrix, new int[]{rowMid+1, upperLeft[1]}, new int[]{lowerRight[0], colMid}, target)
+    				|| searchMatrix(matrix, new int[]{rowMid+1, colMid+1}, lowerRight, target);
+    	}
+    	else return true;
+    }
+
+
+  [1]: https://leetcode.com/discuss/48852/my-concise-o-m-n-java-solution
+
+----------------------------------------------------------------------------------------------------
+Java short code, O(m+n)
+    public class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        int m=matrix.length, n=matrix[0].length, i=0, j=n-1;
+        while (i<m && j>=0) {
+            if (matrix[i][j]==target) return true;
+            else if (matrix[i][j]<target) i++;
+            else j--;
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ two solutions (O(m+n), O(mlogn))
+1. O(m+n) solution
+
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int i = 0;
+        int j = matrix[0].size() - 1;
+        
+        while(i < matrix.size() && j >= 0) {
+            if(matrix[i][j] == target)
+                return true;
+            
+            if(matrix[i][j] < target)
+                i++;
+            else
+                j--;
+        }
+        
+        return false;
+        }
+
+
+
+
+2. O(mlogn) solution
+
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+		return searchMatrix(matrix, target, 0, matrix.size() - 1);
+	    }
+
+	    bool searchMatrix(vector<vector<int>>& matrix, int target, int top, int bottom) {
+		if (top > bottom)
+			return false;
+
+		int mid = top + (bottom - top) / 2;
+		if (matrix[mid].front() <= target && target <= matrix[mid].back())
+			if (searchVector(matrix[mid], target)) return true;
+
+		if (searchMatrix(matrix, target, top, mid - 1)) return true;
+		if (searchMatrix(matrix, target, mid + 1, bottom)) return true;
+
+		return false;
+	    }
+
+	    bool searchVector(vector<int>& v, int target) {
+		int left = 0, right = v.size() - 1;
+
+		while (left <= right) {
+			int mid = left + (right - left) / 2;
+			if (v[mid] == target)
+				return true;
+			if (v[mid] < target)
+				left = mid + 1;
+			else
+				right = mid - 1;
+		}
+
+		return false;
+	    }
+
+
+----------------------------------------------------------------------------------------------------
+AC clean Java solution
+If we stand on the top-right corner of the matrix and look diagonally, it's kind of like a BST, we can go through this matrix to find the target like how we traverse the BST.
+
+    public boolean searchMatrix(int[][] matrix, int target) {
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0)
+            return false;
+
+        int n = matrix.length, m = matrix[0].length;
+        int i = 0, j = m - 1;
+        
+        while (i < n && j >= 0) {
+            int num = matrix[i][j];
+            
+            if (num == target)
+                return true;
+            else if (num > target)
+                j--;
+            else
+                i++;
+        }
+        
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+6-9 lines C++&#x2F;Python Solutions with Explanations
+Well, the idea is to search from the **top-right** element and then reduce the range for further searching by comparisons between `target` and the current element.
+ 
+Let's take the matrix in the problem statement as an example.
+
+    [
+      [1,   4,  7, 11, 15],
+      [2,   5,  8, 12, 19], 
+      [3,   6,  9, 16, 22],
+      [10, 13, 14, 17, 24],
+      [18, 21, 23, 26, 30]
+    ] 
+
+Suppose we want to search for `12`. We first initialize `r = 0` and `c = 4`. We compare `12` with `matrix[r][c] = matrix[0][4] = 15` and `12 < 15`, so `12` cannot appear in the column of `15` since all elements below `15` are not less than `15`. Thus, we decrease `c` by `1` and reduce the search range by a column. Now we compare `12` with `matrix[r][c] = matrix[0][3] = 11` and `12 > 11`, so `12` cannot appear in the row of `11` since all elements left to `11` are not greater than `11`. Thus, we increase `r` by `1` and reduce the search range by a row. Then we reach `matrix[1][3] = 12 = target` and we are done (return `true`). If we have moved beyond the matrix and have not found the `target`, return `false`. 
+
+Putting these together, we will have the following short codes.
+
+----------
+**C++**
+
+    class Solution {
+    public:
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+            int m = matrix.size(), n = matrix[0].size(), r = 0, c = n - 1;
+            while (r < m && c >= 0) {
+                if (matrix[r][c] == target) return true;
+                if (matrix[r][c] > target) c--;
+                else r++;
+            }
+            return false;
+        } 
+    };
+
+----------
+**Python**
+
+    class Solution:
+        # @param {integer[][]} matrix
+        # @param {integer} target
+        # @return {boolean}
+        def searchMatrix(self, matrix, target):
+            m, n, r, c = len(matrix), len(matrix[0]), 0, n - 1
+            while r < m and c >= 0:
+                if matrix[r][c] == target:
+                    return True
+                if matrix[r][c] > target:
+                    c -= 1
+                else: 
+                    r += 1
+            return False
+
+----------------------------------------------------------------------------------------------------
+My C++ soluation using Binary search Tree model beats 100%~~~~
+at first i use binary search method, but i found it's hard to pruning Redundant situation,and i just found we can treat the left bottom as a root of a BST so we only need o(m+N) to find the target.
+
+    class Solution {
+    public:
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+            int row = matrix.size();
+            int col = matrix[0].size();
+            int i = row-1,j =0;
+            while(i>=0&&j<=col-1)
+            {
+                if(target>matrix[i][j])
+                {
+                    j++;
+                }
+                else if(target<matrix[i][j])
+                {
+                    i--;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+So clear solve for c++
+    class Solution {
+    public:
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+            if(matrix.size() == 0)return false;
+            return searchMatrix(matrix, 0, matrix[0].size() - 1, target);
+        }
+        bool searchMatrix(vector<vector<int>>& matrix, int x, int y, int target) {
+            if(x >= matrix.size() || y < 0)return false;
+            if(matrix[x][y] == target)return true;
+            else if(matrix[x][y] < target) return searchMatrix(matrix, x + 1, y, target);
+            else if(matrix[x][y] > target) return searchMatrix(matrix, x, y - 1, target);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4 lines C, 6 lines Ruby, 7 lines Python, 1-liners
+Same O(m+n) method as most, just a bit different style/languages.
+
+---
+
+**C**
+
+Check the top-right corner. If it's not the target, then remove the top row or rightmost column.
+
+    bool searchMatrix(int** A, int m, int n, int target) {
+        int x = ~target;
+        while (m && n && (x = A[0][n-1]) != target)
+            x < target ? A++, m-- : n--;
+        return x == target;
+    }
+
+**Ruby**
+
+    def search_matrix(matrix, target)
+        j = -1
+        matrix.each { |row|
+            j -= 1 while row[j] && row[j] > target
+            return true if row[j] == target
+        }
+        false
+    end
+
+**Python**
+
+    def searchMatrix(self, matrix, target):
+        j = -1
+        for row in matrix:
+            while j + len(row) and row[j] > target:
+                j -= 1
+            if row[j] == target:
+                return True
+        return False
+
+**1-liners**
+
+Relax, I know they're O(mn). This is just for fun (although they did get accepted):
+
+Python (204 ms):
+
+    def searchMatrix(self, matrix, target):
+        return any(target in row for row in matrix)
+
+Ruby (828 ms):
+
+    def search_matrix(matrix, target)
+        matrix.any? { |row| row.include? target }
+    end
+
+----------------------------------------------------------------------------------------------------
+Java Solution Worst Case O(m+n)
+    public boolean searchMatrix(int[][] matrix, int target) {
+        if(matrix==null ||matrix.length==0 ||matrix[0].length==0)
+            return false;
+        int i=0,j=matrix[0].length-1;
+        while(i<matrix.length && j>=0){
+            if(matrix[i][j] == target)
+                return true;
+            else if(matrix[i][j] < target)
+                i++;
+            else
+                j--;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+2-clean-C++ implementation with detailed complexity analysis
+ Here is the O(M+N) solution, It is important to make it clear we choose the position
+
+         right-up-corner-position : can help us to exclude a column or a row
+
+So by judging the right-up-corner-value, we can exclude a column or a row one loop, so the loop is 
+O(M+N) time complexity.
+
+    class Solution {
+    public:
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+            int m=matrix.size();
+            if(m==0)  return false;
+            int n=matrix[0].size();
+            /*** start from the right-up-position ***/
+            int i=0, j=n-1;
+            while(i<m && j>=0){
+                if(matrix[i][j]==target)  return true;
+                /*** the element-of-column-j >= matrix[i][j] > target ***/
+                else if(matrix[i][j]>target)  j--;
+                /*** the element-of-row-i <= matrix[i][j] < target ***/
+                else   i++;
+            }
+            return false;
+        }
+    };
+
+
+Here is a recursion-version-implementation, by analyzing the time complexity 
+
+      T(N)=3*(T(N/4)) + O(1)
+
+Based the master theory, 
+
+     f(n) = O(1) = O(log(4, 3-e))    with e=2   
+
+So
+
+     T(n) = O(N ^ log(4, 3) )    <  O(N)
+
+here is the C++ implementation:
+
+
+       class Solution {
+        public:
+            bool searchMatrix(vector<vector<int>>& matrix, int target) {
+                if(matrix.size()==0) return false;
+                int row=matrix.size(), col=matrix[0].size();
+                return help(matrix, 0, row-1, 0, col-1, target);
+            }
+            
+            bool help(vector<vector<int>>& matrix, int row_start, int row_end, int col_start, int col_end, int target) {
+                if(row_start>row_end || col_start>col_end)  return false;
+                int row_mid=(row_start+row_end)/2, col_mid=(col_start+col_end)/2;
+                if(matrix[row_mid][col_mid]==target)    return true;
+                else if(matrix[row_mid][col_mid]>target){
+                    /*** left-up || left-down || right-up ***/
+                    return help(matrix, row_start, row_mid-1, col_start, col_mid-1, target) ||
+                        help(matrix, row_mid, row_end, col_start, col_mid-1, target) ||
+                        help(matrix, row_start, row_mid-1, col_mid, col_end, target);
+                }
+                else{
+                    /*** right-down || left-down || right-up ***/
+                    return help(matrix, row_mid+1, row_end, col_mid+1, col_end, target) ||
+                        help(matrix, row_mid+1, row_end, col_start, col_mid, target) ||
+                        help(matrix, row_start, row_mid, col_mid+1, col_end, target);
+                }
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Python O(m+n) with clear search strategy
+
+
+    class Solution:
+        # @param {integer[][]} matrix
+        # @param {integer} target
+        # @return {boolean}
+        def searchMatrix(self, matrix, target):
+            if matrix:
+                row,col,width=len(matrix)-1,0,len(matrix[0])
+                while row>=0 and col<width:
+                    if matrix[row][col]==target:
+                        return True
+                    elif matrix[row][col]>target:
+                        row=row-1
+                    else:
+                        col=col+1
+                return False
+
+----------------------------------------------------------------------------------------------------
+Is there&#x27;s a O(log(m)+log(n)) solution? I know O(n+m) and O(m*log(n))
+Is there's a O(log(m)+log(n)) solution?
+
+----------------------------------------------------------------------------------------------------
+Share my C++  O(m+n) solution,easy to understand
+    class Solution {
+    public:
+        bool searchMatrix(vector<vector<int>>& matrix, int target) {
+            int row = matrix.size();
+            if (row == 0)
+                return false;
+            int col = matrix[0].size();
+            if (col == 0)
+                return false;
+            if (target < matrix[0][0] || target > matrix[row-1][col-1])
+                return false;
+            
+            int i = 0, j = col - 1;
+            while (i < row && j >=0)
+            {
+                if (target == matrix[i][j])
+                    return true;
+                //if target > matrix[i][j],then target must not appear in row-i
+                else if (target > matrix[i][j])
+                    ++i;
+                //if target < matrix[i][j],then target must not appear in column-j
+                else
+                    --j;
+            }
+            
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(m+n) Java solution
+        public boolean searchMatrix(int[][] matrix, int target) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        int x = 0;
+        int y = n - 1;
+        while (x < m && y >= 0) {
+            if (target == matrix[x][y]) {
+                return true;
+            } else if (target > matrix[x][y]) {
+                x++;
+            } else {
+                y--;
+            }
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean easy solution in Java
+    public boolean searchMatrix(int[][] matrix, int target) {
+		int line=0;
+		int len=matrix.length;
+		int col=matrix[0].length;
+		while (line<len && col>0){
+			int num= matrix[line][col-1];
+			if (num>target) col--;
+			if (num<target) line++;
+			if (num==target) return true;}
+		
+        return false;
+    }
+
+The main idea of this solution is to compare the target with the number in the top-right corner and decrease the row number or the col number one by one. It's simple and efficient.
+
+----------------------------------------------------------------------------------------------------
+O(M+N) C++ solution
+O(M+N) C++ solution for M*N matrix;
+
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+       if(matrix.size() == 0) return false;
+        int n = matrix[0].size()-1;
+        int m = 0;
+        while(m < matrix.size() && n >= 0) {
+            if (matrix[m][n] == target) return true;
+            else if (matrix[m][n] < target) ++m;
+            else --n;
+        }
+        return false;
+    }
+
+The idea is: 
+start from the upper right corner: 
+
+ - if the element is equal to target, return true;
+ - if the element is greater than target, that means the whole column is greater than target, we can delete a whole column
+ - else, we can delete a whole row
+
+
+
+----------------------------------------------------------------------------------------------------
+An easy understanding solution
+     // any comments are welcome
+     bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int m = matrix.size(), n = matrix[0].size();
+        int i = 0, j = n - 1;
+        
+        // search target from up-right side to down-left side
+        while (i <= m-1 && j >= 0) {
+            if (matrix[i][j] == target)
+                return true;
+            else if (matrix[i][j] > target)
+                --j;
+            else // matrix[i][j] < target
+                ++i;
+        }
+        
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solutions, 308ms
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        if (matrix.empty())
+        {
+            return false;
+        }
+        int siz0 = matrix.size();
+        int siz1 = matrix[0].size();
+        int x = siz0 - 1, y = 0;
+        while (true)
+        {
+            if (matrix[x][y] > target)
+            {
+                x--;
+            }
+            else if (matrix[x][y] < target){
+                y++;
+            }
+            else {
+                return true;
+            }
+            if (x < 0 || y >= siz1)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------

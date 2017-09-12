@@ -1,0 +1,401 @@
+Simple Java solution
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+            Set<Integer> set = new HashSet<Integer>();
+            for(int i = 0; i < nums.length; i++){
+                if(i > k) set.remove(nums[i-k-1]);
+                if(!set.add(nums[i])) return true;
+            }
+            return false;
+     }
+
+----------------------------------------------------------------------------------------------------
+C++ solution with unordered_set
+    class Solution {
+    public:
+        bool containsNearbyDuplicate(vector<int>& nums, int k)
+        {
+           unordered_set<int> s;
+           
+           if (k <= 0) return false;
+           if (k >= nums.size()) k = nums.size() - 1;
+           
+           for (int i = 0; i < nums.size(); i++)
+           {
+               if (i > k) s.erase(nums[i - k - 1]);
+               if (s.find(nums[i]) != s.end()) return true;
+               s.insert(nums[i]);
+           }
+           
+           return false;
+        }
+    };
+
+The basic idea is to maintain a set s which contain unique values from nums[i  - k] to nums[i - 1],
+if nums[i] is in set s then return true else update the set.
+
+----------------------------------------------------------------------------------------------------
+Short AC JAVA solution
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int i = 0; i < nums.length; i++) {
+            if (map.containsKey(nums[i])) {
+                if (i - map.get(nums[i]) <= k) return true;
+            }
+            map.put(nums[i], i);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python concise solution with dictionary.
+        
+    def containsNearbyDuplicate(self, nums, k):
+        dic = {}
+        for i, v in enumerate(nums):
+            if v in dic and i - dic[v] <= k:
+                return True
+            dic[v] = i
+        return False
+
+----------------------------------------------------------------------------------------------------
+C++ 6 line solution. simple code and easy understanding
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        set<int> cand;
+        for (int i = 0; i < nums.size(); i++) {
+            if (i > k) cand.erase(nums[i-k-1]);
+            if (!cand.insert(nums[i]).second) return true;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my easy-to-understand C++ code
+Well, the basic idea is fairly straightforward. We maintain a mapping `mp` from a value in `nums` to its position (index) `i`. Each time we meet an unseen value, we add it to the map (`mp[nums[i]] = i`). Otherwise, depending on whether the recorded index `mp[nums[i]]` and the current index `i` satisfy `i - mp[nums[i]] <= k` (node that the new index `i` is larger than the old index `mp[nums[i]]`), we return `true` or update the index (`mp[nums[i]] = i`). If all the elements have been visited and we have not returned `true`, we will return `false`.
+
+    class Solution { 
+    public:
+        bool containsNearbyDuplicate(vector<int>& nums, int k) {
+            unordered_map<int, int> mp; 
+            for (int i = 0; i < nums.size(); i++) {
+                if (mp.find(nums[i]) != mp.end() && i - mp[nums[i]] <= k)
+                    return true;
+                mp[nums[i]] = i; 
+            }
+            return false; 
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short HashSet Solution
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+        HashSet<Integer> hs=new HashSet<>();
+        for(int i=0;i<nums.length;i++)
+        {
+            if(hs.add(nums[i])==false) return true;
+            if(hs.size()==k+1) hs.remove(nums[i-k]);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution using HashMap&#x27;s put()
+    public class Solution {
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+		
+		for(int i = 0; i <  nums.length; i++) {
+			Integer ord = map.put(nums[i], i);
+			if(ord != null && i - ord <= k) {
+				return true;
+			}
+		}
+		
+		return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution using Set and sliding window
+My solution is simple. My set only contain the numbers in the window. slide the  window which is size k, if the new coming number cannot be add to set then return true. The time complexity is O(n), space complexity is O(k).
+
+    public class Solution {
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+        HashSet<Integer> set = new HashSet<Integer>();
+        
+        for(int i=0;i<nums.length && i<=k;i++){
+            if(!set.add(nums[i])){
+                return true;
+            }
+        }
+        
+        for(int i=k+1;i<nums.length;i++){
+            set.remove(nums[i-k-1]);
+            if(!set.add(nums[i])){
+                return true;
+            }
+        }
+        return false;
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+The testcases are too weak
+The testcases for this problem are too weak.
+
+In my first AC solution, I wrote the code
+
+    if (n < k) return false;
+
+, where n is the length of the array.
+
+Clearly, it is wrong(e.g. `nums = {2,2}, k = 3`).
+
+
+I think the admin should do more serious test before a new problem coming online.
+
+----------------------------------------------------------------------------------------------------
+Only one test per element :-)
+Standard solution with a little trick. I walk over the array once, remembering where I last saw each number, and use that to answer. But the way I do it, I don't need the *"have I already seen this"* safety test before accessing *where* I have last seen it.
+
+---
+
+**Python**
+
+In Python 2, `dict.get(key)` returns `None` if the key doesn't exist, and `somenumber <= None` always returns `False`. So I don't have to first check whether the number has occurred before and then check whether it has occurred recently.
+
+    class Solution:
+        def containsNearbyDuplicate(self, nums, k):
+            index = {}
+            for i, n in enumerate(nums):
+                if i - k <= index.get(n):
+                    return True
+                index[n] = i
+            return False
+
+---
+
+**Java**
+
+Similar in Java, but using `getOrDefault` with default `-k - 1`:
+
+    public class Solution {
+        public boolean containsNearbyDuplicate(int[] nums, int k) {
+            Map<Integer, Integer> index = new HashMap<>();
+            for (int i = 0; i < nums.length; i++) {
+                if (i - k <= index.getOrDefault(nums[i], -k - 1))
+                    return true;
+                index.put(nums[i], i);
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple solution in Java using HashMap
+Iterate through the array and use HashMap to save number[i] as a key and 'i' as a value. If map already contains number[i] - subtract its value of 'i' from current 'i' and return true if result is less or equal to 'k'.
+
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+
+        for (int i = 0; i < nums.length; i++) {
+            if (map.containsKey(nums[i]) && (i - map.get(nums[i])) <= k) {
+                return true;
+            }
+
+            map.put(nums[i], i);
+        }
+
+        return false;
+
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 5 lines 32ms solution
+    bool containsNearbyDuplicate(vector<int>& nums, int k)  {
+        unordered_map<int,int> map;
+        for(int i = 0; i < nums.size(); i++){
+          if(map.count(nums[i]) && (i - map[nums[i]] <= k)) return true;
+          map[nums[i]] = i;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution with hashtable
+
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        unordered_map<int,int> m;
+        for(int i=0;i<nums.size();i++){
+            if(m.find(nums[i])!=m.end()&&m[nums[i]]>=i-k)
+            return true;
+            m[nums[i]]=i;
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+I use set instead of map!
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        unordered_set<int> hashSet;
+        if (!k) return false;
+        if (k >= nums.size()) k = nums.size()-1;
+        for (int i = 0;i <= k;++i)
+            if (hashSet.find(nums[i]) == hashSet.end())
+                hashSet.insert(nums[i]);
+            else
+                return true;
+        for (int i = k+1;i < nums.size();++i) {
+            hashSet.erase(nums[i-k-1]);
+            if (hashSet.find(nums[i]) == hashSet.end())
+                hashSet.insert(nums[i]);
+            else
+                return true;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 12ms by hashtable
+    struct LinkedNode
+    {
+        int val;
+        LinkedNode *next;
+        LinkedNode(int x = 0) : val(x), next(NULL) {}
+    };
+    
+    bool containsNearbyDuplicate(vector<int>& nums, int k)
+    {
+        int len = nums.size();
+        if(len <= 1) return false;
+        int D = len;
+        LinkedNode *nodes = new LinkedNode[D];
+        for(int i = 0;i < len;++i)
+        {
+            int bucket = abs(nums[i]) % D;
+            LinkedNode *node = nodes[bucket].next;
+            while(node)
+            {
+                int j = node->val;
+                if(nums[i] == nums[j] && i - j <= k) return true;
+                node = node->next;
+            }
+            node = nodes[bucket].next;
+            nodes[bucket].next = new LinkedNode(i);
+            nodes[bucket].next->next = node;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Use hashset, 40ms python, beat 94%.
+hash a K-length moving window of nums.  When moving along, do not reconstruct the set, just add the new one, and remove the earliest element.
+
+    class Solution(object):
+        def containsNearbyDuplicate(self, nums, k):
+            """
+            :type nums: List[int]
+            :type k: int
+            :rtype: bool
+            """
+            if len(nums)<=k:
+                return len(nums) >  len(set(nums))
+    
+            hashSet=set(nums[:k])
+            if len(hashSet) < k:
+                return True
+    
+            for i in xrange(k,len(nums)):
+                hashSet.add(nums[i])
+                if len(hashSet)==k:
+                    return True
+                else:
+                    hashSet.remove(nums[i-k])
+            return False
+
+----------------------------------------------------------------------------------------------------
+5 line Java code solution
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+            Set<Integer> set = new HashSet<Integer>();
+    
+            for(int j = 0; j < nums.length; j++){
+                if(j > k) set.remove(nums[j - k - 1]);
+                if(!set.add(nums[j]))  return true;
+            }
+            return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+My JS solution 115ms
+    var containsNearbyDuplicate = function(nums, k) {
+        if(nums.length <= 1 || k < 1)
+        {
+            return false;
+        }
+        var map = {};
+        for(var i=0; i<nums.length; i++)
+        {
+            if(map[nums[i]] !== undefined)
+            {
+                return true;
+            }
+            else 
+            {
+                if(i - k >=0)
+                {
+                    map[nums[i-k]] = undefined;
+                }
+                map[nums[i]] = true;
+            }
+        }
+        return false;
+    };
+
+----------------------------------------------------------------------------------------------------
+Can Understand the difference between unordered_map and map by this question.
+I have used exactly same code,apart from, in first case I have used map and in second case I have used unordered_map for checking the number's previous occurrence.And I have observed a significant running time difference between these two.
+
+**Running Time:**
+
+ - map : 76ms
+
+ - unordered_map : 32ms
+
+So I have posted this thinking that this might many people like me to understand that:
+
+ - Internally, the elements in a map are always sorted by its key following a specific strict weak ordering criterion indicated by its internal comparison object (of type Compare).
+
+ - Internally, the elements in the unordered_map are not sorted in any particular order with respect to either their key or mapped values, but organized into buckets depending on their hash values to allow for fast access to individual elements directly by their key values (with a constant average time complexity on average).
+
+And here is my code:
+
+    class Solution {
+    public:
+        
+        bool containsNearbyDuplicate(vector<int>& nums, int k) {
+            int prev,len = nums.size();
+            unordered_map<int,int>mm;
+            
+            
+            //fill map with numbers positions
+            for(int i=0;i<len;i++){
+    
+                if(mm.find(nums[i])==mm.end()){
+                    mm[nums[i]] = i;
+                }else{
+                    prev = mm[(nums[i])];
+                    if(i-prev<=k)return true;
+                    mm[nums[i]] = i;
+                }
+            }        
+            
+            return false;
+        }
+    };
+
+
+   
+
+
+----------------------------------------------------------------------------------------------------

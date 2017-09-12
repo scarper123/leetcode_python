@@ -1,0 +1,481 @@
+Concise Java solution using DP
+public class Solution {
+    public int findSubstringInWraproundString(String p) {
+        // count[i] is the maximum unique substring end with ith letter.
+        // 0 - 'a', 1 - 'b', ..., 25 - 'z'.
+        int[] count = new int[26];
+        
+        // store longest contiguous substring ends at current position.
+        int maxLengthCur = 0; 
+
+        for (int i = 0; i < p.length(); i++) {
+            if (i > 0 && (p.charAt(i) - p.charAt(i - 1) == 1 || (p.charAt(i - 1) - p.charAt(i) == 25))) {
+                maxLengthCur++;
+            }
+            else {
+                maxLengthCur = 1;
+            }
+            
+            int index = p.charAt(i) - 'a';
+            count[index] = Math.max(count[index], maxLengthCur);
+        }
+        
+        // Sum to get result
+        int sum = 0;
+        for (int i = 0; i < 26; i++) {
+            sum += count[i];
+        }
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Concise Solution
+int findSubstringInWraproundString(string p) {
+        vector<int> letters(26, 0);
+        int res = 0, len = 0;
+        for (int i = 0; i < p.size(); i++) {
+            int cur = p[i] - 'a';
+            if (i > 0 && p[i - 1] != (cur + 26 - 1) % 26 + 'a') len = 0;
+            if (++len > letters[cur]) {
+                res += len - letters[cur];
+                letters[cur] = len;
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) DP
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        """
+        :type p: str
+        :rtype: int
+        """
+        pattern = 'zabcdefghijklmnopqrstuvwxyz'
+        cmap = collections.defaultdict(int)
+        start = end = 0
+        for c in range(len(p)):
+            if c and p[c-1:c+1] not in pattern:
+                for x in range(start, end):
+                    cmap[p[x]] = max(end - x, cmap[p[x]])
+                start = c
+            end = c + 1
+        for x in range(start, end):
+            cmap[p[x]] = max(end - x, cmap[p[x]])
+        return sum(cmap.values())
+
+
+----------------------------------------------------------------------------------------------------
+Concise O(n) 6-liner in Python
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        p, d, lo = '0'+p, collections.defaultdict(int), 0
+        for hi in range(1, len(p)):
+            if p[hi-1]+p[hi] not in 'abcdefghijklmnopqrstuvwxyza':
+                lo = hi
+            d[p[hi]] = max(d[p[hi]], hi+1-lo)
+        return sum(d.values())
+
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to optimal
+    int findSubstringInWraproundString(string p) {
+        int len[26]={0}, i = 0, n = p.size();
+        for(int j=0;j<n;j++)
+            if(j>i && p[j-1]+1!=p[j] && p[j-1]-p[j]!=25) {
+                for(int k=i;k<min(j,i+26);k++) len[p[k]-'a'] = max(len[p[k]-'a'],j-k);
+                i=j--;
+            }
+        for(int k=i;k<min(n,i+26);k++) len[p[k]-'a'] = max(len[p[k]-'a'],n-k);
+        return accumulate(len,len+26,0);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java two different solutions with explanation
+public class Solution {
+    public int findSubstringInWraproundString(String p) {
+        if(p == null || p.isEmpty()) return 0;
+        int dp[] = new int[26];
+        int i = 0;
+        int n = p.length();
+        char [] s = p.toCharArray();
+        int len = 1;
+        while(i<n){
+            char prev = s[i];
+            i++;
+            dp[prev - 'a'] = Math.max(dp[prev-'a'], len);
+            while(i<p.length() && s[i]-'a' == (prev-'a'+1)%26){
+                prev = s[i];
+                len++;
+                i++;
+                dp[prev - 'a'] = Math.max(dp[prev-'a'], len);
+            }
+            dp[prev - 'a'] = Math.max(dp[prev-'a'], len);
+            len = 1;
+        }
+        int count = 0;
+        for(int j = 0;j<26;j++) count+=dp[j];
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ two passes, O(1) space. find the longest substring starting from each letter
+class Solution {
+public:
+    int findSubstringInWraproundString(string p) {
+        vector<int> longest(26, 0);
+        int i = 0, left = 0;
+        while (i < p.size()) {
+            if (i + 1 == p.size() || (i + 1 < p.size() && (p[i] - 'a' + 1) % 26 != (p[i+1] - 'a'))) {
+                //from left to i;
+                for (int j = left; j <= i; j++) {
+                    longest[p[j] - 'a'] = max(longest[p[j] - 'a'], i - j + 1);
+                }
+                left = i+1;
+            }
+            i++;
+        }
+        
+        int ret = 0;
+        for (int k = 0; k < 26; k++) {
+            ret += longest[k]; 
+        }
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time. O(alphabet size) memory. Store maximum length for each alphabet
+public class Solution {
+    public int findSubstringInWraproundString(String p) {
+        if (p==null || p.isEmpty()) return 0;
+       
+        HashMap<Character, Integer> charMaxLen = new HashMap<>();
+        charMaxLen.put(p.charAt(0), 1);
+        int sum = 1;
+        int len = 1;
+        
+        for (int i=1; i<p.length(); i++) {
+            char prev = p.charAt(i-1);
+            char cur = p.charAt(i);
+            if (isSequential(prev, cur)) {
+                len++;
+            } else {
+                len = 1;
+            }
+            
+            sum+=Math.max(len-charMaxLen.getOrDefault(cur,0), 0);
+            charMaxLen.putIfAbsent(cur, 0);
+            charMaxLen.put(cur, Math.max(len, charMaxLen.get(cur)));
+        }
+        return sum;
+    }
+    
+    private boolean isSequential(char prev, char cur) {
+        return (prev=='z' && cur=='a') || (cur-prev==1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Solution explained and Python + Ruby implementation
+<p><a href="http://ruslanledesma.com/2016/12/10/unique-substrings-in-wraparound-string.html" rel="nofollow">http://ruslanledesma.com/2016/12/10/unique-substrings-in-wraparound-string.html</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        """
+        :type p: str
+        :rtype: int
+        """
+
+        N = len(p)
+        if N <= 1: return N
+
+        dp = [0 for i in range(N)]
+        start, seen = 0, {}
+        dp[0], seen[p[0]] = 1, 1
+
+        for i in range(1, N):
+            if p[i - 1] == 'z' and p[i] == 'a' or ord(p[i - 1]) + 1 == ord(p[i]):
+                x = i - start + 1
+                if p[i] not in seen:
+                    dp[i] = x
+                    seen[p[i]] = dp[i]
+                else:
+                    if x > seen[p[i]]:
+                        dp[i] = x - seen[p[i]]
+                        seen[p[i]] = x
+                    else:
+                        dp[i] = 0
+            else:
+                if p[i] not in seen:
+                    dp[i] = 1
+                    seen[p[i]] = dp[i]
+                else:
+                    dp[i] = 0
+
+                start = i
+
+        return sum(dp)
+
+----------------------------------------------------------------------------------------------------
+Java DP Solution, easy understand
+public class Solution {
+    public int findSubstringInWraproundString(String p) {
+        int[] alphabets=new int[26];
+        if(p.isEmpty()) return 0;
+         int len=1;
+         alphabets[p.charAt(0)-'a']=1;
+        for(int i=1;i<p.length();i++)
+        {
+            int current=p.charAt(i)-'a';
+            int prev =p.charAt(i-1)-'a';
+            if((prev+1)%26==current)
+             len++;
+            else len=1;
+            alphabets[current]=Math.max(alphabets[current],len);
+        }
+        int sum=0;
+        for(int i:alphabets) sum+=i;
+        return sum;
+
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python Sliding Window O(n) time O(1) space
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        """
+        :type p: str
+        :rtype: int
+        """
+        d = {}
+        cnt = 0
+        for i in range(len(p)):
+            if i > 0 and (ord(p[i]) - ord(p[i-1]) == 1 or ord(p[i-1]) - ord(p[i]) == 25):
+                cnt += 1
+            else:
+                cnt = 1
+            d[ord(p[i])] = max(d.get(ord(p[i]), 0), cnt)
+        return sum(d.values())
+
+
+----------------------------------------------------------------------------------------------------
+Java fragment solution
+public class Solution {
+    public int findSubstringInWraproundString(String p) {
+        if (p == null || p.length() == 0) {
+            return 0;
+        }
+        List<String> segments = fragment(p);
+        Map<Character, Integer> metlengths = new HashMap<>();
+        int substrings = 0;
+        for (String segment : segments) {
+            for (int i = 0; i < segment.length(); i++) {
+                char ch = segment.charAt(i);
+                int metlength = metlengths.containsKey(ch) ? metlengths.get(ch) : 0;
+                substrings += Math.max(0, segment.length() - i - metlength);
+                metlengths.put(ch, Math.max(segment.length() - i, metlength));
+            }
+        }
+        return substrings;
+    }
+
+    private List<String> fragment(String p) {
+        List<String> strs = new ArrayList<>();
+        int lastEnd = -1;
+        while (lastEnd + 1 < p.length()) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(p.charAt(lastEnd + 1));
+            int candidate = lastEnd + 2;
+            for (; candidate < p.length(); candidate++) {
+                char ch1 = p.charAt(candidate - 1);
+                char ch2 = p.charAt(candidate);
+                if ((ch2 == ch1 + 1) || (ch1 == 'z' && ch2 == 'a')) {
+                    sb.append(ch2);
+                } else {
+                    break;
+                }
+            }
+            lastEnd = candidate - 1;
+            strs.add(sb.toString());
+        }
+        return strs;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Sliding window problem with DP. Concise and easy to understand.
+    public int findSubstringInWraproundString(String p) {
+        char[] arr=p.toCharArray();
+        int[] start=new int[26];
+        int count=0,left=0,right=1;
+        
+        while(right<=arr.length){
+            while(right<arr.length&&((arr[right]==arr[right-1]+1)||(arr[right]=='a'&&arr[right-1]=='z'))){
+                right++;
+            }
+            
+            while(left<right){
+                if(start[arr[left]-'a']<right-left){
+                    count+=(right-left-start[arr[left]-'a']);
+                    start[arr[left]-'a']=right-left;
+                }
+                left++;
+            }
+            right++;
+        }
+        return count;
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java sliding window solutions
+    // O(N) two pointer counting number of substrings starting at char c
+    public int findSubstringInWraproundString(String p) {
+        if (p.isEmpty()) return 0;
+        char[] chars = p.toCharArray();
+        int[] dp = new int[26];
+        int j = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char cur = chars[i];
+            if ((i + 1) == chars.length || (cur + 1) != chars[i + 1] && (cur != 'z' || chars[i + 1] != 'a')) {
+                while (j < i + 1) {
+                    int ind = chars[j] - 'a';
+                    dp[ind] = Math.max(dp[ind], i - j + 1);
+                    j++;
+                }
+            }
+        }
+        int res = 0;
+        for (int i = 0; i < 26; i++) res += dp[i];
+        return res;
+    }
+
+// O(N) one pointer counting number of substrings ending at char c
+    public int findSubstringInWraproundString(String p) {
+        if (p.isEmpty()) return 0;
+        char[] chars = p.toCharArray();
+        int[] dp = new int[26];
+        int maxLen = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char cur = chars[i];
+            if (i == 0 || (cur - 1) != chars[i - 1] && (cur != 'a' || chars[i - 1] != 'z')) {
+                maxLen = 0;
+            }
+            dp[cur - 'a'] = Math.max(dp[cur - 'a'], ++maxLen);
+        }
+        int res = 0;
+        for (int i = 0; i < 26; i++) res += dp[i];
+        return res;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+simple python O(1) space, O(n) time with explanation
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        """
+        :type p: str
+        :rtype: int
+        """
+        dp = [0]*26
+        l = 0
+        cur = ""
+        for c in p:
+            index = ord(c) - ord("a")
+            if not cur or ord(c) - ord(cur) == 1 or (c == "a" and cur == "z"):
+                l += 1
+            else:
+                l = 1
+            dp[index] = max(dp[index], l)
+            cur = c
+        
+        return sum(dp)
+
+
+----------------------------------------------------------------------------------------------------
+&quot;concise&quot; Java solution, one pass, reverse traversal, O(len(alphabet)) space.
+import java.util.Arrays;
+
+class Solution {
+    public int findSubstringInWraproundString(String p) {
+        if (p == null || p.length() == 0) return 0;
+        int e = p.length();    //end of the current legal substring, exclusive
+        int[] letters = new int[26];
+        letters[p.charAt(p.length() - 1) - 'a'] = 1;
+        for (int i = p.length() - 2; i >= 0; i--) {
+            int idx = p.charAt(i) - 'a';
+            if ((idx + 1) % 26 != p.charAt(i + 1) - 'a') e = i + 1;  //reset end if p(i) and p(i+1) are not 'adjacent'
+            letters[idx] = Math.max(letters[idx], i - e);
+        }
+        return Arrays.stream(letters).sum();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+python simple solution
+class Solution(object):
+    def findSubstringInWraproundString(self, p):
+        """
+        :type p: str
+        :rtype: int
+        """
+        # store #substrings ends at some "char": counter["a"]
+        counter = collections.defaultdict(int)
+        
+        # start is the position where the legal substring begins; prev stores the #legal substrings ends at previous position
+        start, prev = 0, 1
+        for i in range(len(p)):
+            if i != 0 and ord(p[i])==ord(p[i-1])+1 or p[i-1:i+1] == "za":
+                counter[p[i]] = max(counter[p[i]], i - start + prev)
+            else:
+                start, prev = i, 1
+                counter[p[i]] = max(counter[p[i]], 1)
+        
+        return sum(counter.values())
+
+
+----------------------------------------------------------------------------------------------------
+Ruby Solution
+def find_substring_in_wrapround_string(p)
+    len = 0
+    counts = Hash.new(0)
+    
+    0.upto(p.size-1) do |index|
+        char = p[index]
+        if index > 0 && p[index-1] == prev(char)
+            len += 1
+        else
+            len = 1
+        end
+        counts[char] = len if len > counts[char]
+    end
+    
+    counts.inject(0) { |acc, (k,v)| acc+= v }
+end
+
+def prev(char)
+    char == 'a' ? 'z' : (char.ord-1).chr
+end
+
+
+----------------------------------------------------------------------------------------------------

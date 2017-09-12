@@ -1,0 +1,122 @@
+Simple, Short, Fast
+These are four different solutions.
+
+---
+**With Variables:** 841 ms
+
+First one uses two variables, one for the current rank and one for the previous score.
+
+    SELECT
+      Score,
+      @rank := @rank + (@prev <> (@prev := Score)) Rank
+    FROM
+      Scores,
+      (SELECT @rank := 0, @prev := -1) init
+    ORDER BY Score desc
+
+---
+
+**Always Count:** 1322 ms
+
+This one counts, for each score, the number of distinct greater or equal scores.
+
+    SELECT
+      Score,
+      (SELECT count(distinct Score) FROM Scores WHERE Score >= s.Score) Rank
+    FROM Scores s
+    ORDER BY Score desc
+
+---
+
+**Always Count, Pre-uniqued:** 795 ms
+
+Same as the previous one, but faster because I have a subquery that "uniquifies" the scores first. Not entirely sure *why* it's faster, I'm guessing MySQL makes `tmp` a temporary table and uses it for every outer Score.
+
+    SELECT
+      Score,
+      (SELECT count(*) FROM (SELECT distinct Score s FROM Scores) tmp WHERE s >= Score) Rank
+    FROM Scores
+    ORDER BY Score desc
+
+---
+
+**Filter/count Scores^2:** 1414 ms
+
+Inspired by the attempt in wangkan2001's answer. Finally `Id` is good for something :-)
+
+    SELECT s.Score, count(distinct t.score) Rank
+    FROM Scores s JOIN Scores t ON s.Score <= t.score
+    GROUP BY s.Id
+    ORDER BY s.Score desc
+
+
+----------------------------------------------------------------------------------------------------
+Accepted solution using InnerJoin and GroupBy
+    SELECT Scores.Score, COUNT(Ranking.Score) AS RANK
+      FROM Scores
+         , (
+           SELECT DISTINCT Score
+             FROM Scores
+           ) Ranking
+     WHERE Scores.Score <= Ranking.Score
+     GROUP BY Scores.Id, Scores.Score
+     ORDER BY Scores.Score DESC;
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution with subqueries and group by
+# Solution with sub-queries
+
+We just get the rows the distinct rows that are <= that each score, count them and wrap them in an external SELECT for formatting. 
+
+    SELECT Scores.Score, Q3.Rank
+    FROM(
+        SELECT Q1.Score as Score, COUNT(Q1.Score) as Rank
+        FROM 
+            (SELECT DISTINCT Score from Scores) as Q1,
+            (SELECT DISTINCT Score from Scores) as Q2
+        WHERE Q1.Score <= Q2.Score
+        GROUP BY Q1.Score
+        ) as Q3, Scores
+    WHERE Q3.Score = Scores.Score
+    ORDER BY Scores.Score DESC
+
+----------------------------------------------------------------------------------------------------
+Very concise accepted solution without variables. Check it out!
+    Select sc.Score,
+           (Select count(*)+1 from (select distinct (Score) from Scores)
+            as uniqeScores where Score > sc.Score) as rank 
+    from Scores sc order by sc.Score desc;
+
+
+
+----------------------------------------------------------------------------------------------------
+My 800ms Simple Solution without variables
+    SELECT T2.Score Score, (SELECT COUNT(*) + 1 FROM (SELECT T1.Score FROM Scores T1 GROUP BY Score ORDER BY Score DESC) TEMP WHERE T2.Score < TEMP.Score) Rank FROM Scores T2 ORDER BY Score DESC;
+
+----------------------------------------------------------------------------------------------------
+1169ms solution without variables and union
+    SELECT
+      s2.`Score`,
+      (SELECT COUNT(DISTINCT s1.`Score`) FROM `Scores` s1 WHERE s1.`Score` >= s2.`Score`)
+        FROM `Scores` s2
+          ORDER BY s2.`Score` DESC
+
+p.s. please share more faster solutions!
+
+----------------------------------------------------------------------------------------------------
+Runtime: 704 ms ,use two variables
+    select Score,Rank from 
+    (
+    SELECT Score,
+           CASE
+               WHEN @dummy <=> Score THEN @Rank := @Rank 
+               ELSE @Rank := @Rank +1
+    	END AS Rank,@dummy := Score as dummy
+    FROM
+      (SELECT @Rank := 0,@dummy := NULL) r,
+         Scores
+    ORDER BY Score DESC
+    ) AS C
+
+----------------------------------------------------------------------------------------------------
+Maybe the Simpest Solution

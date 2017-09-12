@@ -1,0 +1,1294 @@
+Very simple Python BFS,  But Why TLE??
+import collections
+class Solution(object):
+    def cutOffTree(self, G):
+        """
+        :type forest: List[List[int]]
+        :rtype: int
+        """
+        if not G or not G[0]: return -1
+        m, n = len(G), len(G[0])
+        trees = []
+        for i in xrange(m):
+            for j in xrange(n):
+                if G[i][j] > 1:
+                    trees.append((G[i][j], i, j))
+        trees = sorted(trees)
+        count = 0
+        cx, cy = 0, 0
+        for h, x, y in trees:
+            step = self.BFS(G, cx, cy, x, y)
+            if step == -1:
+                return -1
+            else:
+                count += step
+                G[x][y] = 1
+                cx, cy = x, y
+        return count
+
+    def BFS(self, G, cx, cy, tx, ty):
+        m, n = len(G), len(G[0])
+        visited = [[False for j in xrange(n)] for i in xrange(m)]
+        Q = collections.deque()
+        step = -1
+        Q.append((cx, cy))
+        while len(Q) > 0:
+            size = len(Q)
+            step += 1
+            for i in xrange(size):
+                x, y = Q.popleft()
+                visited[x][y] = True
+                if x == tx and y == ty:
+                    return step
+                for nx, ny in [(x + 1, y), (x - 1, y), (x, y-1), (x, y + 1)]:
+                    if nx < 0 or nx >= m or ny < 0 or ny >= n or G[nx][ny] == 0 or visited[nx][ny]:
+                        continue
+                    Q.append((nx, ny))
+        return -1
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, PriorityQueue + BFS
+class Solution {
+    static int[][] dir = {{0,1}, {0, -1}, {1, 0}, {-1, 0}};
+
+    public int cutOffTree(List<List<Integer>> forest) {
+        if (forest == null || forest.size() == 0) return 0;
+        int m = forest.size(), n = forest.get(0).size();
+
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[2] - b[2]);
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (forest.get(i).get(j) > 1) {
+                    pq.add(new int[] {i, j, forest.get(i).get(j)});
+                }
+            }
+        }
+
+        int[] start = new int[2];
+        int sum = 0;
+        while (!pq.isEmpty()) {
+            int[] tree = pq.poll();
+            int step = minStep(forest, start, tree, m, n);
+
+            if (step < 0) return -1;
+            sum += step;
+
+            start[0] = tree[0];
+            start[1] = tree[1];
+        }
+
+        return sum;
+    }
+
+    private int minStep(List<List<Integer>> forest, int[] start, int[] tree, int m, int n) {
+        int step = 0;
+        boolean[][] visited = new boolean[m][n];
+        Queue<int[]> queue = new LinkedList<>();
+        queue.add(start);
+        visited[start[0]][start[1]] = true;
+
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                int[] curr = queue.poll();
+                if (curr[0] == tree[0] && curr[1] == tree[1]) return step;
+
+                for (int[] d : dir) {
+                    int nr = curr[0] + d[0];
+                    int nc = curr[1] + d[1];
+                    if (nr < 0 || nr >= m || nc < 0 || nc >= n 
+                        || forest.get(nr).get(nc) == 0 || visited[nr][nc]) continue;
+                    queue.add(new int[] {nr, nc});
+                    visited[nr][nc] = true;
+                }
+            }
+            step++;
+        }
+
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#x2F;C++&#93; Straightforward solution - sorted array + BFS
+class Solution {
+public:    
+    vector<vector<int>> dir = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    int cutOffTree(vector<vector<int>>& forest) {
+        int m = forest.size(), n , res = 0;
+        if(m == 0)return -1;
+        n = forest[0].size();
+        //first step: sort the tree position based on its height
+        vector<vector<int>> heights;
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                if(forest[i][j] > 1)heights.push_back({forest[i][j], i, j});
+            }
+        }
+        sort(heights.begin(), heights.end());
+        //second step: accumulate the shortest steps between each two adajacent points in heights[].
+        int start_x = 0, start_y = 0; 
+        for(int i = 0; i<heights.size(); i++){
+            int cnt_steps = BFS(forest, m, n, start_x, start_y, heights[i][1], heights[i][2]); 
+            if(cnt_steps == -1)return -1;
+            res += cnt_steps;
+            start_x = heights[i][1], start_y = heights[i][2];
+        }
+        return res;
+    }
+    
+    int BFS(vector<vector<int>>& forest, int m, int n, int start_x, int start_y, int des_x, int des_y){
+        if(start_x == des_x && start_y == des_y)return 0;
+        int steps = 0;
+        queue<pair<int, int>> q;
+        q.push({start_x, start_y});
+        vector<vector<int>> visited(m, vector<int>(n, 0));
+        visited[start_x][start_y] = 1;
+        while(!q.empty()){
+            int qsize = q.size();
+            steps++;
+            while(qsize-- >0 ){
+                int cur_x = q.front().first, cur_y = q.front().second;
+                q.pop();
+                for(int k = 0; k<4; k++){
+                    int x = cur_x + dir[k][0], y = cur_y + dir[k][1];
+                    if(x>=0 && x<m && y>=0 && y<n && forest[x][y] > 0 && visited[x][y] == 0){
+                        if(x == des_x && y == des_y)return steps;
+                        visited[x][y] = 1;
+                        q.push({x,y});
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++, Sort + BFS with explanation
+class Solution {
+public:
+    int cutOffTree(vector<vector<int>>& forest) {
+        if (forest.empty() || forest[0].empty()) return 0;
+        int m = forest.size(), n = forest[0].size();
+        vector<vector<int>> trees;
+        // get all the tree positions and sort based on height
+        // trees[i][0] is height. The default comparison of vector compare first element before other elements.
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (forest[i][j] > 1) trees.push_back({forest[i][j], i, j});
+            }
+        }
+        sort(trees.begin(), trees.end());
+        int ans = 0;
+        // accumulate all the paths
+        for (int i = 0, cur_row = 0, cur_col = 0; i < trees.size(); i++) {
+            int step = next_step(forest, cur_row, cur_col, trees[i][1], trees[i][2]);
+            // if next tree cannot be reached, step = -1;
+            if (step == -1) return -1;
+            ans += step;
+            cur_row = trees[i][1];
+            cur_col = trees[i][2];
+        }
+        return ans;
+    }
+private:
+    // BFS to find shortest path to next tree; if cannot reach next tree, return -1
+    int next_step(vector<vector<int>>& forest, int sr, int sc, int er, int ec) {
+        if (sr == er && sc == ec) return 0;
+        int m = forest.size(), n = forest[0].size();
+        queue<pair<int, int>> myq;
+        myq.push({sr, sc}); 
+        vector<vector<int>> visited(m, vector<int>(n, 0));
+        visited[sr][sc] = 1;
+        int step = 0;
+        vector<int> dir = {-1, 0, 1, 0, -1};
+        while (!myq.empty()) {
+            step++;
+            int sz = myq.size();
+            for (int i = 0; i < sz; i++) {
+                int row = myq.front().first, col = myq.front().second;
+                myq.pop();
+                for (int i = 0; i < 4; i++) {
+                    int r = row + dir[i], c = col + dir[i+1];
+                    if (r < 0 || r >= m || c < 0 || c >= n || visited[r][c] == 1 || forest[r][c] == 0) continue;
+                    if (r == er && c == ec) return step;
+                    visited[r][c] = 1;
+                    myq.push({r, c});
+                }
+            }
+        }
+        return -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+BFS method using JAVA Programming!
+class Solution {
+    class Tree{
+        int x;
+        int y;
+        int height; 
+      
+        Tree(int x,int y,int h){
+            this.x = x;
+            this.y = y;
+            this.height = h;
+        }
+    }
+    
+    public int cutOffTree(List<List<Integer>> forest) {
+        if(forest == null || forest.size()<1){
+            return 0;
+        }
+        int[][] ground = new int[forest.size()][forest.get(0).size()];
+        List<Tree> treelist = new ArrayList<>();
+        for(int i=0;i<ground.length;i++){
+            for(int j=0;j<ground[0].length;j++){
+                ground[i][j] = forest.get(i).get(j);
+            }
+        }
+        
+        for(int i=0;i<ground.length;i++){
+            for(int j=0;j<ground[0].length;j++){
+                if(ground[i][j]>=2){
+                    treelist.add(new Tree(i,j,ground[i][j]));
+                }
+            }
+        }
+        
+        Collections.sort(treelist,new Comparator<Tree>(){
+               public int compare(Tree a,Tree b){
+                   return a.height-b.height;
+               }
+        });
+        Tree start = new Tree(0,0,ground[0][0]);
+        int total = 0;
+        for(int i=0;i<treelist.size();i++){
+            int count = shortestPath(start,treelist.get(i),ground);
+            //System.out.println(count);
+            if(count == -1){
+                return -1;
+            }
+            total+=count;
+            ground[treelist.get(i).x][treelist.get(i).y] = 1;
+            start = treelist.get(i);
+        }
+        
+        return total;
+    }
+    
+    public int shortestPath(Tree start,Tree end,int[][] ground){
+        int start_x = start.x;
+        int start_y = start.y;
+        int des_x = end.x;
+        int des_y = end.y;
+        
+        if(start_x==end.x&&start_y==des_y){
+            return 0;
+        }
+        
+        Deque<int[]> deque = new ArrayDeque<>();
+        deque.offer(new int[]{start_x,start_y});
+        int[][] dirs = new int[][]{{-1,0},{0,1},{1,0},{0,-1}};
+        int level = 0;
+        boolean[][] used = new boolean[ground.length][ground[0].length];
+        used[start_x][start_y]=true;
+        while(deque.size()!=0){
+            level++;
+            int size = deque.size();
+            while(size--!=0){
+                int[] tmp = deque.pollFirst();
+                for(int[] dir:dirs){
+                    int row = tmp[0]+dir[0];
+                    int col = tmp[1]+dir[1];
+                    if(row<0||row>=ground.length||col<0||col>=ground[0].length||used[row][col]==true){
+                        continue;
+                    }
+                    if(row==end.x&&col==end.y){
+                        return level;
+                    }else if(ground[row][col]>=1){
+                        used[row][col]= true;
+                        deque.offer(new int[]{row,col});
+                    }
+                }   
+            }
+        }
+        
+        return -1;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS with TreeMap
+public int cutOffTree(List<List<Integer>> forest) {
+    int n = forest.size(), m = forest.get(0).size(), numSteps = 0;
+    Map<Integer, int[]> map = new TreeMap<>();
+    for (int i=0;i<n;i++) 
+        for (int j=0;j<m;j++) 
+            if (forest.get(i).get(j) > 1) 
+      	       map.put(forest.get(i).get(j), new int[]{i,j});
+    
+    int[] curCoord = new int[]{0,0};
+    for (Map.Entry<Integer, int[]> entry : map.entrySet()) {
+        int stepsNeeded = getDistance(curCoord, entry.getValue(), forest, n, m);
+        if (stepsNeeded == -1) return -1;
+        numSteps += stepsNeeded;
+        curCoord = entry.getValue();
+    }
+    return numSteps;
+}
+
+public int getDistance(int[] coord1, int[] coord2, List<List<Integer>> forest, int n, int m) {
+    Queue<int[]> queue = new LinkedList<>();
+    queue.add(coord1);
+    int stepsTaken = 0;
+    boolean[][] visited = new boolean[n][m];
+    visited[coord1[0]][coord1[1]] = true;
+    while (!queue.isEmpty()) {
+        int queueSize = queue.size();
+        for (int k=0;k<queueSize;k++) {
+            int[] curCoord = queue.poll();
+            int i = curCoord[0], j = curCoord[1];
+            if (i == coord2[0] && j == coord2[1]) return stepsTaken;
+            if (i-1 >= 0 && !visited[i-1][j] && forest.get(i-1).get(j) != 0) {
+                queue.add(new int[]{i-1, j});
+                visited[i-1][j] = true;
+            }
+            if (j-1 >= 0 && !visited[i][j-1] && forest.get(i).get(j-1) != 0) {
+                queue.add(new int[]{i, j-1});
+                visited[i][j-1] = true;
+            }     
+            if (i+1 < n && !visited[i+1][j] && forest.get(i+1).get(j) != 0) {
+                queue.add(new int[]{i+1, j});
+                visited[i+1][j] = true;
+            } 
+            if (j+1 < m && !visited[i][j+1] && forest.get(i).get(j+1) != 0) {
+                queue.add(new int[]{i, j+1});
+                visited[i][j+1] = true;
+            }  
+        }
+        stepsTaken++;
+    }
+    return -1;
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - priority_queue
+class Solution {
+    int delta[4][2] = { -1, 0, 1, 0, 0, -1, 0, 1 };
+public:
+    int cutOffTree(vector<vector<int>>& f) {
+        int m = f.size(), n = f[0].size();
+        auto cmp = [](vector<int>& a, vector<int>& b) { return a[2] > b[2]; };
+        priority_queue<vector<int>, vector<vector<int>>, decltype(cmp)> trees(cmp);
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++)
+                if (f[i][j] > 1) trees.push({ i, j, f[i][j] });
+        auto dist = [&](int i0, int j0, int i1, int j1) {
+            if (i0 == i1 && j0 == j1) return 0;
+            queue<pair<int, int>> q; q.push({ i0, j0 });
+            unordered_map<int, unordered_map<int, int>> visited{ { i0,{ { j0, 1 } } } };
+            for (int steps = 1; !q.empty(); steps++)
+                for (int k = q.size(); k > 0; k--) {
+                    pair<int, int> p = q.front(); q.pop();
+                    for (int d = 0; d < 4; d++) {
+                        int i = p.first + delta[d][0], j = p.second + delta[d][1];
+                        if (i == i1 && j == j1) return steps;
+                        if (i < 0 || m <= i || j < 0 || n <= j || !f[i][j] || visited[i][j]++) continue;
+                        q.push({ i, j });
+                    }
+                }
+            return -1;
+        };
+        int total = 0, d = 0; // d: dist
+        vector<int> t; // t: tree
+        for (int i = 0, j = 0; !trees.empty(); i = t[0], j = t[1], total += d) {
+            t = trees.top(); trees.pop();
+            if ((d = dist(i, j, t[0], t[1])) == -1) return -1;
+        }
+        return total;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS + priority queue
+class Solution {
+    class Tree {
+        public int i = 0, j = 0;
+        Tree(int i, int j) {
+            this.i = i;
+            this.j = j;
+        }
+    }
+    public int cutOffTree(List<List<Integer>> forest) {
+        PriorityQueue<Tree> pq = new PriorityQueue<Tree>((t1, t2) -> forest.get(t1.i).get(t1.j) - forest.get(t2.i).get(t2.j));
+        for(int i = 0; i < forest.size(); i++) {
+            for(int j = 0; j < forest.get(i).size(); j++) {
+                if(forest.get(i).get(j) > 1) pq.add(new Tree(i, j));
+            }
+        }
+        int res = 0;
+        int i = 0, j = 0;
+        while(!pq.isEmpty()) {
+            Tree curTree = pq.poll();
+            int d = dist(forest, i, j, curTree.i, curTree.j);
+            if(d == -1) return -1;
+            res += d;
+            i = curTree.i;
+            j = curTree.j;
+        }
+        return res;
+    }
+    private int dist(List<List<Integer>> forest, int i1, int j1, int i2, int j2) {
+        boolean[][] visited = new boolean[forest.size()][forest.get(0).size()];
+        int[][] distMatrix = new int[forest.size()][forest.get(0).size()];
+        int[] move = new int[]{-1, 1};
+        int curDist = 0;
+        Queue<Tree> q = new LinkedList<>();
+        q.add(new Tree(i1, j1));
+        visited[i1][j1] = true;
+        while(!q.isEmpty()) {
+            int len = q.size();
+            for(int i = 0; i < len; i++) {
+                Tree t = q.poll();
+                if(t.i == i2 && t.j == j2) return curDist;
+                distMatrix[t.i][t.j] = curDist;
+                if(t.i > 0 && !visited[t.i-1][t.j] && forest.get(t.i-1).get(t.j) != 0) {
+                    q.add(new Tree(t.i-1, t.j));
+                    visited[t.i-1][t.j] = true;
+                }
+                if(t.i < forest.size() - 1 && !visited[t.i+1][t.j] && forest.get(t.i+1).get(t.j) != 0) {
+                    q.add(new Tree(t.i+1, t.j));
+                    visited[t.i+1][t.j] = true;
+                }
+                if(t.j > 0 && !visited[t.i][t.j-1] && forest.get(t.i).get(t.j-1) != 0) {
+                    q.add(new Tree(t.i, t.j-1));
+                    visited[t.i][t.j-1] = true;
+                }
+                if(t.j < forest.get(0).size() - 1 && !visited[t.i][t.j+1] && forest.get(t.i).get(t.j+1) != 0) {
+                    q.add(new Tree(t.i, t.j+1));
+                    visited[t.i][t.j+1] = true;
+                }
+            }
+            curDist++;
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+java solution, BFS
+class Solution {
+    
+    private List<List<Integer>> forest;
+    private int R;
+    private int C;
+    private static int[][] increments = {{0, +1}, {-1, 0}, {0, -1}, {+1, 0}};
+    
+    public int cutOffTree(List<List<Integer>> forest) {
+        this.forest = forest;
+        R = forest.size();
+        C = forest.get(0).size();
+        int output = 0;
+        Tree t = new Tree(1, 0, 0);
+        Tree nt = nextTree(1);
+        while (nt != null) {
+            int d = distance(t.r, t.c, nt.r, nt.c);
+            if (d < 0) {
+                return -1;
+            }
+            output += d;
+            t = nt;
+            nt = nextTree(t.h);
+        }
+        return output;
+    }
+    
+    private int distance(int r1, int c1, int r2, int c2) {
+        boolean[][] isVisited = new boolean[R][C];
+        int distance = 0;
+        Queue<int[]> q = new LinkedList<>();
+        q.add(new int[] {r1, c1});
+        while (!q.isEmpty()) {
+            Queue<int[]> next = new LinkedList<>();
+            for (int[] i : q) {
+                int r = i[0];
+                int c = i[1];
+                if (r < 0 || c < 0 || r >= R || c >= C || isVisited[r][c] || forest.get(r).get(c) == 0) {
+                    continue;
+                } else if (r == r2 && c == c2) {
+                    return distance;
+                }
+                isVisited[r][c] = true;
+                for (int[] increment : increments) {
+                    next.add(new int[] {r + increment[0], c + increment[1]});
+                }
+            }
+            q = next;
+            distance++;
+        }
+        return -1;
+    }
+    
+    private Tree nextTree(int minHeight) {
+        Tree t = null;
+        for (int i = 0; i < R; i++) {
+            for (int j = 0; j < C; j++) {
+                int h = forest.get(i).get(j);
+                if (h > minHeight && (t == null || h < t.h)) {
+                        t = new Tree(h, i, j);
+                }
+            }
+        }
+        return t;
+    }
+    
+    private class Tree {
+        int h;
+        int r;
+        int c;
+        Tree(int h, int r, int c) {
+            this.h = h;
+            this.r = r;
+            this.c = c;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ SPFA O(n^2m^2)
+class Solution {
+public:
+    struct node{
+        int x,y,i;
+    }zy[10010];
+
+    static bool cmp(node a, node b){
+        return (a.i < b.i);
+    }
+    queue<int> qx;
+    queue<int> qy;
+    queue<int> qt;
+    int a[10001], b[10001];
+    int N_M,tot,n,m,x,y,t,h;
+    struct Edge{
+        int to,cost,next;
+    };
+    Edge e[50010];
+    int e_sum,head[50010];
+    void addedge(int x,int y,int z)
+    {
+        e[e_sum].next = head[x];
+        e[e_sum].to = y;
+        e[e_sum].cost = z;
+        head[x] = e_sum++;
+    }
+    void spfa(int start,int dist[])
+    {
+        int u,i,j,v,h;
+        bool vis[10010];
+        memset(vis,false,sizeof(vis));
+        
+        queue <int>q;
+        dist[start] = 0;
+        q.push(start);
+        vis[start] = true;
+        while (!q.empty())
+        {
+            v=q.front();
+            q.pop();
+            for (i = head[v]; i != -1; i=e[i].next)
+            {
+                u = e[i].to;
+                h = e[i].cost;
+                if (dist[v]+h<dist[u])
+                {
+                    dist[u] = dist[v]+h;
+                    if (vis[u]==false)
+                    {
+                        vis[u] = true;
+                        q.push(u);
+                    }
+                }
+            }
+            vis[v] = false;
+        }
+    }
+    
+    int work(int x,int y,vector<vector<int>>& forest){
+        if (x < 0 || x >= n)
+            return -1;
+        if (y < 0 || y >= m)
+            return -1;
+        if (forest[x][y] == 0)
+            return -1;
+        return N_M*x+y;
+    }
+    int cutOffTree(vector<vector<int>>& forest) {
+        memset(head,-1,sizeof(head));
+
+        n = (int)forest.size();
+        m = (int)forest[0].size();
+        N_M = (n > m) ? n : m;
+        
+        qx.push(0);
+        qx.push(0);
+        qt.push(0);
+        tot = 0;
+        
+        for (int i = 0; i < n; ++i){
+            for (int j = 0; j < m; ++j){
+                if (forest[i][j] != 0){
+                    h = forest[i][j];
+                    zy[++tot].x = i;
+                    zy[tot].y = j;
+                    zy[tot].i = h;
+                }
+            }
+        }
+        sort(zy+1, zy+tot+1, cmp);
+        for (int i = 1; i <= tot; ++i){
+            a[i] = zy[i].x;
+            b[i] = zy[i].y;
+        }
+        
+        int hh[5];
+        for (int i = 0; i < n; ++i){
+            for (int j = 0; j < m; ++j){
+                if (forest[i][j] == 0)
+                    continue;
+                h = N_M*i+j;
+                hh[1] = work(i-1,j, forest);
+                hh[2] = work(i+1,j, forest);
+                hh[3] = work(i,j-1, forest);
+                hh[4] = work(i,j+1, forest);
+                for (int k = 1;  k <= 4; ++k){
+                    if (hh[k]!=-1&&h!=hh[k]){
+                        addedge(h, hh[k], 1);
+                    }
+                }
+            }
+        }
+        
+        int lx,ly, nx, ny;
+        lx = ly = 0;
+        int dis[10001];
+        int ans = 0;
+        int des;
+        for (int i = 1; i <= tot; ++i){
+            nx = a[i];
+            ny = b[i];
+            h = N_M*nx+ny;
+            memset(dis,0x3f,sizeof(dis));
+            spfa(h, dis);
+            des = N_M*lx+ly;
+            if (dis[des]>n*m){
+                return -1;
+            }
+            ans+=dis[des];
+            lx = nx;
+            ly = ny;
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS solution with priority queue
+class Solution {
+    class Tree{
+        int h;
+        int x;
+        int y;
+        public Tree(int h, int x, int y){
+            this.h=h;
+            this.x=x;
+            this.y=y;
+        }
+    }
+    public int cutOffTree(List<List<Integer>> forest) {
+        if(forest.size()==0 || forest.get(0).size()==0)
+            return 0;
+        int m=forest.size();
+        int n=forest.get(0).size();
+        int total=0;
+        PriorityQueue<Tree> queue = new PriorityQueue<Tree>(m*n, new Comparator<Tree>(){
+            public int compare(Tree a, Tree b){
+                return a.h-b.h;
+            }
+        });
+        for(int i=0; i<m; i++){
+            for(int j=0; j<n; j++){
+                if(forest.get(i).get(j)>1){
+                   queue.add(new Tree(forest.get(i).get(j), i, j));
+                }
+            }
+        }
+        Tree cur=new Tree(1, 0, 0);
+        while(!queue.isEmpty()){
+            Tree next=queue.poll();
+            int steps=canReach(forest, cur.x, cur.y, next);
+            if(steps==-1)
+                return -1;
+            total+=steps;
+            cur=next;
+        }
+        return total;
+    }
+    public int canReach(List<List<Integer>> forest, int x, int y, Tree next){
+        int m=forest.size();
+        int n=forest.get(0).size();
+        boolean[][] visited= new boolean[m][n];
+        LinkedList<int[]> queue = new LinkedList<int[]>();
+        queue.add(new int[]{x, y});
+        visited[x][y]=true;
+        int steps=0;
+        int[][] dir={{-1,0},{1,0},{0,-1},{0,1}};
+        while(!queue.isEmpty()){
+            int size=queue.size();
+            for(int i=0; i<size; i++){
+                 int[] cur=queue.poll();
+                if(cur[0]==next.x && cur[1]==next.y)
+                    return steps;
+                for(int[] d: dir){
+                    int nx=cur[0]+d[0];
+                    int ny=cur[1]+d[1];
+                    if(nx>=0 && nx<m && ny>=0 && ny<n && forest.get(nx).get(ny)!=0 && !visited[nx][ny]){
+                        visited[nx][ny]=true;
+                        queue.add(new int[]{nx, ny});
+                    }
+                }
+            }
+            steps++; 
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java, BFS, easy to understand with explanation
+class Solution {
+    static int[][] deltas = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    
+    public int cutOffTree(List<List<Integer>> forest) {
+        if (forest == null || forest.isEmpty())
+            return 0;
+        HashMap<Integer, int[]> heightMap = new HashMap<>();
+        PriorityQueue<Integer> pq = new PriorityQueue<>(); //heights
+        int numRows = forest.size(), numCols = forest.get(0).size();
+        for (int i = 0; i<numRows; i++) {
+            List<Integer> list = forest.get(i);
+            for(int j = 0; j<numCols; j++) {
+                if(list.get(j) > 1){
+                    heightMap.put(list.get(j), new int[]{i, j});
+                    pq.offer(list.get(j));
+                }   
+            }
+        }
+        int sum = 0;
+        int[] start = new int[]{0, 0};
+        while(!pq.isEmpty()) {
+            int target = pq.poll();
+            int[] end = heightMap.get(target);
+            int steps = bfs(numRows, numCols, forest, target, start, end);
+            if (steps < 0){
+                return -1;
+            }    
+            sum += steps;
+            start = end;
+        }
+        return sum;
+    }
+    
+    private static int bfs(int numRows, int numCols, List<List<Integer>> forest, int target, int[] start, int[] end) {
+        Queue<int[]> q = new LinkedList<>();
+        q.offer(start);
+        int steps = 0;
+        HashSet<Integer> visited = new HashSet<>();
+        visited.add(start[0] * numCols+start[1]);
+        while(!q.isEmpty()) {
+            int size = q.size();
+            for(int i = 0; i<size; i++) {
+                int[] cur = q.poll();
+                if (cur[0] == end[0] && cur[1]==end[1])
+                    return steps;
+                for (int[] delta : deltas) {
+                    int r = cur[0]+delta[0];
+                    int c = cur[1]+delta[1];
+                    if (r<0 || r>=numRows || c<0 || c>=numCols)
+                        continue;
+                    int h = forest.get(r).get(c);
+                    int val = r*numCols+c;
+                    if (h==0 || visited.contains(val))
+                        continue;
+                    visited.add(val);
+                    q.offer(new int[]{r, c});
+                }
+            }
+            steps++;
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My JAVA BFS solution
+class Solution {
+    int[] dx = {0, 1, 0, -1};
+    int[] dy = {1, 0, -1, 0};
+    public int cutOffTree(List<List<Integer>> forest) {
+        PriorityQueue<Integer> pq = new PriorityQueue<>();
+        for (List<Integer> list : forest) {
+            for (Integer i : list) {
+                if (i > 1)
+                    pq.add(i);
+            }
+        }
+        Queue<int[]> queue = new LinkedList<>();
+        int count = 0;
+        queue.add(new int[]{0, 0, 0});
+        while(!pq.isEmpty()) {
+            int target = pq.poll();
+            bfs(queue, forest, target);
+            if (queue.isEmpty())
+                return -1;
+        }
+        int[] res = queue.poll();
+        return res[2];
+    }
+    
+    public void bfs(Queue<int[]> queue, List<List<Integer>> forest, int target) {
+        int m = forest.size();
+        int n = forest.get(0).size();
+        boolean[][] visited = new boolean[m][n];
+        while(!queue.isEmpty()) {
+            int[] cur = queue.poll();
+            int val = forest.get(cur[0]).get(cur[1]);
+            visited[cur[0]][cur[1]] = true;
+            if (val == 0)
+                continue;
+            if (val == target) {
+                forest.get(cur[0]).set(cur[1], 1);
+                queue.clear();
+                queue.add(cur);
+                return;
+            } else {
+                for (int i = 0; i < 4; i++) {
+                    int x = cur[0] + dx[i];
+                    int y = cur[1] + dy[i];
+                    if (x >= 0 && x < m && y >= 0 && y < n && !visited[x][y]) {
+                        queue.add(new int[]{x, y, cur[2] + 1});
+                        visited[x][y] = true;
+                    }
+                } 
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ easy way(sort+BFS)
+class Solution {
+public:
+    int n,m,ans=0;
+    bool vis[55][55];
+    struct node{
+        int x,y,step,val;
+        node(){}
+        node(int x,int y,int step,int val):x(x),y(y),step(step),val(val){}
+    };
+    int f[4][2]={{0,1},{0,-1},{1,0},{-1,0}};
+    bool jug(int x,int y){
+        if(x<0||x>=n||y<0||y>=m)return false;
+        return true;
+    }
+    node BFS(node s,int aim,vector<vector<int>>& forest){
+        queue<node>q;
+        vis[s.x][s.y]=1;
+        q.push(s);
+        while(!q.empty()){
+            node tmp = q.front(); q.pop();
+            if(tmp.val == aim){
+                ans+=tmp.step;
+                return tmp;
+            }
+            for(int i=0;i<4;i++){
+                int x = tmp.x+f[i][0];
+                int y = tmp.y+f[i][1];
+                if(jug(x,y)&&!vis[x][y]){
+                   if(forest[x][y]==0)continue;
+                   vis[x][y]=1;
+                   node t; t.x=x,t.y=y,t.step=tmp.step+1;
+                   t.val = forest[x][y];
+                   q.push(t);
+                }
+            }
+        }
+        return (node){-1,-1,-1,-1};
+    }
+    int cutOffTree(vector<vector<int>>& forest) {
+        n = forest.size();
+        m = forest[0].size();
+        vector<int> high;
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                if(forest[i][j]>1)high.push_back(forest[i][j]);
+            }
+        }
+        sort(high.begin(),high.end());
+        node s = (node){0,0,0,forest[0][0]};
+        for(int i=0;i<high.size();i++){
+            memset(vis,0,sizeof(vis));
+            s = BFS(s,high[i],forest);
+            if(s.x==-1)return -1;
+            s.step = 0;
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Question unclear whether one could walk through a tree before cutting it?
+<p>I wrote code for the function assuming that one could walk through only grass, and trees can be walked through only after cutting them based on the following sentence. This doesn&#39;t seem true as the following test would otherwise have returned -1.</p>
+<p>Isn&#39;t this question unclear? Could someone clarify this?</p>
+<blockquote>
+<p>You are asked to cut off all the trees in this forest in the order of tree&#39;s height - always cut off the tree with lowest height first. And after cutting, the original place has the tree will become a grass (value 1).</p>
+</blockquote>
+<p>&#91;&#91;54581641,64080174,24346381,69107959&#93;,&#91;86374198,61363882,68783324,79706116&#93;,&#91;668150,92178815,89819108,94701471&#93;,&#91;83920491,22724204,46281641,47531096&#93;,&#91;89078499,18904913,25462145,60813308&#93;&#93;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - BFS
+class Solution {
+    
+    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    
+    func cutOffTree(_ forest: [[Int]]) -> Int {
+        if forest.count == 0 || forest[0].count == 0 {
+            return -1
+        }
+        
+        let m = forest.count
+        let n = forest[0].count
+        var result = 0
+        var startX = 0
+        var startY = 0
+        var heights = [(Int, (Int, Int))]()
+        
+        for i in 0..<m {
+            for j in 0..<n {
+                if forest[i][j] > 1 {
+                    heights .append((forest[i][j], (i, j)))
+                }
+            }
+        }
+        heights.sort { (height1: (Int, (Int, Int)), height2: (Int, (Int, Int))) -> Bool in
+            return height1.0 < height2.0
+        }
+        
+        for i in 0..<heights.count {
+            let endX = heights[i].1.0
+            let endY = heights[i].1.1
+            let steps = BFS(forest, m, n, startX, startY, endX, endY)
+            if steps == -1 {
+                return -1
+            }
+            result += steps
+            startX = endX
+            startY = endY
+        }
+        
+        return result
+    }
+    
+    private func BFS(_ forest: [[Int]], _ m: Int, _ n: Int, _ startX: Int, _ startY: Int, _ endX: Int, _ endY: Int) -> Int {
+        if startX == endX && startY == endY {
+            return 0
+        }
+        
+        var steps = 0
+        var queue = [(Int, Int)]()
+        var visited = [[Bool]](repeatElement([Bool](repeatElement(false, count: n)), count: m))
+        
+        queue.append((startX, startY))
+        visited[startX][startY] = true
+        
+        while !queue.isEmpty {
+            let count = queue.count
+            steps += 1
+            for _ in 0..<count {
+                let (x, y) = queue.removeFirst()
+                for i in 0..<directions.count {
+                    let nextX = x + directions[i].0
+                    let nextY = y + directions[i].1
+                    if nextX >= 0 && nextX < m && nextY >= 0 && nextY < n && forest[nextX][nextY] > 0 && !visited[nextX][nextY] {
+                        if nextX == endX && nextY == endY {
+                            return steps
+                        }
+                        visited[nextX][nextY] = true
+                        queue.append((nextX, nextY))
+                    }
+                }
+            }
+        }
+        
+        return -1
+    }
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ BFS with optimization, 86ms beats 100%
+class Solution {
+public:
+    int cutOffTree(vector<vector<int>>& forest) {
+        vector<vector<int>> trees; //vector<[height,i,j]>
+        for(int i=0; i<forest.size(); ++i)
+            for(int j=0; j<forest[0].size(); ++j)
+                if(forest[i][j]>1)
+                    trees.push_back(vector<int>({forest[i][j],i,j}));
+        sort(trees.begin(),trees.end(),[](vector<int>& a, vector<int>& b){
+            return a[0]<b[0]; //sort by tree's height
+        });
+        
+        //doing DFS to see if every tree is available from (0,0)
+        int tree_available = 0;
+        vector<vector<bool>> visited(forest.size(),vector<bool>(forest[0].size(),false));
+        DFS(0,0,visited,forest,tree_available);
+        if(tree_available != trees.size())   return -1; //some trees are not available from (0,0)
+        
+        int step = 0;
+        int si=0, sj=0;
+        for(int i=0; i<trees.size(); ++i){
+            // optimization here, if there are no obstacles blocking the shortest path, return the shortest length 
+            // no need to do the 4-direction BFS
+            if(ShortestPathAvailable(si,sj,trees[i][1],trees[i][2],forest))
+                step += abs(si-trees[i][1])+abs(sj-trees[i][2]);
+            else
+                step += BFS(si,sj,trees[i][1],trees[i][2],forest);
+            si = trees[i][1];
+            sj = trees[i][2];
+        }
+        
+        return step;
+    }
+    
+    void DFS(int i, int j, vector<vector<bool>>& visited, const vector<vector<int>>& forest, int& count){
+        if(i<0 || i>=forest.size() || j<0 || j>=forest[0].size() || visited[i][j] || forest[i][j]==0)  return;
+        visited[i][j] = true;
+        if(forest[i][j]>1)  count++;
+        DFS(i+1,j,visited,forest,count);
+        DFS(i-1,j,visited,forest,count);
+        DFS(i,j+1,visited,forest,count);
+        DFS(i,j-1,visited,forest,count);
+    }
+    
+    //return the minimum step from (si,sj) to (ti,tj)
+    int BFS(int si, int sj, int ti, int tj, const vector<vector<int>>& forest){
+        vector<vector<bool>> visited(forest.size(),vector<bool>(forest[0].size(),false));
+        visited[si][sj] = true;
+        queue<pair<int,int>> q({make_pair(si,sj)});
+        int len = 0;
+        int di[4] = {1,0,-1,0};
+        int dj[4] = {0,1,0,-1};
+        while(true){
+            int qsize = q.size();
+            while(qsize--){
+                if(q.front().first==ti && q.front().second==tj) //the function stops here
+                    return len; 
+                for(int k=0; k<4; ++k){
+                    int i=q.front().first+di[k];
+                    int j=q.front().second+dj[k];
+                    if(i>=0 && i<forest.size() && j>=0 && j<forest[0].size() && !visited[i][j] && forest[i][j]>0){
+                        visited[i][j] = true;
+                        q.push(make_pair(i,j));
+                    }
+                }
+                q.pop();
+            }
+            ++len;
+        }
+        return -999999; //redundancy, never goes this line
+    }
+    
+    // check if there exists a shortest path avail from (x1,y1) to (x2,y2) going one out of 4 directions :
+    // upper-left , upper-right , lower-left , lower-right
+    /*  e.g. going from S(x1,y1) to T(x2,y2), 'X' is obstacle, '*' is current layer
+        lower-right direction, minumum step = 5, going step by step as follow
+        [S, , , ]     [ ,*, , ]    [ , ,*, ]    [ , , ,*]    [ , , , ]    [ , , , ]
+        [ , ,X, ] ->  [*, ,X, ] -> [ ,*,X, ] -> [ , ,X, ] -> [ , ,X,*] -> [ , ,X, ]
+        [X, , ,T]     [X, , , ]    [X, , , ]    [X,*, , ]    [X, ,*, ]    [X, , ,*]     
+                        step 1       step 2       step 3       step 4       step 5
+    */
+    bool ShortestPathAvailable(int x1, int y1, int x2, int y2, const vector<vector<int>>& forest){
+        int dx = (x2>x1)? 1 : -1;
+        int dy = (y2>y1)? 1 : -1;
+        int minstep = abs(x1-x2)+abs(y1-y2);
+        queue<pair<int,int>> q({make_pair(x1,y1)});
+        while(minstep--){
+            int qsize = q.size();
+            if(qsize==0) 
+                return false; //haven't gone minstep yet, but no path available
+            while(qsize--){
+                int x = q.front().first;
+                int y = q.front().second;
+                q.pop();
+                if(x!=x2 && forest[x+dx][y]>0 && ((x+dx)!=q.back().first || y!=q.back().second))
+                    q.push(make_pair(x+dx,y));
+                if(y!=y2 && forest[x][y+dy]>0 && (x!=q.back().first || (y+dy)!=q.back().second))
+                    q.push(make_pair(x,y+dy));
+            }
+        }
+        return q.size()==1; //if true return, only destination [x2,y2] is in the queue
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS TLE solution. Just for fun and comparison to BFS solution.
+public int cutOffTree(List<List<Integer>> forest) {
+    int m = forest.size();
+    int n = forest.get(0).size();
+    List<Tree> wood = new ArrayList<>();
+    for (int i = 0; i < m; i++) {
+        for(int j = 0; j < n; j++) {
+            if (forest.get(i).get(j) == 0) continue;
+            Tree tree = new Tree(i, j, forest.get(i).get(j));
+            wood.add(tree);
+        }
+    }
+    Collections.sort(wood, (Tree t1, Tree t2) -> (t1.h - t2.h));
+    int y = 0;
+    int x = 0;
+    int res = 0;
+    for (int i = 0; i < wood.size(); i++) {
+        if (wood.get(i).h <= 1) continue;
+        int current= findPath(y, x, wood.get(i).y, wood.get(i).x, forest, new boolean[m][n]);
+        if (current == -1) return -1;
+        else res += current;
+        y = wood.get(i).y;
+        x = wood.get(i).x;
+    }
+    return res;
+}
+
+private int findPath(int y1, int x1, int y2, int x2, List<List<Integer>> forest, boolean[][] visited) {
+    int m = forest.size();
+    int n = forest.get(0).size();
+    if (y1 == y2 && x1 == x2) return 0;
+    if (visited[y1][x1]) return -1;
+    visited[y1][x1] = true;
+    int res = Integer.MAX_VALUE;
+    int[][]directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    for (int i = 0; i < 4; i++) {
+        int nY = y1 + directions[i][0];
+        int nX = x1 + directions[i][1];
+        if (nY >= 0 && nY < m && nX >= 0 && nX < n && forest.get(nY).get(nX) > 0) {
+            int neighbour = findPath(nY, nX, y2, x2, forest, visited);
+            if (neighbour >= 0) {
+                res = Math.min(res, neighbour);  
+            }
+        }
+    }
+    visited[y1][x1] = false;
+    if (res == Integer.MAX_VALUE) {
+        return -1;
+    }
+    else {
+        res += 1;
+        return res;
+    }
+    
+}
+class Tree {
+    int y;
+    int x;
+    int h;
+    public Tree(int y, int x, int h) {
+        this.y = y;
+        this.x = x;
+        this.h = h;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+BFS Jave Consice Solution
+class Solution {
+    int[][] dirs = {{1, 0}, {-1, 0}, {0, -1}, {0, 1}};
+    int m, n;
+    public int cutOffTree(List<List<Integer>> forest) {
+        m = forest.size();
+        n = forest.get(0).size();
+        PriorityQueue<int[]> pq = new PriorityQueue<>(new Comparator<int[]>(){
+            public int compare(int[] a, int[] b) {
+                return a[2] - b[2];
+            }
+        });
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (forest.get(i).get(j) > 1) {
+                    pq.offer(new int[]{i, j, forest.get(i).get(j)});
+                }
+            }
+        }
+        int res = 0;
+        int x = 0, y = 0;
+        while (!pq.isEmpty()) {
+            int[] next = pq.poll();
+            int t_x = next[0], t_y = next[1];
+            int step = helper(forest, x, y, t_x, t_y);
+            System.out.println("step = " + step + " t_x = " + t_x + " t_y = " + t_y);
+            if (step == -1) return -1;
+            res += step;
+            forest.get(t_x).set(t_y, 1);
+            x = t_x;
+            y = t_y;
+        }
+        return res;
+    }
+    private int helper(List<List<Integer>> forest, int x, int y, int t_x, int t_y) {
+        if (x == t_x && y == t_y) return 0;
+        Queue<int[]> q = new LinkedList<>();
+        boolean[][] visited = new boolean[m][n];
+        q.offer(new int[]{x, y});
+        visited[x][y] = true;
+        int step = 1;
+        while (!q.isEmpty()) {
+            int size = q.size();
+            for (int i = 0; i < size; i++) {
+                int[] curr = q.poll();
+                for (int[] dir : dirs) {
+                    int nx = dir[0] + curr[0];
+                    int ny = dir[1] + curr[1];
+                    if (nx < 0 || ny < 0 || nx >= m || ny >= n || forest.get(nx).get(ny) < 1 || visited[nx][ny]) continue;
+                    if (nx == t_x && ny == t_y) return step;
+                    visited[nx][ny] = true;
+                    q.offer(new int[]{nx, ny}); 
+                }
+            }
+            step++;
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

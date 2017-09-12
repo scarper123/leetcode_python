@@ -1,0 +1,634 @@
+Java Concise Postorder Traversal Solution
+public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+    List<TreeNode> res = new LinkedList<>();
+    postorder(root, new HashMap<>(), res);
+    return res;
+}
+
+public String postorder(TreeNode cur, Map<String, Integer> map, List<TreeNode> res) {
+    if (cur == null) return "#";  
+    String serial = cur.val + "," + postorder(cur.left, map, res) + "," + postorder(cur.right, map, res);
+    if (map.getOrDefault(serial, 0) == 1) res.add(cur);
+    map.put(serial, map.getOrDefault(serial, 0) + 1);
+    return serial;
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code
+class Solution {
+    public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        Map<String, List<TreeNode>> map = new HashMap<String, List<TreeNode>>();
+        List<TreeNode> dups = new ArrayList<TreeNode>();
+        serialize(root, map);
+        for (List<TreeNode> group : map.values()) {
+            if (group.size() > 1) dups.add(group.get(0));
+        }
+        return dups;
+    }
+
+    private String serialize(TreeNode node, Map<String, List<TreeNode>> map) {
+        if (node == null) return "";
+        String s = "(" + serialize(node.left, map) + node.val + serialize(node.right, map) + ")";
+        if (!map.containsKey(s)) map.put(s, new ArrayList<TreeNode>());
+        map.get(s).add(node);
+        return s;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time and space, lots of analysis
+>>> 0.99999999999907540756613520**167
+0.9999999998455928
+
+
+----------------------------------------------------------------------------------------------------
+Python, O(N) Merkle Hashing Approach
+def findDuplicateSubtrees(self, root):
+    from hashlib import sha256
+    def hash_(x):
+        S = sha256()
+        S.update(x)
+        return S.hexdigest()
+
+    def merkle(node):
+        if not node:
+            return '#'
+        m_left = merkle(node.left)
+        m_right = merkle(node.right)
+        node.merkle = hash_(m_left + str(node.val) + m_right)
+        count[node.merkle].append(node)
+        return node.merkle
+
+    count = collections.defaultdict(list)
+    merkle(root)
+    return [nodes.pop() for nodes in count.values() if len(nodes) >= 2]
+
+
+----------------------------------------------------------------------------------------------------
+Python easy understand solution
+def findDuplicateSubtrees(self, root):
+        def trv(root):
+            if not root: return "null"
+            struct = "%s,%s,%s" % (str(root.val), trv(root.left), trv(root.right))
+            nodes[struct].append(root)
+            return struct
+        
+        nodes = collections.defaultdict(list)
+        trv(root)
+        return [nodes[struct][0] for struct in nodes if len(nodes[struct]) > 1]
+
+----------------------------------------------------------------------------------------------------
+Verbose Java solution, tree traversal
+public class Solution {
+    Map<String, TreeNode> map = new HashMap<>();
+    
+    public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        List<TreeNode> result = new ArrayList<>();
+        if (root == null) return result;
+        
+        traverse(first(root));
+        
+        for (TreeNode node : map.values()) {
+            if (node != null) {
+                result.add(node);
+            }
+        }
+        
+        return result;
+    }
+    
+    private TreeNode first(TreeNode root) {
+        if (root == null) return null;
+        if (root.left != null && root.right != null) return root;
+        if (root.left != null) return first(root.left);
+        return first(root.right);
+    }
+    
+    private void traverse(TreeNode root) {
+        if (root == null) return;
+        
+        String s = path(root);
+        if (map.containsKey(s)) {
+            map.put(s, root);
+        }
+        else {
+            map.put(s, null);
+        }
+        
+        traverse(root.left);
+        traverse(root.right);
+    }
+    
+    private String path(TreeNode root) {
+        if (root == null) return "#";
+        return root.val + "," + path(root.left) + "," + path(root.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+No string hash, Python code, O(n) time and space
+    def findDuplicateSubtrees(self, root):
+        self.type_id_gen = 0
+        duplicated_subtrees = []
+        type_to_freq = defaultdict(int)
+        type_to_id = {}
+        
+        def dfs(node):
+            if not node:
+                return -1
+            type_id_left, type_id_right = (dfs(ch) for ch in (node.left, node.right))
+            tree_type = (node.val, type_id_left, type_id_right)
+            freq = type_to_freq[tree_type]
+            if freq == 0:
+                type_id = self.type_id_gen
+                self.type_id_gen += 1
+                type_to_id[tree_type] = type_id
+            elif freq == 1:
+                type_id = type_to_id[tree_type]
+                duplicated_subtrees.append(node)
+            else:
+                type_id = type_to_id[tree_type] 
+            type_to_freq[tree_type] += 1
+            return type_id
+            
+        dfs(root)
+        return duplicated_subtrees  
+
+
+----------------------------------------------------------------------------------------------------
+C++, 19 ms, O(n^2), sort by subtree height
+class Solution {
+public:
+    vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+        vector<TreeNode*> ans;
+        if (root == NULL) return ans;
+        vector<vector<TreeNode*>> height(1, vector<TreeNode*>());
+        find_height(height, root);
+        for (int i = 1; i < height.size(); i++) {
+            for (int j = 0; j < height[i].size(); j++) {
+                if (height[i][j] == NULL) continue;
+                bool exist = false;
+                for (int k = j+1; k < height[i].size(); k++) {
+                    if (sametree(height[i][j], height[i][k])) {
+                        height[i][k] = NULL;
+                        exist = true;
+                    }
+                }
+                if (exist) ans.push_back(height[i][j]);
+            }   
+        }
+        return ans;
+    }
+private:
+    int find_height(vector<vector<TreeNode*>>& height, TreeNode* p) {
+        if (p == NULL) return 0;
+        int left = find_height(height, p->left), right = find_height(height, p->right), h = max(left, right)+1;
+        if (h == height.size()) 
+            height.push_back({p});
+        else 
+            height[h].push_back(p);
+        return h;
+    }
+    bool sametree(TreeNode* p, TreeNode* q) {
+        if (p == NULL && q == NULL) return true;
+        if (p == NULL || q == NULL) return false;
+        if (p->val != q->val) return false;
+        return sametree(p->left, q->left) && sametree(p->right, q->right);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using level order traversal
+public class Solution {
+    List<TreeNode> result = new ArrayList<TreeNode>();
+    TreeNode origRoot = null;
+    Map<TreeNode, Integer> depthMap = new HashMap<TreeNode, Integer>();
+    Map<String, TreeNode> nodeStr = new HashMap<String, TreeNode>();
+    HashSet<String> dups = new HashSet<String>();
+    
+    public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        populateStrMap(root);
+        return result;
+    }
+    
+    public void populateStrMap(TreeNode root) {
+        if (root == null) return;
+        String str = toString(root);
+        if (nodeStr.containsKey(str) && !dups.contains(str)) {result.add(root); dups.add(str);}
+        else nodeStr.put(str, root);
+        populateStrMap(root.left);
+        populateStrMap(root.right);
+    }
+ 
+    LinkedList<TreeNode> list = new LinkedList<TreeNode>();
+    
+    public String toString(TreeNode root) {
+        StringBuilder result = new StringBuilder();
+        list.add(root);
+        TreeNode dummyNode = new TreeNode(-1);
+        TreeNode nullNode = new TreeNode(-1);
+        list.add(dummyNode);
+        while(!list.isEmpty()) {
+            TreeNode node = list.pollFirst();
+            if (node == dummyNode) if (list.isEmpty()) break; else {list.add(dummyNode); continue;}
+            if (node == nullNode) {result.append("n,"); continue;}
+            if (nodeStr.containsKey(node)) {
+                result.append(nodeStr.get(node)); continue;
+            }
+            result.append(Integer.toString(node.val)).append(",");
+            if (node.left != null) list.add(node.left);
+            else list.add(nullNode);
+            if (node.right != null) list.add(node.right);
+            else list.add(nullNode);
+        }
+        return result.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java - Super easy postorder with HashMap&lt;String, TreeNode&gt; solution
+public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        if(root == null) return new LinkedList<>();	
+	
+	HashMap<String, TreeNode> map = new HashMap<>();
+	
+	helper(root, map);
+	
+	List<TreeNode> res = new LinkedList<>();	
+	
+	for(Map.Entry<String, TreeNode> e : map.entrySet()){
+	     if(e.getValue() != null) res.add(e.getValue());
+	}
+	
+	return res;
+    
+}
+
+public String helper(TreeNode node, HashMap<String, TreeNode> map){
+	//leaves node
+       if(node.left == null && node.right == null){
+		String str = "" + node.val;
+		if(!map.containsKey(str))			
+		    map.put(str, null);
+		else
+                    map.put(str, node);			
+		
+		return str;
+	}
+	//post order
+	String left = "";
+	if(node.left != null)
+	    left = helper(node.left, map);	
+	
+	String right = "";
+	if(node.right != null)
+	    right = helper(node.right, map);
+	
+	//new subtree found, put null; subtree found again, put the subtree's root node.
+	String str = left +" # "+ right +" # "+ node.val;        
+	if(!map.containsKey(str))		
+	    map.put(str, null);
+	else
+            map.put(str, node);		
+		
+	return str;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java HashCode Solution to avoid most equals comparison
+private boolean sameNode(TreeNode a, TreeNode b){
+    if(a == null && b == null)
+        return true;
+    if(a == null && b != null || a != null && b == null)
+        return false;
+    return a.val == b.val && sameNode(a.left, b.left) && sameNode(a.right, b.right);
+    
+}
+
+private class Entry{
+    int hash_code;
+    TreeNode node;
+    Entry(int h, TreeNode n){
+        hash_code = h;
+        node = n;
+    }
+    public int hashCode(){
+        return hash_code;
+    }
+    public boolean equals(Object e){
+        return sameNode(node, ((Entry)e).node);
+    }
+}
+List<Entry> list = new ArrayList<>();
+private int getEntry(TreeNode root){
+    if(root == null)
+        return 1;
+    int left = getEntry(root.left);
+    int right = getEntry(root.right);
+    int code = left * 100007 + right * 700001 + root.val;
+    list.add(new Entry(code, root));
+    return code;
+}
+public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+    getEntry(root);
+    Map<Entry, Integer> map = new HashMap<>();
+    for(Entry e : list){
+        if(map.containsKey(e))
+            map.put(e, map.get(e) + 1);
+        else
+            map.put(e, 1);
+    }
+    List<TreeNode> ans = new LinkedList<>();
+    for(Entry key : map.keySet())
+        if(map.get(key) > 1)
+            ans.add(key.node);
+    return ans;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Postorder traversal without serialization with explaination beat 95%
+struct Subtree {
+    int v;
+    int lid; // id for left subtree
+    int rid; // id for right subtree
+    Subtree(int x, int l, int r) : v(x), lid(l), rid(r) {}
+    bool operator==(const Subtree &r) const {
+        return v==r.v && lid==r.lid && rid==r.rid;
+    }
+};
+struct Hasher {
+    size_t operator() (const Subtree& k) const{
+        size_t key=k.v;
+        return (key<<32)+(k.lid^k.rid);
+    }
+  };   
+struct Comp {
+    bool operator() (const Subtree& l, const Subtree& r) const {
+        return l.v==r.v && l.lid==r.lid && l.rid==r.rid;
+    }
+  };
+
+class Solution {
+public:     
+    unordered_map<Subtree, int, Hasher, Comp> fmap; // Subtree=>Subtree id map
+    vector<int> count; // id => count map
+    vector<TreeNode*> rmap; // subtree id => real root map
+    int PostTraverse(TreeNode* root) {
+        if (root==NULL)
+            return 0;
+        int lid = PostTraverse(root->left);
+        int rid = PostTraverse(root->right);
+        Subtree st(root->val, lid, rid);
+        if (fmap.find(st)==fmap.end()) {
+            // a new subtree is found
+            int newid = count.size(); // new id is always the number of all subtrees traversed
+            fmap[st] = newid;
+            count.push_back(1);
+            rmap.push_back(root);
+        } else {
+            // this subtree has been found
+            count[fmap[st]]++;
+        }
+        return fmap[st];
+    }
+
+    vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {       
+        fmap[Subtree(INT_MAX,INT_MAX,INT_MAX)] = 0; // id 0 indicates a NULL tree
+        count.push_back(1); // count[0] = 1;
+        rmap.push_back(NULL); // id 0 indicate null tree
+        PostTraverse(root);
+        vector<TreeNode*> res;
+        for (int i=0; i<count.size(); ++i)
+            if (count[i]>1)
+                res.push_back(rmap[i]);
+        return res;   
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Preorder traversal using string and hashmap
+class Solution {
+public:
+    string preorder(TreeNode* root, unordered_map<string, int>& freq, vector<TreeNode*>& res) {
+        if(root != NULL) {
+            string left = preorder(root -> left, freq, res);
+            string right = preorder(root -> right, freq, res);
+            
+            string str = to_string(root -> val) + " " + left + right;
+            
+            if(freq[str] == 1) res.push_back(root);
+            freq[str]++;
+            return str;
+        } else {
+            return "null ";
+        }
+    }
+    vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+        unordered_map<string, int> freq;
+        vector<TreeNode*> res;
+        preorder(root, freq, res);
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python code easy to understand, postorder traversal + serialization
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def postorder(self, node):
+        """
+        :type node: TreeNode
+        :rtype: str
+        """
+        if not node:
+            return '#'
+        tree_str = self.postorder(node.left) + self.postorder(node.right) + str(node.val)
+        if self.tree_str_count[tree_str] == 1:
+            self.result.append(node)
+        self.tree_str_count[tree_str] += 1
+        return tree_str
+    
+    def findDuplicateSubtrees(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[TreeNode]
+        """
+        self.tree_str_count, self.result = collections.defaultdict(int), []
+        self.postorder(root)
+        return self.result
+
+
+----------------------------------------------------------------------------------------------------
+Python, Simple - Using Postorder traversal
+class Solution:
+     
+    def findDuplicateSubtrees(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[TreeNode]
+        """
+        freq = {}
+        ans = []
+        def postorder(root):
+            if root is None: return "#"
+            leftsub = postorder(root.left)
+            rightsub = postorder(root.right)
+            tree = leftsub + rightsub + str(root.val)
+            if tree not in freq:
+                freq[tree] = 1
+            elif freq[tree] == 1:
+                ans.append(root)
+                freq[tree] += 1
+            return tree
+        postorder(root)
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Java - via subtree serialization for all nodes - easy to understand
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    List<String> list = new ArrayList<>();
+    List<TreeNode> nodes = new ArrayList<>();
+    List<String> done = new ArrayList<>();
+    
+    public List<TreeNode> findDuplicateSubtrees(TreeNode root) {
+        
+        
+        if (root == null) return nodes;
+        
+        if (root != null) {
+            StringBuilder sb = new StringBuilder();
+            Serialize(root, sb);
+            String s = sb.toString();
+            
+            if (!list.contains(s)) {                   
+                list.add(s);                
+            } else {       
+                if (!done.contains(s)) {  
+                    nodes.add(root);
+                    done.add(s);  
+                }                    
+            }
+            
+            findDuplicateSubtrees(root.left);
+            findDuplicateSubtrees(root.right);
+        }
+        
+        return nodes;
+        
+    }
+    
+    void Serialize(TreeNode root, StringBuilder sb) {       
+        String del = ",";
+        sb.append(((root == null)? "null": root.val) + del);
+        if (root != null) {
+            Serialize(root.left, sb);
+            Serialize(root.right, sb);
+        }        
+    }    
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution using post order traverse and serialization
+class Solution {
+public:
+    string helper(vector<TreeNode *> &ans, unordered_map<string, int> &m, TreeNode *curr) {
+        if (!curr)
+            return "#";
+        
+        string left = helper(ans, m, curr->left), right = helper(ans, m, curr->right);
+        string s = to_string(curr->val) + "," + left + "," + right;
+        if (m[s] == 1)
+            ans.push_back(curr);
+        ++m[s];
+        return s;
+    }
+    
+    vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+        vector<TreeNode *> ans;
+        unordered_map<string, int> m;
+        helper(ans, m, root);
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def findDuplicateSubtrees(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[TreeNode]
+        """
+        record = collections.defaultdict(list)
+        self.helper(root, record)
+        return [sub[0] for sub in record.values() if len(sub) > 1]
+
+        
+    def helper(self, cur, record):
+    	if not cur:
+    		return 'N'
+    	sub = str(cur.val) +','+ self.helper(cur.left, record) +','+ self.helper(cur.right, record)
+    	record[sub].append(cur)
+    	return sub
+
+
+----------------------------------------------------------------------------------------------------
+Solution using Postorder Traversal (C++)
+string duplicateSubtree(TreeNode* root,map<string,int> &m,vector<TreeNode*> &result){
+    string s="";
+    if(root==NULL) return s+'#';
+    
+    string left = duplicateSubtree(root->left,m,result);
+    string right = duplicateSubtree(root->right,m,result);
+    
+    s = s + to_string(root->val) + left + right;
+    if(m.find(s)==m.end()) m[s] = 1;
+    else if(m[s]==1) {
+        result.push_back(root);
+        m[s] = 2;
+    }
+   
+    return s;
+}
+
+vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+    vector<TreeNode*> result;
+    map<string,int> m;
+    duplicateSubtree(root,m,result);
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------

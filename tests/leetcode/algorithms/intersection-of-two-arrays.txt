@@ -1,0 +1,783 @@
+Accepted Java simple solution in 8 lines
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> answer = new ArrayList<String>();
+        if (root != null) searchBT(root, "", answer);
+        return answer;
+    }
+    private void searchBT(TreeNode root, String path, List<String> answer) {
+        if (root.left == null && root.right == null) answer.add(path + root.val);
+        if (root.left != null) searchBT(root.left, path + root.val + "->", answer);
+        if (root.right != null) searchBT(root.right, path + root.val + "->", answer);
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean Java solution (Accepted) without any helper recursive function
+Lot of recursive solutions on this forum involves creating a helper recursive function with added parameters. The added parameter which usually is of the type List<String> , carries the supplementary path information. However, the approach below doesn't use such a helper function.
+
+
+
+    public List<String> binaryTreePaths(TreeNode root) {
+            
+            List<String> paths = new LinkedList<>();
+    
+            if(root == null) return paths;
+            
+            if(root.left == null && root.right == null){
+                paths.add(root.val+"");
+                return paths;
+            }
+    
+             for (String path : binaryTreePaths(root.left)) {
+                 paths.add(root.val + "->" + path);
+             }
+    
+             for (String path : binaryTreePaths(root.right)) {
+                 paths.add(root.val + "->" + path);
+             }
+    
+             return paths;
+            
+        }
+
+----------------------------------------------------------------------------------------------------
+C++ simple 4ms recursive solution
+    void binaryTreePaths(vector<string>& result, TreeNode* root, string t) {
+        if(!root->left && !root->right) {
+            result.push_back(t);
+            return;
+        }
+
+        if(root->left) binaryTreePaths(result, root->left, t + "->" + to_string(root->left->val));
+        if(root->right) binaryTreePaths(result, root->right, t + "->" + to_string(root->right->val));
+    }
+
+    vector<string> binaryTreePaths(TreeNode* root) {
+        vector<string> result;
+        if(!root) return result;
+        
+        binaryTreePaths(result, root, to_string(root->val));
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (dfs+stack, bfs+queue, dfs recursively).
+        
+    # dfs + stack
+    def binaryTreePaths1(self, root):
+        if not root:
+            return []
+        res, stack = [], [(root, "")]
+        while stack:
+            node, ls = stack.pop()
+            if not node.left and not node.right:
+                res.append(ls+str(node.val))
+            if node.right:
+                stack.append((node.right, ls+str(node.val)+"->"))
+            if node.left:
+                stack.append((node.left, ls+str(node.val)+"->"))
+        return res
+        
+    # bfs + queue
+    def binaryTreePaths2(self, root):
+        if not root:
+            return []
+        res, queue = [], collections.deque([(root, "")])
+        while queue:
+            node, ls = queue.popleft()
+            if not node.left and not node.right:
+                res.append(ls+str(node.val))
+            if node.left:
+                queue.append((node.left, ls+str(node.val)+"->"))
+            if node.right:
+                queue.append((node.right, ls+str(node.val)+"->"))
+        return res
+        
+    # dfs recursively
+    def binaryTreePaths(self, root):
+        if not root:
+            return []
+        res = []
+        self.dfs(root, "", res)
+        return res
+    
+    def dfs(self, root, ls, res):
+        if not root.left and not root.right:
+            res.append(ls+str(root.val))
+        if root.left:
+            self.dfs(root.left, ls+str(root.val)+"->", res)
+        if root.right:
+            self.dfs(root.right, ls+str(root.val)+"->", res)
+
+----------------------------------------------------------------------------------------------------
+5 lines recursive Python
+    def binaryTreePaths(self, root):
+        if not root:
+            return []
+        return [str(root.val) + '->' + path
+                for kid in (root.left, root.right) if kid
+                for path in self.binaryTreePaths(kid)] or [str(root.val)]
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using StringBuilder instead of string manipulation.
+
+
+    public class Solution {
+        public List<String> binaryTreePaths(TreeNode root) {
+            List<String> rst = new ArrayList<String>();
+            if(root == null) return rst;
+            StringBuilder sb = new StringBuilder();
+            helper(rst, sb, root);
+            return rst;
+        }
+        
+        public void helper(List<String> rst, StringBuilder sb, TreeNode root){
+            if(root == null) return;
+            int tmp = sb.length();
+            if(root.left == null && root.right == null){
+                sb.append(root.val);
+                rst.add(sb.toString());
+                sb.delete(tmp , sb.length());
+                return;
+            }
+            sb.append(root.val + "->");
+            helper(rst, sb, root.left);
+            helper(rst, sb, root.right);
+            sb.delete(tmp , sb.length());
+            return;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My Java solution in DFS, BFS, recursion
+recursion:
+
+    public class Solution {
+    //Recursion
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> sList=new LinkedList<String>();
+        //String s=new String();
+        if (root==null) return sList;
+        if (root.left==null && root.right==null) {
+            sList.add(Integer.toString(root.val));
+            return sList;
+        }
+        
+        for (String s: binaryTreePaths(root.left)) {
+            sList.add(Integer.toString(root.val)+"->"+s);
+        }
+        for (String s: binaryTreePaths(root.right)) {
+            sList.add(Integer.toString(root.val)+"->"+s);
+        }
+        return sList;
+    }
+}
+
+BFS  - queue
+
+    public class Solution {
+    //BFS - Queue
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> list=new ArrayList<String>();
+        Queue<TreeNode> qNode=new LinkedList<TreeNode>();
+        Queue<String> qStr=new LinkedList<String>();
+        
+        if (root==null) return list;
+        qNode.add(root);
+        qStr.add("");
+        while(!qNode.isEmpty()) {
+            TreeNode curNode=qNode.remove();
+            String curStr=qStr.remove();
+            
+            if (curNode.left==null && curNode.right==null) list.add(curStr+curNode.val);
+            if (curNode.left!=null) {
+                qNode.add(curNode.left);
+                qStr.add(curStr+curNode.val+"->");
+            }
+            if (curNode.right!=null) {
+                qNode.add(curNode.right);
+                qStr.add(curStr+curNode.val+"->");
+            }
+        }
+        return list;
+    }
+    
+DFS - stack
+
+    public class Solution {
+    //DFS - Stack
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> list=new ArrayList<String>();
+        Stack<TreeNode> sNode=new Stack<TreeNode>();
+        Stack<String> sStr=new Stack<String>();
+        
+        if(root==null) return list;
+        sNode.push(root);
+        sStr.push("");
+        while(!sNode.isEmpty()) {
+            TreeNode curNode=sNode.pop();
+            String curStr=sStr.pop();
+            
+            if(curNode.left==null && curNode.right==null) list.add(curStr+curNode.val);
+            if(curNode.left!=null) {
+                sNode.push(curNode.left);
+                sStr.push(curStr+curNode.val+"->");
+            }
+            if(curNode.right!=null) {
+                sNode.push(curNode.right);
+                sStr.push(curStr+curNode.val+"->");
+            }
+        }
+        return list;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+8 lines in python,48ms
+    def binaryTreePaths(self, root):
+        if not root:
+            return []
+        if not root.left and not root.right:
+            return [str(root.val)]
+        treepaths = [str(root.val)+'->'+path for path in self.binaryTreePaths(root.left)]
+        treepaths += [str(root.val)+'->'+path for path in self.binaryTreePaths(root.right)]
+        return treepaths
+
+----------------------------------------------------------------------------------------------------
+My concise JAVA DFS solution
+**Explanation**
+
+This is just a classic problem to use depth first search algorithm.
+
+    public List<String> binaryTreePaths(TreeNode root) {
+        ArrayList<String> res = new ArrayList<String>();        
+        DFS(root, "", res);
+        return res;        
+    }
+    	
+    public void DFS(TreeNode root, String solution, ArrayList<String> res) {
+    	if (root == null) return;    	
+    	if (root.left==null && root.right==null) res.add(solution + root.val);
+    	DFS(root.left, solution + root.val + "->", res);    	
+    	DFS(root.right, solution + root.val + "->", res);    	    	
+    }
+
+----------------------------------------------------------------------------------------------------
+My java and c++ solution,c++ 4ms
+ this is a simple dfs+tree question,using preorder to visit tree will be fine.
+ 
+c++:
+
+     class Solution {
+        public:
+        
+                vector<string> binaryTreePaths(TreeNode* root) {
+                    vector<string> v;
+                    if(root)
+                        preorder(v,root,"");
+                    return v;
+                }
+                void preorder(vector<string>& v,TreeNode* r,string t){
+                    if(!r)
+                        return;
+                    if(!t.empty())
+                        t+=("->"+to_string(r->val));
+                    else t+=to_string(r->val);
+                    if(r->left||r->right){
+                        preorder(v,r->left,t);
+                        preorder(v,r->right,t);
+                    }else{
+                        v.push_back(t);
+                    }
+                }
+            };
+
+my java:
+
+    public class Solution {
+        public List<String> binaryTreePaths(TreeNode root) {
+            List<String> l=new ArrayList<>();
+            if(root!=null)
+                pre(l,root,"");
+            return l;
+        }
+         void pre(List<String> l,TreeNode r,String s){
+             if(r==null)return;
+             if(s.isEmpty())
+                s+=r.val;
+            else s+=("->"+r.val);
+            if(r.left!=null||r.right!=null){
+                pre(l,r.left,s);
+                pre(l,r.right,s);
+            }else
+                l.add(s);
+         }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ non-recursive version and recursive version
+    /*
+    follow up: non-recursive version
+    */
+    class Solution {
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) {
+            vector<string> res;
+            if (root == NULL) return res;
+            stack<TreeNode*> s;
+            stack<string> pathStack;
+            s.push(root);
+            pathStack.push(to_string(root->val));
+            
+            while (!s.empty()) {
+                TreeNode * curNode = s.top(); s.pop();
+                string tmpPath = pathStack.top(); pathStack.pop();
+                
+                if (curNode->left == NULL && curNode->right == NULL) {
+                    res.push_back(tmpPath); continue;
+                }
+                
+                if (curNode->left != NULL) {
+                    s.push(curNode->left);
+                    pathStack.push(tmpPath + "->" + to_string(curNode->left->val));
+                }
+                
+                if (curNode->right != NULL) {
+                    s.push(curNode->right);
+                    pathStack.push(tmpPath + "->" + to_string(curNode->right->val));
+                }
+            }
+            
+            return res;
+        }
+    };
+    
+    //recursive version
+    class Solution {
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) {
+            vector<string> res;
+            if (root == NULL) return res;
+            dfs(root, to_string(root->val), res);
+            return res;
+        }
+        
+        void dfs(TreeNode* root, string path, vector<string>& res) {
+            if (root->left == NULL && root->right == NULL) {
+                res.push_back(path);
+            }
+            
+            if (root->left != NULL)
+                dfs(root->left, path + "->" + to_string(root->left->val), res);
+            
+            if (root->right != NULL)
+                dfs(root->right, path + "->" + to_string(root->right->val), res);
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Three 4ms c++ solutions given (recursion&#x2F; dfs stack based&#x2F; bfs queue based)
+(1)Recursion, if root is empty, return, if root is a leaf, then return cur+root->val, if root has childrens, then do recursion on each child, with cur updated to cur + root->val +"->"
+
+    class Solution {
+        void dfs(vector<string> &res, TreeNode *root, string cur)
+        {
+            if(!root->left && !root->right) res.push_back(cur  + std::to_string(root->val));
+            else
+            {
+                if(root->left) dfs(res, root->left,  cur  + std::to_string(root->val)+"->");
+                if(root->right) dfs(res, root->right, cur  + std::to_string(root->val)+"->");
+            }
+        }
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) {
+            vector<string> res;
+            if(root)  dfs(res, root, "");
+            return res;
+        }
+    };
+
+(2) DFS Version using a stack
+Using a stack (the element is a pair of the current node pointer and the string recording the path from root to the current node). The logic is the same as (1)
+
+    class Solution {
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) {
+            vector<string> res;
+            TreeNode *curNode;
+            string curPath;
+            stack<pair<TreeNode*, string>> liveNodes;
+            if(root) liveNodes.push(make_pair(root, ""));
+            while(!liveNodes.empty())
+            {
+                curNode = liveNodes.top().first;
+                curPath    = liveNodes.top().second;
+                liveNodes.pop();
+                if(!curNode->left && !curNode->right)
+                {
+                    res.push_back(curPath + std::to_string(curNode->val));
+                }
+                else
+                {
+                    if(curNode->left)  liveNodes.push(make_pair(curNode->left, curPath + std::to_string(curNode->val)+ "->"));
+                    if(curNode->right) liveNodes.push(make_pair(curNode->right, curPath + std::to_string(curNode->val)+ "->"));
+                }
+            }
+            return res;
+        }
+    };
+
+(3) BFS queue based solution.
+It prints all the paths in an ascending order of the path length
+
+    class Solution {
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) {
+            queue<pair<TreeNode*, string>> liveNodes[2];
+            int cur=0, next=1;
+            TreeNode* curNode;
+            string curPath;
+            vector<string> res;
+            
+            if(root) liveNodes[cur].push(make_pair(root, ""));
+            while(!liveNodes[cur].empty())
+            {
+                curNode = liveNodes[cur].front().first;
+                curPath = liveNodes[cur].front().second;
+                liveNodes[cur].pop();
+                if(!curNode->left && !curNode->right) res.push_back(curPath + std::to_string(curNode->val));
+                else{
+                    if(curNode->left)  liveNodes[next].push(make_pair(curNode->left,  curPath + std::to_string(curNode->val) + "->"));
+                    if(curNode->right) liveNodes[next].push(make_pair(curNode->right, curPath + std::to_string(curNode->val) + "->"));
+                }
+                if(liveNodes[cur].empty()) swap(cur, next);
+            }
+            return res;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Short and clear c++ dfs solution
+    vector<string> binaryTreePaths(TreeNode* root) {
+    	vector<string> res;
+    	help(res, root, "");
+    	return res;
+    }
+    void help(vector<string>& res, TreeNode* root, string pre) {
+    	if (!root)
+    		return;
+    	if (!root->left && !root->right) {
+    		res.push_back(pre + to_string(root->val));
+    		return;
+    	}
+    	help(res, root->left, pre + to_string(root->val) + "->");
+    	help(res, root->right, pre + to_string(root->val) + "->");
+    }
+
+----------------------------------------------------------------------------------------------------
+My java non-recursion solution using stack and wrapper
+    private class Wrapper {
+    		private TreeNode node;
+    		private String path;
+    
+    		public Wrapper(TreeNode node, String path) {
+    			this.node = node;
+    			this.path = path;
+    		}
+    	}
+    
+    	// non-recursion-version
+    	public List<String> binaryTreePaths(TreeNode root) {
+    		List<String> res = new LinkedList<>();
+    		if (root == null) {
+    			return res;
+    		}
+    		Stack<Wrapper> stack = new Stack<>();
+    		stack.add(new Wrapper(root, ""+root.val));
+    		while(!stack.isEmpty()){
+    			Wrapper wrapper = stack.pop();
+    			if (wrapper.node.left == null && wrapper.node.right == null) {
+    				res.add(wrapper.path);
+    			}
+    			if (wrapper.node.left != null) {
+    				stack.add(new Wrapper(wrapper.node.left, wrapper.path + "->" + wrapper.node.left.val));
+    			}
+    			if (wrapper.node.right != null) {
+    				stack.add(new Wrapper(wrapper.node.right, wrapper.path + "->" + wrapper.node.right.val));
+    			}
+    		}
+    		return res;
+    
+    	}
+
+----------------------------------------------------------------------------------------------------
+*Java* Easy to understand solution 3-line DFS
+Code in Java:
+
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> res = new ArrayList<>(); // stores the final output
+        if(root==null) return res;
+        helper(root, "", res);
+        return res;
+    }
+    // DFS
+    private void helper(TreeNode root, String str, List<String> res) {
+        if(root.left==null && root.right==null) res.add(str + root.val); // reach a leaf node, completes a path
+        if(root.left!=null)                     helper(root.left, str+root.val+"->", res); // recursively checks its left child
+        if(root.right!=null)                    helper(root.right, str+root.val+"->", res); // recursively checks its right child
+    }
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; A clean one function approach
+    vector<string> binaryTreePaths(TreeNode* root) {
+      if (root == nullptr)
+        return {};
+      if (root->left == nullptr && root->right == nullptr)
+        return {to_string(root->val)};
+    
+      vector<string> left  = binaryTreePaths(root->left);
+      vector<string> right = binaryTreePaths(root->right);
+      left.insert(left.end(), begin(right), end(right));
+      for (auto &e : left)
+        e = to_string(root->val) + "->" + e;
+      return left;
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms simple C++ solution
+class Solution {
+public:
+    vector<string> binaryTreePaths(TreeNode* root) {
+        vector<string> res;
+
+        if(!root) return res;
+        else if(!root->left && !root->right) res.push_back(to_string(root->val));
+        
+        string head = to_string(root->val) + "->";
+        
+        for(auto item: binaryTreePaths(root->left)) res.push_back(head + item);
+        for(auto item: binaryTreePaths(root->right)) res.push_back(head + item);
+        
+        return res;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ recursive and iterative solutions with detailed comments
+The recursive solution is trivial.
+
+    class Solution 
+    {
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) 
+        {
+            vector<string> paths;
+            // If root is NULL, return an empty path vector.
+            if (root == nullptr)
+            {
+                return paths;
+            }
+            
+            // Get the path vector starting from the left child.
+            vector<string> leftPaths = binaryTreePaths(root->left);
+            // Concatenate root with the left paths to generate 
+            // the paths starting from root.
+            for (auto& lp : leftPaths)
+            {
+                paths.push_back(to_string(root->val) + "->" + lp);
+            }
+            
+            // Get the path vector starting from the right child.
+            vector<string> rightPaths = binaryTreePaths(root->right);
+            // Concatenate root with the right paths to generate 
+            // the paths starting from root.
+            for (auto& rp : rightPaths)
+            {
+                paths.push_back(to_string(root->val) + "->" + rp);
+            }
+            
+            // In case that both leftPaths and rightPaths are empty, 
+            // i.e., root is a leaf, root itself is a path.
+            if (paths.empty())
+            {
+                paths.push_back(to_string(root->val));
+            }
+            
+            return paths;
+        }
+    };
+
+The iterative solution essentially uses the depth-first search to find all the paths from root to leaves. Compared with the breadth-first search approach, this approach doesn't need to have a vector of vectors to keep the paths from root to the nodes at the current level. Besides the result vector of strings, this approach just needs one vector which keeps one path from root to the current node and one unordered set which keeps all the nodes that have been visited during the depth-first search. Thus, with respect the space complexity, the depth-first search is more efficient than the breadth-first search.
+
+    class Solution 
+    {
+        // Generate the path string from the TreeNode val vector.
+        string GetPathStringFromNums(vector<int> &pathVal)
+        {
+            int n = pathVal.size();
+            string res;
+            // For the nodes except the last node, we need to 
+            // append "->" to the node values.
+            for (int i = 0; i < n - 1; i++)
+            {
+                res += (to_string(pathVal[i]) + "->");
+            }
+            
+            if (n > 0)
+            {
+                res += to_string(pathVal[n - 1]);
+            }
+            
+            return res;
+        }
+        
+    public:
+        vector<string> binaryTreePaths(TreeNode* root) 
+        {
+            vector<string> paths;
+            // If root is NULL, return an empty path vector immediately.
+            if (root == nullptr)
+            {
+                return paths;
+            }
+            
+            // pathVal is a vector of TreeNode values along a path 
+            // starting from root.
+            vector<int> pathVal({root->val});
+            
+            // st is the stack used for the depth-first search.
+            stack<TreeNode*> st;
+            st.push(root);
+            
+            // visitedNodes keeps all the nodes which have been visited 
+            // during the depth-first search. In other words, it keeps 
+            // all the nodes which have ever been pushed into the stack.
+            unordered_set<TreeNode*> visitedNodes({root});
+            
+            // Do the depth-first search until the stack is empty.
+            while (!st.empty())
+            {
+                TreeNode *curr = st.top();
+    
+                if ((curr->left == nullptr) && (curr->right == nullptr))
+                {
+                    // curr is a leaf, so the current path is a path from 
+                    // root to a leaf and add it to paths.
+                    paths.push_back(GetPathStringFromNums(pathVal));
+                    
+                    // Remove the leaf node from pathVal which will end at 
+                    // the parent node of curr.
+                    pathVal.pop_back();
+                    
+                    st.pop();
+                }
+                else 
+                {
+                    // curr is not leaf, so we need to go down at least one 
+                    // level.
+                    
+                    // First we try pushing the left child if it hasn't 
+                    // been visited.
+                    if (curr->left != nullptr)
+                    {
+                        auto itLeft = visitedNodes.find(curr->left);
+                        if (itLeft == visitedNodes.end())
+                        {
+                            st.push(curr->left);
+                            pathVal.push_back(curr->left->val);
+                            
+                            visitedNodes.insert(curr->left);
+                            continue;
+                        }
+                    }
+                    
+                    // We reach here because either the left child doesn't 
+                    // exist or the left child has been visited. Then we try 
+                    // pushing the right child if it hasn't been visited.
+                    if (curr->right != nullptr)
+                    {
+                        auto itRight = visitedNodes.find(curr->right);
+                        if (itRight == visitedNodes.end())
+                        {
+                            st.push(curr->right);
+                            pathVal.push_back(curr->right->val);
+                            
+                            visitedNodes.insert(curr->right);
+                            continue;
+                        }
+                    }
+                    
+                    // The nodes in the subtree below curr have all been 
+                    // visited, so remove curr from pathVal which will end 
+                    // at the parent node of curr.
+                    pathVal.pop_back();
+                    st.pop();
+                }
+            }
+            
+            return paths;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution
+    public class Solution {
+     public List<String> binaryTreePaths(TreeNode root) {
+        if (root == null){
+            return new ArrayList<>();
+        }
+        List<String> returnList = new ArrayList<>();
+        getBinaryTreePaths(returnList,root,"");
+        return returnList;
+
+    }
+
+    private void getBinaryTreePaths(List<String> returnList, TreeNode node,String base) {
+        String current = base.length()==0?node.val+"":base+"->"+node.val;
+        if(node.left == null && node.right == null){
+            returnList.add(current);
+        }
+        if (node.left != null){
+            getBinaryTreePaths(returnList,node.left,current);
+        }
+        if (node.right != null){
+            getBinaryTreePaths(returnList,node.right,current);
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+2ms Java recursive solution with explaination
+The idea is to perform a dfs, for every node we visit the path up till that node is path + currentNode.val and when we see that a node has no children we know this is one of the valid path.
+
+     public List<String> binaryTreePaths(TreeNode root) {
+        List<String> result = new ArrayList<String>();
+        helper(root, result, "");
+        return result;
+    }
+    public void helper(TreeNode root, List<String> result, String path){
+        if(root == null){
+            return;
+        }
+        if(root.left == null && root.right == null){
+            result.add(path+root.val);
+            return;
+        }
+        
+        helper(root.left, result, path+root.val+"->");
+        helper(root.right, result, path+root.val+"->");
+        return;
+    }
+
+----------------------------------------------------------------------------------------------------

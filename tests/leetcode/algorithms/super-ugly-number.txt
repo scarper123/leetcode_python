@@ -1,0 +1,1024 @@
+18-22 lines C++ BFS&#x2F;DFS Solutions
+As suggested by the hints, this problem is equivalent to detecting a cycle in the graph represented by `prerequisites`. Both BFS and DFS can be used to solve it using the idea of **topological sort**. If you find yourself unfamiliar with these concepts, you may refer to their wikipedia pages. Specifically, you may only need to refer to the link in the third hint to solve this problem. 
+ 
+Since `pair<int, int>` is inconvenient for the implementation of graph algorithms, we first transform it to a graph. If course `u` is a prerequisite of course `v`, we will add a directed edge from node `u` to node `v`.
+ 
+----------
+**BFS**
+
+BFS uses the indegrees of each node. We will first try to find a node with `0` indegree. If we fail to do so, there must be a cycle in the graph and we return `false`. Otherwise we have found one. We set its indegree to be `-1` to prevent from visiting it again and reduce the indegrees of all its neighbors by `1`. This process will be repeated for `n` (number of nodes) times. If we have not returned `false`, we will return `true`.
+
+    class Solution {
+    public:
+        bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph = make_graph(numCourses, prerequisites);
+            vector<int> degrees = compute_indegree(graph);
+            for (int i = 0; i < numCourses; i++) {
+                int j = 0;
+                for (; j < numCourses; j++)
+                    if (!degrees[j]) break;
+                if (j == numCourses) return false;
+                degrees[j] = -1;
+                for (int neigh : graph[j])
+                    degrees[neigh]--;
+            }
+            return true;
+        }
+    private:
+        vector<unordered_set<int>> make_graph(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph(numCourses);
+            for (auto pre : prerequisites)
+                graph[pre.second].insert(pre.first);
+            return graph;
+        }
+        vector<int> compute_indegree(vector<unordered_set<int>>& graph) {
+            vector<int> degrees(graph.size(), 0);
+            for (auto neighbors : graph)
+                for (int neigh : neighbors)
+                    degrees[neigh]++;
+            return degrees;
+        }
+    }; 
+
+----------
+**DFS**
+
+For DFS, it will first visit a node, then one neighbor of it, then one neighbor of this neighbor... and so on. If it meets a node which was visited in the current process of DFS visit, a cycle is detected and we will return `false`. Otherwise it will start from another unvisited node and repeat this process till all the nodes have been visited. Note that you should make two records: one is to record all the visited nodes and the other is to record the visited nodes in the current DFS visit.
+
+The code is as follows. We use a `vector<bool> visited` to record all the visited nodes and another `vector<bool> onpath` to record the visited nodes of the current DFS visit. Once the current visit is finished, we reset the `onpath` value of the starting node to `false`. 
+
+    class Solution {
+    public:
+        bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph = make_graph(numCourses, prerequisites);
+            vector<bool> onpath(numCourses, false), visited(numCourses, false);
+            for (int i = 0; i < numCourses; i++)
+                if (!visited[i] && dfs_cycle(graph, i, onpath, visited))
+                    return false;
+            return true;
+        }
+    private:
+        vector<unordered_set<int>> make_graph(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<unordered_set<int>> graph(numCourses);
+            for (auto pre : prerequisites)
+                graph[pre.second].insert(pre.first);
+            return graph;
+        } 
+        bool dfs_cycle(vector<unordered_set<int>>& graph, int node, vector<bool>& onpath, vector<bool>& visited) {
+            if (visited[node]) return false;
+            onpath[node] = visited[node] = true; 
+            for (int neigh : graph[node])
+                if (onpath[neigh] || dfs_cycle(graph, neigh, onpath, visited))
+                    return true;
+            return onpath[node] = false;
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+Easy BFS Topological sort, Java
+
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        int[][] matrix = new int[numCourses][numCourses]; // i -> j
+        int[] indegree = new int[numCourses];
+        
+        for (int i=0; i<prerequisites.length; i++) {
+            int ready = prerequisites[i][0];
+            int pre = prerequisites[i][1];
+            if (matrix[pre][ready] == 0)
+                indegree[ready]++; //duplicate case
+            matrix[pre][ready] = 1;
+        }
+        
+        int count = 0;
+        Queue<Integer> queue = new LinkedList();
+        for (int i=0; i<indegree.length; i++) {
+            if (indegree[i] == 0) queue.offer(i);
+        }
+        while (!queue.isEmpty()) {
+            int course = queue.poll();
+            count++;
+            for (int i=0; i<numCourses; i++) {
+                if (matrix[course][i] != 0) {
+                    if (--indegree[i] == 0)
+                        queue.offer(i);
+                }
+            }
+        }
+        return count == numCourses;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS and BFS solution
+According to my code test, BFS is much faster than DFS. From my perspective DFS searches more branches. EX: 1->3->4 //1->5->3   the first branch we need search 3's children, in second we still need to do so.
+
+BFS:
+
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            ArrayList[] graph = new ArrayList[numCourses];
+            int[] degree = new int[numCourses];
+            Queue queue = new LinkedList();
+            int count=0;
+            
+            for(int i=0;i<numCourses;i++)
+                graph[i] = new ArrayList();
+                
+            for(int i=0; i<prerequisites.length;i++){
+                degree[prerequisites[i][1]]++;
+                graph[prerequisites[i][0]].add(prerequisites[i][1]);
+            }
+            for(int i=0; i<degree.length;i++){
+                if(degree[i] == 0){
+                    queue.add(i);
+                    count++;
+                }
+            }
+            
+            while(queue.size() != 0){
+                int course = (int)queue.poll();
+                for(int i=0; i<graph[course].size();i++){
+                    int pointer = (int)graph[course].get(i);
+                    degree[pointer]--;
+                    if(degree[pointer] == 0){
+                        queue.add(pointer);
+                        count++;
+                    }
+                }
+            }
+            if(count == numCourses)
+                return true;
+            else    
+                return false;
+        }
+    }
+
+DFS:
+
+    public class Solution {
+            public boolean canFinish(int numCourses, int[][] prerequisites) {
+                ArrayList[] graph = new ArrayList[numCourses];
+                for(int i=0;i<numCourses;i++)
+                    graph[i] = new ArrayList();
+                    
+                boolean[] visited = new boolean[numCourses];
+                for(int i=0; i<prerequisites.length;i++){
+                    graph[prerequisites[i][1]].add(prerequisites[i][0]);
+                }
+    
+                for(int i=0; i<numCourses; i++){
+                    if(!dfs(graph,visited,i))
+                        return false;
+                }
+                return true;
+            }
+    
+            private boolean dfs(ArrayList[] graph, boolean[] visited, int course){
+                if(visited[course])
+                    return false;
+                else
+                    visited[course] = true;;
+    
+                for(int i=0; i<graph[course].size();i++){
+                    if(!dfs(graph,visited,(int)graph[course].get(i)))
+                        return false;
+                }
+                visited[course] = false;
+                return true;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+JAVA---------Easy Version To UnderStand!!!!!!!!!!!!!!!!!
+    public static boolean canFinish(int numCourses, int[][] prerequisites) {
+		if (numCourses <= 0)
+			return false;
+		Queue<Integer> queue = new LinkedList<>();
+		int[] inDegree = new int[numCourses];
+		for (int i = 0; i < prerequisites.length; i++) {
+			inDegree[prerequisites[i][1]]++;
+		}
+		for (int i = 0; i < inDegree.length; i++) {
+			if (inDegree[i] == 0)
+				queue.offer(i);
+		}
+		while (!queue.isEmpty()) {
+			int x = queue.poll();
+			for (int i = 0; i < prerequisites.length; i++) {
+				if (x == prerequisites[i][0]) {
+					inDegree[prerequisites[i][1]]--;
+					if (inDegree[prerequisites[i][1]] == 0)
+						queue.offer(prerequisites[i][1]);
+				}
+			}
+		}
+		for (int i = 0; i < inDegree.length; i++) {
+			if (inDegree[i] != 0)
+				return false;
+		}
+		return true;
+	}
+
+----------------------------------------------------------------------------------------------------
+BFS(Topological Sort) and DFS(Finding cycle) by C++
+1. BFS(Topological Sort)
+======
+
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites)
+    {
+        vector<unordered_set<int>> matrix(numCourses); // save this directed graph
+        for(int i = 0; i < prerequisites.size(); ++ i)
+            matrix[prerequisites[i][1]].insert(prerequisites[i][0]);
+        
+        vector<int> d(numCourses, 0); // in-degree
+        for(int i = 0; i < numCourses; ++ i)
+            for(auto it = matrix[i].begin(); it != matrix[i].end(); ++ it)
+                ++ d[*it];
+        
+        for(int j = 0, i; j < numCourses; ++ j)
+        {
+            for(i = 0; i < numCourses && d[i] != 0; ++ i); // find a node whose in-degree is 0
+            
+            if(i == numCourses) // if not find
+                return false;
+            
+            d[i] = -1;
+            for(auto it = matrix[i].begin(); it != matrix[i].end(); ++ it)
+                -- d[*it];
+        }
+        
+        return true;
+    }
+
+2. DFS(Finding cycle)
+======
+
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites)
+    {
+        vector<unordered_set<int>> matrix(numCourses); // save this directed graph
+        for(int i = 0; i < prerequisites.size(); ++ i)
+            matrix[prerequisites[i][1]].insert(prerequisites[i][0]);
+        
+        unordered_set<int> visited;
+        vector<bool> flag(numCourses, false);
+        for(int i = 0; i < numCourses; ++ i)
+            if(!flag[i])
+                if(DFS(matrix, visited, i, flag))
+                    return false;
+        return true;
+    }
+    bool DFS(vector<unordered_set<int>> &matrix, unordered_set<int> &visited, int b, vector<bool> &flag)
+    {
+        flag[b] = true;
+        visited.insert(b);
+        for(auto it = matrix[b].begin(); it != matrix[b].end(); ++ it)
+            if(visited.find(*it) != visited.end() || DFS(matrix, visited, *it, flag))
+                return true;
+        visited.erase(b);
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python 20 lines DFS solution sharing with explanation
+    def canFinish(self, numCourses, prerequisites):
+        graph = [[] for _ in xrange(numCourses)]
+        visit = [0 for _ in xrange(numCourses)]
+        for x, y in prerequisites:
+            graph[x].append(y)
+        def dfs(i):
+            if visit[i] == -1:
+                return False
+            if visit[i] == 1:
+                return True
+            visit[i] = -1
+            for j in graph[i]:
+                if not dfs(j):
+                    return False
+            visit[i] = 1
+            return True
+        for i in xrange(numCourses):
+            if not dfs(i):
+                return False
+        return True
+
+1. if node `v` has not been visited, then mark it as `0`.
+2. if node `v` is being visited, then mark it as `-1`. If we find a vertex marked as `-1` in DFS, then their is a ring.
+3. if node `v` has been visited, then mark it as `1`. If a vertex was marked as `1`, then no ring contains `v` or its successors.
+
+*References: [daoluan.net][1]* 
+
+
+  [1]: http://daoluan.net/blog/map-ring/
+
+----------------------------------------------------------------------------------------------------
+OO easy to read java solution
+    public class Solution {
+        static class Course {
+            private boolean vis;
+            private boolean done;
+            private ArrayList<Course> pre = new ArrayList<Course>();
+            
+            void addPre(Course preCourse) {
+                pre.add(preCourse);
+            }
+            
+            boolean isCyclic() {
+                if( done ) {
+                    return false;
+                }
+                if( vis ) {
+                    return true;
+                }
+                vis = true;
+                
+                for(Course preCourse: pre ) {
+                    if( preCourse.isCyclic() ) {
+                        return true;
+                    }
+                }
+                
+                vis = false;
+                done = true;
+                return false;
+            }
+        }
+        
+            
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            Course clist[] = new Course[numCourses];
+            
+            for(int i=0; i<numCourses; i++) {
+                clist[i] = new Course();
+            }
+            
+            for(int[] couple: prerequisites ) {
+                Course c1 = clist[couple[0]];
+                Course c2 = clist[couple[1]];
+                c1.addPre(c2);
+            }
+            
+            for(int i=0; i<numCourses; i++) {
+                if( clist[i].isCyclic() ) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solutions based on BFS and DFS with explanation
+**BFS Solution: (Topological sorting)**
+
+The basic idea is to use Topological algorithm: put NODE with 0 indgree into the queue, then make indegree of NODE's successor dereasing 1. Keep the above steps with BFS. 
+
+Finally, if each node' indgree equals 0, then it is validated DAG (Directed acyclic graph), which means the course schedule can be finished.
+
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        if (numCourses == 0 || prerequisites.length == 0) return true;
+    
+        // Convert graph presentation from edges to indegree of adjacent list.
+        int indegree[] = new int[numCourses];
+        for (int i = 0; i < prerequisites.length; i++) // Indegree - how many prerequisites are needed.
+            indegree[prerequisites[i][0]]++;    
+    
+        Queue<Integer> queue = new LinkedList<Integer>();
+        for (int i = 0; i < numCourses; i++) 
+            if (indegree[i] == 0)
+                queue.add(i);
+    
+        // How many courses don't need prerequisites.
+        int canFinishCount = queue.size();  
+        while (!queue.isEmpty()) {
+            int prerequisite = queue.remove(); // Already finished this prerequisite course.
+            for (int i = 0; i < prerequisites.length; i++)  {
+                if (prerequisites[i][1] == prerequisite) { 
+                    indegree[prerequisites[i][0]]--;
+                    if (indegree[prerequisites[i][0]] == 0) {
+                        canFinishCount++;
+                        queue.add(prerequisites[i][0]);
+                    }
+                }
+            }
+        }
+    
+        return (canFinishCount == numCourses);    
+    }
+
+**DFS Solution:**
+
+The basic idea is using DFS to check if the current node was already included in the traveling path. In this case, we need to convert graph presentation from edge list to adjacency list first, and then check if there's cycle existing in any subset. Because tree is a connected graph, we can start from any node.
+
+The graph is possibly not connected, so need to check every node. 
+
+To do memorization and pruning, a HashMap is used to save the previous results for the specific node.
+
+
+    HashMap<Integer, Boolean>memo = new HashMap<Integer, Boolean>();//Memorization HashMap for DFS pruning 
+    public boolean canFinish(int n, int[][] edges) {		 
+        if (edges.length != 0) { 
+            HashMap<Integer, HashSet<Integer>> neighbors = new HashMap<Integer, HashSet<Integer>>(); // Neighbors of each node
+            HashSet<Integer>curPath = new HashSet<Integer>(); // Nodes on the current path
+            for (int i = 0; i < edges.length; i++) {// Convert graph presentation from edge list to adjacency list 
+                if (!neighbors.containsKey(edges[i][1])) 
+                    neighbors.put(edges[i][1], new HashSet<Integer>());            
+                neighbors.get(edges[i][1]).add(edges[i][0]);
+            }
+            
+            for (int a[] : edges) // The graph is possibly not connected, so need to check every node.
+    	        if (hasCycle(neighbors, a[0], -1, curPath))// Use DFS method to check if there's cycle in any curPath
+    	            return false;
+        } 
+        return true;
+    }     
+
+    boolean hasCycle(HashMap<Integer, HashSet<Integer>> neighbors, int kid, int parent, HashSet<Integer>curPath) {
+    	if (memo.containsKey(kid)) return memo.get(kid);
+        if (curPath.contains(kid)) return true;// The current node is already in the set of the current path	    
+        if (!neighbors.containsKey(kid)) return false;	   
+        
+        curPath.add(kid);
+        for (Integer neighbor : neighbors.get(kid)) {
+        	boolean hasCycle = hasCycle(neighbors, neighbor, kid, curPath);// DFS
+        	memo.put(kid, hasCycle);	        	
+            if (hasCycle) return true;
+        }
+        curPath.remove(kid);	    
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Python topological sort 52 ms solution, O(V + E) time and O(V + E) space
+    def canFinish(self, n, pres):
+        from collections import deque
+        ind = [[] for _ in xrange(n)]  # indegree
+        oud = [0] * n  # outdegree
+        for p in pres:
+            oud[p[0]] += 1
+            ind[p[1]].append(p[0])
+        dq = deque()
+        for i in xrange(n):
+            if oud[i] == 0:
+                dq.append(i)
+        k = 0
+        while dq:
+            x = dq.popleft()
+            k += 1
+            for i in ind[x]:
+                oud[i] -= 1
+                if oud[i] == 0:
+                    dq.append(i)
+        return k == n
+
+
+    # 34 / 34 test cases passed.
+    # Status: Accepted
+    # Runtime: 52 ms
+    # 99.68%
+
+
+The topological sort is natural for this problem. We always take the courses with no unstudied prereqs and so on until no more courses we can take. The oud[i] is the number of prereqs for course i and indegree keep a list of courses require course i.
+
+
+----------------------------------------------------------------------------------------------------
+My Java BFS solution
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            Map<Integer, ArrayList<Integer>> map = new HashMap<Integer, ArrayList<Integer>>();
+            int[] indegree = new int[numCourses];
+            Queue<Integer> queue = new LinkedList<Integer>();
+            int count = numCourses;
+            for (int i = 0; i < numCourses; i++) {
+                map.put(i, new ArrayList<Integer>());
+            }
+            for (int i = 0; i < prerequisites.length; i++) {
+                map.get(prerequisites[i][0]).add(prerequisites[i][1]);
+                indegree[prerequisites[i][1]]++;
+            }
+            for (int i = 0; i < numCourses; i++) {
+                if (indegree[i] == 0) {
+                    queue.offer(i);
+                }
+            }
+            while (!queue.isEmpty()) {
+                int current = queue.poll();
+                for (int i : map.get(current)) {
+                    if (--indegree[i] == 0) {
+                        queue.offer(i);
+                    }
+                }
+                count--;
+            }
+            return count == 0;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ clean code for DFS solution with simple comments
+    bool canFinish(int numCourses, vector<pair<int, int>>& prer) {
+        vector<vector<int>> gragh(numCourses);
+        vector<int> visited(numCourses, 0); // White at initialization
+        for (int i = 0; i < prer.size(); i++) {
+            gragh[prer[i].second].push_back(prer[i].first);
+        }
+        bool cycle = false;
+        for (int i = 0; i < numCourses; i++) {
+            if (cycle) return false;
+            if (visited[i] == 0) dfs_top(i, gragh, visited, cycle);
+        }
+        return !cycle;
+    }
+    void dfs_top(int node, vector<vector<int>> &gragh, vector<int> &visited, bool &cycle) {
+        if (visited[node] == 1) {cycle = true; return;} // cycle occurs, break the dfs chain and all return
+        visited[node] = 1; //Gray, searching
+        for (int i = 0; i < gragh[node].size(); i++) {
+            dfs_top(gragh[node][i], gragh, visited, cycle);
+            if (cycle) return; // do some pruning here
+        }
+        visited[node] = 2; //Black Once finished.
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ solution 23ms beats 100% submissions
+    class Solution {
+    public:
+        bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<vector<int>> graph(numCourses);
+            vector<int> indegree(numCourses,0);
+            for(auto edge : prerequisites)
+            {
+                graph[edge.second].push_back(edge.first);
+                ++indegree[edge.first];
+            }
+            queue<int> Q;
+            for(int i = 0;i < numCourses;i++)
+                if(indegree[i] == 0)
+                    Q.push(i);
+            int counter = 0;
+            while(!Q.empty())
+            {
+                int u = Q.front();
+                Q.pop();
+                ++counter;
+                for(auto v : graph[u])
+                {
+                    if(--indegree[v] == 0)
+                        Q.push(v);
+                }
+            }
+            return counter == numCourses;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java AC Solution with Top Sort
+My solution does not involve DFS. It is regular topological sort. 
+
+Create a set to store all vertices with 0 in-degree, and an array to store each vertex's in-degree.
+
+Then check if there is a cycle. If yes, return false, otherwise return true.
+
+After that, select a random vertex with 0 in-degree from set. Use it to relax other vertices, i.e. reduce other vertices' in-degree by 1 if there is an edge coming from that vertex. Furthermore, if any vertex has 0 in-degree after relax, add it to set.
+
+Repeat step above until set becomes empty. 
+
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            Set<Integer> zeroDegree = new HashSet<>();
+            int[] degree = new int[numCourses];
+            for (int row = 0; row < prerequisites.length; row++)
+                degree[prerequisites[row][0]]++;
+            for (int i = 0; i < degree.length; i++)
+                if (degree[i] == 0) zeroDegree.add(i);
+            if (zeroDegree.isEmpty()) return false;
+            while (!zeroDegree.isEmpty()) {
+                Iterator<Integer> it = zeroDegree.iterator();
+                int course = it.next();
+                zeroDegree.remove(course);
+                for (int row = 0; row < prerequisites.length; row++) {
+                    int[] edge = prerequisites[row];
+                    if (edge[1] == course) {
+                        degree[edge[0]]--;
+                        if (degree[edge[0]] == 0) zeroDegree.add(edge[0]);
+                    }
+                }
+            }
+            for (int i = 0; i < degree.length; i++)
+                if (degree[i] != 0) return false;
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python BFS&#x2F;DFS solutions with comments.
+   
+    # BFS: from the end to the front
+    def canFinish1(self, numCourses, prerequisites):
+        forward = {i: set() for i in xrange(numCourses)}
+        backward = collections.defaultdict(set)
+        for i, j in prerequisites:
+            forward[i].add(j)
+            backward[j].add(i)
+        queue = collections.deque([node for node in forward if len(forward[node]) == 0])
+        while queue:
+            node = queue.popleft()
+            for neigh in backward[node]:
+                forward[neigh].remove(node)
+                if len(forward[neigh]) == 0:
+                    queue.append(neigh)
+            forward.pop(node)
+        return not forward  # if there is cycle, forward won't be None
+    
+    # BFS: from the front to the end    
+    def canFinish2(self, numCourses, prerequisites):
+        forward = {i: set() for i in xrange(numCourses)}
+        backward = collections.defaultdict(set)
+        for i, j in prerequisites:
+            forward[i].add(j)
+            backward[j].add(i)
+        queue = collections.deque([node for node in xrange(numCourses) if not backward[node]])
+        count = 0
+        while queue:
+            node = queue.popleft()
+            count += 1
+            for neigh in forward[node]:
+                backward[neigh].remove(node)
+                if not backward[neigh]:
+                    queue.append(neigh)
+        return count == numCourses
+        
+    # DFS: from the end to the front
+    def canFinish3(self, numCourses, prerequisites):
+        forward = {i: set() for i in xrange(numCourses)}
+        backward = collections.defaultdict(set)
+        for i, j in prerequisites:
+            forward[i].add(j)
+            backward[j].add(i)
+        stack = [node for node in forward if len(forward[node]) == 0]
+        while stack:
+            node = stack.pop()
+            for neigh in backward[node]:
+                forward[neigh].remove(node)
+                if len(forward[neigh]) == 0:
+                    stack.append(neigh)
+            forward.pop(node)
+        return not forward
+            
+    # DFS: from the front to the end    
+    def canFinish(self, numCourses, prerequisites):
+        forward = {i: set() for i in xrange(numCourses)}
+        backward = collections.defaultdict(set)
+        for i, j in prerequisites:
+            forward[i].add(j)
+            backward[j].add(i)
+        stack = [node for node in xrange(numCourses) if not backward[node]]
+        while stack:
+            node = stack.pop()
+            for neigh in forward[node]:
+                backward[neigh].remove(node)
+                if not backward[neigh]:
+                    stack.append(neigh)
+            backward.pop(node)
+        return not backward
+
+----------------------------------------------------------------------------------------------------
+O(E) Solution - DFS based
+I couldn't really see anyone posting an O(E) solution. Here's one in Java. It is a dfs solution that tries to find a cycle. The code doesn't even use the first parameter `numCources`. The graph is stored in a map, which allows to completely ignore courses that no other courses depend on. While navigating the graph (using dfs) the dependencies get removed one by one until the graph is empty or a cycle was found.
+
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        Map<Integer, Set<Integer>> map = new HashMap<>();
+        for (int[] p : prerequisites) {
+            if (!map.containsKey(p[0])) {
+                map.put(p[0], new HashSet<>());
+            }
+            map.get(p[0]).add(p[1]);
+        }
+        while (!map.isEmpty()) {
+            if(dfs(map.keySet().iterator().next(), map, new HashSet<>())) return false;
+        }
+        return true;
+    }
+    private boolean dfs(int start, Map<Integer,Set<Integer>> map, Set<Integer> visited) {
+        if (visited.contains(start)) return true;
+        if (!map.containsKey(start)) return false;
+        visited.add(start);
+        while (!map.get(start).isEmpty()) {
+            int n = map.get(start).iterator().next();
+            if (dfs(n, map, visited)) return true;
+            map.get(start).remove(n);
+        }
+        map.remove(start);
+        visited.remove(start);
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ Dfs with Cycle check algorithm.
+It would be easier if consider the course and it's require as a DAG, 
+eg, [0, 1] is  vetex 0 have a edge to 1, and the course the job is check whether this DAG has a cycle.
+
+it can be easy archive by DFS, 
+the key idea of DFS checking cycle is check if the calling vetex already in the stack, if it was in stack, it indeed is a cycle.
+
+Please reference Algorithms  4th, Page 576.
+
+Below is my code, 
+two parts,  1 part is setup the graph, and another part is use dfs checking if there is cycle.
+
+    class Solution {
+    public:
+    using vi = vector<int>;
+            
+        bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+            vector<vi> adj(numCourses, vi());
+            for (auto p : prerequisites) {
+                adj[p.first].push_back(p.second);
+            }
+            
+            bool hasCycle = false;
+            
+            vector<bool> onStack(numCourses, false);
+            vector<bool> visited(numCourses, false);
+            for(int i = 0; i < adj.size(); i++) {
+                if (!visited[i])
+                    dfs(i, adj, hasCycle, onStack, visited);
+            }
+            return !hasCycle;
+        }
+        
+        void dfs(int v, vector<vi> &adj, bool &hasCycle, vector<bool> &onStack, vector<bool> &visited) {
+         
+            visited[v] = true;
+            onStack[v] = true;
+            
+            for (auto &w : adj[v]) {
+                if (hasCycle)
+                    return;
+                else if (!visited[w]) {
+                    dfs(w, adj, hasCycle, onStack, visited);
+                } else if (onStack[w]) {
+                    hasCycle = true;
+                    return;
+                }
+            }
+            
+            onStack[v] = false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Explained Java 12ms Iterative DFS solution based on DFS algorithm in CLRS
+Just FYI, here is [my solution for the other problem: Course Schedule II][1].
+
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            int[] visited = new int[numCourses];
+            List<List<Integer>> graph = new ArrayList<>();
+            ArrayDeque<Integer> stack = new ArrayDeque<>();
+            for (int i = 0; i < numCourses; i++) {
+                graph.add(new ArrayList<Integer>());
+            }
+            for (int i = 0; i < prerequisites.length; i++) {
+                int course = prerequisites[i][0], prere = prerequisites[i][1];
+                graph.get(prere).add(course);
+            }
+            //mapping of element value in visited array to colors in CLRS DFS algorithm: 
+            //0 -> White, -1 -> Gray, 1 -> Black
+            for (int i = 0; i < numCourses; i++) {
+                if (visited[i] == 0) {
+                    stack.push(i);
+                    while (!stack.isEmpty()) {
+                        // We need to peek a node in stack for the first time, and pop it 
+                        // for the second time we meet it. In other words, we need to 
+                        // keep a node in stack until the dfs search rooted at it
+                        // has been finished, which is equivalent to the end of a recursive call
+                        Integer prere = stack.peek();
+                        if(visited[prere] == 0) {
+                            visited[prere] = -1;
+                        }
+                        else if (visited[prere] == -1 || visited[prere] == 1) {
+                            // for the end of the corresponding recursive dfs call rooted at prere
+                            //-1 corresponding to prere as a normal node
+                            //1 corresponding to prere as an end node of a cross edge 
+                            stack.pop();
+                            visited[prere] = 1;
+                            continue;
+                        }
+                        for (Integer course: graph.get(prere)) {
+                            if (visited[course] == 0) {
+                                stack.push(course);
+                            }
+                            else if (visited[course] == -1) {
+                                return false;
+                            }
+                        }
+                    }
+                    
+                }
+            }
+            return true;
+        }
+    }
+
+Just for comparison, my solution implementing recursive DFS (7ms):
+
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            int[] visited = new int[numCourses];
+            List<List<Integer>> graph = new ArrayList<>();
+            for (int i = 0; i < numCourses; i++) {
+                graph.add(new ArrayList<Integer>());
+            }
+            for (int i = 0; i < prerequisites.length; i++) {
+                graph.get(prerequisites[i][1]).add(prerequisites[i][0]);
+            }
+            for (int i = 0; i < numCourses; i++) {
+                if (visited[i] == 0 && dfsDetectCycle(graph, visited, i)) return false;// 0: White
+            }
+            return true;
+        }
+        
+        private boolean dfsDetectCycle(List<List<Integer>> graph, int[] visited, int prere) {
+            visited[prere] = -1; //-1: Gray
+            for (Integer course: graph.get(prere)) {
+                if (visited[course] == -1) return true;
+                else if (visited[course] == 0 && dfsDetectCycle(graph, visited, course)) return true;
+            }
+            visited[prere] = 1; //1: Black
+            return false;
+        }
+    }
+
+My implementation of BFS solution using indegree:
+
+    public class Solution {
+        public boolean canFinish(int numCourses, int[][] prerequisites) {
+            int[] indegree = new int[numCourses];
+            List<List<Integer>> graph = new ArrayList<>();
+            int count = 0;
+            Queue<Integer> queue = new ArrayDeque<>();
+            for (int i = 0; i < numCourses; i++) {
+                graph.add(new ArrayList<Integer>());
+            }
+            for (int i = 0; i < prerequisites.length; i++) {
+                int course = prerequisites[i][0], prere = prerequisites[i][1];
+                indegree[course]++;
+                graph.get(prere).add(course);
+            }
+            for (int i = 0; i < numCourses; i++) {
+                if (indegree[i] == 0) {
+                    queue.offer(i);
+                }
+            }
+            
+            while (!queue.isEmpty()) {
+                Integer prere = queue.poll();
+                count++;
+                for (Integer course: graph.get(prere)) {
+                    if (--indegree[course] == 0) {
+                        queue.offer(course);
+                    }
+                }
+            }
+            return count == numCourses;
+            
+        }
+    }
+
+
+  [1]: https://leetcode.com/discuss/71446/java-13ms-iterative-dfs-solution-with-explanation
+
+----------------------------------------------------------------------------------------------------
+C++ dfs (backtracking) and bfs (indegree) methods
+First method is dfs. Idea is to start from each node in graph, go down every path (using its adjacency list) and mark each node along path. If you see a node in a path again (already marked) then there is a cycle in graph. For this algorithm to work in O(V+E) time (V:vertices, E:edges), flag each visited node and do not start a path using flagged nodes. This is because paths started from flagged nodes have already been checked during previous dfs calls.
+
+Second method is bfs. First compute the indegree array (how many edges toward a node). Use a stack to push all nodes with indegree 0. Start from a node on the stack and subtract by 1 of all the nodes on its adjacency list. If after subtraction, the node has indegree 0, push it onto stack. Do this recursively for all nodes on stack until no nodes are on stack (you pop a node after subtracting by 1 of all nodes on its adjacency list). If there is at least one node that is never pushed on stack, the graph has a cycle. Too see why draw a digraph with a cycle between two nodes (1->2, 2->1) and for all other nodes draw no cycle. Follow this algorithm you will see the indegree array will be all 0 except for node 1 and 2, which both have indegree 1.
+
+I think both algorithms run in O(V+E) time and O(V) space I do not take the adjacency list into account)
+
+The codes:
+
+DFS:
+
+    class Solution {
+    public:
+        bool canFinish(int num, vector<vector<int>>& pre) {
+            if(num==0) return true;
+            /*
+            * "mark" is to mark nodes in a "path". If a node is marked and you 
+            * see it again in a "path", the graph has a cycle.
+            * "flag" is to mark visited nodes in a graph. Once a node is flaged 
+            * it will not be used as a starting point to search for cycles 
+            * (i.e. it is for backtracking)
+            * "nei" is the adjacency list. The problem gives us the "edge list"
+            * it is better to convert it to adjacency list first
+            */
+            bool mark[num]={false}; 
+            bool flag[num]={false};
+            vector<vector<int>> nei(num);
+            for(int i=0; i<pre.size(); i++) 
+                nei[pre[i][1]].push_back(pre[i][0]);
+            for(int i=0; i<num; i++) {
+                if(!flag[i]) {
+                    if(hasCycle(i,mark,flag,nei)) return false;
+                }
+            }
+            return true;
+        }
+    private:
+        /*
+        * \return true; if there is a cycle in graph
+        */
+        bool hasCycle(int cur, bool mark[], bool flag[], const vector<vector<int>>& nei) {
+            flag[cur]=true;
+            for(int i=0; i<nei[cur].size();i++) {
+                int neiIndex = nei[cur][i];
+                if(mark[neiIndex]) return true;
+                mark[neiIndex]=true;
+                if(hasCycle(neiIndex,mark,flag,nei)) return true;
+                mark[neiIndex]=false;
+            }
+            return false;
+        }
+    };
+
+
+BFS:
+
+    class Solution {
+    public:
+        bool canFinish(int num, vector<vector<int>>& pre) {
+            if(num==0) return true;
+            
+            vector<vector<int>> adj(num);
+            for(int i=0; i<pre.size(); i++) // convert edge list to adjacency list
+                adj[pre[i][1]].push_back(pre[i][0]);
+            
+            int indegree[num]={0}; 
+            for(int i=0; i<num; i++) // compute the indegree array
+                for(int j=0; j<adj[i].size(); j++)
+                    indegree[adj[i][j]]++;
+            
+            stack<int> in0; // stores nodes with indegree 0
+            for(int i=0; i<num; i++) 
+                if(indegree[i]==0) in0.push(i);
+            
+            int count = 0;
+            while(!in0.empty()) {
+                int index = in0.top();
+                in0.pop();
+                count++;
+                for(int i=0; i<adj[index].size(); i++)
+                    if(--indegree[adj[index][i]]==0) in0.push(adj[index][i]);
+            }
+            return count == num;
+        }
+    
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted solutions runtime distribution looks strange, why?
+Python/C# solutions seems faster than C/C++/Java solutions. It is so strange, is there anything like in-built data structure for graph that I don't know in Python/C#?
+
+----------------------------------------------------------------------------------------------------
+60ms concise python solution using topological sort
+    from collections import defaultdict
+    #from set import Set
+    class Solution:
+        # @param {integer} numCourses
+        # @param {integer[][]} prerequisites
+        # @return {boolean}
+        def canFinish(self, num_courses, prereq):
+            if num_courses < 2:
+                return True
+            
+            path = defaultdict(list)
+            for c in prereq:
+                path[c[0]].append(c[1])
+    
+            searched = set()
+            for start in path.keys():
+                if not self.dfs(path, set(), start, searched):
+                    return False
+            return True
+    
+        def dfs(self, path, seen, curr, searched):
+            if curr in searched:
+                return True
+    
+            for x in path[curr]:
+                if x in seen:
+                    return False
+
+                seen.add(x)
+                if not self.dfs(path, seen, x, searched):
+                    return False
+
+                seen.remove(x)
+
+            searched.add(curr)
+            return True
+            
+
+----------------------------------------------------------------------------------------------------

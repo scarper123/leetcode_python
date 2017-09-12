@@ -1,0 +1,901 @@
+My solutions in 3 languages with Stack
+I use Stack to store directed left children from root.
+When next() be called, I just pop one element and process its right child as new root.
+The code is pretty straightforward.
+
+So this can satisfy O(h) memory, hasNext() in O(1) time,
+But next() is O(h) time.
+
+I can't find a solution that can satisfy both next() in O(1) time, space in O(h).
+
+Java:
+
+    public class BSTIterator {
+        private Stack<TreeNode> stack = new Stack<TreeNode>();
+        
+        public BSTIterator(TreeNode root) {
+            pushAll(root);
+        }
+    
+        /** @return whether we have a next smallest number */
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+    
+        /** @return the next smallest number */
+        public int next() {
+            TreeNode tmpNode = stack.pop();
+            pushAll(tmpNode.right);
+            return tmpNode.val;
+        }
+        
+        private void pushAll(TreeNode node) {
+            for (; node != null; stack.push(node), node = node.left);
+        }
+    }
+
+C++:
+
+
+    class BSTIterator {
+        stack<TreeNode *> myStack;
+    public:
+        BSTIterator(TreeNode *root) {
+            pushAll(root);
+        }
+    
+        /** @return whether we have a next smallest number */
+        bool hasNext() {
+            return !myStack.empty();
+        }
+    
+        /** @return the next smallest number */
+        int next() {
+            TreeNode *tmpNode = myStack.top();
+            myStack.pop();
+            pushAll(tmpNode->right);
+            return tmpNode->val;
+        }
+    
+    private:
+        void pushAll(TreeNode *node) {
+            for (; node != NULL; myStack.push(node), node = node->left);
+        }
+    };
+
+
+Python:
+
+    class BSTIterator:
+        # @param root, a binary search tree's root node
+        def __init__(self, root):
+            self.stack = list()
+            self.pushAll(root)
+    
+        # @return a boolean, whether we have a next smallest number
+        def hasNext(self):
+            return self.stack
+    
+        # @return an integer, the next smallest number
+        def next(self):
+            tmpNode = self.stack.pop()
+            self.pushAll(tmpNode.right)
+            return tmpNode.val
+            
+        def pushAll(self, node):
+            while node is not None:
+                self.stack.append(node)
+                node = node.left
+
+----------------------------------------------------------------------------------------------------
+Ideal Solution using Stack (Java)
+My idea comes from this: My first thought was to use inorder traversal to put every node into an array, and then make an index pointer for the next() and hasNext(). That meets the O(1) run time but not the O(h) memory. O(h) is really much more less than O(n) when the tree is huge.
+
+This means I cannot use a lot of memory, which suggests that I need to make use of the tree structure itself. And also, one thing to notice is the "average O(1) run time". It's weird to say average O(1), because there's nothing below O(1) in run time, which suggests in most cases, I solve it in O(1), while in some cases, I need to solve it in O(n) or O(h). These two limitations are big hints.
+
+Before I come up with this solution, I really draw a lot binary trees and try inorder traversal on them. We all know that, once you get to a TreeNode, in order to get the smallest, you need to go all the way down its left branch. So our first step is to point to pointer to the left most TreeNode. The problem is how to do back trace. Since the TreeNode doesn't have father pointer, we cannot get a TreeNode's father node in O(1) without store it beforehand. Back to the first step, when we are traversal to the left most TreeNode, we store each TreeNode we met ( They are all father nodes for back trace). 
+
+After that, I try an example, for next(), I directly return where the pointer pointing at, which should be the left most TreeNode I previously found. What to do next? After returning the smallest TreeNode, I need to point the pointer to the next smallest TreeNode. When the current TreeNode has a right branch (It cannot have left branch, remember we traversal to the left most), we need to jump to its right child first and then traversal to its right child's left most TreeNode. When the current TreeNode doesn't have a right branch, it means there cannot be a node with value smaller than itself father node, point the pointer at its father node.
+
+The overall thinking leads to the structure Stack, which fits my requirement so well.
+
+    /**
+     * Definition for binary tree
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    
+    public class BSTIterator {
+        
+        private Stack<TreeNode> stack;
+        public BSTIterator(TreeNode root) {
+            stack = new Stack<>();
+            TreeNode cur = root;
+            while(cur != null){
+                stack.push(cur);
+                if(cur.left != null)
+                    cur = cur.left;
+                else
+                    break;
+            }
+        }
+    
+        /** @return whether we have a next smallest number */
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+    
+        /** @return the next smallest number */
+        public int next() {
+            TreeNode node = stack.pop();
+            TreeNode cur = node;
+            // traversal right branch
+            if(cur.right != null){
+                cur = cur.right;
+                while(cur != null){
+                    stack.push(cur);
+                    if(cur.left != null)
+                        cur = cur.left;
+                    else
+                        break;
+                }
+            }
+            return node.val;
+        }
+    }
+    
+    /**
+     * Your BSTIterator will be called like this:
+     * BSTIterator i = new BSTIterator(root);
+     * while (i.hasNext()) v[f()] = i.next();
+     */
+
+----------------------------------------------------------------------------------------------------
+My java accepted solution
+the idea is same as using stack to do Binary Tree Inorder Traversal    
+
+    public class BSTIterator {
+        
+            Stack<TreeNode> stack =  null ;            
+            TreeNode current = null ;
+        	
+            public BSTIterator(TreeNode root) {
+            	  current = root;	     
+            	  stack = new Stack<> ();
+        	}
+        
+        	/** @return whether we have a next smallest number */
+        	public boolean hasNext() {		  
+        	      return !stack.isEmpty() || current != null;  
+        	}
+        
+        	    /** @return the next smallest number */
+        	public int next() {
+        		while (current != null) {
+        			stack.push(current);
+        			current = current.left ;
+        		}		
+        		TreeNode t = stack.pop() ;		
+        		current = t.right ;		
+        		return t.val ;
+        	}
+        }
+
+----------------------------------------------------------------------------------------------------
+My Solution in C++, in average O(1) time and uses O(h) memory
+    class BSTIterator {
+    private:
+        stack<TreeNode*> st;
+    public:
+        BSTIterator(TreeNode *root) {
+            find_left(root);
+        }
+    
+        /** @return whether we have a next smallest number */
+        bool hasNext() {
+            if (st.empty())
+                return false;
+            return true;
+        }
+    
+        /** @return the next smallest number */
+        int next() {
+            TreeNode* top = st.top();
+            st.pop();
+            if (top->right != NULL)
+                find_left(top->right);
+                
+            return top->val;
+        }
+        
+        /** put all the left child() of root */
+        void find_left(TreeNode* root)
+        {
+            TreeNode* p = root;
+            while (p != NULL)
+            {
+                st.push(p);
+                p = p->left;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My Solution with less than 10 lines of code
+
+
+ public class BSTIterator {
+
+
+    private Stack<TreeNode> stack = new Stack<TreeNode>();
+
+    public BSTIterator(TreeNode root) {
+        pushAllNodes(root);
+    }
+
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        return !stack.isEmpty();
+    }
+
+    /** @return the next smallest number */
+    public int next() {
+        TreeNode minNode = stack.pop();
+        pushAllNodes(minNode.right);
+        return minNode.val;
+    }
+
+    private void pushAllNodes(TreeNode node) {
+        while(node != null)
+        {
+            stack.push(node);
+            node = node.left;
+        }
+    }
+}
+
+/**
+ * Your BSTIterator will be called like this:
+ * BSTIterator i = new BSTIterator(root);
+ * while (i.hasNext()) v[f()] = i.next();
+ */
+
+----------------------------------------------------------------------------------------------------
+Two Python solutions, stack and generator
+stack solution: 
+
+
+    def __init__(self, root):
+        self.stack = []
+        while root:
+            self.stack.append(root)
+            root = root.left
+
+    # @return a boolean, whether we have a next smallest number
+    def hasNext(self):
+        return len(self.stack) > 0
+
+    # @return an integer, the next smallest number
+    def next(self):
+        node = self.stack.pop()
+        x = node.right
+        while x:
+            self.stack.append(x)
+            x = x.left
+        return node.val
+
+generator solution:
+    
+    def __init__(self, root):
+        self.last = root
+        while self.last and self.last.right:
+            self.last = self.last.right
+        self.current = None
+        self.g = self.iterate(root)
+
+    # @return a boolean, whether we have a next smallest number
+    def hasNext(self):
+        return self.current is not self.last
+
+    # @return an integer, the next smallest number
+    def next(self):
+        return next(self.g)
+        
+    def iterate(self, node):
+        if node is None:
+            return
+        for x in self.iterate(node.left):
+            yield x
+        self.current = node
+        yield node.val
+        for x in self.iterate(node.right):
+            yield x
+
+----------------------------------------------------------------------------------------------------
+Very concise solution by using stack in java
+    public class BSTIterator {
+        Stack<TreeNode> stack;
+        public BSTIterator(TreeNode root) {
+            stack = new Stack<TreeNode>();
+            setNext(root);
+        }
+    
+        /** @return whether we have a next smallest number */
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+    
+        /** @return the next smallest number */
+        public int next() {
+            if(stack.isEmpty()) return -1;
+            TreeNode node = stack.pop();
+            int val = node.val;
+            setNext(node.right);
+            return val;
+        }
+        
+        private void setNext(TreeNode root){
+           while(root != null){
+               stack.push(root);
+               root = root.left;
+           }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Morris traverse solution
+Traverse a BST from the smallest to the largest, then i solve this question simply use the inorder traversal.
+To implement a iterator means we should traverse the tree step by step, so just split the inorder traversal.
+
+    class BSTIterator {
+    public:
+    BSTIterator(TreeNode *root) {
+        p = root;
+    }
+
+    /** @return whether we have a next smallest number */
+    bool hasNext() {
+        return p != NULL;
+    }
+
+    /** @return the next smallest number */
+    int next() {
+        TreeNode *tmp;
+        int ret;
+        while(p) {
+            if (p->left == NULL) {  
+                ret = p->val;
+                p = p->right;
+                break;
+            }  
+            else {  
+                tmp = p->left;  
+                while (tmp->right != NULL && tmp->right != p)  
+                    tmp = tmp->right;  
+                if (tmp->right == NULL) {  
+                    tmp->right = p;  
+                    p = p->left;  
+                }  
+                else {
+                    ret = p->val;
+                    tmp->right = NULL;  
+                    p = p->right;
+                    break;
+                }  
+            }  
+        }
+        
+        return ret;
+    }
+    
+    TreeNode *p;
+    };
+
+----------------------------------------------------------------------------------------------------
+What does it mean by the next smallest?
+Can some one give one example?
+
+----------------------------------------------------------------------------------------------------
+C++. using stack.
+    /**
+     * Definition for binary tree
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class BSTIterator {
+    private:
+        TreeNode *current = NULL; 
+        stack<TreeNode*> s;
+    public:
+        BSTIterator(TreeNode *root) {
+             // initialize the current pointer
+            current = root;
+        }
+    
+        /** @return whether we have a next smallest number */
+        bool hasNext() {
+            while(current){
+                s.push(current);
+                current = current->left;
+            }
+            if(s.empty()){
+                return false;
+            }
+            return true;
+        }
+    
+        /** @return the next smallest number */
+        int next() {
+            TreeNode* node = s.top();
+            s.pop();
+            current = node->right;
+            return node->val;
+        }
+    };
+    
+    /**
+     * Your BSTIterator will be called like this:
+     * BSTIterator i = BSTIterator(root);
+     * while (i.hasNext()) cout << i.next();
+     */
+
+The basic idea behind this solution is that we have to implement inorder iteratively but it will gets split into two functions i.e. hasNext and next.
+hasNext() will push all the left elements and check and return accordingly if elements are in the stack.
+next() will just pop() the top element from the stack and update the current pointer to right .
+For this we are taking a stack and a current pointer.
+But maybe I may be wrong in hasNext as the requirement of question is O(1) for hasNext() as well.
+
+Open for comments.
+
+----------------------------------------------------------------------------------------------------
+My simple solution here
+    public class BSTIterator {
+    Stack<TreeNode> stack=new Stack<TreeNode>();
+    public BSTIterator(TreeNode root) {
+       while(root!=null){
+	            stack.push(root);
+	            root=root.left;
+	        }
+	    }
+
+	    /** @return whether we have a next smallest number */
+	    public boolean hasNext() {
+	        if(!stack.isEmpty())
+	            return true;
+	        else
+	        	 return false;
+	    }
+
+	    /** @return the next smallest number */
+	    public int next() {
+	        int res=0;
+	        if(!stack.isEmpty()){
+	            TreeNode cur=stack.pop();
+	            res=cur.val;
+	            cur=cur.right;
+	            while(cur!=null){
+	                stack.push(cur);
+	                cur=cur.left;
+	            }
+	        }
+	        return res;
+	    }
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; a solution of 15 lines
+The idea for the solution is composed of the following points.
+
+ 1. The solution uses a stack to keep track at most the next `"h"` (height of tree)
+    elements for `"next()"` calls. 
+ 2. The top of the stack is the current
+    minimum element. 
+ 3. At every `"next()"` call, we need to refresh the
+    stack by populating the stack with all the left nodes up to the
+    leaf, starting from the right node of the current minimum node.
+
+The complexity of the `"hasNext()"` is O(1). While the `"next()"` needs to refresh the stack, which in the best case (leaf) takes constant time, and in the worst case, it would take up to `"h"` steps. The overall cost of `"next()"` is then amortized over the number of nodes. I don't have the precise proof, but it seems to be O(1) on average.
+
+Here is the code. One trick is that I extract the refreshing into a function which can be used in the constructor as well, so that the code is more concise. 
+
+
+    Stack<TreeNode> stack = new Stack<TreeNode>();
+    
+    private void refreshStack(TreeNode iter){
+         while(iter != null){
+         	stack.push(iter);
+         	iter = iter.left;
+         }
+    }
+    	
+    public BSTIterator(TreeNode root) {
+       this.refreshStack(root);
+    }
+    
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        return !(stack.isEmpty());
+    }
+    
+    /** @return the next smallest number */
+    public int next() {
+        TreeNode node = stack.pop();
+        if(node != null){
+        	this.refreshStack(node.right);
+        	return node.val;
+        }
+        
+        return -1; // should throw exception here.
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+My python solution
+    class BSTIterator:
+    # @param root, a binary search tree's root node
+    def __init__(self, root):
+        self.q=[]
+        self.allLeftIntoStack(root)
+
+    # @return a boolean, whether we have a next smallest number
+    def hasNext(self):
+        if not self.q:return False
+        return True
+
+    # @return an integer, the next smallest number
+    def next(self):
+        cur = self.q.pop()
+        self.allLeftIntoStack(cur.right)
+        return cur.val
+
+    def allLeftIntoStack(self,root):
+        while root:
+            self.q.append(root)
+            root=root.left
+
+----------------------------------------------------------------------------------------------------
+Nice Comparison (and short Solution)
+Compare this typical iterative inorder traversal
+
+    1.    TreeNode visit = root;
+          Stack<TreeNode> stack = new Stack();
+    2.    while (visit != null || !stack.empty()) {
+    3.        while (visit != null) {
+                  stack.push(visit);
+                  visit = visit.left;
+              }
+              TreeNode next = stack.pop();
+              visit = next.right;
+              doSomethingWith(next.val);
+          }
+
+with what we're supposed to support here:
+
+    1.    BSTIterator i = new BSTIterator(root);
+    2.    while (i.hasNext())
+    3.        doSomethingWith(i.next());
+
+You can see they already have the exact same structure:
+
+1. Some **initialization**.
+2. A while-loop with **a condition that tells whether there is more**.
+3. The loop body **gets the next value** and does something with it.
+
+So simply put the three parts of that iterative solution into our three iterator methods:
+
+    public class BSTIterator {
+    
+        private TreeNode visit;
+        private Stack<TreeNode> stack;
+        
+        public BSTIterator(TreeNode root) {
+            visit = root;
+            stack = new Stack();
+        }
+    
+        public boolean hasNext() {
+            return visit != null || !stack.empty();
+        }
+    
+        public int next() {
+            while (visit != null) {
+                stack.push(visit);
+                visit = visit.left;
+            }
+            TreeNode next = stack.pop();
+            visit = next.right;
+            return next.val;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution with O(1) space and O(1) amortized time, using Morris Tree Traversal
+First of all, even with most optimized space and time complexity, I have to say this may be not the best solution, since it changes the tree structure a little bit during constructor period.
+
+#Construct Period
+The idea is use in-order Morris Tree Traversal (check out [1][2] if you are not familiar with it, otherwise the bellow explanation to you is nonsense) to construct a threaded binary tree in construct function. (This is O(n) time, but we don't care much about it.) Then set a pointer (we call it "curr") to the smallest TreeNode, which is easy to do, just find the left-most child from root.
+
+#hasNext()
+For hasNext() function, simple return "curr != null", which is by definition of threaded binary tree.
+
+#next()
+For next() function, it is a little bit tricky. We call the right child of "curr" as "next". If "next" is not a normal right child of "curr", which means the right child relationship is constructed during the threaded binary tree construction period, then the next TreeNode we should iterate is indeed "next". However, if "next" is a normal right child of "curr", then the next TreeNode we should iterate is actually the left-most child of "next". 
+
+So the problem reduces to how to make clear the situation. Well, it is no hard. If "next" is null, then we've done, simply set "curr" to null. If "next" has no left child, or "next"'s left child is strictly larger than "curr", that means it is a normal right child of "curr", so we should set "curr" to left-most child of "next". Otherwise, we set "curr" to "next", and break the right child relationship between "curr" and "next", to recover the original tree structure. 
+
+#Complexity analysis
+The space complexity is straightforwardly O(1). The time complexity needs some more explanation. Since the only part that is not O(1) is when we search the left-most child of "next". However, for all the children along this left path (say, there are N children), we do once search left-most and (N-1) times simply go to right child. So the amortized time complexity is still O(1).
+
+#Code:
+
+    public class BSTIterator {
+    
+    	private TreeNode curr;
+        public BSTIterator(TreeNode root) {
+    		TreeNode prev;
+    		//Do a morris in-order traversal, to construct a threaded binary tree
+    		curr = root;
+    		while(curr != null){
+    			if(curr.left == null){
+    				curr = curr.right;
+    			}
+    			else{
+    				prev = curr.left;
+    				while(prev.right != null && prev.right != curr)
+    					prev = prev.right;
+    
+    				if(prev.right == null){
+    					prev.right = curr;
+    					curr = curr.left;
+    				}
+    				else{
+    					curr = curr.right;
+    				}
+    			}
+    		}
+    
+    		//get the left-most child of root, i.e. the smallest TreeNode
+    		curr = root;
+    		while(curr != null && curr.left != null)
+    			curr = curr.left;
+        }
+    
+        /** @return whether we have a next smallest number */
+        public boolean hasNext() {
+    		return curr != null;
+        }
+    
+        /** @return the next smallest number */
+        public int next() {
+    
+    		//copy the value we need to return
+    		int result = curr.val;
+    
+    		TreeNode next = curr.right;
+    		if(next == null)
+    			curr = next;
+    		//the right child relationship is a normal one, find left-most
+    		//child of "next"
+    		else if(next.left == null || next.left.val > curr.val){
+    			curr = next;
+    			while(curr.left != null)
+    				curr = curr.left;
+    		}
+    		//the right child relationship is made when we
+    		//construct the threaded binary tree
+    		else{
+    			curr.right = null;//we recover the original tree structure
+    			curr = next;
+    		}
+    
+    		return result;
+        }
+    }
+
+#Reference
+
+For those who are not familiar with Morris Tree Traversal, these two paragraphs are good references.
+
+[1]https://en.wikipedia.org/wiki/Threaded_binary_tree
+
+[2]http://www.geeksforgeeks.org/inorder-tree-traversal-without-recursion-and-without-stack/
+
+----------------------------------------------------------------------------------------------------
+Using stack with explanations
+    class BSTIterator {
+       public:
+        BSTIterator(TreeNode *root) {
+            pushAllToTheLeftMost(root);
+        }
+    
+        bool hasNext() {
+            return !nodes.empty();
+        }
+    
+        /**
+         * Precondition: the top of the stack is current smallest node (t)
+         *               whose value will be returned
+         * 
+         * Postcondition: the top of the stack is the next smallest node.
+         * 
+         * if the t has right node, the next smallest node will be the left 
+         * most of the right node; otherwise, the next smallest node is t's parent node, 
+         * which has already been pushed on the stack just before the t. 
+         * */
+        int next() {
+            TreeNode *t = nodes.top();
+            nodes.pop();
+            pushAllToTheLeftMost(t->right);
+            return t->val;
+        }
+        
+    private:
+        /** push all the nodes from c to its left most node to the stack */
+        void pushAllToTheLeftMost(TreeNode *c) {
+            while (c) {
+                nodes.push(c);
+                c = c->left;
+            }
+        }
+        stack<TreeNode*> nodes;
+    };
+
+----------------------------------------------------------------------------------------------------
+Elegant Java Solution using a stack
+    public class BSTIterator {
+    private Stack<TreeNode> stack = null; 
+    public BSTIterator(TreeNode root) {
+        stack = new Stack<>();
+        
+        TreeNode curr = root;
+        while(curr!=null){
+            stack.push(curr);
+            curr = curr.left;
+        }
+        
+    }
+
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        return !stack.isEmpty();
+    }
+
+    /** @return the next smallest number */
+    public int next() {
+        
+        if(hasNext()){
+            int ret = stack.peek().val;
+            TreeNode curr = stack.pop();
+            if(curr.right!=null){
+                curr = curr.right;
+                
+                while(curr!=null){
+                    stack.push(curr);
+                    curr = curr.left;
+                }
+            }
+            return ret;
+        }
+        return -1;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java concise solution.
+        
+    private Stack<TreeNode> stack;
+    public BSTIterator(TreeNode root) {
+        stack = new Stack<>();
+        pushLeft(root);
+    }
+
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        return !stack.isEmpty();
+    }
+
+    private void pushLeft(TreeNode node) {
+        while (node != null) {
+            stack.push(node);
+            node = node.left;
+        }
+    }
+    /** @return the next smallest number */
+    public int next() {
+        TreeNode node = stack.pop();
+        pushLeft(node.right);
+        return node.val;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java with Morris method, 4ms , 99%,without stack
+/** Morris */
+public class BSTIterator {
+    private TreeNode read = null;
+    public BSTIterator(TreeNode root) {
+    read = root;
+}
+
+/** @return whether we have a next smallest number */
+public boolean hasNext() {
+    return read != null;
+}
+
+/** @return the next smallest number */
+public int next() {
+    int x = 0;
+    while ( read != null ){
+        if ( read.left == null ){
+            x = read.val;
+            read = read.right;
+            break;
+        }else{
+            TreeNode tempNode = read.left;
+            // Find most 'right' child in left subtree
+            while ( tempNode.right != null && tempNode.right != read ){
+                tempNode = tempNode.right;
+            }
+            if ( tempNode.right == null ){
+                tempNode.right = read;
+                read = read.left;
+            }else{
+                x = tempNode.right.val;
+                tempNode.right = null;
+                read = read.right;
+                break;
+            }
+        }
+    }// end_while
+    return x;
+}// end_method
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using iterative inorder traversal
+    class BSTIterator {
+    public:
+        BSTIterator(TreeNode *root) {
+            p = root;
+            while (p) {
+                s.push(p);
+                p = p->left;
+            }
+        }
+
+        /** @return whether we have a next smallest number */
+        bool hasNext() {
+            return !s.empty() || p;
+        }
+
+        /** @return the next smallest number */
+        int next() {
+            while (p) {
+                s.push(p);
+                p = p->left;
+            }
+            p = s.top();
+            int val = p->val;
+        
+            s.pop();
+            p = p->right;
+        
+            return val;
+        }
+        TreeNode *p;
+        stack<TreeNode*> s;
+      };
+
+----------------------------------------------------------------------------------------------------

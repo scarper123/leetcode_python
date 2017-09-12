@@ -1,0 +1,535 @@
+&#91;Java&#x2F;C++&#93; Three simple methods - choose one you like
+    bool findTarget(TreeNode* root, int k) {
+        return dfs(root, root,  k);
+    }
+    
+    bool dfs(TreeNode* root,  TreeNode* cur, int k){
+        if(cur == NULL)return false;
+        return search(root, cur, k - cur->val) || dfs(root, cur->left, k) || dfs(root, cur->right, k);
+    }
+    
+    bool search(TreeNode* root, TreeNode *cur, int value){
+        if(root == NULL)return false;
+        return (root->val == value) && (root != cur) 
+            || (root->val < value) && search(root->right, cur, value) 
+                || (root->val > value) && search(root->left, cur, value);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - O(n) time O(lg n) space - BinaryTree Iterator
+class BSTIterator {
+    stack<TreeNode*> s;
+    TreeNode* node;
+    bool forward;
+    int cur;
+public:
+    BSTIterator(TreeNode *root, bool forward) : node(root), forward(forward) { (*this)++; };
+    int operator*() { return cur; }
+    void operator++(int) {
+        while (node || !s.empty()) {
+            if (node) {
+                s.push(node);
+                node = forward ? node->left : node->right;
+            }
+            else {
+                node = s.top();
+                s.pop();
+                cur = node->val;
+                node = forward ? node->right : node->left;
+                break;
+            }
+        }
+    }
+};
+class Solution {
+public:
+    bool findTarget(TreeNode* root, int k) {
+        if (!root) return false;
+        BSTIterator l(root, true);
+        BSTIterator r(root, false);
+        while (*l < *r) {
+            if (*l + *r == k) return true;
+            else if (*l + *r < k) l++;
+            else r++;
+        }
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++&#x2F;Python Straight Forward Solution
+def findTarget(self, root, k):
+        if not root: return False
+        bfs, s = [root], set()
+        for i in bfs:
+            if k - i.val in s: return True
+            s.add(i.val)
+            if i.left: bfs.append(i.left)
+            if i.right: bfs.append(i.right)
+        return False
+
+----------------------------------------------------------------------------------------------------
+Java Simple AC with Time O(n) Space O(log n) in Average
+    public boolean findTarget(TreeNode root, int k) {
+    	Stack<TreeNode> l_stack = new Stack<>();
+    	Stack<TreeNode> r_stack = new Stack<>();
+    	stackAdd(l_stack, root, true);
+    	stackAdd(r_stack, root, false);
+    	while(l_stack.peek() != r_stack.peek()){
+    	    int n = l_stack.peek().val + r_stack.peek().val;
+    	    if(n == k){
+    		return true;
+    	    }else if(n > k){
+    		stackNext(r_stack, false);
+    	    }else{
+		stackNext(l_stack, true);
+    	    }
+    	}
+    	return false;
+    }
+    
+    private void stackAdd(Stack<TreeNode> stack, TreeNode node, boolean isLeft){
+    	while(node != null){
+    	    stack.push(node);
+            node = (isLeft) ? node.left : node.right;
+    	}
+    }
+
+    private void stackNext(Stack<TreeNode> stack, boolean isLeft){
+    	TreeNode node = stack.pop();
+    	if(isLeft){
+    	    stackAdd(stack, node.right, isLeft);
+    	}else{
+    	    stackAdd(stack, node.left, isLeft);
+    	}
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two simple elegant approaches in JavaScript. O(n) time O(n) space
+var findTarget = function(root, k) {
+    const values = [];
+    function inorder(node) {
+        if (!node) {
+            return;
+        }
+        inorder(node.left);
+        values.push(node.val);
+        inorder(node.right);
+    }
+    inorder(root);
+    let start = 0, end = values.length - 1;
+    while (start < end) {
+        const total = values[start] + values[end];
+        if (total > k) {
+            end--;
+        } else if (total < k) {
+            start++;
+        } else {
+            return true;
+        }
+    }
+    return false;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, tree traversal and two pointers
+public class Solution {
+    public boolean findTarget(TreeNode root, int k) {
+        if (root == null) return false;
+        
+        List<Integer> list = new ArrayList<>();
+        inOrder(root, list);
+        
+        int i = 0, j = list.size() - 1;
+        while (i < j) {
+            int sum = list.get(i) + list.get(j);
+            if (sum == k) return true;
+            if (sum < k) {
+                i++;
+            }
+            else {
+                j--;
+            }
+        }
+        
+        return false;
+    }
+    
+    private void inOrder(TreeNode root, List<Integer> list) {
+        if (root == null) return;
+        
+        inOrder(root.left, list);
+        list.add(root.val);
+        inOrder(root.right, list);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My C++ non-recursive solution using unordered_set and stack
+    bool findTarget(TreeNode* root, int k) {
+        unordered_set<int> s;
+        stack<TreeNode*> q;
+        q.push(root);
+        TreeNode *temp;
+        while(q.size())
+        {
+            temp = q.top();
+            q.pop();
+            if(temp){
+                if(s.count(k-temp->val)) return true;
+                else s.insert(temp->val);
+                if(temp->right) q.push(temp->right);
+                if(temp->left) q.push(temp->left);
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple O(n) DFS
+def findTarget(self, root, k):
+    a = set()
+    self.f = False
+    def dfs(root, k):
+        if not root:
+            return 
+        if root.val not in a:
+            a.add(k - root.val)
+        else:
+            self.f = True
+        dfs(root.left, k)
+        dfs(root.right, k)
+    dfs(root, k)
+    return self.f
+
+----------------------------------------------------------------------------------------------------
+Java simple recursive solution with explanation - O(nlogn)
+public class Solution {    
+    public boolean findTarget(TreeNode root, int k) {
+        return findTarget(root, root, k);
+    }
+    
+    private boolean findTarget(TreeNode node, TreeNode root, int k) {
+        if(node == null) {
+            return false;
+        }
+        
+        if(search(root, node, k - node.val)) {
+            return true;
+        }
+        
+        return findTarget(node.left, root, k) || findTarget(node.right, root, k);
+    }
+    
+    private boolean search(TreeNode node, TreeNode excluded, int target) {
+        if(node == null) {
+            return false;
+        }
+        
+        if(node.val == target) {
+            return node != excluded;    
+        }
+        else if(target < node.val) {
+            return search(node.left, excluded, target);
+        }
+        else if(target > node.val) {
+            return search(node.right, excluded, target);
+        }
+        
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+clean recursive solution, O(n) time and O(n) space
+import java.util.HashSet;
+
+public class Solution {
+    private HashSet<Integer> set = new HashSet<>();
+
+    public boolean findTarget(TreeNode root, int k) {
+        if (root == null) return false;
+        if (set.contains(k - root.val)) return true;
+        set.add(root.val);
+        return findTarget(root.left, k) || findTarget(root.right, k);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python O(n) Solution with Explanation
+class Solution(object):
+    def findTarget(self, root, k):
+        """
+        :type root: TreeNode
+        :type k: int
+        :rtype: bool
+        """
+        if not root:
+            return False
+
+        return self._findTarget(root, set(), k)
+    
+    def _findTarget(self, node, nodes, k):
+        if not node:
+            return False
+
+        complement = k - node.val
+        if complement in nodes:
+            return True
+
+        nodes.add(node.val)
+
+        return self._findTarget(node.left, nodes, k) or self._findTarget(node.right, nodes, k)
+
+
+----------------------------------------------------------------------------------------------------
+BFS Accepted Solution. Why BST?
+    public bool FindTarget(TreeNode root, int k)
+    {
+        if (root == null) return false;
+        HashSet<int> set = new HashSet<int>();
+        Queue<TreeNode> q = new Queue<TreeNode>();
+        q.Enqueue(root);
+
+        while (q.Any())
+        {
+            TreeNode temp = q.Dequeue();
+            int required = k - temp.val;
+            if (set.Contains(required)) return true;
+            else set.Add(temp.val);
+            if (temp.left != null) q.Enqueue(temp.left);
+            if (temp.right != null) q.Enqueue(temp.right);
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very easy and conscise O(n) both time and space complexity solution
+
+public class Solution {
+    public boolean findTarget(TreeNode root, int k) {
+        List<Integer> list=new LinkedList<>();
+        Set<Integer> set = new HashSet<>();
+        traverse(root,list);
+        for(int x :list){
+            if(set.contains(k-x)){
+                return true;
+            }
+            set.add(x);
+        }
+        return false;
+    }
+    public void traverse(TreeNode root,List<Integer> list){
+        if(root==null) return;
+        list.add(root.val);
+        traverse(root.left,list);
+        traverse(root.right,list);
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Code - O(n) time &#x2F; O(lg(n)) space using DFS + Stack
+    public boolean findTarget(TreeNode root, int k) {
+        Stack<TreeNode> stackL = new Stack<TreeNode>();  // iterator 1 that gets next smallest value
+        Stack<TreeNode> stackR = new Stack<TreeNode>();  // iterator 2 that gets next largest value
+        
+        for(TreeNode cur = root; cur != null; cur = cur.left)  
+            stackL.push(cur);
+        for(TreeNode cur = root; cur != null; cur = cur.right)  
+            stackR.push(cur);
+            
+        while(stackL.size() != 0 && stackR.size() != 0 && stackL.peek() != stackR.peek()){
+            int tmpSum = stackL.peek().val + stackR.peek().val;
+            if(tmpSum == k)  return true;
+            else if(tmpSum < k)
+                for(TreeNode cur = stackL.pop().right; cur != null; cur = cur.left) 
+                    stackL.push(cur);
+            else
+                for(TreeNode cur = stackR.pop().left; cur != null; cur = cur.right) 
+                    stackR.push(cur);
+        }
+        
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand solution (using Queue and HashMap)
+    Queue<TreeNode> queue = new ArrayDeque<TreeNode>();
+    queue.add(root);
+    while(!queue.isEmpty()) {
+        TreeNode top = queue.poll();
+        if(!map.containsKey(k-top.val)) {
+            map.put(top.val,1);
+        }
+        else {
+            return true;
+        }
+        if(top.left != null) {
+            queue.add(top.left);
+        }
+        if(top.right != null) {
+            queue.add(top.right);
+        }
+    }
+    
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++, O(n) time O(n) space, inorder traversal and two pointers
+class Solution {
+public:
+    bool findTarget(TreeNode* root, int k) {
+        vector<int> nums;
+        inorder(nums, root);
+        int n = nums.size(), i = 0, j = n-1;
+        while (i < j) {
+            long sum = nums[i]+nums[j];
+            if (sum == k)
+                return true;
+            else if (sum < k) 
+                i++;
+            else
+                j--;
+        }
+        return false;
+    }
+private:
+    void inorder(vector<int>& nums, TreeNode* p) {
+        if (p == nullptr) return;
+        inorder(nums, p->left);
+        nums.push_back(p->val);
+        inorder(nums, p->right);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using Stacks
+public static boolean findTarget(TreeNode root, int k) {
+		Stack<TreeNode> s1 = new Stack<>();
+	    Stack<TreeNode> s2 = new Stack<>();
+	    TreeNode current1 = root;
+	    TreeNode current2 = root;
+
+	    while (!s1.isEmpty() || !s2.isEmpty() ||
+	           current1 !=null || current2 !=null) {
+	       if (current1 !=null || current2 !=null) {
+	            if (current1 != null) {
+	                s1.push(current1);
+	                current1 = current1.left;
+	            }
+
+	            if (current2 != null) {
+	                s2.push(current2);
+	                current2 = current2.right;
+	            }
+	        } else {
+	            int v1 = s1.peek().val;
+	            int v2 = s2.peek().val;
+	            if (s1.peek() == s2.peek()) break;
+
+	            if (v1 +  v2 == k) return true;
+
+	            if (v1 + v2 < k) {
+	                current1 = s1.pop();
+	                current1 = current1.right;
+	            } else {
+	                current2 = s2.pop();
+	                current2 = current2.left;
+	            }
+	        }
+	    }
+
+	    return false;
+	}
+
+----------------------------------------------------------------------------------------------------
+Weird Error
+class Solution(object):
+    nList = []
+    dict = {}
+
+    def preorder(self, node):
+        if (node == None):
+            return 0
+        self.nList.append(node.val)
+        if node.val in self.dict:
+            self.dict[node.val] = True
+        else:
+            self.dict[node.val] = False
+        self.preorder(node.left)
+        self.preorder(node.right)
+
+
+    def findTarget(self, root, k):
+        self.preorder(root)
+        if len(self.nList)<2:
+            return False
+        for i in self.nList:
+            if k - i in self.dict:
+                if (k - i) == i:
+                    if self.dict[k - i] == True:
+                        return True
+                else:
+                    return True
+
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+share my java Solution, O(n) time!
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public boolean findTarget(TreeNode root, int k) {
+         List<Integer> list = new ArrayList<>();
+         inorder(list,root);
+        
+         int i=0,j=list.size()-1;
+        while(i<j){
+            if(list.get(i)+list.get(j)==k){
+                return true;
+            }else if(list.get(i)+list.get(j)<k){
+                i++;
+            }else{
+                j--;
+            }
+        }
+        
+        return false;
+    }
+    
+    public void inorder(List<Integer> list,TreeNode root){
+        if(root==null){
+            return;
+        }
+        
+        inorder(list,root.left);
+        list.add(root.val);
+        inorder(list,root.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

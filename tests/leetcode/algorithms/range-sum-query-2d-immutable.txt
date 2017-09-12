@@ -1,0 +1,145 @@
+C 1ms, O(1)space,  very simple solution
+    #define max(a, b) ((a)>(b)?(a):(b))
+    int rob(int num[], int n) {
+        int a = 0;
+        int b = 0;
+        
+        for (int i=0; i<n; i++)
+        {
+            if (i%2==0)
+            {
+                a = max(a+num[i], b);
+            }
+            else
+            {
+                b = max(a, b+num[i]);
+            }
+        }
+        
+        return max(a, b);
+    }
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution, space O(1)
+    public int rob(int[] num) {
+        int[][] dp = new int[num.length + 1][2];
+        for (int i = 1; i <= num.length; i++) {
+            dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1]);
+            dp[i][1] = num[i - 1] + dp[i - 1][0];
+        }
+        return Math.max(dp[num.length][0], dp[num.length][1]);
+    }
+
+dp[i][1] means we rob the current house and dp[i][0] means we don't,
+
+so it is easy to convert this to O(1) space
+
+    public int rob(int[] num) {
+        int prevNo = 0;
+        int prevYes = 0;
+        for (int n : num) {
+            int temp = prevNo;
+            prevNo = Math.max(prevNo, prevYes);
+            prevYes = n + temp;
+        }
+        return Math.max(prevNo, prevYes);
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solution, 3 lines.
+Based on the recursive formula:
+
+>     f(0) = nums[0]
+>     f(1) = max(num[0], num[1])
+>     f(k) = max( f(k-2) + nums[k], f(k-1) )
+
+    class Solution:
+        
+        def rob(self, nums):
+            
+            last, now = 0, 0
+            
+            for i in nums: last, now = now, max(last + i, now)
+                    
+            return now
+        
+
+----------------------------------------------------------------------------------------------------
+JAVA DP Solution, O(n) runtime and O(1) space, with inline comment
+    public int rob(int[] num) {
+        int rob = 0; //max monney can get if rob current house
+        int notrob = 0; //max money can get if not rob current house
+        for(int i=0; i<num.length; i++) {
+            int currob = notrob + num[i]; //if rob current value, previous house must not be robbed
+            notrob = Math.max(notrob, rob); //if not rob ith house, take the max value of robbed (i-1)th house and not rob (i-1)th house
+            rob = currob;
+        }
+        return Math.max(rob, notrob);
+    }
+
+----------------------------------------------------------------------------------------------------
+DP O(N) time, O(1) space with easy to understand explanation
+For every house k, there are two options: either to rob it (include this house: i) or not rob it (exclude this house: e). 
+
+1. Include this house:
+i = num[k] + e (money of this house + money robbed excluding the previous house)
+
+2. Exclude this house:
+e = max(i, e) (max of money robbed including the previous house or money robbed excluding the previous house)
+(note that i and e of the previous step, that's why we use tmp here to store the previous i when calculating e, to make O(1) space)
+
+Here is the code:
+
+    public class Solution {
+        public int rob(int[] num) {
+            int i = 0;
+            int e = 0;
+            for (int k = 0; k<num.length; k++) {
+                int tmp = i;
+                i = num[k] + e;
+                e = Math.max(tmp, e);
+            }
+            return Math.max(i,e);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 0ms solution using Dynamic Programming
+    public int rob(int[] nums) {  
+        if(nums.length==0) return 0;
+        if(nums.length==1) return nums[0];
+
+        //Initialize an arrays to store the money
+    	int[] mark = new int[nums.length];
+
+        //We can infer the formula from problem:mark[i]=max(num[i]+mark[i-2],mark[i-1])
+        //so initialize two nums at first.
+    	mark[0] = nums[0];
+    	mark[1] = Math.max(nums[0], nums[1]);
+
+        //Using Dynamic Programming to mark the max money in loop.
+    	for(int i=2;i<nums.length;i++){
+    		mark[i] = Math.max(nums[i]+mark[i-2], mark[i-1]);
+    	}
+		return mark[nums.length-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Simplest java solution
+    public class Solution {
+    
+        public int rob(int[] num) {
+            int last = 0;
+            int now = 0;
+            int tmp;
+            for (int n :num) {
+                tmp = now;
+                now = Math.max(last + n, now);
+                last = tmp;
+            }
+            return now;        
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+The correct DP solution

@@ -1,0 +1,275 @@
+Straightforward DFS recursive, iterative, BFS solutions
+As in many other cases this problem has more than one possible solutions:
+
+----------
+
+Lets start with straightforward - recursive DFS - it's easy to write and pretty much concise.
+
+----------
+
+    public class Solution {
+        public TreeNode invertTree(TreeNode root) {
+            
+            if (root == null) {
+                return null;
+            }
+    
+            final TreeNode left = root.left,
+                    right = root.right;
+            root.left = invertTree(right);
+            root.right = invertTree(left);
+            return root;
+        }
+    }
+
+----------
+
+The above solution is correct, but it is also bound to the application stack, which means that it's no so much scalable - (you can find the problem size that will overflow the stack and crash your application), so more robust solution would be to use stack data structure.
+
+----------
+
+
+    public class Solution {
+        public TreeNode invertTree(TreeNode root) {
+            
+            if (root == null) {
+                return null;
+            }
+    
+            final Deque<TreeNode> stack = new LinkedList<>();
+            stack.push(root);
+            
+            while(!stack.isEmpty()) {
+                final TreeNode node = stack.pop();
+                final TreeNode left = node.left;
+                node.left = node.right;
+                node.right = left;
+                
+                if(node.left != null) {
+                    stack.push(node.left);
+                }
+                if(node.right != null) {
+                    stack.push(node.right);
+                }
+            }
+            return root;
+        }
+    }
+
+----------
+
+Finally we can easly convert the above solution to BFS - or so called level order traversal.
+
+----------
+
+    public class Solution {
+        public TreeNode invertTree(TreeNode root) {
+            
+            if (root == null) {
+                return null;
+            }
+    
+            final Queue<TreeNode> queue = new LinkedList<>();
+            queue.offer(root);
+    
+            while(!queue.isEmpty()) {
+                final TreeNode node = queue.poll();
+                final TreeNode left = node.left;
+                node.left = node.right;
+                node.right = left;
+    
+                if(node.left != null) {
+                    queue.offer(node.left);
+                }
+                if(node.right != null) {
+                    queue.offer(node.right);
+                }
+            }
+            return root;
+        }
+    }
+
+----------
+
+If I can write this code, does it mean I can get job at Google? ;)
+
+----------------------------------------------------------------------------------------------------
+Recursive and non-recursive C++ both 4ms
+Recursive 
+
+    TreeNode* invertTree(TreeNode* root) {
+        if (root) {
+            invertTree(root->left);
+            invertTree(root->right);
+            std::swap(root->left, root->right);
+        }
+        return root;
+    }
+
+Non-Recursive
+
+    TreeNode* invertTree(TreeNode* root) {
+        std::stack<TreeNode*> stk;
+        stk.push(root);
+        
+        while (!stk.empty()) {
+            TreeNode* p = stk.top();
+            stk.pop();
+            if (p) {
+                stk.push(p->left);
+                stk.push(p->right);
+                std::swap(p->left, p->right);
+            }
+        }
+        return root;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+3-4 lines Python
+    def invertTree(self, root):
+        if root:
+            root.left, root.right = self.invertTree(root.right), self.invertTree(root.left)
+            return root
+
+Maybe make it four lines for better readability:
+
+    def invertTree(self, root):
+        if root:
+            invert = self.invertTree
+            root.left, root.right = invert(root.right), invert(root.left)
+            return root
+
+---
+
+And an iterative version using my own stack:
+
+    def invertTree(self, root):
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            if node:
+                node.left, node.right = node.right, node.left
+                stack += node.left, node.right
+        return root
+
+
+----------------------------------------------------------------------------------------------------
+My simple recursion java solution
+    public class Solution {
+        public TreeNode invertTree(TreeNode root) {
+            if(root == null) return null;
+            TreeNode tmp = root.left;
+            root.left = invertTree(root.right);
+            root.right = invertTree(tmp);
+            return root;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (recursively, dfs, bfs).
+        
+    # recursively
+    def invertTree1(self, root):
+        if root:
+            root.left, root.right = self.invertTree(root.right), self.invertTree(root.left)
+            return root
+            
+    # BFS
+    def invertTree2(self, root):
+        queue = collections.deque([(root)])
+        while queue:
+            node = queue.popleft()
+            if node:
+                node.left, node.right = node.right, node.left
+                queue.append(node.left)
+                queue.append(node.right)
+        return root
+        
+    # DFS
+    def invertTree(self, root):
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            if node:
+                node.left, node.right = node.right, node.left
+                stack.extend([node.right, node.left])
+        return root
+
+----------------------------------------------------------------------------------------------------
+My simple Java Solution
+
+    public class Solution {
+        public TreeNode invertTree(TreeNode root) {
+            if (root == null)
+                return root;
+            
+            TreeNode tmp = root.left;
+            root.left = invertTree(root.right);
+            root.right = invertTree(tmp);
+            
+            return root;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++, no-recursion, clean BFS solution
+If you draw the 3 or 4 level, just to make sure, binary tree and invert it on a paper, you will easily see that all have to be done is to swap kids for each node. This can be done many ways: recursion or using queue to store nodes of one level. Recursion is not good way to go due to performance overhead and risk to run it against huge tree. With standard queue solution looks simple robust and runs faster.
+
+    TreeNode* invertTree(TreeNode* root) {
+        
+        if(nullptr == root) return root;
+        
+        queue<TreeNode*> myQueue;   // our queue to do BFS
+        myQueue.push(root);         // push very first item - root
+
+        while(!myQueue.empty()){    // run until there are nodes in the queue 
+            
+            TreeNode *node = myQueue.front();  // get element from queue
+            myQueue.pop();                     // remove element from queue
+                     
+            if(node->left != nullptr){         // add left kid to the queue if it exists
+                myQueue.push(node->left);
+            }
+            
+            if(node->right != nullptr){        // add right kid 
+                myQueue.push(node->right);
+            }
+            
+            // invert left and right pointers      
+            TreeNode* tmp = node->left;
+            node->left = node->right;
+            node->right = tmp;
+
+        }
+
+        return root;
+    } 
+
+----------------------------------------------------------------------------------------------------
+What does invert mean?
+To my understanding, the statement is inconsistent with the title. The statement is to mirror the tree, not to invert the tree instead.
+
+Source: http://www.quora.com/What-is-the-algorithmic-approach-to-invert-a-given-binary-tree
+
+
+For example, 
+Given:
+
+            1
+           / \
+          2   3 
+               \
+                4 
+
+output:
+
+               4 
+              /
+        2   3
+         \ /
+          1
+
+
+
+----------------------------------------------------------------------------------------------------

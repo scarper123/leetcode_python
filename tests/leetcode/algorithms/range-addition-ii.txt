@@ -1,0 +1,602 @@
+Python, Simple with Explanation
+def nearestPalindromic(self, S):
+    K = len(S)
+    candidates = [str(10**k + d) for k in (K-1, K) for d in (-1, 1)]
+    prefix = S[:(K+1)/2]
+    P = int(prefix)
+    for start in map(str, (P-1, P, P+1)):
+        candidates.append(start + (start[:-1] if K%2 else start)[::-1])
+    
+    def delta(x):
+        return abs(int(S) - int(x))
+    
+    ans = None
+    for cand in candidates:
+        if cand != S and not cand.startswith('00'):
+            if (ans is None or delta(cand) < delta(ans) or
+                    delta(cand) == delta(ans) and int(cand) < int(ans)):
+                ans = cand
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with full explaination
+public class Solution {
+    public String nearestPalindromic(String n) {
+        Long number = Long.parseLong(n);
+        Long big = findHigherPalindrome(number + 1);
+        Long small = findLowerPalindrome(number - 1);
+        return Math.abs(number - small) > Math.abs(big - number) ? String.valueOf(big) : String.valueOf(small);
+    }
+    public Long findHigherPalindrome(Long limit) {
+        String n = Long.toString(limit);
+        char[] s = n.toCharArray(); // limit
+        int m = s.length;
+        char[] t = Arrays.copyOf(s, m); // target
+        for (int i = 0; i < m / 2; i++) {
+            t[m - 1 - i] = t[i];
+        }
+        for (int i = 0; i < m; i++) {
+            if (s[i] < t[i]) {
+                return Long.parseLong(String.valueOf(t)); 
+            } else if (s[i] > t[i]) { 
+                for (int j = (m - 1) / 2; j >= 0; j--) {
+                    if (++t[j] > '9') {
+                        t[j] = '0';
+                    } else {
+                        break;
+                    }
+                }
+                // make it palindrome again
+                for (int k = 0; k < m / 2; k++) {
+                    t[m - 1 - k] = t[k];
+                }
+                return Long.parseLong(String.valueOf(t)); 
+            }
+        }
+        return Long.parseLong(String.valueOf(t));    
+    }
+    public Long findLowerPalindrome(Long limit) {
+        String n = Long.toString(limit);
+        char[] s = n.toCharArray();
+        int m = s.length;
+        char[] t = Arrays.copyOf(s, m);
+        for (int i = 0; i < m / 2; i++) {
+            t[m - 1 - i] = t[i];
+        }
+        for (int i = 0; i < m; i++) {
+            if (s[i] > t[i]) {
+                return Long.parseLong(String.valueOf(t)); 
+            } else if (s[i] < t[i]) {
+                for (int j = (m - 1) / 2; j >= 0; j--) {
+                    if (--t[j] < '0') {
+                        t[j] = '9';
+                    } else {
+                        break;
+                    }
+                }
+                if (t[0] == '0') {
+                    char[] a = new char[m - 1];
+                    Arrays.fill(a, '9');
+                    return Long.parseLong(String.valueOf(a)); 
+                }
+                // make it palindrome again
+                for (int k = 0; k < m / 2; k++) {
+                    t[m - 1 - k] = t[k];
+                }
+                return Long.parseLong(String.valueOf(t)); 
+            }
+        }
+         return Long.parseLong(String.valueOf(t));  
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with detailed proof
+public String nearestPalindromic(String n) {
+    char[] arr = n.toCharArray();
+    for (int i = 0, j = arr.length - 1; i < j; i++, j--) arr[j] = arr[i];
+        
+    String curP = String.valueOf(arr);
+    String preP = nearestPalindrom(curP, false);
+    String nextP = nearestPalindrom(curP, true);
+        
+    long num = Long.valueOf(n);
+    long cur = Long.valueOf(curP);
+    long pre = Long.valueOf(preP);
+    long next = Long.valueOf(nextP);
+        
+    long d1 = Math.abs(num - pre);
+    long d2 = Math.abs(num - cur);
+    long d3 = Math.abs(num - next);
+        
+    if (num == cur) {
+        return d1 <= d3 ? preP : nextP;
+    } else if (num > cur) {
+        return d2 <= d3 ? curP : nextP;
+    } else {
+        return d1 <= d2 ? preP : curP;
+    }
+}
+    
+private String nearestPalindrom(String curP, boolean dir) {
+    int k = curP.length() >> 1, p = curP.length() - k;
+    int l = Integer.valueOf(curP.substring(0, p));
+    l += (dir ? 1 : -1);
+    	
+    if (l == 0) return k == 0 ? "0" : "9";
+    	
+    StringBuilder left = new StringBuilder(String.valueOf(l));
+    StringBuilder right = new StringBuilder(left).reverse();
+    if (k > left.length()) right.append("9");
+    	
+    return left.append(right.substring(right.length() - k)).toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+java solution
+public class Solution {
+    public String nearestPalindromic(String n) {
+        if (n.length() >= 2 && allNine(n)) {
+            String s = "1";
+            for (int i = 0; i < n.length() - 1; i++) {
+                s += "0";
+            }
+            s += "1";
+            return s;
+        }
+        boolean isOdd = (n.length() % 2 != 0);
+        String left = n.substring(0, (n.length() + 1) / 2);
+        long[] increment = {-1, 0, +1};
+        String ret = n;
+        long minDiff = Long.MAX_VALUE;
+        for (long i : increment) {
+            String s = getPalindrom(Long.toString(Long.parseLong(left) + i), isOdd);
+            if (n.length() >= 2 && (s.length() != n.length() || Long.parseLong(s) == 0)) {
+                s = "";
+                for (int j = 0; j < n.length() - 1; j++) {
+                    s += "9";
+                }
+            }
+            long diff = s.equals(n) ? Long.MAX_VALUE : Math.abs(Long.parseLong(s) - Long.parseLong(n));
+            if (diff < minDiff) {
+                minDiff = diff;
+                ret = s;
+            }
+        }
+        return ret;
+    }
+    private String getPalindrom(String s, boolean isOdd) {
+        String right = new StringBuilder(s).reverse().toString();
+        return isOdd ? s.substring(0, s.length() - 1) + right : s + right;
+    }
+    private boolean allNine(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) != '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise Java Solution
+long ans = 0, diff = Long.MAX_VALUE, n = 0;
+
+private void update(String val) {
+    try {
+        long tmp = Long.parseLong(val);
+        if (tmp == n) return;
+        if (Math.abs(tmp - n) < diff || (Math.abs(tmp - n) == diff && tmp < ans)) {
+            ans = tmp;
+            diff = Math.abs(tmp - n);
+        }
+    } catch (Exception e) { }
+}
+
+private void concat(long leftHalf) {
+    String s = "" + leftHalf, rs = new StringBuilder(s).reverse().toString();
+    update(s + rs); // abc -> abccba
+    update(s + rs.substring(1)); // abc -> abcba
+}
+
+public String nearestPalindromic(String n) {
+    this.n = Long.parseLong(n);
+    diff = Long.MAX_VALUE;
+    long leftHalf = Long.parseLong(n.substring(0, (n.length() + 1) / 2));
+    concat(leftHalf - 1);
+    concat((leftHalf - 1) * 10 + 9); // Handle 1, 1000, 100000, etc.
+    concat(leftHalf);
+    concat(leftHalf + 1);
+    concat((leftHalf + 1) / 10); // Handle 9, 999, 99999, etc.
+    return "" + ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ short solution, only need to compare 5 numbers
+class Solution(object):
+    def nearestPalindromic(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        # based on @awice and @o_sharp
+        l = len(n)
+        # with different digits width, it must be either 10...01 or 9...9
+        candidates = set((str(10 ** l + 1), str(10 ** (l - 1) - 1)))
+        # the closest must be in middle digit +1, 0, -1, then flip left to right
+        prefix = int(n[:(l + 1)/2])
+        for i in map(str, (prefix - 1, prefix, prefix + 1)):
+            candidates.add(i + [i, i[:-1]][l & 1][::-1])
+        candidates.discard(n)
+        return min(candidates, key=lambda x: (abs(int(x) - int(n)), int(x)))
+
+
+----------------------------------------------------------------------------------------------------
+16 lines C++
+class Solution {
+public:
+    string nearestPalindromic(string n) {
+        function<long(long, int)> mirror = [&n](long mid, int d) {
+            string prefix = to_string(mid + d);
+            return stol(prefix + string(prefix.rbegin() + (n.size() % 2), prefix.rend()));
+        };
+        
+        long mid = stol(n.substr(0, (n.size() + 1) / 2));
+        set<long> candidates = { pow(10, n.size() - 1) - 1, mirror(mid, -1), mirror(mid, 0), mirror(mid, 1), pow(10, n.size()) + 1 };
+
+        long num = stol(n);
+        candidates.erase(num);
+        return to_string(*min_element(candidates.begin(), candidates.end(), [num](long a, long b) { return abs(num - a) < abs(num - b); }));
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Straight forward solution
+public class Solution {
+    public String nearestPalindromic(String n) {
+        if(n == null) return n;
+        String inc = getNearestByInc(n, 1, '9');
+        String dec  = getNearestByInc(n,-1,'0');
+        
+        StringBuilder spec = new StringBuilder();
+        for(int i = 0;i<n.length()-1;i++) spec.append('9');
+        String str= spec.toString();
+        spec.setLength(0);
+        spec.append('1');
+        for(int i = 0;i<n.length()-1;i++) spec.append('0');
+        spec.append('1');
+        String str2 = spec.toString();
+        if(Math.abs(Long.parseLong(dec)-Long.parseLong(n)) <= Math.abs(Long.parseLong(inc)-Long.parseLong(n))){
+            if(!str.isEmpty() && Math.abs(Long.parseLong(dec)-Long.parseLong(n)) >= Math.abs(Long.parseLong(str)-Long.parseLong(n))){
+                return str;
+            }
+            if(Math.abs(Long.parseLong(dec)-Long.parseLong(n)) >= Math.abs(Long.parseLong(str2)-Long.parseLong(n))){
+                return str2;
+            }
+            return dec;
+        }
+         if(!str.isEmpty() && Math.abs(Long.parseLong(inc)-Long.parseLong(n)) >= Math.abs(Long.parseLong(str)-Long.parseLong(n))){
+                return str;
+            }
+        if(Math.abs(Long.parseLong(inc)-Long.parseLong(n)) > Math.abs(Long.parseLong(str2)-Long.parseLong(n))){
+                return str2;
+        }
+        return inc;
+    }
+    
+    private String getNearestByInc(String n, int inc, char tresh){
+        int mid = n.length()/2;
+        StringBuilder pal = new StringBuilder();
+        StringBuilder res = new StringBuilder();
+        pal.append(n.substring(0,mid));
+        res.append(pal);
+        if(n.length()%2 == 1) res.append(n.charAt(mid));
+        res.append(pal.reverse());
+        String maxStr = res.toString();
+        long val = Long.parseLong(n);
+        long minDiff = Math.abs(val-Long.parseLong(maxStr));
+        if(maxStr.equals(n)){
+            maxStr = "0";
+            minDiff = Math.abs(val-Long.parseLong(maxStr));
+        }
+        for(int i = mid-1;i>=0;i--){
+            if(n.charAt(i) == tresh) continue;
+            pal.setLength(0);
+            res.setLength(0);
+            pal.append(n.substring(0,i));
+            pal.append((char)(n.charAt(i)+inc));
+            for(int j = i+1;j<mid;j++) pal.append('0');
+            res.append(pal);
+            if(n.length()%2 == 1) res.append('0');
+            res.append(pal.reverse());
+            String str = res.toString();
+            long diff = Math.abs(val-Long.parseLong(str));
+            if(diff < minDiff){
+                maxStr = str;
+                minDiff = diff;
+            } else if(diff == minDiff){
+                if(Long.parseLong(maxStr) > Long.parseLong(str)){
+                    maxStr = str;
+                }
+            } 
+        }
+        pal.setLength(0);
+        res.setLength(0);
+        if(n.length()%2 == 1 && n.charAt(mid) != tresh){
+            pal.append(n.substring(0,mid));
+            res.append(pal);
+            res.append((char)(n.charAt(mid)+inc));
+            res.append(pal.reverse());
+            String str = res.toString();
+            long diff = Math.abs(val-Long.parseLong(str));
+            if(diff < minDiff){
+                maxStr = str;
+                minDiff = diff;
+            } else if(diff == minDiff){
+                if(Long.parseLong(maxStr) > Long.parseLong(str)){
+                    maxStr = str;
+                }
+            } 
+        }
+        return maxStr;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+python,simple
+class Solution(object):
+    def nearestPalindromic(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        if re.match(r'^1[0]*[01]$',n):
+            res=""
+            for i in range(len(n)-1):
+                res+="9"
+            return  res
+        #if n=="11" or n=="10":return "9"
+        def makepalindorm(s):
+            if len(s)==1: return s
+            t=0
+            for i in range(len(s)-1,(len(s)>>1)-1,-1):
+                s=s[:i]+s[t]+s[i+1:]
+                t+=1
+            return s
+        n0=makepalindorm(n)
+        cur=(len(n)+1)>>1
+        #if len(n)==2:cur=0
+        n1=makepalindorm(str(int(n[:cur])+1)+n[cur:])
+        n2=makepalindorm(str(int(n[:cur])-1)+n[cur:])
+        print n0,n1,n2
+        gap0=abs(int(n)-int(n0))
+        gap1=abs(int(n)-int(n1))
+        gap2=abs(int(n)-int(n2))
+        print gap0,gap1,gap2
+        if gap0==0:return n1 if gap1<gap2 else n2
+        return n2 if gap2==min(gap0,gap1,gap2) else n0 if gap0==min(gap0,gap1,gap2) else n1
+        
+
+
+----------------------------------------------------------------------------------------------------
+Short Python
+class Solution(object):
+    def nearestPalindromic(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        if n <= '10':
+            return str(int(n)-1)
+        inputs = [str(10**(len(n)-1)-1), str(int(n) - 10**(len(n)/2)), str(int(n) + 10**(len(n)/2))] + ([n] if n != n[::-1] else []) 
+        return min([i[:len(i)-len(i)/2] + i[:len(i)/2][::-1] for i in inputs], key = lambda a: (abs(int(a) - int(n)), int(a)))
+
+
+
+----------------------------------------------------------------------------------------------------
+simple method
+<p>public class Solution {<br/>
+public String nearestPalindromic(String n) {<br/>
+int i;<br/>
+int j;<br/>
+//int i,j = n.length()/2;<br/>
+if(n.length()%2==0){<br/>
+i = n.length()/2;<br/>
+j = n.length()/2-1;<br/>
+}else{<br/>
+i = n.length()/2+1;<br/>
+j = n.length()/2-1;<br/>
+}<br/>
+char&#91;&#93; temp = new char&#91;n.length()&#93;;<br/>
+temp = n.toCharArray();<br/>
+while(j&gt;0){<br/>
+temp&#91;j&#93;=temp&#91;i&#93;;<br/>
+j--;<br/>
+i++;<br/>
+}<br/>
+return new String(temp);<br/>
+}<br/>
+}</p>
+
+
+----------------------------------------------------------------------------------------------------
+Very concise Java Solution
+public class Solution {
+    long getPal(int half,int k)
+    {
+        StringBuilder sb=new StringBuilder(half+""),sb2=new StringBuilder(half+"");
+        if (k==1) sb2.deleteCharAt(sb2.length()-1);
+        return Long.parseLong(sb.append(sb2.reverse())+"");
+    }
+    public String nearestPalindromic(String n) {
+        int l=n.length(),half=Integer.parseInt(n.substring(0,(l+1)/2));
+        long num=Long.parseLong(n),first=getPal(half-1,l&1),second=getPal(half,l&1),third=getPal(half+1,l&1),tens=(long)Math.pow(10,l-1);
+        if (num<10 || num==tens) return (num-1)+"";
+        if (num==tens*10-1) return (tens*10+1)+"";
+        if (num==tens+1) return (tens-1)+"";
+        if (second!=num && Math.abs(second-num)<Math.abs(first-num)) first=second;
+        if (Math.abs(third-num)<Math.abs(first-num)) first=third;
+        return first+"";
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+20+ Lines easy to understand C# code.
+        if (upPld.ToString().Equals(n) || upPld < input)
+        {
+            var upnum = (Convert.ToInt64(spld) + 1).ToString();
+            var upinc = upnum.Length > spld.Length ? n.Length % 2 + 1 : n.Length % 2;
+            Pld = upnum + new string(upnum.Substring(0, upnum.Length - upinc).Reverse().ToArray());
+            upPld = Convert.ToInt64(Pld.ToString());
+        }
+        if (lowPld.ToString().Equals(n) || lowPld > input)
+        {
+            var lownum = (Convert.ToInt64(spld) - 1).ToString();
+            var lowinc = n.Length % 2;
+            if (lownum.Length < spld.Length)
+            {
+                lownum = lownum + lownum.Last();
+                lowinc = lowinc + 1;
+            }
+            Pld = lownum + new string(lownum.Substring(0, lownum.Length - lowinc).Reverse().ToArray());
+            lowPld = Convert.ToInt64(Pld.ToString());
+        }
+        return (input - lowPld) <= (upPld - input) ? lowPld.ToString() : upPld.ToString();
+    }
+
+----------------------------------------------------------------------------------------------------
+C# solution, but getting Time Limit Exceed.
+public class Solution {
+    private bool isPalindrome(Int64 target) {
+        var s = target.ToString();
+        for (int i = 0, j = s.Length - 1; i < j; i++, j--) {
+            if ( s[i] != s[j] ) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private Int64 getNextPalindrome(Int64 i, Func<Int64, Int64> intFn) {
+        Int64 nextInt = intFn(i);
+        while ( !isPalindrome( nextInt ) ) {
+            nextInt = intFn(nextInt);
+        }
+        
+        return nextInt;
+    }
+    
+    Func<Int64, Int64> upFn = ( i ) => i + 1 ;
+    Func<Int64, Int64> downFn = ( i ) => i - 1;
+    public string NearestPalindromic(string n) {
+        Int64 target = Convert.ToInt64( n );
+        
+        Int64 upTarget = getNextPalindrome( target, upFn );
+        //Console.WriteLine( "Up: " + upTarget );
+        Int64 downTarget = getNextPalindrome( target, downFn );
+        //Console.WriteLine( "Down: " + downTarget );
+        
+        Int64 diffUp = Math.Abs( upTarget - target );
+        Int64 diffDown = Math.Abs( downTarget - target );
+        if ( diffUp == diffDown ) {
+            return downTarget.ToString();
+        }
+        else if ( diffUp < diffDown ) {
+            return upTarget.ToString();
+        }
+        
+        return downTarget.ToString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+java solution(select from multiple candidates)
+public String nearestPalindromic(String n) {
+        int len=n.length();
+        //if(len==1) return Integer.toString((Integer.parseInt(n)!=0)?Integer.parseInt(n)-1:1);
+        long N=Long.parseLong(n);
+        
+        List<Long> list=new ArrayList();
+        list.add(allNine(len-1));
+        list.add(allZero(len));
+        if(len%2==1){
+            list.add(makeOddPaline(n,0));
+            if(n.charAt(len/2)!='0') list.add(makeOddPaline(n,-1));
+            if(n.charAt(len/2)!='9') list.add(makeOddPaline(n,1));
+        }else
+        {
+            list.add(makeEvenPaline(n,0));
+            
+            if(n.charAt(len/2-1)!='0') list.add(makeEvenPaline(n,-1));
+            if(n.charAt(len/2-1)!='9') list.add(makeEvenPaline(n,1));
+        }
+        System.out.println(list.toString());
+        long result=pickFromList(list,N);
+        return Long.toString(result);
+    }
+    
+    private long pickFromList(List<Long> list,long num){
+        long result=0;long min_diff=Long.MAX_VALUE;
+        for(long cand:list){
+            if(num==cand) continue;
+            if(Math.abs(cand-num)<min_diff){
+                min_diff=Math.abs(cand-num);
+                result=cand;
+            }else if(Math.abs(cand-num)==min_diff){
+                result=Math.min(cand,result);
+            }else{
+            }
+        }
+        return result;
+    } 
+    
+    
+    private long allNine(int len){//1->9
+        long num=9;
+        for(int i=0;i<len-1;i++)
+            num=num*10+9;
+        return num;
+    }
+    private long allZero(int len){//1->11
+        long num=1;
+        for(int i=0;i<len;i++)
+            num=num*10;
+        num+=1;
+        return num;
+    }
+    
+    private long makeEvenPaline(String n,int mode){
+        StringBuffer sb=new StringBuffer();
+        int i=0;
+        int len=n.length();
+        for(i=0;i<len/2-1;i++) sb.append(n.charAt(i));
+        //if(len%2==1) 
+        { sb.append((char)(n.charAt(len/2-1)+mode));}
+        { sb.append((char)(n.charAt(len/2-1)+mode));}
+        for( i=len/2-2;i>=0;i--) sb.append(n.charAt(i));
+        return Long.parseLong(sb.toString());
+    }
+    
+    private long makeOddPaline(String n,int mode){
+        StringBuffer sb=new StringBuffer();
+        int i=0;int len=n.length();
+        for(i=0;i<len/2;i++) sb.append(n.charAt(i));
+        //if(len%2==1) 
+        { sb.append((char)(n.charAt(i)+mode));}
+        for( i=len/2-1;i>=0;i--) sb.append(n.charAt(i));
+        return Long.parseLong(sb.toString());
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ code

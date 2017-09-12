@@ -1,0 +1,402 @@
+Math solution..
+    int bulbSwitch(int n) {
+        return sqrt(n);
+    }
+
+A bulb ends up on iff it is switched an odd number of times.
+
+Call them bulb 1 to bulb n. Bulb i is switched in round d if and only if d divides i. So bulb i ends up on if and only if it has an odd number of divisors.
+
+Divisors come in pairs, like i=12 has divisors 1 and 12, 2 and 6, and 3 and 4. Except when i is a square, like 36 has divisors 1 and 36, 2 and 18, 3 and 12, 4 and 9, and double divisor 6. So bulb i ends up on if and only if i is a square.
+
+**So just count the square numbers.**
+
+Let R = int(sqrt(n)). That's the root of the largest square in the range [1,n]. And 1 is the smallest root. So you have the roots from 1 to R, that's R roots. Which correspond to the R squares. So int(sqrt(n)) is the answer. (C++ does the conversion to int automatically, because of the specified return type).
+
+----------------------------------------------------------------------------------------------------
+Share my o(1) solution with explanation
+    class Solution {
+    public:
+        int bulbSwitch(int n) {
+            return sqrt(n);
+        }
+    };
+ As we know that there are n bulbs, let's name them as 1, 2, 3, 4, ..., n.  
+
+ 1. You first turn on all the bulbs.
+ 2. Then, you turn off every second bulb.(2, 4, 6, ...)
+ 3. On the third round, you toggle every third bulb.(3, 6, 9, ...) 
+ 4. For the ith round, you toggle every i bulb.(i, 2i, 3i, ...)
+ 5. For the nth round, you only toggle the last bulb.(n)
+
+
+----------
+
+
+If n > 6, you can find that bulb 6 is toggled in round 2 and 3. 
+
+Later, it will also be toggled in round 6, and round 6 will be the last round when bulb 6 is toggled.
+
+Here, **2,3 and 6 are all *factors* of 6 (except 1).**
+
+----------
+**Prove:**
+----------
+
+We can come to the conclusion that **the bulb *i* is toggled *k* times.**
+
+Here, ***k*** is **the number of *i*'s factors (except 1)**.
+
+***k* + 1** will be **the total number of *i*'s factors**
+
+
+----------
+
+
+For example:
+
+ - **Factors of 6: 1, 2, 3, 6 (3 factors except 1, so it will be toggled 3 times)**
+ - **Factors of 7: 1, 7 (1 factors except 1, so it will be toggled once)**
+....
+
+Now, the key problem here is to judge **whether *k* is *even* or *odd*.**
+
+----------
+
+Since **all bulbs are on at the beginning**, we can get:
+
+ - **If *k* is *odd*, the bulb will be *off* in the end.(after odd times of toggling).**
+ - **If *k* is *even*, the bulb i will be *on* in the end (after even times of toggling).**
+
+As we all know, **a natural number can divided by 1 and itself**, and **all factors appear *in pairs***.
+
+**When we know that *p* is *i*'s factor, we are sure *q* = *i/p* is also *i*'s factor.**
+
+**If *i* has no factor *p* that makes *p* = *i/p*, *k*+ 1 is even.**
+
+**If *i* has a factor *p* that makes *p* = *i/p* (*i* = *p*^2, *i* is a perfect square of *p*), *k*+ 1 is odd.**
+
+
+----------
+
+
+So we get that **in the end**:
+
+ - If ***i*** is a **perfect square** , *k*+ 1 is odd, ***k* is even (bulb *i* is on)**.
+ - If ***i*** is **NOT** a **perfect square** , *k*+ 1 is even, ***k* is odd (bulb *i* is off)**.
+
+----------
+
+We want to find **how many *bulbs* are on** after *n* rounds (**In the end**).
+
+That means we need to find out **how many *perfect square numbers* are NO MORE than *n***.
+
+The **number of *perfect square numbers* which are no more than *n***, is the ***square root* of the *maximum perfect square number* which is NO MORE than *n***
+
+----------
+**Result:**
+----------
+
+The ***square root* of the *maximum perfect square number* which is NO MORE than *n*** is the 
+***integer part* of *sqrt(n)*.**
+
+(**If *i* = 1, it will NEVER be toggled, *k* is 0 (even) here which meets the requirement.**)
+
+----------------------------------------------------------------------------------------------------
+My 0 ms C++ solution with explanation
+    int bulbSwitch(int n) {
+        int counts = 0;
+        
+        for (int i=1; i*i<=n; ++i) {
+            ++ counts;    
+        }
+        
+        return counts;
+    }
+
+Explanation:  
+A light will be toggled only during the round of its factors, e.g.  number 6 light will be toggled at 1,2,3,6 and light 12 will be toggled at 1,2,3,4,6,12.   The final state of a light is on and off only depends on if the number of its factor is odd or even.    If odd, the light is on and if even the light is off.   The number of one number's factor is odd if and only if it is a perfect square!   
+So we will only need to loop to find all the perfect squares that are smaller than n!
+
+----------------------------------------------------------------------------------------------------
+The simplest and most efficient solution well-explained
+Before we take a jump to the solution, let's first try to clear out what exactly the problem is talking about: 
+
+ - every i-th distance you switch the bulb to the opposite state (from on to off, or from off to on); actually suppose the bulbs are labelled from 1 to n then the every second bulb will mean that 2, 4, 6, 8, ... all even numbers less than n; while every third bulb will be 3, 6, 9, 12, ... all multiples of 3 that is less than n and so on; 
+ - since the bulb will only have two different states - on or off, the result will be quite clear now; odd switching operations will result in bulb-on state (original state is bulb-off) while even switching operations will give us bulb-off state;
+
+Now the purpose here is clear searching for the odd-operation numbers:
+
+ - as for primes, they only have 1 and itself as their factors; so primes are even-operation numbers;
+ - as for non-primes, normally they will have different pairs of factors like 12 whose factors are 1*12, 2*6, 3*4 - 6 different factors, so they are also even-operation numbers;
+ - but among non-primes, there are some special numbers which are square numbers like 9 whose factors are 1*9, 3*3  - three different factors which means we finally got odd-operation numbers!
+
+So that's all we need to know to hack this problem now. But how to get the amount of squares that are less than n, quite simple, right? sqrt(n) is the answer. Confused? ok, all square numbers that is less than n will be 1, 4, 9 ... n and corresponding root will be 1, 2, 3,... sqrt(n) Get it? 
+
+Bang. End of story.
+
+ - Space cost O(1)
+ - Time cost O(1)
+
+
+----------
+
+    //AC - 0ms;
+    int bulbSwitch(int n)
+    {
+        return sqrt(n);
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+One line java with explanation
+factor of 6: 1,2,3,6
+factor of 7: 1,7 
+factor of 9: 1,3,9
+
+so all number have even number of factors except square number(e.g: factor of 9:1,3,9). 
+square number must turn on because of odd number of factors(9: turn on at 1st, off at 3rd, on at 9th)
+other number must turn off(6: turn on at 1st, off at 2nd, on at 3rd, off at 6th)
+so we only need to compute the number of square number less equal than n
+
+    public class Solution {
+        public int bulbSwitch(int n) {
+            return (int)Math.sqrt(n);
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Crystal clear explanation, one line c++ code
+Ok, very verbose explanation, but clear enough for everyone to understand.
+
+the initial state all bulbs are off.
+
+if at last the bulb was toggled odd number of times, it is on.
+if toggled even number of times, it is off.
+
+simple enough, and that number is determined by how many factors a number has.
+note that every number has 1 and itself as a factor. and if it has multiple times of a factor
+it only counted once.
+
+1 --------- 1
+
+2 --------- 1, 2
+
+3 --------- 1, 3
+
+4 --------- 1, 2, 4
+
+5 --------- 1, 5
+
+6 --------- 1, 2, 3, 6
+
+7 --------- 1, 7
+
+8 --------- 1, 2, 4, 8
+
+9 --------- 1, 3, 9
+
+see that only square numbers like 1, 4 and 9 has odd number of factors.
+bulbs at those numbers will left on after all the rounds of toggle.
+
+so basically, we calculate how many square numbers are there within a given number.
+and we can get it simply by calculate the square root of that number. of course the decimal part is eliminated.
+
+
+    class Solution {
+    public:
+        int bulbSwitch(int n) {
+            return sqrt(n);
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+The original question should be updated
+It only stated the first, second, third, and last round. Should be updated as follows:
+
+There are n bulbs that are initially off. You first turn on all the bulbs. Then, you turn off every second bulb. On the third round, you toggle every third bulb (turning on if it's off or turning off if it's on). **For the ith round, you toggle every i bulb.** For the nth round, you only toggle the last bulb. Find how many bulbs are on after n rounds.
+
+
+----------------------------------------------------------------------------------------------------
+One Line Math Solution with some explanation
+    // For prime numbers, they must be off because we can reach them only twice (The first round and their own round).
+    /* For other numbers, if we can reach them odd times, then they are on; otherwise, they are off. So only 
+     those numbers who have square root will be reached odd times and there are sqrt(n) of them because
+     for every x > sqrt(n), x*x > n and thus should not be considered as the answer. */
+    
+     return (int)sqrt(n);
+
+----------------------------------------------------------------------------------------------------
+C Solution with 0ms
+    We are toggling the nth bulb that much number of times as much there are factors of it. Thus number i with even number of factors will be off and bulb at number j with odd number of factors will be on.
+    And only square numbers have odd number of factors. E.g 1(only 1), 4(1,2,4) ,  9(1,3,9), 16(1,2,4,8,16)...and so on...thus we have to find number of perfect squares within n which can be simply reduced to square root of n.
+    
+        int bulbSwitch(int n) {
+            int i;
+            for(i=1; i*i<=n; i++);
+            return i-1;
+        }
+
+----------------------------------------------------------------------------------------------------
+Java O(1) solution, for real - no bs :) No sqrt
+    public int bulbSwitch(int n) {
+        return (int) Math.pow(2, 0.5 * (Math.log(n)/Math.log(2)));
+    }
+
+There is a Math trick to get a rounded to the floor square root of a number (this is exactly what we need since integers get rounded down).
+
+1. We can express sqrt(n) as n^0.5, 
+2. then add a log trick: 2^log(base 2)(n^0.5),
+3. then simplify a little: 2^(0.5*log(base 2)(n)).
+4. Since java's Math library doesn't have log(base 2), we can get it by log(base e)(n) / log(base e)(2).
+
+I looked at Java's Math source code and its log method defaults to the log method of StrictMath. I have a link here for the StrictMath source:
+
+[http://developer.classpath.org/doc/java/lang/StrictMath-source.html][1]
+
+The log method is O(1) (I didn't see any loops or recursive calls), although extremely ugly, there is a lot going on in it, and I don't understand most of it :) Another slow-down comes from the pow method, it's also O(1) and even uglier than log :D
+
+I also ran a quick speed test for both sqrt and log versions of the bulbSwitch, here are the results ( I ran a few times, the results are relatively consistent) :
+
+    bulbSwitchSqrt(5) ------------------------- 35437 ns
+    bulbSwitchLog(5) -------------------------- 8495 ns
+    bulbSwitchSqrt(25789104) ------------------ 421 ns
+    bulbSwitchLog(25789104) ------------------- 822 ns
+
+For very small numbers log method is an order of the magnitude faster than sqrt, for very large numbers they are about the same. From what I read in the source code comments, small values require more precision, so there is more computation going on in both log and sqrt, otherwise sqrt is surprisingly fast.
+
+I am not making any claims here, just sharing what I've found out :) Let me know if I made a mistake somewhere or missed anything.
+
+Cheers.
+
+
+
+
+  [1]: http://developer.classpath.org/doc/java/lang/StrictMath-source.html
+
+----------------------------------------------------------------------------------------------------
+Clear thought process explained
+I try explain my though as following:
+
+How many "on" at the end of nth toggle?
+
+--> "on" or "off" at each position in an array of length n?
+
+--> toggle even number times will result in "on", toggle odd number times will result in "off"
+
+--> for position k, the number of toggles is the number of distinct divisors that k has
+
+--> divisors always come in pair, which means even number of divisors, for example, 12 has (1,12),(2,6),(3,4).
+
+--> however, Square Number has odd number of divisors, e.g. 25 has 1,25,5
+
+--> thus, the number of "on", is the number of perfect square number <= n
+
+
+
+Python:
+
+    def bulbSwitch(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        return int(math.sqrt(n))
+
+----------------------------------------------------------------------------------------------------
+It&#x27;s equivalent to count the square numbers no larger than n
+    
+/* For individual bulb, its final state depends on how many times it got toggled, and it equals the number of its distinct factors. If the number is even, the bulb is off, otherwise it's on. We know all numbers factors are even number unless it's a square number. So the problem is equivalent to count the square numbers no larger than n
+*/
+
+    public class Solution {
+        public int BulbSwitch(int n) {
+            return (int)Math.Sqrt(n);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+One line Python Solution of O(1)
+    class Solution(object):
+        def bulbSwitch(self, n):
+            return int(n**(0.5))
+
+----------------------------------------------------------------------------------------------------
+I&#x27;s a math problem, not a programming problem
+     public int bulbSwitch(int n) {
+            
+            return (int) Math.sqrt(n);
+        }
+
+Only problem is to prove this is correct. Don't think this is a good programming / algorithm problem though. Just by observing sequences will probably found the trick
+
+----------------------------------------------------------------------------------------------------
+1 line solution, 0ms
+     int bulbSwitch(int n) {   return sqrt(n+0.5);  }
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution square root
+Only bulbs with index equaling a perfect square number will be on in the end. (because it has an odd number of divisors). So a simple solution follows:
+
+
+    public static int bulbSwitch(int n) {
+            return (int)Math.sqrt((double)n);
+    }
+
+----------------------------------------------------------------------------------------------------
+One more tag should be added to this problem &quot;Math&quot;
+This problem is heavily math based. The `Math` tag should be added to this problem. 
+
+**General technique for solving problems like this.**
+
+Without being a genius the only way to solve problems like this is to use whats known as the *Examplify Technique* In the Examplify technique you write out specific examples of the problem and see if you can derive a general rule (or pattern) from there. In this case write out by hand what will happen when n = 1 then n = 2 then n = 3 then n = 4, and so on until you are able to figure out the pattern. This approach isn't the fastest but its a decent approach when you are unable to think of a solution off of the top of your head. 
+
+many others have provided the answer to this problem but the answer to this one problem isn't the important part being able to come up with solutions is what matters.
+
+----------------------------------------------------------------------------------------------------
+1 line C++ code with explanation
+Only lights labeled as perfect squares will be on because perfect squares have odd numbers of divisors.
+
+1st bulb  (1: 1):           1 **on**                 -------             1=1^2
+
+2nd bulb (2: 1,2):        1 on, 2 off
+
+3rd bulb  (3: 1,3):        1 on, 3 off
+
+4th bulb  (4: 1,2,4):     1 on, 2 off, 4 **on**     ------      4=2^2
+
+5th bulb  (5: 1,5):        1 on, 5 off
+
+6th bulb  (6: 1,2,3,6):  1 on, 2 off, 3 on, 6 off
+
+7th bulb  (7: 1,7):        1 on, 7 off
+
+8th bulb  (8: 1,2,4,8):  1 on, 2 off, 4 on, 8 off
+
+9th bulb  (9: 1,3,9):     1 on, 3 off, 9 **on**    ---------       9=3^2
+
+and so on...
+
+    int bulbSwitch(int n) {
+        return sqrt(n);
+    }
+
+----------------------------------------------------------------------------------------------------
+Java: One line solution
+     public int bulbSwitch(int n) {
+            return (int)Math.sqrt(n);
+        }
+
+----------------------------------------------------------------------------------------------------
+Java Accepted solution
+    public class Solution {
+        public int bulbSwitch(int n) {
+            if (n <= 0) return 0;
+            return (int)Math.sqrt(n);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

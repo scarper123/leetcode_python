@@ -1,0 +1,396 @@
+My concise solution in Java
+    public class Solution {
+    public List<List<Integer>> generate(int numRows)
+	{
+		List<List<Integer>> allrows = new ArrayList<List<Integer>>();
+		ArrayList<Integer> row = new ArrayList<Integer>();
+		for(int i=0;i<numRows;i++)
+		{
+			row.add(0, 1);
+			for(int j=1;j<row.size()-1;j++)
+				row.set(j, row.get(j)+row.get(j+1));
+			allrows.add(new ArrayList<Integer>(row));
+		}
+		return allrows;
+		
+	}
+}
+
+----------------------------------------------------------------------------------------------------
+Solution in Java
+two loops, one go through the row, one go through the column
+
+database: pretty straight forward, ArrayList
+
+calculate element value: K(i)(j)=K(i-1)(j-1)+K(i-1)(j) except for the first and last element
+
+    public class Solution {
+        public List<List<Integer>> generate(int numRows) {
+            List<List<Integer>> triangle = new ArrayList<List<Integer>>();
+            if (numRows <=0){
+                return triangle;
+            }
+            for (int i=0; i<numRows; i++){
+                List<Integer> row =  new ArrayList<Integer>();
+                for (int j=0; j<i+1; j++){
+                    if (j==0 || j==i){
+                        row.add(1);
+                    } else {
+                        row.add(triangle.get(i-1).get(j-1)+triangle.get(i-1).get(j));
+                    }
+                }
+                triangle.add(row);
+            }
+            return triangle;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python 4 lines short solution using map.
+    def generate(self, numRows):
+            res = [[1]]
+            for i in range(1, numRows):
+                res += [map(lambda x, y: x+y, res[-1] + [0], [0] + res[-1])]
+            return res[:numRows]
+
+
+explanation: Any row can be constructed using the offset sum of the previous row. Example:
+
+        
+        1 3 3 1 0 
+     +  0 1 3 3 1
+     =  1 4 6 4 1 
+
+----------------------------------------------------------------------------------------------------
+Maybe shortest c++ solution
+    class Solution {
+    public:
+        vector<vector<int> > generate(int numRows) {
+            vector<vector<int>> r(numRows);
+    
+            for (int i = 0; i < numRows; i++) {
+                r[i].resize(i + 1);
+                r[i][0] = r[i][i] = 1;
+      
+                for (int j = 1; j < i; j++)
+                    r[i][j] = r[i - 1][j - 1] + r[i - 1][j];
+            }
+            
+            return r;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java clean Code 1ms dp
+    public class Solution {
+    	public List<List<Integer>> generate(int numRows) {
+    		List<List<Integer>> res = new ArrayList<List<Integer>>();
+    		List<Integer> row, pre = null;
+    		for (int i = 0; i < numRows; ++i) {
+    			row = new ArrayList<Integer>();
+    			for (int j = 0; j <= i; ++j)
+    				if (j == 0 || j == i)
+    					row.add(1);
+    				else
+    					row.add(pre.get(j - 1) + pre.get(j));
+    			pre = row;
+    			res.add(row);
+    		}
+    		return res;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ code, 0ms
+just do it in a straightforward, each time generate a new line, first push all 1 vector into res and then update the elements from 1 to i-1.
+
+    class Solution {
+    public:
+        vector<vector<int>> generate(int numRows) {
+            vector<vector<int>> res;
+            for(auto i=0;i<numRows;++i)
+            {
+                res.push_back(vector<int>(i+1,1));
+                for(auto j=1; j<i; ++j) res[i][j] = res[i-1][j-1] + res[i-1][j];
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My 10 lines c++ code
+    class Solution {
+    public:
+        vector<vector<int>> generate(int numRows) {
+            vector<vector<int> > ret(numRows, vector<int>());
+            for(int i=0; i<numRows; i++) {
+                for(int j=0; j<=i; j++) {
+                    ret[i].push_back(j == 0 ? 1 : j == i ? 1 : ret[i-1][j-1] + ret[i-1][j]);
+                }
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A simple python solution
+    class Solution:
+    # @return a list of lists of integers
+    def generate(self, numRows):
+        lists = []
+        for i in range(numRows):
+            lists.append([1]*(i+1))
+            if i>1 :
+                for j in range(1,i):
+                    lists[i][j]=lists[i-1][j-1]+lists[i-1][j]
+        return lists
+
+----------------------------------------------------------------------------------------------------
+Simple Python 4 lines
+    def generate(numRows):
+        pascal = [[1]*(i+1) for i in range(numRows)]
+        for i in range(numRows):
+            for j in range(1,i):
+                pascal[i][j] = pascal[i-1][j-1] + pascal[i-1][j]
+        return pascal
+
+----------------------------------------------------------------------------------------------------
+Maybe is the shortest code in c++
+    // autho  : s2003zy
+    // weibo  : weibo.com/songzy982
+    // blog   : s2003zy.com
+    class Solution {
+    public:
+        vector<vector<int>> generate(int numRows) {
+            vector<vector<int>> res = {};
+            for (int i = 0; i < numRows; i++) {
+                res.push_back(vector<int>(i + 1, 1));
+                for(int j = 1; j < i; j++) {
+                    res[i][j] = (res[i - 1][j] + res[i - 1][j - 1]);
+                }
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Beat 100% Fastest Java Solution with Brief Explanation
+The trick is to use linked list because there is a lot of add operations that each costs o(n) time using array list. And to get the previous assigned before retriving value frequently from it.
+
+    public List<List<Integer>> generate(int numRows) {
+
+
+        List<List<Integer>> ans = new ArrayList<List<Integer>>();
+		if (numRows == 0)
+			return ans;
+			
+		LinkedList<Integer> sub = new LinkedList<Integer>();
+		sub.add(1);
+		ans.add(sub);
+
+		for (int i = 1; i < numRows; i++) {
+			LinkedList<Integer> subAns = new LinkedList<Integer>();
+			List<Integer> list = ans.get(i - 1);
+			subAns.addFirst(1);
+			for (int j = 1; j < i; j++)
+				subAns.addFirst(list.get(j - 1) + list.get(j));
+			subAns.addFirst(1);
+			ans.add(subAns);
+		}
+
+		return ans;
+
+	}
+
+----------------------------------------------------------------------------------------------------
+The python way, 36ms
+    class Solution(object):
+        def generate(self, numRows):
+            """
+            :type numRows: int;; rtype: List[List[int]]
+            """
+            if not numRows: return []
+            ret = [[1]]
+            numRows -= 1
+            while numRows:
+                ret.append([1] + [a+b for a,b in zip(ret[-1][:-1], ret[-1][1:])] +[1])
+                numRows-=1
+            return ret
+
+----------------------------------------------------------------------------------------------------
+Short C++ solution using only O(k) extra space
+Starting with empty array. Because row i + 1 is longer than row i by 1, and the last number in each row is always 1.
+
+So suppose we are just done with row i, when when proceed with row i + 1:
+
+1) We need to push a "1" to the current array first we have (with row i's result), 
+
+2) Then update index 1 through i. Observing that first number of array always will be 1 too, which doesn't need to be updated since we already did that when we deal with row 0 (last and first index are both 0 for row 0).
+
+    class Solution {
+    public:
+        vector<vector<int>> generate(int numRows) {
+            vector<vector<int>> result;
+            
+            vector<int> row;
+            for(int i = 0; i < numRows; i++){
+                row.push_back(1);
+                for(int j = i - 1; j > 0; j--){
+                    row[j] = row[j - 1] + row[j];
+                }
+                result.push_back(row);
+            }
+            
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solution,very easy to understand
+    class Solution(object):
+    def generate(self, numRows):
+        """
+        :type numRows: int
+        :rtype: List[List[int]]
+        """
+        n,b,res=0,[1],[]
+        while n<numRows:
+            res.append(b)
+            b=[1]+[b[i]+b[i+1] for i in xrange(len(b)-1)]+[1]
+            n+=1
+        return res
+
+----------------------------------------------------------------------------------------------------
+My C++ code for reference
+    class Solution {
+    public:
+        vector<vector<int> > generate(int numRows) {
+            
+            if(numRows==0) return vector<vector<int> >();
+            
+            vector<vector<int> > res;
+            
+            res.resize(numRows);
+            
+            res[0].push_back(1);
+            
+            if(numRows==1) return res;
+            
+            for(int i=1; i<numRows; i++){
+                
+                res[i].resize(i+1); // make vector for each row 
+                
+                res[i][0]=res[i][i]=1; // put 1 to first and last element
+                
+                for(int j=1; j<i; j++) 
+                    res[i][j]=res[i-1][j]+res[i-1][j-1]; // generate other elements of the row
+                
+            }
+            
+            return res;
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ implementation refered to &#64;mzchen
+    class Solution {
+    public:
+        vector<vector<int>> generate(int numRows) {
+            vector<vector<int>> result(numRows);
+            for(int i=0; i<numRows; i++){
+                result[i].resize(i+1);
+                result[i][0]=result[i][i]=1;
+                for(int j=1; j<i; j++) 
+                    result[i][j]=result[i-1][j-1]+result[i-1][j];
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1ms Java solution - Simple
+    public List<List<Integer>> generate(int numRows) {
+            List<List<Integer>> sol = new ArrayList<>();
+            if (numRows == 0) return sol;
+            
+            List<Integer> row = new ArrayList<>();
+            row.add(1);
+            sol.add(row);
+            
+            for (int i = 1; i < numRows; i++) {
+                List<Integer> r = new ArrayList<>();
+                r.add(1);
+                List<Integer> p = sol.get(i-1);
+                for (int j = 0; j < p.size()-1; j++) {
+                    r.add(p.get(j) + p.get(j+1));
+                }
+                r.add(1);
+                sol.add(r);
+            }        
+            return sol;
+        }
+
+----------------------------------------------------------------------------------------------------
+Another accepted Java solution
+    public class Solution {
+        public List<List<Integer>> generate(int numRows) {
+            List<List<Integer>> res = new ArrayList<List<Integer>>();
+            
+            for (int i = 0; i < numRows; i++) {
+                List<Integer> list = new ArrayList<Integer>(Arrays.asList(1));
+                
+                for (int j = 1; j < i; j++) 
+                    list.add(res.get(i - 1).get(j - 1) + res.get(i - 1).get(j));
+                    
+                if (i > 0) list.add(1);
+                
+                res.add(list);
+            }
+            
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+200ms Java simple loop solution
+    public class Solution {
+        public List<List<Integer>> generate(int numRows) {
+            if(numRows == 0) return new ArrayList<>();
+            List<List<Integer>> result = new ArrayList<>();
+            List<Integer> first = new ArrayList<>();
+            first.add(1);
+            result.add(first);
+            List<Integer> lastLevel;
+            List<Integer> currentLevel;
+            for(int i = 1; i < numRows; i++) {
+                lastLevel = result.get(i-1);
+                currentLevel = new ArrayList<>();
+                currentLevel.add(1);
+                for(int j = 1; j < lastLevel.size(); j++) {
+                    currentLevel.add(lastLevel.get(j-1) + lastLevel.get(j));
+                }
+                currentLevel.add(1);
+                result.add(currentLevel);
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Short python answer, 7-lines
+    class Solution(object):
+    def generate(self, numRows):
+        """
+        :type numRows: int
+        :rtype: List[List[int]]
+        """
+        if numRows <= 0:
+            return []
+        triangle = [[1]]
+        for i in range(1, numRows):
+            row = [0] + triangle[-1] + [0]
+            triangle.append([row[j]+row[j+1] for j in range(i+1)])
+        return triangle
+
+----------------------------------------------------------------------------------------------------

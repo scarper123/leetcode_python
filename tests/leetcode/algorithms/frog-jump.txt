@@ -1,0 +1,528 @@
+Java Standard Two Pointer Solution
+In the inner while loop, don't forget the condition "start less than end" while incrementing start  and decrementing end. This is my friend's google phone interview question. Cheers!
+// update! May use a HashSet<Character> to reduce the look up time to O(1)
+
+    public class Solution {
+    public String reverseVowels(String s) {
+        if(s == null || s.length()==0) return s;
+        String vowels = "aeiouAEIOU";
+        char[] chars = s.toCharArray();
+        int start = 0;
+        int end = s.length()-1;
+        while(start<end){
+            
+            while(start<end && !vowels.contains(chars[start]+"")){
+                start++;
+            }
+            
+            while(start<end && !vowels.contains(chars[end]+"")){
+                end--;
+            }
+            
+            char temp = chars[start];
+            chars[start] = chars[end];
+            chars[end] = temp;
+            
+            start++;
+            end--;
+        }
+        return new String(chars);
+    }
+   }
+
+----------------------------------------------------------------------------------------------------
+Super clean C++ solution using find_first_of and find_last_of
+    class Solution {
+    public:
+        string reverseVowels(string s) {
+            int i = 0, j = s.size() - 1;
+            while (i < j) {
+                i = s.find_first_of("aeiouAEIOU", i);
+                j = s.find_last_of("aeiouAEIOU", j);
+                if (i < j) {
+                    swap(s[i++], s[j--]);
+                }
+            }
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1-2 lines Python&#x2F;Ruby
+**Ruby**
+
+    def reverse_vowels(s)
+      vowels = s.scan(/[aeiou]/i)
+      s.gsub(/[aeiou]/i) { vowels.pop }
+    end
+
+---
+
+**Python**
+
+    def reverseVowels(self, s):
+        vowels = re.findall('(?i)[aeiou]', s)
+        return re.sub('(?i)[aeiou]', lambda m: vowels.pop(), s)
+
+---
+
+It's possible in one line, but I don't really like it:
+
+    def reverseVowels(self, s):
+        return re.sub('(?i)[aeiou]', lambda m, v=re.findall('(?i)[aeiou]', s): v.pop(), s)
+
+---
+
+Another version, finding replacement vowels on the fly instead of collecting all in advance:
+
+    def reverseVowels(self, s):
+        vowels = (c for c in reversed(s) if c in 'aeiouAEIOU')
+        return re.sub('(?i)[aeiou]', lambda m: next(vowels), s)
+
+----------------------------------------------------------------------------------------------------
+One pass Java Solution 13ms
+    public class Solution {
+        public String reverseVowels(String s) {
+            char[] list=s.toCharArray();
+            Set<Character> set=new HashSet<>();
+            set.add('a');
+            set.add('e');
+            set.add('i');
+            set.add('o');
+            set.add('u');
+            set.add('A');
+            set.add('E');
+            set.add('I');
+            set.add('O');
+            set.add('U');
+            for(int i=0,j=list.length-1;i<j;){
+                if(!set.contains(list[i])){
+                    i++;
+                    continue;
+                }
+                if(!set.contains(list[j])){
+                    j--;
+                    continue;
+                }
+                char temp=list[i];
+                list[i]=list[j];
+                list[j]=temp;
+                i++;
+                j--;
+            }
+            return String.valueOf(list);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ easy understanding solution
+    class Solution {
+    public:
+        string reverseVowels(string s) {
+            int dict[256] = {0};
+            dict['a'] = 1, dict['A'] = 1;
+            dict['e'] = 1, dict['E'] = 1;
+            dict['i'] = 1, dict['I'] = 1;
+            dict['o'] = 1, dict['O'] = 1;
+            dict['u'] = 1, dict['U'] = 1;
+            int start = 0, end = (int)s.size() - 1;
+            while(start < end){
+                while(start < end && dict[s[start]] == 0) start++;
+                while(start < end && dict[s[end]] == 0) end--;
+                swap(s[start],s[end]);
+                start++;end--;
+            }
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python 2 Pointers Solution
+    class Solution(object):
+        def reverseVowels(self, s):
+            vowels = set(list("aeiouAEIOU"))
+            s = list(s)
+            ptr_1, ptr_2 = 0, len(s) - 1
+            while ptr_1 < ptr_2:
+                if s[ptr_1] in vowels and s[ptr_2] in vowels:
+                    s[ptr_1], s[ptr_2] = s[ptr_2], s[ptr_1]
+                    ptr_1 += 1
+                    ptr_2 -= 1
+                if s[ptr_1] not in vowels:
+                    ptr_1 += 1
+                if s[ptr_2] not in vowels:
+                    ptr_2 -= 1
+            return ''.join(s)
+
+The idea is really simple. But I think my code is somewhat ugly in two ways:
+
+ 1. Convert string to list then convert back 
+ 2. Pointer processing is verbose.
+
+Any suggestion? Thanks.
+
+
+----------------------------------------------------------------------------------------------------
+C++, 12ms, two pointers, easy to understand
+    class Solution {
+    public:
+        string reverseVowels(string s) {
+            auto p1 = s.begin(), p2 = s.end() - 1;
+            string vowels = "aeiouAEIOU";
+            while(p1 < p2) {
+                while((vowels.find(*p1) == string::npos) && (p1 < p2)) p1++;
+                while((vowels.find(*p2) == string::npos) && (p1 < p2)) p2--;
+                if(p1 < p2) swap(*p1, *p2);
+                p1++;
+                p2--;
+            }
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution using StringBuilder
+    public class Solution {
+    public String reverseVowels(String s) {
+        StringBuilder sb = new StringBuilder();
+        int j = s.length() - 1;
+        for (int i = 0; i < s.length(); i++)
+        {
+            if ("AEIOUaeiou".indexOf(s.charAt(i)) != -1)
+            {
+                while (j >= 0 && "AEIOUaeiou".indexOf(s.charAt(j)) == -1)
+                {
+                    j--;
+                }
+                sb.append(s.charAt(j));
+                j--;
+            }
+            else
+                sb.append(s.charAt(i));
+        }
+        return sb.toString();
+    }
+}
+
+}
+
+----------------------------------------------------------------------------------------------------
+My 4ms solution in Java (beats 98.20%!!!!!)
+        public static boolean isVowel(char a){
+    	    switch(a){
+    	         case ('a') : return true;
+    	         case ('e') : return true;
+    	         case ('i') : return true;
+    	         case ('o') : return true;
+    	         case ('u') : return true;
+    	         case ('A') : return true;
+    	         case ('E') : return true;
+    	         case ('I') : return true;
+    	         case ('O') : return true;
+    	         case ('U') : return true;
+    	         default : return false;
+    	    }
+        }
+    
+        public static String reverseVowels(String s) {
+    	     if (s.length()<2) return s;
+    	
+    	     char[] tab = s.toCharArray();
+    	     int j = tab.length - 1;
+    	     int i = 0;
+    	
+    	     while( i < j ) {
+
+    		if (!isVowel(tab[i]))
+    			i++;	
+    		else {
+    			while (j!=i && !isVowel(tab[j]))
+    				j--;
+    			
+    			char temp = tab[i];
+    			tab[i] = tab[j];
+    			tab[j] = temp;
+    			i++;
+    			j--;
+    		}
+    	}
+    	return new String(tab);
+    }
+
+----------------------------------------------------------------------------------------------------
+Beat 99.7% using python two pointers
+    class Solution(object):
+        def reverseVowels(self, s):
+            """
+            :type s: str
+            :rtype: str
+            """
+            vowels = {'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'}
+            L = list(s)
+            i = 0
+            j = len(L) - 1
+            while i < j:
+                while i < j and L[i] not in vowels:
+                    i += 1
+                while j > i and L[j] not in vowels:
+                    j -= 1
+                L[i], L[j] = L[j], L[i] 
+                i += 1
+                j -= 1
+            return ''.join(L)
+
+----------------------------------------------------------------------------------------------------
+5ms Java Two pointer solution
+    public class Solution {
+        public String reverseVowels(String s) {
+            if (s == null) {
+                throw new IllegalArgumentException();
+            }
+            if (s.length() <= 1) {
+                return s;
+            }
+            char[] str = s.toCharArray();
+            for (int i = 0, j = str.length - 1; i < j; i++, j--) {
+                while (i < j && !isVowel(str[i])) i++;
+                while (i < j && !isVowel(str[j])) j--;
+                if (i <= j) swap(str, i, j);
+            }
+            return new String(str);
+        }
+        private boolean isVowel(char ch) {
+            char c = Character.toLowerCase(ch);
+            return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u';
+        }
+        private void swap(char[] str, int i, int j) {
+            char tmp = str[i];
+            str[i] = str[j];
+            str[j] = tmp;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java two pointers solution, easy to understand and finish in interview
+The problem would be some warm-up problem during the interview and the idea is pretty straight forward, we define a String vowels to save all the vowels, when it is not a vowel character, `vowels.indexOf(arr[i])` will equal to `-1` and we skip those characters.  For vowels, we just swap them.
+
+
+    public String reverseVowels(String s) {
+        int i = 0, j = s.length() - 1;
+        char[] arr = s.toCharArray();
+        String vowels = "aeiouAEIOU";
+        while(i < j) {
+            while(i < j && vowels.indexOf(arr[i]) == -1) {
+                i++;
+            }
+            while(i < j && vowels.indexOf(arr[j]) == -1) {
+                j--;
+            }
+            if(i < j) {
+                swap(arr, i, j);
+                i++;
+                j--;
+            }
+        }
+        return new String(arr);
+    }
+
+----------------------------------------------------------------------------------------------------
+12ms  C++ solution
+    class Solution {
+    public:
+    string reverseVowels(string s) {
+        string s1=s;
+        int n= s1.length();
+        int i=0,j=n-1;
+        while(i<j){
+            while((!isVovel(s1[i]))&&i<j)i++;
+            while((!isVovel(s1[j]))&&i<j)j--;
+            swap(s1[i],s1[j]);
+            i++;j--;
+        }
+        return s1;
+    }
+    private:
+    bool isVovel(char &ch)
+    {
+        bool flag=false;
+        if((ch=='a')||(ch=='e')||(ch=='i')||(ch=='o')||(ch=='u')
+        ||(ch=='A')||(ch=='E')||(ch=='I')||(ch=='O')||(ch=='U'))
+            flag = true;
+        return flag;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Y is Y considered to be a consonant?
+Hello,
+
+Forgive the cheeky title, but I couldn't resist. I was puzzled at the rejection of my solution when presented with the following Test case:
+
+"yo! Bottoms Up, u.S. Motto, boy!"
+
+which is apparently expected to output:
+
+"Yo! Bottoms up, U.S. Motto, boy!"
+
+My own solution switched the location of the two Y's - which fails to pass the test case.
+
+A quick google lead me to find that despite my own schooling, teaching Y as a vowel, it can also be regarded as a consonant. Given this somewhat broad ambiguity, I think the question should be updated to either state that Y is considered a consonant, or specify exactly which letters are considered to be vowels.
+
+Regards,
+Gazoo
+
+----------------------------------------------------------------------------------------------------
+JavaScript Solution
+var reverseVowels = function(s) {
+    if(s === null || s.length === 0) {
+        return s;
+    }
+    var chars = s.split('');
+    var low = 0;
+    var high = s.length - 1;
+    var vowels = "aeiouAEIOU";
+    var tmp;
+    while(low < high) {
+        while(low < high && vowels.indexOf(chars[low]) === -1) {
+            low++;
+        }
+        
+        while(low < high && vowels.indexOf(chars[high]) === -1) {
+            high--;
+        }
+        
+        tmp = chars[high];
+        chars[high] = chars[low];
+        chars[low] = tmp;
+        low++;
+        high--;
+    }
+    
+    return chars.join('');
+};
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ solution
+    class Solution {
+    public:
+        string reverseVowels(string s) {
+            unordered_set<char> vowels = {'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'};
+            int i = 0, j = s.length() - 1;
+            while (i < j) {
+                if (!vowels.count(s[i]))
+                    ++i;
+                else if (!vowels.count(s[j]))
+                    --j;
+                else
+                    swap(s[i++], s[j--]);
+            }
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Solution by Marking Indices of Vovels
+ I have first iterated through the string to mark the index where vowels are found and stored those indices in an array. I then swap the vowels in the original string using this array of indices.
+
+    public class Solution {
+            public String reverseVowels(String s) {
+                char[] charArray = s.toCharArray();
+                int[] temp = new int[charArray.length];
+                int j = 0;
+                HashSet<Character> vovels = new HashSet<>();
+        
+                vovels.add('a');
+                vovels.add('e');
+                vovels.add('i');
+                vovels.add('o');
+                vovels.add('u');
+                vovels.add('A');
+                vovels.add('E');
+                vovels.add('I');
+                vovels.add('O');
+                vovels.add('U');
+        
+        
+                for (int i = 0; i < s.length(); i++){
+                    if (vovels.contains(s.charAt(i))) temp[j++] = i;
+                }
+        
+        
+                for (int i = 0, k = j-1; i < k; i++, k--){
+                    char c = charArray[temp[i]];
+                    charArray[temp[i]] = charArray[temp[k]];
+                    charArray[temp[k]] = c;
+                }
+        
+                return new String(charArray);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My 12ms c++ simple solution
+    class Solution {
+    public:
+        string reverseVowels(string s) {
+            if (s.length() < 2) return s;
+	    string vowels="aeiouAEIOU";
+            int i = 0, j = s.length()-1;
+
+            while (i < j)
+            {
+                while (vowels.find(s[i])==string::npos && i<j) i++;
+                while (vowels.find(s[j])==string::npos && i<j) j--;
+                swap(s[i++],s[j--]);
+            }
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solution
+    class Solution(object):
+        def reverseVowels(self, s):
+            """
+            :type s: str
+            :rtype: str
+            """
+            vowels='aeiouAEIOU'
+            vpos=[i for i,j in enumerate(s) if j in vowels]
+            svrev=list(s)
+            i,j=0,len(vpos)-1
+            while i<j:
+                svrev[vpos[i]],svrev[vpos[j]]=svrev[vpos[j]],svrev[vpos[i]]
+                i+=1
+                j-=1
+            return ''.join(svrev)
+
+----------------------------------------------------------------------------------------------------
+C++ Solution Easy to Understand
+
+
+
+    class Solution {
+    public:
+    	bool isVowel (char c) {
+    		return (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || 
+    		        c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U');
+    	}
+    
+    	string reverseVowels (string s) {
+    		if (s.size() <= 1) return s;
+    		int i = 0, j = s.size() - 1;
+    		while (i < j) {
+    			if (isVowel(s[i]) && isVowel(s[j]))
+    				swap(s[i++], s[j--]);
+    			else {
+    				if (!isVowel(s[i])) ++i;
+    				if (!isVowel(s[j])) --j;
+    			}
+    		}
+    		return s;
+    	}
+    };
+
+
+
+----------------------------------------------------------------------------------------------------

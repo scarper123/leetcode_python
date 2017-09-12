@@ -1,0 +1,465 @@
+C++ 3 lines (unordered_set)
+int d(vector<int>& p1, vector<int>& p2) {
+    return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]);
+}
+bool validSquare(vector<int>& p1, vector<int>& p2, vector<int>& p3, vector<int>& p4) {
+    unordered_set<int> s({ d(p1, p2), d(p1, p3), d(p1, p4), d(p2, p3), d(p2, p4), d(p3, p4) });
+    return !s.count(0) && s.size() == 2;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution - Square distances
+public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+    long[] lengths = {length(p1, p2), length(p2, p3), length(p3, p4),
+            length(p4, p1), length(p1, p3),length(p2, p4)}; // all 6 sides
+
+    long max = 0, nonMax = 0;
+    for(long len : lengths) {
+        max = Math.max(max, len);
+    }
+    int count = 0;
+    for(int i = 0; i < lengths.length; i++) {
+        if(lengths[i] == max) count++;
+        else nonMax = lengths[i]; // non diagonal side.
+    }
+    if(count != 2) return false; // diagonals lenghts have to be same.
+
+    for(long len : lengths) {
+        if(len != max && len != nonMax) return false; // sides have to be same length
+    }
+    return true;
+}
+private long length(int[] p1, int[] p2) {
+    return (long)Math.pow(p1[0]-p2[0],2) + (long)Math.pow(p1[1]-p2[1], 2);
+}
+
+----------------------------------------------------------------------------------------------------
+4 Liner Java
+public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+    HashSet<Integer> hs = new HashSet<>(Arrays.asList(dis(p1, p2), dis(p1, p3), dis(p1, p4), dis(p2, p3), dis(p2, p4), dis(p3, p4)));        
+	 return !hs.contains(0) && hs.size()==2; //One each for side & diagonal
+    }
+    int dis(int[] a, int[] b){
+	 return (a[0]-b[0])*(a[0]-b[0]) + (a[1]-b[1])*(a[1]-b[1]);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my simple Python solution
+class Solution(object):
+    def validSquare(self, p1, p2, p3, p4):
+        points = [p1, p2, p3, p4]
+        
+        dists = collections.Counter()
+        for i in range(len(points)):
+            for j in range(i+1, len(points)):
+                dists[self.getDistance(points[i], points[j])] += 1
+        
+        return len(dists.values())==2 and 4 in dists.values() and 2 in dists.values()
+        
+    def getDistance(self, p1, p2):
+        return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, calculate distance from rest of the points
+public class Solution {
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        if (p1[0] == p2[0] && p1[1] == p2[1]
+            || p1[0] == p3[0] && p1[1] == p3[1]
+            || p1[0] == p4[0] && p1[1] == p4[1]) return false;
+        
+        int d2 = distSq(p1, p2);  // from p1 to p2
+        int d3 = distSq(p1, p3);  // from p1 to p3
+        int d4 = distSq(p1, p4);  // from p1 to p4
+     
+        // If lengths if (p1, p2) and (p1, p3) are same, then
+        // following conditions must met to form a square.
+        // 1) Square of length of (p1, p4) is same as twice
+        //    the square of (p1, p2)
+        // 2) p4 is at same distance from p2 and p3
+        if (d2 == d3 && 2 * d2 == d4) {
+            int d = distSq(p2, p4);
+            return (d == distSq(p3, p4) && d == d2);
+        }
+     
+        // The below two cases are similar to above case
+        if (d3 == d4 && 2 * d3 == d2) {
+            int d = distSq(p2, p3);
+            return (d == distSq(p2, p4) && d == d3);
+        }
+        
+        if (d2 == d4 && 2*d2 == d3) {
+            int d = distSq(p2, p3);
+            return (d == distSq(p3, p4) && d == d2);
+        }
+     
+        return false;
+    }
+    
+    int distSq(int[] p, int[] q) {
+        return (p[0] - q[0])*(p[0] - q[0]) + (p[1] - q[1])*(p[1] - q[1]);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+12ms short Java Solution. No multiplication needed.
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        int[][] p = {p1, p2, p3, p4};
+        for (int i = 0; i < 4; i++) {
+            if (p[i][0] == p[0][0] && p[i][1] < p[0][1] || p[i][0] < p[0][0]) {
+                swap(p, i, 0);
+            }
+            if (p[i][0] == p[3][0] && p[i][1] > p[3][1] || p[i][0] > p[3][0]) {
+                swap(p, i, 3);
+            }
+        }
+        //Arrays.sort(p, (a, b) -> (a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]));
+        int [][] d = new int[4][2];
+        for (int i = 1; i < 4; i++) {
+            for (int j = 0; j < 2; j++) {
+                d[i][j] = p[i][j] - p[0][j];
+            }
+            if (d[i][0] == 0 && d[i][1] == 0) {
+                return false;
+            }
+        }        
+        return d[3][0] == d[1][0] + d[2][0] 
+            && d[3][1] == d[1][1] + d[2][1]
+            && (d[1][0] == d[2][1] && d[2][0] + d[1][1] == 0
+               || d[2][0] == d[1][1] && d[1][0] + d[2][1] == 0);
+    }
+    
+    void swap (int[][] p, int i, int j) {
+        int[] t = p[i];
+        p[i] = p[j];
+        p[j] = t;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java easy to understand  :)
+public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        int d1 = getDist(p1, p2);
+        if (d1 == 0 || d1 != getDist(p3, p4)) return false;
+        int d2 = getDist(p1, p3);
+        if (d2 == 0 || d2 != getDist(p2, p4)) return false;
+        int d3 = getDist(p1, p4);
+        if (d3 == 0 || d3 != getDist(p2, p3)) return false;
+        if (d1 == d2 || d1 == d3 || d2 == d3) return true;
+        return false;
+    }
+    
+    private int getDist(int [] p1, int [] p2) {
+        return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple python solution by comparing distance
+    def validSquare(self, p1, p2, p3, p4):
+        if p1==p2==p3==p4:return False
+        def dist(x,y):
+            return (x[0]-y[0])**2+(x[1]-y[1])**2
+        ls=[dist(p1,p2),dist(p1,p3),dist(p1,p4),dist(p2,p3),dist(p2,p4),dist(p3,p4)]
+        ls.sort()
+        if ls[0]==ls[1]==ls[2]==ls[3]:
+            if ls[4]==ls[5]:
+                return True
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java solution: check 3 points each time
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        return check(p1,p2,p3) && check(p1,p2,p4) && check(p1,p3,p4) && check(p2,p3,p4);
+    }
+    
+    public boolean check(int[] p1, int[] p2, int[] p3) { 
+        int[] vec1 = {p1[0]-p2[0], p1[1]-p2[1]};
+        int[] vec2 = {p1[0]-p3[0], p1[1]-p3[1]};
+        int[] vec3 = {p2[0]-p3[0], p2[1]-p3[1]};
+        
+        return L(vec1,vec2) || L(vec2,vec3) || L(vec1, vec3);
+    }
+    
+    public boolean L(int[] p, int[] q) {
+    // check whether two vector are non-zero, has equal length and can build a vertical corner
+        return p[0]*p[0]+p[1]*p[1]!= 0 && q[0]*q[0]+q[1]*q[1] != 0 &&(p[0]*p[0]+p[1]*p[1] == q[0]*q[0]+q[1]*q[1]) && (p[0]*q[0]+p[1]*q[1] == 0);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using HashMap
+public class Solution {
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        HashMap<Integer, Integer> hm = new HashMap<>();
+        updateHM(p1, p2, p3, p4, hm);
+        updateHM(p2, p3, p4, p1, hm);
+        updateHM(p3, p4, p1, p2, hm);
+        updateHM(p4, p1, p2, p3, hm);
+        if(hm.size() != 2) return false;
+        boolean check_4 = false, check_8 = false;
+        for(Integer key:hm.keySet()) {
+            if(hm.get(key) == 4) check_4 = true;
+            if(hm.get(key) == 8) check_8 = true; 
+        }
+        return check_4&&check_8;
+    }
+    
+    private void updateHM(int[] p1, int[] p2, int[] p3, int[] p4, HashMap<Integer, Integer> hm) {
+        hm.put(getDist(p1, p2), hm.getOrDefault(getDist(p1,p2), 0) + 1);
+        hm.put(getDist(p1, p3), hm.getOrDefault(getDist(p1,p3), 0) + 1);
+        hm.put(getDist(p1, p4), hm.getOrDefault(getDist(p1,p4), 0) + 1);
+    }
+    
+    private int getDist(int[] p1, int[] p2) {
+        return (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;JAVA - 22ms&#93; using HashSet and comparing sides and the diagonal
+public class Solution {
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        Set<Double> dist = new HashSet<Double>();
+        dist.add(getDistance(p1, p2));
+        dist.add(getDistance(p2, p3));
+        dist.add(getDistance(p3, p4));
+        dist.add(getDistance(p4, p1));
+        dist.add(getDistance(p1, p3));
+        dist.add(getDistance(p2, p4));
+        
+        if(dist.size() != 2 ) return false;
+        
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+        
+        for(double d : dist){
+            min = Math.min(min, d);
+            max = Math.max(max, d);
+        }
+        return (Math.abs(Math.sqrt(2*Math.pow(min,2) ) - max) <= 0.0000001) ? true : false;
+    }
+    
+    private double getDistance(int[] p1, int[] p2){
+        return Math.sqrt(Math.pow((p1[0] - p2[0]),2)+Math.pow((p1[1] - p2[1]),2));
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my Python solution
+    def validSquare(self, p1, p2, p3, p4):
+        """
+        :type p1: List[int]
+        :type p2: List[int]
+        :type p3: List[int]
+        :type p4: List[int]
+        :rtype: bool
+        """
+        def fl(p1,p2):
+            return (p1[0]-p2[0])** 2 + (p1[1]-p2[1])** 2
+            
+        length = []
+        length.append(fl(p1,p2))
+        length.append(fl(p1,p3))
+        length.append(fl(p1,p4))
+        length.append(fl(p2,p3))
+        length.append(fl(p2,p4))
+        length.append(fl(p3,p4))
+        a = sorted(length)
+        
+        return len(set(a)) == 2 and len(set(a[:4])) == 1 and len(set(a[4:])) == 1```
+
+----------------------------------------------------------------------------------------------------
+Clean C++ solution with overloaded &#x27;-&#x27; and &#x27;*&#x27; operator.
+vector<int> operator-(const vector<int>& lhs, const vector<int>& rhs) {
+    return {lhs[0] - rhs[0], lhs[1] - rhs[1]};
+}
+int operator*(const vector<int>& lhs, const vector<int>& rhs) {
+    return lhs[0] * rhs[0] + lhs[1] * rhs[1];
+}
+
+class Solution {
+public:
+    bool validateSquare(vector<int>& p1, vector<int>& p2, vector<int>& p3, vector<int>& p4) {
+        return (p1 - p2) * (p1 - p2) != 0                           // the first side is not zero
+            && (p1 - p2) * (p1 - p2) == (p2 - p3) * (p2 - p3)       
+            && (p2 - p3) * (p2 - p3) == (p3 - p4) * (p3 - p4)       // we have three equal non-zero sides.
+            && (p1 - p2) * (p2 - p3) == 0                           // with two more right angle,
+            && (p2 - p3) * (p3 - p4) == 0;                           // a square is guaranteed
+    }
+    bool validSquare(vector<int>& p1, vector<int>& p2, vector<int>& p3, vector<int>& p4) {
+        return validateSquare(p1, p2, p3, p4) || validateSquare(p1, p2, p4, p3) || validateSquare(p1, p3, p2, p4);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My Python Solution
+class Solution(object):
+    def validSquare(self, p1, p2, p3, p4):
+        return not (p1==p2 or p1==p3 or p1==p4 or p2==p3 or p2==p4 or p3==p4) and (self.issquare(p1,p2,p3,p4) or self.issquare(p1,p3,p2,p4) or self.issquare(p1,p4,p2,p3))
+        
+    def issquare(self, p1, p2, p3, p4):
+        return not p1[0]+p2[0]-p3[0]-p4[0] and not p1[1] + p2[1] - p3[1] - p4[1] and not (p1[0]-p2[0])*(p3[0]-p4[0])+(p1[1]-p2[1])*(p3[1]-p4[1]) and (p1[0]-p2[0] == p3[1]-p4[1] or p1[1]-p2[1] == p3[0]-p4[0])
+
+
+
+----------------------------------------------------------------------------------------------------
+JavaScript Straight Forward O(1) Time O(1) Space
+/**
+ * @param {number[]} p1
+ * @param {number[]} p2
+ * @param {number[]} p3
+ * @param {number[]} p4
+ * @return {boolean}
+ */
+var validSquare = function(p1, p2, p3, p4) {
+    function lExp2(q0,q1){
+        return (q0[0]-q1[0])*(q0[0]-q1[0]) + (q0[1]-q1[1])*(q0[1]-q1[1]);
+    }
+    let l1 = lExp2(p1,p2),
+        l2 = lExp2(p1,p3),
+        l3 = lExp2(p1,p4),
+        l4 = lExp2(p2,p3),
+        l5 = lExp2(p2,p4),
+        l6 = lExp2(p3,p4),arr=[l1,l2,l3,l4,l5,l6],ma=0,mi=0;
+    let max = Math.max(l1,l2,l3,l4,l5,l6),min = Math.min(l1,l2,l3,l4,l5,l6);
+    if (max !== 2*min) return false;
+    for(let l of arr){
+        if(l === max) ma++;
+        if(l === min) mi++;
+    }
+    return ma===2&&mi===4;
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple sol
+class Solution {
+public:
+    int dis(vector<int> p,vector<int> q){
+        return pow((p[0]-q[0]),2) + pow((p[1]-q[1]),2);
+    }
+    bool validSquare(vector<int>& p1, vector<int>& p2, vector<int>& p3, vector<int>& p4) {
+        int a[6];
+        a[0]=dis(p1,p2);
+        a[1]=dis(p1,p3);
+        a[2]=dis(p1,p4);
+        a[3]=dis(p2,p3);
+        a[4]=dis(p2,p4);
+        a[5]=dis(p3,p4);
+        sort(a,a+6);
+        if(a[0]!=a[1]||a[0]!=a[2]||a[0]!=a[3]||a[1]!=a[2]||a[1]!=a[3]||a[2]!=a[3]||a[4]!=a[5])
+            return false;
+        if(a[4]!=2*a[0])
+            return false;
+        if(a[0]==0)
+            return false;
+        return true;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy + Clean JAVA solution
+ public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        int p12 = distance(p1, p2);
+        int p13 = distance(p1, p3);
+        int p14 = distance(p1, p4);
+        if(p12 == 0 || p13 == 0 || p14 == 0) return false;
+       
+        if((p12 == (2 * p13)) && p13 == p14 ) { //p12 is diagonal distance
+            return distance(p2, p3) == distance(p2, p4);
+        }
+        
+        else if((p13 == (2 * p12)) && p12 == p14 ) { //p13 is diagonal distance
+            return distance(p4, p3) == distance(p2, p3);
+        }
+        
+        else if((p14 == (2 * p13)) && p13 == p12 ) { //p14 is diagonal distance
+            return distance(p2, p4) == distance(p3, p4);
+        }
+        else return false;
+    }
+    
+    public int distance(int[] p, int[] q) {
+        int x = (p[0] - q[0]) * (p[0] - q[0]);
+        int y = (p[1] - q[1]) * (p[1] - q[1]);
+        return x  + y;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+my python solution
+    def validSquare(self, p1, p2, p3, p4):
+        dist = []
+        ps = [p1, p2, p3, p4]
+        for i in range(4):
+          for j in range(i+1, 4, 1):
+            dist.append((ps[i][0] - ps[j][0])**2 + (ps[i][1] - ps[j][1])**2)
+        return len(set(dist)) == 2 and all(x != 0 for x in dist)
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution
+class Solution(object):
+    def validSquare(self, p1, p2, p3, p4):
+        def dist(p1,p2):
+            return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
+
+        d1 = dist(p1,p2)
+        d2 = dist(p1,p3)
+        d3 = dist(p1,p4)
+        if (p1==p2==p3==p4):
+            return False                       
+        if (d1==d2 and d2*2==d3):           
+            if (dist(p4,p2)==dist(p4,p3)):                
+                return True
+        if (d2==d3 and d3*2==d1):            
+            if (dist(p4,p2)==dist(p2,p3)):               
+                return True
+        if (d3==d1 and d1*2==d2):            
+            if (dist(p4,p3)==dist(p2,p3)):                
+                return True 
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Java diagonals&#x27; three-check solution
+public class Solution {
+    public boolean validSquare(int[] p1, int[] p2, int[] p3, int[] p4) {
+        //only three possible situations
+        if (isPerpen(p1, p2, p3, p4) && isEqual(p1, p2, p3, p4) && isCenter(p1, p2, p3, p4)) return true;
+        if (isPerpen(p1, p3, p2, p4) && isEqual(p1, p3, p2, p4) && isCenter(p1, p3, p2, p4)) return true;
+        if (isPerpen(p1, p4, p2, p3) && isEqual(p1, p4, p2, p3) && isCenter(p1, p4, p2, p3)) return true;
+        return false;
+    }
+    
+   public boolean isPerpen (int[] p1, int[] p2, int[] p3, int[] p4) { //check whether two lines are perpendicular
+       if ((p1[0] - p2[0]) * (p3[0] - p4[0]) + (p1[1] - p2[1]) * (p3[1] - p4[1]) == 0) return true;
+       return false;
+   }
+    
+   public boolean isEqual(int[] p1, int[] p2, int[] p3, int[] p4) {//check whether two lines' lengths are equal
+       if (dist(p1, p2) == dist(p3, p4) && dist(p1, p2) != 0) return true;
+       return false;
+   }
+   
+   public boolean isCenter(int[] p1, int[] p2, int[] p3, int[] p4) {//check whether two lines' centers are equal
+       if (p1[0] + p2[0] == p3[0] + p4[0] && p1[1] + p2[1] == p3[1] + p4[1]) return true;
+       return false;
+   }
+    
+   public int dist (int[] p1, int[] p2) {
+       return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]);
+   } 
+}
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,658 @@
+Three Java Solutions
+Use two hash sets
+
+Time complexity: O(n)
+
+    public class Solution {
+        public int[] intersection(int[] nums1, int[] nums2) {
+            Set<Integer> set = new HashSet<>();
+            Set<Integer> intersect = new HashSet<>();
+            for (int i = 0; i < nums1.length; i++) {
+                set.add(nums1[i]);
+            }
+            for (int i = 0; i < nums2.length; i++) {
+                if (set.contains(nums2[i])) {
+                    intersect.add(nums2[i]);
+                }
+            }
+            int[] result = new int[intersect.size()];
+            int i = 0;
+            for (Integer num : intersect) {
+                result[i++] = num;
+            }
+            return result;
+        }
+    }
+
+
+Sort both arrays, use two pointers
+
+Time complexity: O(nlogn)
+
+    public class Solution {
+        public int[] intersection(int[] nums1, int[] nums2) {
+            Set<Integer> set = new HashSet<>();
+            Arrays.sort(nums1);
+            Arrays.sort(nums2);
+            int i = 0;
+            int j = 0;
+            while (i < nums1.length && j < nums2.length) {
+                if (nums1[i] < nums2[j]) {
+                    i++;
+                } else if (nums1[i] > nums2[j]) {
+                    j++;
+                } else {
+                    set.add(nums1[i]);
+                    i++;
+                    j++;
+                }
+            }
+            int[] result = new int[set.size()];
+            int k = 0;
+            for (Integer num : set) {
+                result[k++] = num;
+            }
+            return result;
+        }
+    }
+
+Binary search
+
+Time complexity: O(nlogn)
+
+    public class Solution {
+        public int[] intersection(int[] nums1, int[] nums2) {
+            Set<Integer> set = new HashSet<>();
+            Arrays.sort(nums2);
+            for (Integer num : nums1) {
+                if (binarySearch(nums2, num)) {
+                    set.add(num);
+                }
+            }
+            int i = 0;
+            int[] result = new int[set.size()];
+            for (Integer num : set) {
+                result[i++] = num;
+            }
+            return result;
+        }
+        
+        public boolean binarySearch(int[] nums, int target) {
+            int low = 0;
+            int high = nums.length - 1;
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                if (nums[mid] == target) {
+                    return true;
+                }
+                if (nums[mid] > target) {
+                    high = mid - 1;
+                } else {
+                    low = mid + 1;
+                }
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms concise C++ using unordered_set
+    class Solution {
+    public:
+        vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+            unordered_set<int> m(nums1.begin(), nums1.end());
+            vector<int> res;
+            for (auto a : nums2)
+                if (m.count(a)) {
+                    res.push_back(a);
+                    m.erase(a);
+                }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python code, 3 lines using set
+    class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        nums1=set(nums1)
+        nums2=set(nums2)
+        return list(nums1&nums2)
+
+        
+
+----------------------------------------------------------------------------------------------------
+5ms Java Using 1 hashset and time complexity of O(m+n)
+    HashSet<Integer> set = new HashSet<Integer>();
+            ArrayList<Integer> res = new ArrayList<Integer>();
+            //Add all elements to set from array 1
+            for(int i =0; i< nums1.length; i++) set.add(nums1[i]);
+            for(int j = 0; j < nums2.length; j++) {
+               // If present in array 2 then add to res and remove from set 
+               if(set.contains(nums2[j])) {
+                    res.add(nums2[j]);
+                    set.remove(nums2[j]);
+                }
+            }
+            // Convert ArrayList to array
+            int[] arr = new int[res.size()];
+            for (int i= 0; i < res.size(); i++) arr[i] = res.get(i);
+            return arr;
+
+----------------------------------------------------------------------------------------------------
+Small C++ solution
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        set<int> s(nums1.begin(), nums1.end());
+        vector<int> out;
+        for (int x : nums2)
+            if (s.erase(x))
+                out.push_back(x);
+        return out;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Four Python solutions with simple explanation
+Solution 1:
+
+use set operation in python, one-line solution.
+
+    class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        return list(set(nums1) & set(nums2))
+
+
+Solution 2:
+
+brute-force searching, search each element of the first list in the second list. (to be more efficient, you can sort the second list and use binary search to accelerate)
+
+    class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        res = []
+        for i in nums1:
+            if i not in res and i in nums2:
+                res.append(i)
+        
+        return res
+
+Solution 3:
+
+use dict/hashmap to record all nums appeared in the first list, and then check if there are nums in the second list have appeared in the map.
+
+    class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        res = []
+        map = {}
+        for i in nums1:
+            map[i] = map[i]+1 if i in map else 1
+        for j in nums2:
+            if j in map and map[j] > 0:
+                res.append(j)
+                map[j] = 0
+        
+        return res
+
+Solution 4:
+
+sort the two list, and use two pointer to search in the lists to find common elements.
+
+    class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        res = []
+        nums1.sort()
+        nums2.sort()
+        i = j = 0
+        while (i < len(nums1) and j < len(nums2)):
+            if nums1[i] > nums2[j]:
+                j += 1
+            elif nums1[i] < nums2[j]:
+                i += 1
+            else:
+                if not (len(res) and nums1[i] == res[len(res)-1]):
+                    res.append(nums1[i])
+                i += 1
+                j += 1
+        
+        return res
+
+----------------------------------------------------------------------------------------------------
+1 line in Python
+    class Solution(object):
+        def intersection(self, nums1, nums2):
+            return list(set(nums1) & set(nums2))
+
+----------------------------------------------------------------------------------------------------
+JavaScript solution with Set
+    function intersection(nums1, nums2) {
+        const set = new Set(nums1);
+        return [...new Set(nums2.filter(n => set.has(n)))];
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ solution with sort
+    class Solution {
+    public:
+        vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+            std::sort(nums1.begin(), nums1.end());
+            std::sort(nums2.begin(), nums2.end());
+            vector<int> ans;
+            int i = 0, j = 0;
+            while (i < nums1.size() && j < nums2.size())
+            {
+                if (nums1[i] < nums2[j])
+                    i++;
+                else if (nums1[i] > nums2[j])
+                    j++;
+                else
+                {
+                    if (!ans.size() || ans.back() != nums1[i])
+                        ans.push_back(nums1[i]);
+                    i++;
+                    j++;
+                }
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ solution using unordered_map O(m + n) time and O(m) space
+    class Solution {
+    public:
+        vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+            
+            unordered_map<int,int> map;
+            vector<int> result;
+            
+            for(int i=0;i<nums1.size();i++)
+            {
+                map[nums1[i]]++;
+            }
+            
+            for(int i=0;i<nums2.size();i++)
+            {
+                if(map[nums2[i]] > 0)
+                {
+                    result.push_back(nums2[i]);
+                    map[nums2[i]] = 0;
+                }
+            }
+            
+            return result;
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ two pointer easy understand solution
+    class Solution {
+    public:
+        vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+            sort(nums1.begin(), nums1.end());
+            sort(nums2.begin(), nums2.end());
+            int n1 = (int)nums1.size(), n2 = (int)nums2.size();
+            int i1 = 0, i2 = 0;
+            vector<int> res;
+            while(i1 < n1 && i2 < n2){
+                if(nums1[i1] == nums2[i2]) {
+                    res.push_back(nums1[i1]);
+                    i1++;
+                    i2++;
+                }
+                else if(nums1[i1] > nums2[i2]){
+                    i2++;
+                }
+                else{
+                    i1++;
+                }
+                while(i1 > 0 && i1 < n1 && nums1[i1] == nums1[i1 - 1]) i1++;
+                while(i2 > 0 && i2 < n2 && nums2[i2] == nums2[i2 - 1]) i2++;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Ruby wins this one
+    def intersection(nums1, nums2)
+      nums1 & nums2
+    end
+
+----------------------------------------------------------------------------------------------------
+Java 6ms O(n+m) Solution with two Hashset
+The problem asks us to find the same integers in both arrays and return a non-duplicate result array.
+
+    public int[] intersection(int[] nums1, int[] nums2) {
+    		if (nums1.length == 0 || nums2.length == 0)
+    			return new int[0];
+    		Set<Integer> set = new HashSet<>();
+    		Set<Integer> result = new HashSet<>();
+    		for (int i = 0; i < nums2.length; i++) {
+    			set.add(nums2[i]);
+    		}
+    		for (int i = 0; i < nums1.length; i++) {
+    			if (set.contains(nums1[i])) {
+    				result.add(nums1[i]);
+    			}
+    		}
+    		int[] intersection = new int[result.size()];
+    		int j = 0;
+    		Iterator<Integer> it = result.iterator();
+    		while(it.hasNext()) {
+    			intersection[j] = it.next();
+    			j++;
+    		}
+    		return intersection;	
+    	}
+
+----------------------------------------------------------------------------------------------------
+My C++ Solutions using set and unordered_set
+Using set 20ms
+
+    class Solution {
+    public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        set<int> st1(nums1.begin(),nums1.end());
+        set<int> st2(nums2.begin(),nums2.end());
+        set<int> intersection; 
+        set_intersection(st1.begin(),st1.end(), st2.begin(), st2.end(), inserter(intersection, intersection.end())); 
+        return vector<int>(intersection.begin(),intersection.end());
+    }
+    };
+
+Using unordered_set 12ms
+
+    class Solution {
+    public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> st1(nums1.begin(),nums1.end());
+        unordered_set<int> st2(nums2.begin(),nums2.end());
+        vector<int> ret;
+        for(const auto & x:st1)
+            if(st2.count(x))
+                ret.push_back(x);
+        return ret;
+    }
+    };
+
+Using unordered_set 12ms
+
+    class Solution {
+    public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> st(nums1.begin(),nums1.end());
+        vector<int> ret;
+        for(const auto & x:nums2)
+            if(st.count(x))
+            {
+                ret.push_back(x);
+                st.erase(x);
+            }
+        return ret;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Two different solutions in C, well-commented
+    //AC - 12ms;
+    #define MIN(a, b) ((a) < (b) ? (a) : (b))
+    int* intersection(int* nums1, int size1, int* nums2, int size2, int* returnSize)
+    {
+        int size = MIN(size1, size2);
+        int *arr = (int*)malloc(sizeof(int)*(size));
+        int top = -1;
+        for(int i = 0; i < size1; i++) //check each element in nums1;
+        {
+            int j = 0;
+            for(; j < size2; j++) //check whether the nums[i] in array nums2;
+                if(nums1[i] == nums2[j]) break;
+            if(j < size2)
+            {
+                j = 0;
+                for(; j <= top; j++) //avoid duplicate;
+                    if(arr[j] == arr[i]) break;
+                if(j > top)
+                    arr[++top] = arr[i];
+            }
+        }
+        *returnSize = top+1;
+        return arr;
+    }
+
+
+----------
+
+
+    #define MIN(a, b) ((a) < (b) ? (a) : (b))    
+    void swap(int* p, int* q)
+    {
+        int t=*p; *p=*q; *q=t;
+    }
+    
+    //Quick sort;
+    void sort(int* nums, int begin, int end)
+    {
+        int l = begin, r = end;
+        int v = nums[l+(r-l)/2];
+        while(l <= r)
+        {
+            while(nums[l] < v) l++;
+            while(nums[r] > v) r--;
+            if(l <= r)
+            {
+                swap(nums+l, nums+r);
+                l++, r--;
+            }
+        }
+        if(begin < r)
+            sort(nums, begin, r);
+        if(l < end)
+            sort(nums, l, end);
+    }
+    
+    //AC - 4ms - using two pointers;
+    int* intersection(int* nums1, int size1, int* nums2, int size2, int* returnSize)
+    {
+        sort(nums1, 0, size1-1);
+        sort(nums2, 0, size2-1);
+        int size = MIN(size1, size2);
+        int* arr = (int*)malloc(sizeof(int)*size); //the size of the result will at most be size;
+        int top = -1;
+        int p1=0, p2=0;
+        while(p1<size1 && p2<size2)
+        {
+            if(nums1[p1] > nums2[p2]) p2++;
+            else if(nums1[p1] < nums2[p2]) p1++;
+            else //only collect the equal one;
+            {
+                if(top==-1 || arr[top]!=nums1[p1])  //avoid duplicates;
+                    arr[++top] = nums1[p1];
+                p1++, p2++;
+            }
+        }
+        *returnSize = top+1;
+        return arr;
+    }
+
+----------------------------------------------------------------------------------------------------
+Two lines Python code
+class Solution(object):
+    def intersection(self, nums1, nums2):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :rtype: List[int]
+        """
+        if not nums1 or not nums2: return []
+        return list(set(nums1 + nums2) - (set(nums1) - set(nums2)) - (set(nums2) - set(nums1)))
+
+
+----------------------------------------------------------------------------------------------------
+Share my 7ms JAVA solution using  hashset
+    public class Solution {
+        public int[] intersection(int[] nums1, int[] nums2) {
+            HashSet<Integer> set1 = new HashSet();
+            HashSet<Integer> res = new HashSet();
+            for(int num:nums1){
+                set1.add(num);
+            }
+            for(int num:nums2){
+                if(set1.contains(num)){
+                    res.add(num);
+                    
+                }
+            }
+            int i = 0;
+            int[] ans = new int[res.size()];
+            for(int num:res){
+                ans[i++] = num;
+            }
+            return ans;
+        }
+    }
+
+O(n) space O(n) time complexity
+
+----------------------------------------------------------------------------------------------------
+One line code in Java using lambda
+    return Arrays.stream(nums1).distinct().filter(p->{return Arrays.stream(nums2).anyMatch(q->{return q==p;});}).toArray();
+
+----------------------------------------------------------------------------------------------------
+Several Java solutions with explanation
+Solution using Java Collections
+
+ 1. Convert first array to the set
+ 2. Convert second array to the set
+ 3. Use retainAll to find set intersection
+ 4. Convert intersection set to array
+
+        // O(max(n, m)) time, O(n + m) space
+        public int[] intersection(int[] nums1, int[] nums2) {
+          Set<Integer> a = new HashSet<>(Arrays.stream(nums1).boxed().collect(Collectors.toList()));
+          Set<Integer> b = new HashSet<>(Arrays.stream(nums2).boxed().collect(Collectors.toList()));
+          a.retainAll(b);
+          return a.stream().mapToInt(Integer::intValue).toArray();
+        }
+
+
+Solution sing sorting
+
+ 1. Sort first array
+ 2. Sort second array
+ 3. Use two pointers to traverse first and second sorted arrays
+ 4. If first pointer points to bigger value - move the second pointer
+ 5. If second pointer points to bigger value - move the first pointer
+ 6. If pointers point to equal values add it to result array and move both pointers to the next distinct value
+ 7. Repeate 4-6 until any pointer reaches the end of array
+ 8. Shrink the size of intersection array to remove unused space
+
+        // O(max(n, m) log max(n, m)) time, O(min(n, m)) space
+        public int[] intersection(int[] nums1, int[] nums2) {
+          Arrays.sort(nums1);
+          Arrays.sort(nums2);
+          int[] intersect = new int[Math.min(nums1.length, nums2.length)];
+          int i = 0;
+          for (int p1 = 0, p2 = 0; p1 < nums1.length && p2 < nums2.length;) {
+            while (p1 < nums1.length && nums1[p1] < nums2[p2]) {
+              p1++;
+            }
+            while (p1 < nums1.length && p2 < nums2.length && nums1[p1] > nums2[p2]) {
+              p2++;
+            }
+            if (p1 < nums1.length && p2 < nums2.length && nums1[p1] == nums2[p2]) {
+              intersect[i++] = nums1[p1];
+              while (p1 < nums1.length && nums1[p1] == intersect[i-1]) {
+                  p1++;
+              }
+              while (p2 < nums2.length && nums2[p2] == intersect[i-1]) {
+                  p2++;
+              }
+            }
+          }                
+          int[] result = new int[i];
+          for (; i-1 >= 0; i--) {
+            result[i-1] = intersect[i-1];
+          }
+          return result;
+        }
+
+Brute-force solution
+
+ 1. For each element in first array traverse second array
+ 2. While traversing second array check for values match
+ 3. If there is a match check if it is unique by traversing intersection array
+ 4. If match is unique add it to intersection array.
+ 5. Shrink intersection array
+
+        // nums1.length = n, nums2.length = m
+        // O (n * m * min(n, m)) time, O(min(n, m)) space
+        public int[] intersection(int[] nums1, int[] nums2) {
+          int[] intersect = new int[Math.min(nums1.length, nums2.length)];
+          int index = 0;
+          for (int i = 0; i < nums1.length; i++) {
+            for (int j = 0; j < nums2.length; j++) {
+              if (nums1[i] == nums2[j]) {
+                boolean isUnique = true;
+                for (int k = 0; k < index; k++) {
+                  if (nums1[i] == intersect[k]) {
+                    isUnique = false;
+                  }
+                }
+                if (isUnique) {
+                  intersect[index++] = nums1[i];   
+                }
+              }
+            }
+          }
+          int[] result = new int[index];
+          for (; index-1 >= 0; index--) {
+            result[index-1] = intersect[index-1];
+          }
+          return result;
+        }
+
+----------------------------------------------------------------------------------------------------
+O(N) simple solution in Java using HashSets
+    public int[] intersection(int[] nums1, int[] nums2) {
+            HashSet<Integer> set = new HashSet<>();
+            HashSet<Integer> inter = new HashSet<>();
+            for(int i = 0 ; i < nums1.length ; i++)
+                set.add(nums1[i]);
+            for(int i = 0 ; i < nums2.length ; i++){
+                if(set.contains(nums2[i]))
+                    inter.add(nums2[i]); // only add unique elements common to both
+            }
+            int[] result = new int[inter.size()];
+            int count = 0;
+            for(Integer in : inter)
+                result[count++] = in;
+                
+            return result;
+        }
+
+----------------------------------------------------------------------------------------------------

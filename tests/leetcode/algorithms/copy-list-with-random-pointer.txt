@@ -1,0 +1,763 @@
+Short but recursive Java code with comments
+Hi, guys!
+Despite the fact that the approach is recursive, the code is less than 20 lines. :)
+
+    public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode curr = head;
+        int count = 0;
+        while (curr != null && count != k) { // find the k+1 node
+            curr = curr.next;
+            count++;
+        }
+        if (count == k) { // if k+1 node is found
+            curr = reverseKGroup(curr, k); // reverse list with k+1 node as head
+            // head - head-pointer to direct part, 
+            // curr - head-pointer to reversed part;
+            while (count-- > 0) { // reverse current k-group: 
+                ListNode tmp = head.next; // tmp - next head in direct part
+                head.next = curr; // preappending "direct" head to the reversed list 
+                curr = head; // move head of reversed part to a new node
+                head = tmp; // move "direct" head to the next node in direct part
+            }
+            head = curr;
+        }
+        return head;
+    }
+
+Hope it helps!
+
+----------------------------------------------------------------------------------------------------
+Share my Java Solution with comments in line
+      
+      public class Solution {
+            public ListNode reverseKGroup(ListNode head, int k) {
+                if (head==null||head.next==null||k<2) return head;
+        
+                ListNode dummy = new ListNode(0);
+                dummy.next = head;
+                
+                ListNode tail = dummy, prev = dummy,temp;
+                int count;
+                while(true){
+                    count =k;
+                    while(count>0&&tail!=null){
+                        count--;
+                        tail=tail.next;
+                    } 
+                    if (tail==null) break;//Has reached the end
+                    
+        
+                    head=prev.next;//for next cycle
+                // prev-->temp-->...--->....--->tail-->....
+                // Delete @temp and insert to the next position of @tail
+                // prev-->...-->...-->tail-->head-->...
+                // Assign @temp to the next node of @prev
+                // prev-->temp-->...-->tail-->...-->...
+                // Keep doing until @tail is the next node of @prev
+                    while(prev.next!=tail){
+                        temp=prev.next;//Assign
+                        prev.next=temp.next;//Delete
+                        
+                        temp.next=tail.next;
+                        tail.next=temp;//Insert
+                        
+                    }
+                    
+                    tail=head;
+                    prev=head;
+                    
+                }
+                return dummy.next;
+                
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+20-line iterative C++ solution
+    -1 -> 1 -> 2 -> 3 -> 4 -> 5
+     |    |    |    | 
+    pre  cur  nex  tmp
+
+    -1 -> 2 -> 1 -> 3 -> 4 -> 5
+     |         |    |    | 
+    pre       cur  nex  tmp
+
+    -1 -> 3 -> 2 -> 1 -> 4 -> 5
+     |              |    |    | 
+    pre            cur  nex  tmp
+
+
+Above is how it works inside one group iteration(for example, k=3)
+
+    class Solution {
+    public:
+        ListNode *reverseKGroup(ListNode *head, int k) {
+            if(head==NULL||k==1) return head;
+            int num=0;
+            ListNode *preheader = new ListNode(-1);
+            preheader->next = head;
+            ListNode *cur = preheader, *nex, *tmp, *pre = preheader;
+            while(cur = cur->next) 
+                num++;
+            while(num>=k) {
+                cur = pre->next;
+                nex = cur->next;
+                for(int i=1;i<k;i++) {
+                    tmp= nex->next;
+                    nex->next = pre->next;
+                    pre->next = nex;
+                    cur->next = tmp;
+                    nex = tmp;
+                }
+                pre = cur;
+                num-=k;
+            }
+            return preheader->next;
+        }
+    };
+
+Thanks to ciaoliang1992, the tmp pointer is no necessary, so the more concise solution is 
+
+    class Solution {
+    public:
+        ListNode *reverseKGroup(ListNode *head, int k) {
+            if(head==NULL||k==1) return head;
+            int num=0;
+            ListNode *preheader = new ListNode(-1);
+            preheader->next = head;
+            ListNode *cur = preheader, *nex, *pre = preheader;
+            while(cur = cur->next) 
+                num++;
+            while(num>=k) {
+                cur = pre->next;
+                nex = cur->next;
+                for(int i=1;i<k;++i) {
+                    cur->next=nex->next;
+                    nex->next=pre->next;
+                    pre->next=nex;
+                    nex=cur->next;
+                }
+                pre = cur;
+                num-=k;
+            }
+            return preheader->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ Elegant and Small
+    class Solution 
+    {
+    public:
+        
+        ListNode* reverse(ListNode* first, ListNode* last)
+        {
+            ListNode* prev = last;
+            
+            while ( first != last )
+            {
+                auto tmp = first->next;
+                first->next = prev;
+                prev = first;
+                first = tmp;
+            }
+            
+            return prev;
+        }
+        
+        ListNode* reverseKGroup(ListNode* head, int k) 
+        {
+            auto node=head;
+            for (int i=0; i < k; ++i)
+            {
+                if ( ! node  )
+                    return head; // nothing to do list too sort
+                node = node->next;
+            }
+    
+            auto new_head = reverse( head, node);
+            head->next = reverseKGroup( node, k);
+            return new_head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Non-recursive Java solution and idea
+Reference: 
+http://www.cnblogs.com/lichen782/p/leetcode_Reverse_Nodes_in_kGroup.html
+
+First, build a function reverse() to reverse the ListNode between begin and end. See the explanation below:
+
+       /**
+         * Reverse a link list between begin and end exclusively
+         * an example:
+         * a linked list:
+         * 0->1->2->3->4->5->6
+         * |           |   
+         * begin       end
+         * after call begin = reverse(begin, end)
+         * 
+         * 0->3->2->1->4->5->6
+         *          |  |
+         *      begin end
+         * @return the reversed list's 'begin' node, which is the precedence of node end
+         */
+
+Then walk thru the linked list and apply reverse() iteratively. See the code below.
+
+    public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode begin;
+        if (head==null || head.next ==null || k==1)
+        	return head;
+        ListNode dummyhead = new ListNode(-1);
+        dummyhead.next = head;
+        begin = dummyhead;
+        int i=0;
+        while (head != null){
+        	i++;
+        	if (i%k == 0){
+        		begin = reverse(begin, head.next);
+        		head = begin.next;
+        	} else {
+        		head = head.next;
+        	}
+        }
+        return dummyhead.next;
+        
+    }
+    
+    public ListNode reverse(ListNode begin, ListNode end){
+    	ListNode curr = begin.next;
+    	ListNode next, first;
+    	ListNode prev = begin;
+    	first = curr;
+    	while (curr!=end){
+    		next = curr.next;
+    		curr.next = prev;
+    		prev = curr;
+    		curr = next;
+    	}
+    	begin.next = prev;
+    	first.next = curr;
+    	return first;
+    }
+
+----------------------------------------------------------------------------------------------------
+Succinct iterative Python, O(n) time O(1) space
+Use a dummy head, and
+
+l, r :          define reversing range
+
+pre, cur :  used in reversing, standard reverse linked linked list method
+
+jump :      used to connect last node in previous k-group to first node in following k-group
+
+    def reverseKGroup(self, head, k):
+        dummy = jump = ListNode(0)
+        dummy.next = l = r = head
+        
+        while True:
+            count = 0
+            while r and count < k:   # use r to locate the range
+                r = r.next
+                count += 1
+            if count == k:  # if size k satisfied, reverse the inner linked list
+                pre, cur = r, l
+                for _ in range(k):
+                    cur.next, cur, pre = pre, cur.next, cur  # standard reversing
+                jump.next, jump, l = pre, l, r  # connect two k-groups
+            else:
+                return dummy.next
+
+----------------------------------------------------------------------------------------------------
+24ms Easy C++ Iterative Solution with Explanations
+Well, since the `head` pointer may also be modified, we create a `new_head` that points to it to facilitate the reverse process. 
+
+For the example list `1 -> 2 -> 3 -> 4 -> 5` in the problem statement, it will become `0 -> 1 -> 2 -> 3 -> 4 -> 5` (we init `new_head -> val` to be `0`). Then we set a pointer `pre` to `new_head` and another `cur` to `head`. Then we insert `cur -> next` after `pre` for `k - 1` times if the current node `cur` has at least `k` nodes after it (including itself). After reversing one `k`-group, we update `pre` to be `cur` and `cur` to be `pre -> next` to reverse the next `k`-group. 
+ 
+The code is as follows.
+
+    class Solution { 
+    public: 
+        ListNode* reverseKGroup(ListNode* head, int k) {
+            if (!hasKNodes(head, k)) return head;
+            ListNode* new_head = new ListNode(0);
+            new_head -> next = head;
+            ListNode* pre = new_head;
+            ListNode* cur = head;
+            while (hasKNodes(cur, k)) {
+                for (int i = 0; i < k - 1; i++) {
+                    ListNode* temp = pre -> next;
+                    pre -> next = cur -> next;
+                    cur -> next = cur -> next -> next;
+                    pre -> next -> next = temp; 
+                }
+                pre = cur;
+                cur = pre -> next;
+            }
+            return new_head -> next;
+        }
+    private:
+        bool hasKNodes(ListNode* node, int k) {
+            int cnt = 0;
+            while (node) {
+                cnt++;
+                if (cnt >= k) return true;
+                node = node -> next;
+            }
+            return false; 
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java O(n) elegant code solution
+  why use while(true) loop? We don't know if there is k nodes left out in advance. So we advance tail for k steps to check for that. If there is no k nodes, the program exits from there.
+
+ 
+
+     public class Solution {
+            public ListNode reverseKGroup(ListNode head, int k) {
+                if (k <= 1 || head == null || head.next == null)
+                    return head;
+                ListNode newHead = new ListNode(0);
+                newHead.next = head;
+                ListNode prev, start, then, tail;
+                tail = prev = newHead;
+                start = prev.next;
+                while (true) {
+                    // check if there's k nodes left-out
+                    for (int i = 0; i < k; i++) {
+                        tail = tail.next;
+                        if (tail == null)
+                            return newHead.next;
+                    }
+                    // reverse k nodes
+                    for (int i = 0; i < k - 1; i++) {
+                        then = start.next;
+                        start.next = then.next;
+                        then.next = prev.next;
+                        prev.next = then;
+                    }
+                    tail = prev = start;
+                    start = prev.next;
+                }
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution, one pass, no additional space, 109ms
+The key idea is to keep track of the `next_head` while reversing the group, `tail` of the current group is always the start node of the group, once the group reversing is done, `next_head` is available, simply connect it to `tail`. 
+
+     
+    def reverseKGroup(self, head, k):
+        if head is None or k < 2:
+            return head
+        
+        next_head = head
+        for i in range(k - 1):
+            next_head = next_head.next
+            if next_head is None:
+                return head
+        ret = next_head
+        
+        current = head
+        while next_head:
+            tail = current
+            prev = None
+            for i in range(k):
+                if next_head:
+                    next_head = next_head.next
+                _next = current.next
+                current.next = prev
+                prev = current
+                current = _next
+            tail.next = next_head or current
+                
+        return ret
+
+----------------------------------------------------------------------------------------------------
+4ms C Solution O(n) time and O(1) space
+Use a scout pointer to scan ahead. Once scout has passed k nodes, reverse this chain of k nodes just passed by scout. Initially, both first and current point to the beginning node of this chain. As each node in the chain following current is placed to the beginning of the chain, first is adjusted to always point to the beginning of the chain, while current moves down the chain (since nodes are placed before it). (k-1) nodes need to be moved during each chain reversing. The reversed chain is connected to the previous node (which always points to the one node before the just reversed chain). current (which points to the end of the chain now) is moved forward to the place of scout, count is reset to 0, and scout can now resume scanning forward. : )
+
+    struct ListNode* reverseKGroup(struct ListNode* head, int k) {
+        
+        struct ListNode *current, *previous, *scout;
+        int count;
+        
+        scout = current = head;
+        previous = NULL;
+        count = 0;
+    
+        while (scout) {
+            
+            ++count;
+    
+            if (k > 1 && count == k) {
+                
+                scout = scout->next;
+                struct ListNode *first, *following;
+                first = current;
+                
+                while (count-- > 1) {
+                    
+                    following = current->next;
+                    current->next = following->next;
+                    following->next = first;
+                    first = following;
+                }
+                
+                if (previous)
+                    previous->next = first;
+                else
+                    head = first;
+                    
+                previous = current;
+                current = scout;
+                count = 0;
+            }
+            else
+                scout = scout->next;
+        }
+        
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Short recursive java solution
+    public class Solution {
+           
+       public  ListNode reverse(ListNode head, ListNode end){
+    	       if(head==null || head.next==null || head==end || head.next==end) return head;
+    	       ListNode sec = head.next;
+    	       ListNode rem = reverse(sec,end);
+    	       sec.next =head; head.next=null;
+    	       return rem;
+    	   }
+    	    public  ListNode reverseKGroup(ListNode head, int k) {
+    	        ListNode curr = head; int count = 0;
+    	        while (curr != null && count != k) {
+    	            curr = curr.next;count++;
+    	        }
+    	        if (count == k) {
+    	            ListNode temp = reverseKGroup(curr, k);
+    	            ListNode t = reverse(head,curr);
+    	            head.next = temp;
+    	            return t;
+    	        }
+    	        return head;
+    	    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Is there any better C++ code?
+ Thanks for  luming.zhang.75  give the excellent code. I try to change a little.
+
+     /**********************
+     * author : s2003zy
+     * weibo  : weibo.com/songzy982
+     * blog   : s2003zy.com
+     **********************/
+    class Solution {
+    public:
+        ListNode *reverseKGroup(ListNode *head, int k) {
+            if (!head || k == 1) return head;
+            int listLen = 0;
+            ListNode preHead(0);
+            preHead.next = head;
+            ListNode* cur = &preHead, *pre = &preHead, *next = NULL;
+            while (cur = cur -> next) listLen++;
+            while (listLen >= k) {
+                cur = pre -> next;
+                next = cur -> next;
+                for (int i = 0; i < k - 1; i++) {
+                    cur -> next = next -> next;
+                    next -> next = pre -> next;
+                    pre -> next = next;
+                    next = cur -> next;
+                }
+                pre = cur;
+                listLen -= k;
+            }
+            return preHead.next;
+        }
+
+};
+
+
+----------------------------------------------------------------------------------------------------
+My simple c++ solution
+    class Solution {
+    public:
+    int length(ListNode * node){
+        int count=0;
+        while(node){
+            count++;
+            node=node->next;
+        }
+        return count;
+    }
+    ListNode* reverseKGroup(ListNode* head, int k) {
+       if(length(head) < k)return head;
+       ListNode * cur=head;
+       ListNode * prev=NULL, *next=NULL;
+       while(int i=0; i < k; i++){
+           next=cur->next;
+           cur->next=prev;
+           prev=cur;
+           cur=next;
+       }
+       head->next=reverseKGroup(cur, k);
+       return prev;
+     }
+    };
+
+----------------------------------------------------------------------------------------------------
+My recursive c++ solution, easy to understand
+class Solution {
+
+public:
+
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        ListNode* temp = head;
+        for (int i=1; i<k; i++){
+            if (!temp) return head;
+            temp = temp->next;
+        }
+        ListNode* pre = NULL;
+        if (!temp) return head;
+        else pre = reverseKGroup(temp->next, k);
+        ListNode* cur = head;
+        ListNode* next;
+        //reverse k nodes
+        for (int i=1; i<k; i++){
+            next = cur->next;
+            cur->next = pre;
+            pre = cur;
+            cur = next;
+        }
+        cur->next = pre;
+        return cur;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Simple Java iterative solution with explanation
+The basic idea is  for each step,we set the the node after `head` as the list's new head, so that `head` then is `tail`. After reversing k nodes, we update the references and iterate through the whole list. If the size of the list is a multiple of k, the list is safely returned. Otherwise, a recursive call is made on the left-out nodes to undo the reverse.  So the whole iteration times will be `(n + n%k)`
+
+ Here is an example of how it works(case of K = 3):
+
+Initial:
+
+    sentinel -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 ->...
+        |       |    |
+      dummy    tail newHead   
+Set the node after tail @newHead as the new head. And the list:
+
+    sentinel -> 2 -> 1 -> 3 -> 4 -> 5 -> 6 ->...
+        |            |    |
+      dummy        tail newHead
+Set node after tail as new Head:
+    
+     sentinel -> 3 -> 2 -> 1 -> 4 -> 5 -> 6 ->...
+        |                  |
+      dummy               tail   
+3 nodes are reversed. Update the references:
+
+    sentinel -> 3 -> 2 -> 1 -> 4 -> 5 -> 6 ->...
+                          |    |    |
+                        dummy tail newHead   
+
+Here is code:
+
+    public ListNode reverseKGroup(ListNode head, int k) {
+        if (k < 2 || head == null) return head;
+        ListNode sentinel = new ListNode(0);
+        sentinel.next = head;
+        ListNode dummy = sentinel, tail = head, newHead;
+        While (true) {
+            int count = k - 1;
+            while (count > 0) {
+                if (tail.next != null) {
+                    newHead = tail.next;
+                    tail.next = newHead.next;
+                    newHead.next = dummy.next;
+                    dummy.next = newHead;
+                    count--;
+                } else { 
+                    /// list size is not multiple of k, a recursive call on the left-out nodes to undo the reverse
+                    dummy.next = reverseKGroup(dummy.next, k - count);
+                    return sentinel.next;
+                }
+            }
+            if (tail.next == null) return sentinel.next; /// list size is multiple of k, safely return
+            dummy = tail;
+            tail = tail.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+I think my recursive c++ solution is easy to understand
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        if(k <= 1 || !head || !head->next)
+            return head;
+        int l = k;
+        ListNode* t = head;
+        l--;
+        while(t->next && l){                     
+            t = t->next;
+            l--;
+        }
+        if(l == 0){                                         //if not, return the original sequence
+            l=k-1;
+            ListNode* pre = head;
+            ListNode *cur, *temp;
+            while(head->next && l){                         //reverse linked list
+                cur = head->next;
+                temp = cur->next;
+                cur->next = pre;
+                pre = head->next;
+                head->next = temp;
+                l--;
+            }
+            head->next = reverseKGroup(temp, k);
+            return cur;
+        }
+        else
+            return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why {1,2} 3 expected {1,2}?
+Does anyone know how to deal with k > length of the list?
+
+----------------------------------------------------------------------------------------------------
+My cpp solution for Reverse Nodes In k-Group
+    /**
+     * Definition for singly-linked list.
+     * struct ListNode {
+     *     int val;
+     *     ListNode *next;
+     *     ListNode(int x) : val(x), next(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        ListNode* reverseKGroup(ListNode* head, int k) {
+    			if ( !head || !(head->next) || k<2 ) return head;
+    			ListNode dummy(-1);
+    			dummy.next = head;
+    			ListNode *beginK = &dummy;
+    			ListNode *endK = &dummy;
+    			while ( true )
+    			{
+    				// move forward k steps
+    				for ( size_t i = 0; i < k && endK; ++i ) {endK = endK->next;}
+    				// check if already move to the end of linked list
+    				if (!endK) break;
+    				// reverse from beginK to endK
+    				ListNode *curr = beginK->next;
+    				for ( size_t i = 0; i < k-1; ++i )
+    				{
+    					ListNode *tmp = curr->next;
+    					curr->next = tmp->next;
+    					tmp->next = beginK->next;
+    					beginK->next = tmp;
+    				}
+    				beginK = curr;
+    				endK = curr;
+    			}
+    			return dummy.next;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand C++ solution
+The idea is to take k items from main list, reverse them and join to the new list. thats all. And dont forget about leftovers.
+
+    class Solution {
+    public:
+        ListNode* reverseKGroup(ListNode* head, int k)
+        {
+            // Count size of the original list
+            int size = 0;
+            ListNode *tmp = head;
+            while (tmp != NULL)
+            {
+                tmp = tmp->next;
+                ++size;
+            }
+            
+            // make sure we need to do anything :)
+            if (k > size)
+                return head;
+            
+            // these are the pointers to the final list that we a building
+            ListNode *newHead = NULL;
+            ListNode *newTail = NULL;
+            
+            // main cycle. While we need to reverse anything
+            while (size >= k)
+            {
+                // build a short reversed list that will contain k items ready to be joined the final list.
+                ListNode *grHead = NULL;
+                for (int i=0; i<k; ++i)
+                {
+                    ListNode *item = head;
+                    head = head->next;
+                    --size;
+                    item->next = grHead;
+                    grHead = item;
+                }
+                // note after building reversed we move head as well and reduce size.
+                
+                // join group (reversed) list to the final list
+                if (newHead == NULL)
+                {
+                    newHead = grHead;
+                    newTail = grHead;
+                }
+                else
+                {
+                    newTail->next = grHead;
+                }
+                
+                // newTail will point to the group of a k items. move it to the end
+                while (newTail->next != NULL)
+                    newTail = newTail->next;
+            }
+            
+            // in case original list has leftovers. it may occur if we have list size 5 and k = 3. 2 last items needs to be joined too
+            if (head != NULL)
+                newTail->next = head;
+            
+            return newHead;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Non recursive solution, easy understand.68 ms
+
+    # pre alway point the last one in previous KGoup. 
+    # Constant insert cur kGroup's node after it.
+    class Solution(object): 
+    def reverseKGroup(self, head, k):
+        pre, pre.next = self, head
+        while self.needReverse(head, k):
+            tail = head  # 1st one in cur KGroup
+            for _ in xrange(k):
+                pre.next, head.next, head = head, pre.next, head.next
+            pre = tail  # now, it become the last one in previous KGroup 
+        pre.next = head  #maybe there are some rest node.
+        return self.next
+        
+    def needReverse(self, head, k):
+        while head and k:
+            k -= 1
+            head = head.next
+        return k == 0
+
+    # 68 ms, 81 / 81 test cases passed.
+    # beats 84.43% of python submissions.
+
+----------------------------------------------------------------------------------------------------

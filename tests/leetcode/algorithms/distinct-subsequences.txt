@@ -1,0 +1,454 @@
+Is this Algorithm optimal or what?
+    public class Solution {
+        public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+            ListNode c1 = l1;
+            ListNode c2 = l2;
+            ListNode sentinel = new ListNode(0);
+            ListNode d = sentinel;
+            int sum = 0;
+            while (c1 != null || c2 != null) {
+                sum /= 10;
+                if (c1 != null) {
+                    sum += c1.val;
+                    c1 = c1.next;
+                }
+                if (c2 != null) {
+                    sum += c2.val;
+                    c2 = c2.next;
+                }
+                d.next = new ListNode(sum % 10);
+                d = d.next;
+            }
+            if (sum / 10 == 1)
+                d.next = new ListNode(1);
+            return sentinel.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;c++&#93; Sharing my 11-line c++ solution, can someone make it even more concise?
+    ListNode *addTwoNumbers(ListNode *l1, ListNode *l2) {
+        ListNode preHead(0), *p = &preHead;
+        int extra = 0;
+        while (l1 || l2 || extra) {
+            int sum = (l1 ? l1->val : 0) + (l2 ? l2->val : 0) + extra;
+            extra = sum / 10;
+            p->next = new ListNode(sum % 10);
+            p = p->next;
+            l1 = l1 ? l1->next : l1;
+            l2 = l2 ? l2->next : l2;
+        }
+        return preHead.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+My accepted Java solution
+Two things to make the code simple:
+
+ 1. Whenever one of the two *ListNode* is null, replace it with 0.
+ 2. Keep the while loop going when at least one of the three conditions is met.
+
+Let me know if there is something wrong. Thanks.
+
+    public class Solution {
+        public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+            ListNode prev = new ListNode(0);
+            ListNode head = prev;
+            int carry = 0;
+            while (l1 != null || l2 != null || carry != 0) {
+                ListNode cur = new ListNode(0);
+                int sum = ((l2 == null) ? 0 : l2.val) + ((l1 == null) ? 0 : l1.val) + carry;
+                cur.val = sum % 10;
+                carry = sum / 10;
+                prev.next = cur;
+                prev = cur;
+                
+                l1 = (l1 == null) ? l1 : l1.next;
+                l2 = (l2 == null) ? l2 : l2.next;
+            }
+            return head.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Don&#x27;t understand the question
+Look at the example input : (2->4->3)+(5->6->4), why the output is the single link list 7->0->8. How do those numbers calculated?
+
+----------------------------------------------------------------------------------------------------
+Clear python code, straight forward
+    class Solution:
+    # @return a ListNode
+    def addTwoNumbers(self, l1, l2):
+        carry = 0
+        root = n = ListNode(0)
+        while l1 or l2 or carry:
+            v1 = v2 = 0
+            if l1:
+                v1 = l1.val
+                l1 = l1.next
+            if l2:
+                v2 = l2.val
+                l2 = l2.next
+            carry, val = divmod(v1+v2+carry, 10)
+            n.next = ListNode(val)
+            n = n.next
+        return root.next
+
+
+----------------------------------------------------------------------------------------------------
+Python concise solution.
+        
+    def addTwoNumbers(self, l1, l2):
+        dummy = cur = ListNode(0)
+        carry = 0
+        while l1 or l2 or carry:
+            if l1:
+                carry += l1.val
+                l1 = l1.next
+            if l2:
+                carry += l2.val
+                l2 = l2.next
+            cur.next = ListNode(carry%10)
+            cur = cur.next
+            carry //= 10
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+Java concise solution.
+        
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        int carry = 0;
+        ListNode p, dummy = new ListNode(0);
+        p = dummy;
+        while (l1 != null || l2 != null || carry != 0) {
+            if (l1 != null) {
+                carry += l1.val;
+                l1 = l1.next;
+            }
+            if (l2 != null) {
+                carry += l2.val;
+                l2 = l2.next;
+            }
+            p.next = new ListNode(carry%10);
+            carry /= 10;
+            p = p.next;
+        }
+        return dummy.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms 11lines java solution
+    public class Solution {
+        public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+            ListNode ln1 = l1, ln2 = l2, head = null, node = null;
+            int carry = 0, remainder = 0, sum = 0;
+            head = node = new ListNode(0);
+            
+            while(ln1 != null || ln2 != null || carry != 0) {
+                sum = (ln1 != null ? ln1.val : 0) + (ln2 != null ? ln2.val : 0) + carry;
+                carry = sum / 10;
+                remainder = sum % 10;
+                node = node.next = new ListNode(remainder);
+                ln1 = (ln1 != null ? ln1.next : null);
+                ln2 = (ln2 != null ? ln2.next : null);
+            }
+            return head.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python for the win
+Python supports arbitrarily large integers, so I can safely turn the two lists into ints, add them, and turn the sum into a list.
+
+    class Solution:
+        def addTwoNumbers(self, l1, l2):
+            def toint(node):
+                return node.val + 10 * toint(node.next) if node else 0
+            def tolist(n):
+                node = ListNode(n % 10)
+                if n > 9:
+                    node.next = tolist(n / 10)
+                return node
+            return tolist(toint(l1) + toint(l2))
+
+Iterative `tolist` instead of recursive:
+
+    class Solution:
+        def addTwoNumbers(self, l1, l2):
+            def toint(node):
+                return node.val + 10 * toint(node.next) if node else 0
+            n = toint(l1) + toint(l2)
+            first = last = ListNode(n % 10)
+            while n > 9:
+                n /= 10
+                last.next = last = ListNode(n % 10)
+            return first
+
+And a very different solution that could sum arbitrarily many addends, not just two:
+
+    class Solution:
+        def addTwoNumbers(self, l1, l2):
+            addends = l1, l2
+            dummy = end = ListNode(0)
+            carry = 0
+            while addends or carry:
+                carry += sum(a.val for a in addends)
+                addends = [a.next for a in addends if a.next]
+                end.next = end = ListNode(carry % 10)
+                carry /= 10
+            return dummy.next
+
+----------------------------------------------------------------------------------------------------
+C++ solution, easy to understand
+The trick is, when two lists are not equally long, pad the shorter one with zero values. In this way, you don't have to handle the remaining sublist.
+
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode *head = NULL, *prev = NULL;
+        int carry = 0;
+        while (l1 || l2) {
+            int v1 = l1? l1->val: 0;
+            int v2 = l2? l2->val: 0;
+            int tmp = v1 + v2 + carry;
+            carry = tmp / 10;
+            int val = tmp % 10;
+            ListNode* cur = new ListNode(val);
+            if (!head) head = cur;
+            if (prev) prev->next = cur;
+            prev = cur;
+            l1 = l1? l1->next: NULL;
+            l2 = l2? l2->next: NULL;
+        }
+        if (carry > 0) {
+            ListNode* l = new ListNode(carry);
+            prev->next = l;
+        }
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+10-line C++ Iterative Solution
+    class Solution {
+    public:
+        ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+            ListNode preheader(-1), *curr=&preheader;
+            int carry=0;
+            while(l1||l2||carry) {
+                curr->next = new ListNode(((l1?l1->val:0)+(l2?l2->val:0)+carry)%10);
+                curr = curr->next;
+                carry = ((l1?l1->val:0)+(l2?l2->val:0)+carry)/10;
+                l1?l1=l1->next:0;
+                l2?l2=l2->next:0;
+            }
+            return preheader.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solution, short and simple
+    # Definition for singly-linked list.
+    # class ListNode(object):
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.next = None
+    
+    class Solution(object):
+        def addTwoNumbers(self, l1, l2):
+            """
+            :type l1: ListNode
+            :type l2: ListNode
+            :rtype: ListNode
+            """
+            ret = ListNode(0)
+            cur = ret
+            add = 0
+            
+            while l1 or l2 or add:
+                val = (l1.val if l1 else 0) + (l2.val if l2 else 0) + add
+                add = val / 10
+                cur.next = ListNode(val % 10)
+                cur = cur.next
+                l1 = l1.next if l1 else None
+                l2 = l2.next if l2 else None
+            
+            return ret.next
+
+----------------------------------------------------------------------------------------------------
+12 line java solution
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode(int x) {
+ *         val = x;
+ *         next = null;
+ *     }
+ * }
+ */
+public class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        return addTwoNumbersWithCarryOver(l1,l2,0); 
+    }
+    
+    public ListNode addTwoNumbersWithCarryOver(ListNode l1,ListNode l2, int carryOver){
+        if (l1 == null) {
+           return carryOver == 0 ? l2 : addTwoNumbersWithCarryOver(new ListNode(carryOver), l2,0); 
+        }
+        
+        if (l2 == null) {
+           return carryOver == 0 ? l1 : addTwoNumbersWithCarryOver(l1, new ListNode(carryOver),0);
+        }
+        
+        int sumVal = l1.val + l2.val + carryOver;
+        ListNode returnVal = new ListNode(sumVal%10);
+        returnVal.next = addTwoNumbersWithCarryOver(l1.next,l2.next, sumVal/10);
+        return returnVal;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Recursive 8 line C++ solution
+    class Solution {
+    
+    	public:
+    		ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+    			if (l1 == NULL and l2 == NULL) return NULL;
+    			else if (l1 == NULL) return l2; 
+    			else if (l2 == NULL) return l1; 
+    
+    			int a = l1->val + l2->val;
+    			ListNode *p = new ListNode(a % 10);
+    			p->next = addTwoNumbers(l1->next,l2->next);
+    			if (a >= 10) p->next = addTwoNumbers(p->next, new ListNode(1));
+    			return p;
+    		}
+      };
+
+
+
+----------------------------------------------------------------------------------------------------
+Intuitive c++ code
+
+
+    class Solution {
+    public:
+        ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+            ListNode* head = new ListNode(0);
+            ListNode* cur = head;
+            int plus = 0;
+            while (l1 || l2) {
+                int num = (l1 ? l1->val : 0) + (l2 ? l2->val : 0) + plus;
+                if (num >= 10) {
+                    num -= 10;
+                    plus = 1;
+                } else plus = 0;
+                cur->next = new ListNode(num);
+                cur = cur->next;
+                if (l1) l1 = l1->next;
+                if (l2) l2 = l2->next;
+            }
+            if (plus) cur->next = new ListNode(1);
+            return head->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+5ms java code for Add Two Numbers
+    public class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode head = new ListNode(0);
+        ListNode p1 = l1, p2 = l2, p = head;
+        int c = 0;
+        while(p1!=null || p2!=null || c==1){
+            int add1 = (p1==null ? 0 : p1.val);
+            int add2 = (p2==null ? 0 : p2.val);
+            int k = add1 + add2 + c;
+            c =  k/10;
+            p.next = new ListNode(k%10);
+            p = p.next;
+            if(p1!=null){p1 = p1.next;}
+            if(p2!=null){p2 = p2.next;}
+        }
+        return head.next;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution -- concise and easy to understand
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        if(l1==null) return l2;
+        if(l2==null) return l1;
+        
+        ListNode head = new ListNode(0);
+        ListNode p = head;
+        
+        int tmp = 0;
+        while(l1!=null || l2!=null || tmp!=0) {
+            if(l1!=null) {
+                tmp += l1.val;
+                l1 = l1.next;
+            }
+            if(l2!=null) {
+                tmp += l2.val;
+                l2 = l2.next;
+            }
+            
+            p.next = new ListNode(tmp%10);
+            p = p.next;
+            tmp = tmp/10;
+        }
+        return head.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why in Javascript an expected result is an array, although the input is 2 linked lists?
+ From the task definition, it is clear that we should return a linked list.
+
+----------------------------------------------------------------------------------------------------
+Clean C++ solution 47ms
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode node(0);
+        ListNode* p1 = l1;
+        ListNode* p2 = l2;
+        ListNode* parent =&node;
+        int more = 0;
+        
+        while (p1 || p2 || more) {
+            int d1 = p1 ? p1->val : 0;
+            int d2 = p2 ? p2->val : 0;
+            if (p1) p1 = p1->next;
+            if (p2) p2 = p2->next;
+            more += d1 + d2;
+            ListNode* node = new ListNode(more % 10);
+            parent->next = node;
+            parent = node;
+            more /= 10;
+        }
+        
+        return node.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ concise solution.
+        
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        int carry = 0;
+        ListNode *dummy = new ListNode(0), *cur;
+        cur = dummy;
+        while (l1 || l2 || carry) {
+            if (l1) {
+                carry += l1->val;
+                l1 = l1->next;
+            }
+            if (l2) {
+                carry += l2->val;
+                l2 = l2->next;
+            }
+            cur->next = new ListNode(carry%10);
+            cur = cur->next;
+            carry /= 10;
+        }
+        return dummy->next;
+    }
+
+----------------------------------------------------------------------------------------------------

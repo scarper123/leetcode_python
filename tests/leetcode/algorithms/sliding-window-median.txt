@@ -1,0 +1,496 @@
+17 ms O(n) java Prefix sum method
+    public int pathSum(TreeNode root, int sum) {
+        HashMap<Integer, Integer> preSum = new HashMap();
+        preSum.put(0,1);
+        return helper(root, 0, sum, preSum);
+    }
+    
+    public int helper(TreeNode root, int currSum, int target, HashMap<Integer, Integer> preSum) {
+        if (root == null) {
+            return 0;
+        }
+        
+        currSum += root.val;
+        int res = preSum.getOrDefault(currSum - target, 0);
+        preSum.put(currSum, preSum.getOrDefault(currSum, 0) + 1);
+        
+        res += helper(root.left, currSum, target, preSum) + helper(root.right, currSum, target, preSum);
+        preSum.put(currSum, preSum.get(currSum) - 1);
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java DFS
+public class Solution {
+    public int pathSum(TreeNode root, int sum) {
+        if (root == null) return 0;
+        return pathSumFrom(root, sum) + pathSum(root.left, sum) + pathSum(root.right, sum);
+    }
+    
+    private int pathSumFrom(TreeNode node, int sum) {
+        if (node == null) return 0;
+        return (node.val == sum ? 1 : 0) 
+            + pathSumFrom(node.left, sum - node.val) + pathSumFrom(node.right, sum - node.val);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple AC Java Solution DFS
+    public int pathSum(TreeNode root, int sum) {
+        Map<Integer, Integer> map = new HashMap<>();
+        map.put(0, 1);  //Default sum = 0 has one count
+        return backtrack(root, 0, sum, map); 
+    }
+    //BackTrack one pass
+    public int backtrack(TreeNode root, int sum, int target, Map<Integer, Integer> map){
+        if(root == null)
+            return 0;
+        sum += root.val;
+        int res = map.getOrDefault(sum - target, 0);    //See if there is a subarray sum equals to target
+        map.put(sum, map.getOrDefault(sum, 0)+1);
+        //Extend to left and right child
+        res += backtrack(root.left, sum, target, map) + backtrack(root.right, sum, target, map);
+        map.put(sum, map.get(sum)-1);   //Remove the current node so it wont affect other path
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 5 Line Body Code DFS Solution
+class Solution {
+public:
+    int pathSum(TreeNode* root, int sum) {
+        if(!root) return 0;
+        return sumUp(root, 0, sum) + pathSum(root->left, sum) + pathSum(root->right, sum);
+    }
+private:
+    int sumUp(TreeNode* root, int pre, int& sum){
+        if(!root) return 0;
+        int current = pre + root->val;
+        return (current == sum) + sumUp(root->left, current, sum) + sumUp(root->right, current, sum);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+class Solution(object):
+    def helper(self, root, target, so_far, cache):
+        if root:
+            complement = so_far + root.val - target
+            if complement in cache:
+                self.result += cache[complement]
+            cache.setdefault(so_far+root.val, 0)
+            cache[so_far+root.val] += 1
+            self.helper(root.left, target, so_far+root.val, cache)
+            self.helper(root.right, target, so_far+root.val, cache)
+            cache[so_far+root.val] -= 1
+        return
+
+    def pathSum(self, root, sum):
+        """
+        :type root: TreeNode
+        :type sum: int
+        :rtype: int
+        """
+        self.result = 0
+        self.helper(root, sum, 0, {0:1})
+        return self.result
+
+
+----------------------------------------------------------------------------------------------------
+Easy Recursive Python 7 lines Solution
+class Solution(object):
+    def pathSum(self, root, s):
+        return self.helper(root, s, [s])
+
+    def helper(self, node, origin, targets):
+        if not node: return 0
+        hit = 0
+        for t in targets:
+            if not t-node.val: hit += 1                          # count if sum == target
+        targets = [t-node.val for t in targets]+[origin]         # update the targets
+        return hit+self.helper(node.left, origin, targets)+self.helper(node.right, origin, targets)
+
+
+----------------------------------------------------------------------------------------------------
+18ms Fast One Pass C++ Solution
+class Solution {
+public:
+    int help(TreeNode* root, int sum, unordered_map<int, int>& store, int pre) {
+        if (!root) return 0;
+        root->val += pre;
+        int res = (root->val == sum) + (store.count(root->val - sum) ? store[root->val - sum] : 0);
+        store[root->val]++;
+        res += help(root->left, sum, store, root->val) + help(root->right, sum, store, root->val);
+        store[root->val]--;
+        return res;
+    }
+
+    int pathSum(TreeNode* root, int sum) {
+        unordered_map<int, int> store;
+        return help(root, sum, store, 0);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java solution with comment.
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+ 
+/*
+for each parent node in the tree, we have 2 choices:
+1. include it in the path to reach sum.
+2. not include it in the path to reach sum. 
+
+for each child node in the tree, we have 2 choices:
+1. take what your parent left you.
+2. start from yourself to form the path.
+
+one little thing to be careful:
+every node in the tree can only try to be the start point once.
+
+for example, When we try to start with node 1, node 3, as a child, could choose to start by itself.
+             Later when we try to start with 2, node 3, still as a child, 
+             could choose to start by itself again, but we don't want to add the count to result again.
+     1
+      \
+       2
+        \
+         3
+         
+*/ 
+public class Solution {
+    int target;
+    Set<TreeNode> visited;
+    public int pathSum(TreeNode root, int sum) {
+        target = sum;
+        visited = new HashSet<TreeNode>();  // to store the nodes that have already tried to start path by themselves.
+        return pathSumHelper(root, sum, false);
+    }
+    
+    public int pathSumHelper(TreeNode root, int sum, boolean hasParent) {
+        if(root == null) return 0;
+        //the hasParent flag is used to handle the case when parent path sum is 0.
+        //in this case we still want to explore the current node.
+        if(sum == target && visited.contains(root) && !hasParent) return 0;
+        if(sum == target && !hasParent) visited.add(root);
+        int count = (root.val == sum)?1:0;
+        count += pathSumHelper(root.left, sum - root.val, true);
+        count += pathSumHelper(root.right, sum - root.val, true);
+        count += pathSumHelper(root.left, target , false);
+        count += pathSumHelper(root.right, target, false);
+        return count;
+    }
+}````
+
+----------------------------------------------------------------------------------------------------
+12-line Python O(N) guaranteed
+class Solution(object):
+    def pathSum(self, root, target):
+        """
+        :type root: TreeNode
+        :type target: int
+        :rtype: int
+        """
+        self.count = 0
+        preDict = {0: 1}
+        def dfs(p, target, pathSum, preDict):
+            if p:
+                pathSum += p.val
+                self.count += preDict.get(pathSum - target, 0)
+                preDict[pathSum] = preDict.get(pathSum, 0) + 1
+                dfs(p.left, target, pathSum, preDict)
+                dfs(p.right, target, pathSum, preDict)
+                preDict[pathSum] -= 1
+        dfs(root, target, 0, preDict)
+        return self.count
+
+
+----------------------------------------------------------------------------------------------------
+C++ straight forward solution
+class Solution {
+public:
+    int pathSum(TreeNode* root, int sum) {
+        int res = 0;
+        pathSumHelper(root, sum, res, false);
+        return res;
+    }
+    void pathSumHelper(TreeNode* root, int sum, int &res, bool parent_used) {
+        if (!root)
+            return;
+        if (sum - root->val == 0)
+            res++;
+        pathSumHelper(root->left, sum - root->val, res, true);
+        pathSumHelper(root->right, sum - root->val, res, true);
+        if (parent_used == false) { //if parent is part of the sum, then we cannot start a new path which jump over this node
+            pathSumHelper(root->left, sum, res, false);
+            pathSumHelper(root->right, sum, res, false);
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java: Never Start or Stick to the End
+    public int pathSum(TreeNode root, int sum) {
+        return helper(root, sum, false);
+    }
+    // Either the path has not started, or it has to go all the way to the end.
+    private int helper(TreeNode root, int sum, boolean hasStarted) {
+        if (root == null) return 0;
+        // if the path has not started, we start now or not.
+        if (!hasStarted) {
+            return helper(root, sum, true) + helper(root.left, sum, false) + helper(root.right, sum, false);
+        }
+        // if the path has started
+        sum -= root.val;
+        return helper(root.left, sum, true) + helper(root.right, sum, true) + (sum == 0? 1 : 0);            
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Another simple python solution
+class Solution(object):
+    def pathSum(self, root, sum):
+        """
+        :type root: TreeNode
+        :type sum: int
+        :rtype: int
+        """
+        if not root: return 0
+        return (1 if root.val == sum else 0) +\
+               self.helper(root.left, sum-root.val) +\
+               self.helper(root.right, sum-root.val) +\
+               self.pathSum(root.left, sum) +\
+               self.pathSum(root.right, sum)
+        
+    def helper(self, root, sum):
+        if not root: return 0
+        return (1 if root.val == sum else 0) +\
+               self.helper(root.left, sum-root.val) +\
+               self.helper(root.right, sum-root.val)
+
+
+----------------------------------------------------------------------------------------------------
+Neat Java Solution With Comment
+public class Solution {
+    public int pathSum(TreeNode root, int sum) {
+        int count = findPathWithRoot(root, sum);
+        if (root != null) count += pathSum(root.left, sum) + pathSum(root.right, sum); //add case when root is excluded.
+        return count;
+    }
+    
+    private int findPathWithRoot(TreeNode root, int sum) { //Must contain root.val when calculating sum.
+        if (root == null) return 0;
+        int count = 0;
+        if (root.val == sum) count = 1;
+        
+        return count + findPathWithRoot(root.left, sum - root.val) + findPathWithRoot(root.right, sum - root.val);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+EZ to understand C# solution
+public int pathSum(TreeNode root, int sum) {
+    if(root == null)
+        return 0;
+    includeRoot(root, sum);
+    pathSum(root.left, sum);
+    pathSum(root.right, sum);
+    return result;
+}
+
+ public void includeRoot(TreeNode root, int sum) {
+    if (root == null) {
+        return;
+    }
+    
+    if (root.val == sum) {
+        result++;
+    }
+    
+    includeRoot(root.left, sum - root.val);
+    includeRoot(root.right, sum - root.val);
+}
+
+
+----------------------------------------------------------------------------------------------------
+JAVA solution by using DFS two times
+public class Solution {
+    int count = 0;
+    public int pathSum(TreeNode root, int sum) {
+        if (root != null){
+            fun(root,sum);
+            pathSum(root.left,sum);
+            pathSum(root.right,sum);
+        }
+        return count;
+    }
+    public void fun(TreeNode root,int sum){
+        if (root != null){
+            if (sum - root.val == 0){
+                count++;
+            }
+            fun(root.left,sum - root.val);
+            fun(root.right,sum - root.val);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with prefix sum stored in hash table
+class Solution {
+public:
+    int pathSum(TreeNode* root, int sum) {
+        unordered_map<int, int> m;
+        m[0]++;
+        
+        int total = 0;
+        helper(root, 0, sum, total, m);
+        return total;
+    }
+    
+    void helper(TreeNode *p, int cur, int sum, int &total, unordered_map<int, int> &m) {
+        if (!p) return;
+        
+        cur += p->val;
+        if (m.find(cur - sum) != m.end()) total += m[cur - sum];
+        m[cur]++;
+        
+        helper(p->left, cur, sum, total, m);
+        helper(p->right, cur, sum, total, m);
+        
+        m[cur]--;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple  Java Recursive O(nlogn) Solution Runtime: 14 ms without using Hashmap
+public class Solution {
+    int count=0;
+    public int pathSum(TreeNode root, int sum) {
+        int n=findDepth(root);
+        int[]path= new int[n];
+        findSum(root,sum,path,0);
+        return count;
+    }
+    int findDepth(TreeNode root){
+        if(root==null)return 0;
+        return Math.max(findDepth(root.left),findDepth(root.right))+1;
+    }
+    void findSum(TreeNode root,int sum,int [] path,int level){
+        if(root==null)return;
+        path[level]=root.val;
+        int total=0;
+        for(int i=level;i>=0;i--){
+           total+=path[i];
+           if(total==sum){
+               count=count+1;
+           }
+         }
+       findSum(root.left,sum,path,level+1);
+       findSum(root.right,sum,path,level+1);
+        path[level]=Integer.MIN_VALUE;    
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python solution from contest
+def pathSum(self, root, sum2):
+    res = [0]
+    def helper2(path, sum2):
+        prev = path[-1]
+        if prev == sum2: res[0] += 1
+        for i in range(len(path)-2, -1, -1):
+            prev += path[i]
+            if prev == sum2: res[0] += 1
+    def helper(node, sum2, path):
+        if not node: return
+        new_path = path + [node.val]
+        helper2(new_path, sum2)
+        helper(node.left, sum2, new_path)
+        helper(node.right, sum2, new_path)
+    helper(root, sum2, [])
+    return res[0]
+
+
+----------------------------------------------------------------------------------------------------
+DFS Java Solution
+public int pathSum(TreeNode root, int sum) {
+	return pathSumRec(root, sum, new ArrayList<Integer>());	
+}
+	
+public int pathSumRec(TreeNode node, int k, List<Integer> pathSums) {
+	if(node==null) return 0;
+	List<Integer> pathSumsLeft = new ArrayList<>();
+	int pathsInLeft = pathSumRec(node.left, k, pathSumsLeft);
+	List<Integer> pathSumsRight = new ArrayList<>();
+	int pathsInRight = pathSumRec(node.right, k, pathSumsRight);
+	
+	int paths = 0;
+	if(node.val==k) paths++;
+	pathSums.add(node.val);
+	
+	for(int i: pathSumsLeft) {
+		if(node.val+i==k) {
+			paths++;
+		}
+		pathSums.add(node.val+i);
+	}
+
+	for(int i: pathSumsRight) {
+		if(node.val+i==k) {
+			paths++;
+		}
+		pathSums.add(node.val+i);
+	}
+	return paths+pathsInLeft+pathsInRight;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python iterative solution
+from collections import defaultdict
+class Solution(object):
+    def pathSum(self, root, sum):
+        """
+        :type root: TreeNode
+        :type sum: int
+        :rtype: int
+        """
+        if root == None: return 0
+        res = 0
+        mystack = [[root, {root.val:1}]]
+        while len(mystack) != 0:
+            temp = mystack.pop()
+            if sum in temp[1]:
+                res += temp[1][sum]
+            if temp[0].right != None:
+                rdict = defaultdict(lambda:0)
+                for k in temp[1]:
+                    rdict[k+temp[0].right.val] = temp[1][k]
+                rdict[temp[0].right.val] += 1
+                mystack.append([temp[0].right, rdict])
+            if temp[0].left != None:
+                ldict = defaultdict(lambda:0)
+                for k in temp[1]:
+                    ldict[k+temp[0].left.val] = temp[1][k]
+                ldict[temp[0].left.val] += 1
+                mystack.append([temp[0].left, ldict])
+        return res
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,621 @@
+Java BFS Solution
+public List<Double> averageOfLevels(TreeNode root) {
+    List<Double> result = new ArrayList<>();
+    Queue<TreeNode> q = new LinkedList<>();
+    
+    if(root == null) return result;
+    q.add(root);
+    while(!q.isEmpty()) {
+        int n = q.size();
+        double sum = 0.0;
+        for(int i = 0; i < n; i++) {
+            TreeNode node = q.poll();
+            sum += node.val;
+            if(node.left != null) q.offer(node.left);
+            if(node.right != null) q.offer(node.right);
+        }
+        result.add(sum / n);
+    }
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+A good problem to practice (BFS + DFS)
+    class Node {
+        double sum;
+        int count;
+        Node (double d, int c) {
+            sum = d;
+            count = c;
+        }
+    }
+    public List<Double> averageOfLevels(TreeNode root) {
+        List<Node> temp = new ArrayList<>();
+        helper(root, temp, 0);
+        List<Double> result = new LinkedList<>();
+        for (int i = 0; i < temp.size(); i++) {
+            result.add(temp.get(i).sum / temp.get(i).count);
+        }
+        return result;
+    }
+    public void helper(TreeNode root, List<Node> temp, int level) {
+        if (root == null) return;
+        if (level == temp.size()) {
+            Node node = new Node((double)root.val, 1);
+            temp.add(node);
+        } else {
+            temp.get(level).sum += root.val;
+            temp.get(level).count++;
+        }
+        helper(root.left, temp, level + 1);
+        helper(root.right, temp, level + 1);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def averageOfLevels(self, root):
+    info = []
+    def dfs(node, depth = 0):
+        if node:
+            if len(info) <= depth:
+                info.append([0, 0])
+            info[depth][0] += node.val
+            info[depth][1] += 1
+            dfs(node.left, depth + 1)
+            dfs(node.right, depth + 1)
+    dfs(root)
+
+    return [s/float(c) for s, c in info]
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple and clear BFS solution
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double> res;
+        queue<TreeNode*> q;
+        q.push(root);
+        while(!q.empty()) {
+            long temp=0;
+            int s=q.size();
+            for(int i=0;i<s;i++) {
+                TreeNode* t=q.front();
+                q.pop();
+                if(t->left) q.push(t->left);
+                if(t->right) q.push(t->right);
+                temp+=t->val;
+            }
+            res.push_back((double)temp/s);
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ nullptr
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double> ret;
+        double sum = 0, count = 0;
+        queue<TreeNode*> q;
+        q.push(root);
+        q.push(nullptr);
+        while (!q.empty()) {
+            TreeNode* t = q.front();
+            q.pop();
+            if (t == nullptr) {
+                ret.push_back(sum / count);
+                sum = count = 0;
+                if (!q.empty()) q.push(nullptr);
+            } else {
+                sum += t->val;
+                ++count;
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+        }
+        return ret;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java solution using DFS with full comments
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public List<Double> averageOfLevels(TreeNode root) {
+        // list answer for sum all value in same level
+        List<Double> answer = new ArrayList<Double>();
+        
+        // list counter for count number of node in same level
+        List<Integer> counter = new ArrayList<Integer>();
+        
+        // using dfs to sum all value in same level and count number of node in same level
+        dfs(0, root, answer, counter);
+        
+        // answer will be answer[level] / counter[level]
+        for (int level = 0; level < answer.size(); level++) {
+            answer.set(level, answer.get(level) / counter.get(level));
+        }
+        return answer;
+    }
+
+    public void dfs(int level, TreeNode node, List<Double> answer, List<Integer> counter) {
+        if (node == null) {
+            return;
+        }
+
+        if (answer.size() <= level) {
+            answer.add(0.0);
+            counter.add(0);
+        }
+
+        answer.set(level, answer.get(level) + node.val);
+        counter.set(level, counter.get(level) + 1);
+
+        // go left node and right node
+        dfs(level + 1, node.left, answer, counter);
+        dfs(level + 1, node.right, answer, counter);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Naive Java Solution with 2 lists with helper()
+public class Solution {
+    public List<Double> averageOfLevels(TreeNode root) {
+        List<Double> sumLs = new ArrayList<Double>();
+        List<Integer> cntLs = new ArrayList<Integer>();
+        if (root == null) return sumLs;
+        helper(root, 0, sumLs, cntLs);
+        for (int i = 0; i < sumLs.size(); i++)
+            sumLs.set(i, sumLs.get(i) / cntLs.get(i));
+        return sumLs;
+    }
+    
+    private void helper(TreeNode root, int lv, List<Double> sumLs, List<Integer> cntLs) {
+        if (root != null) {
+        	if (sumLs.size() <= lv) {
+        		sumLs.add((double) root.val);
+        		cntLs.add(1);
+        	} else {
+        		sumLs.set(lv, sumLs.get(lv) + root.val);
+        		cntLs.set(lv, cntLs.get(lv) + 1);
+        	}
+            helper(root.left, lv + 1, sumLs, cntLs);
+            helper(root.right, lv + 1, sumLs, cntLs);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&quot;one-liner&quot;
+def averageOfLevels(self, root):
+    averages = []
+    level = [root]
+    while level:
+        averages.append(sum(node.val for node in level) / len(level))
+        level = [kid for node in level for kid in (node.left, node.right) if kid]
+    return averages
+
+----------------------------------------------------------------------------------------------------
+C++ BFS
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double> v;
+        if(root == nullptr) return v;
+        queue<TreeNode*> s1;
+        queue<int> s2;
+        
+        s1.push(root);
+        s2.push(0);
+        int level = 0;
+        while(s1.size()) {
+            
+            int tmpLev = s2.front();
+            
+            double avg = 0;
+            int count = 0;
+            
+            while(s2.size() && s2.front() == tmpLev){
+                TreeNode* tmp = s1.front(); s1.pop();
+                s2.pop();
+                if(tmp != nullptr) {
+                    s1.push(tmp->left);
+                    s1.push(tmp->right);
+                    s2.push(tmpLev + 1);
+                    s2.push(tmpLev + 1);
+                    ++count;
+                    avg += tmp->val;
+                }
+                
+            }
+            
+            if(count != 0)
+            v.push_back(avg/count);
+        }
+        
+        return v;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+python BFS
+    def averageOfLevels(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[float]
+        """
+        res=[]
+        if not root: return res
+        q=[root]
+        while q:
+            q1=[]
+            total=0
+            cnt=0
+            while q:
+                node =q.pop()
+                if node.left: q1.append(node.left)
+                if node.right: q1.append(node.right)
+                total+=node.val
+                cnt+=1
+            res.append(total*1.0/cnt)
+            q=list(q1)
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Easy java solution with hashMap
+public class Solution {
+    HashMap<Integer,Double> hashMap = new HashMap<>();
+    HashMap<Integer,Integer> aMap = new HashMap<>();
+    public List<Double> averageOfLevels(TreeNode root) {
+        addToHash(root,0);
+        List<Double> list = new ArrayList<>();
+        for(int i =0;hashMap.containsKey(i);++i){
+            list.add(hashMap.get(i)/aMap.get(i));
+        }
+        return list;
+        
+    }
+    public void addToHash(TreeNode root,int level){
+        if(root == null){
+            return;
+        }
+        hashMap.put(level,(root.val + (hashMap.containsKey(level)?hashMap.get(level):0)));
+        aMap.put(level,(aMap.containsKey(level)?aMap.get(level):0) + 1);
+        addToHash(root.left,level+1);
+        addToHash(root.right,level+1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java Solution traversing levels
+public class Solution {
+    public List<Double> averageOfLevels(TreeNode root) {
+        List<Double> avg = new ArrayList<>();
+        if(root == null) {
+            return avg;
+        }
+        
+        Deque<TreeNode> q = new ArrayDeque<>();
+        q.offerLast(root);
+        double size = 0;
+        TreeNode curNode = null;
+        double prev = 0;
+        long total = 0;
+        
+        while(!q.isEmpty()) {
+            size = q.size();
+            prev = size;
+            total = 0;
+            while(size-- > 0) {
+                curNode = q.pollFirst();
+                if(curNode.left != null) {
+                    q.offerLast(curNode.left);
+                }
+                
+                if(curNode.right != null) {
+                    q.offerLast(curNode.right);
+                }
+                total += curNode.val;
+            }
+            
+            avg.add(total/prev);
+        }
+        return avg;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution - DFS
+public class Solution {
+    private class Pair {
+        public long sum;
+        public int count;
+        public Pair(long sum, int count) {
+            this.sum = sum;
+            this.count = count;
+        }
+    }
+    
+    public List<Double> averageOfLevels(TreeNode root) {
+        Map<Integer, Pair> pairs = new LinkedHashMap<>();
+        calcPairs(root, 0, pairs);   
+        List<Double> result = new ArrayList<>();
+        for(Pair pair : pairs.values()) {
+            result.add((double) pair.sum / (double) pair.count);
+        }
+        
+        return result;
+    }
+    
+    private void calcPairs(TreeNode node, int currLevel, Map<Integer, Pair> pairs) {
+        if(node == null) {
+            return;
+        }
+        
+        Pair pair = pairs.get(currLevel);
+        if(pair != null) {
+            pair.sum += node.val;
+            pair.count++;
+            pairs.put(currLevel, pair);
+        }
+        else {
+            pairs.put(currLevel, new Pair(node.val, 1));
+        }
+        
+        calcPairs(node.left, currLevel + 1, pairs);
+        calcPairs(node.right, currLevel + 1, pairs);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution!
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public List<Double> averageOfLevels(TreeNode root) {
+        List<Double> res=new ArrayList<>();
+        if(root==null) return res;
+        
+        Queue<TreeNode> queue=new LinkedList<>();
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            int size=queue.size();
+            double sum=0;
+            int len=size;
+            while(size--!=0){
+               TreeNode t=queue.poll();
+               sum+=t.val;
+               if(t.left!=null){
+                   queue.offer(t.left);
+               }
+                if(t.right!=null){
+                    queue.offer(t.right);
+                }
+            }
+            res.add(sum/(double)len);
+        }
+        
+        return res;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Python using stack
+class Solution(object):
+    def averageOfLevels(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[float]
+        """
+        stack = [(root, 1)] if root else []
+        total = collections.defaultdict(int)
+        count = collections.defaultdict(int)
+        while stack:
+            node, level = stack.pop()
+            total[level] += node.val
+            count[level] += 1
+            if node.left:
+                stack.append((node.left, level+1))
+            if node.right:
+                stack.append((node.right, level+1))
+        return [1.0 * total[level] / count[level] for level in sorted(total.keys())]
+
+
+----------------------------------------------------------------------------------------------------
+naive java solution
+public List<Double> averageOfLevels(TreeNode root) {
+
+		Queue<TreeNode> currentLevel = new LinkedList<>();
+		Queue<TreeNode> nextLevel = new LinkedList<>();
+
+		List<Double> ans = new ArrayList<>();
+
+		if (root == null)
+			return ans;
+
+		currentLevel.add(root);
+
+		
+		double temp = 0.0;
+		double tempCounter = 0;
+		
+		while (!currentLevel.isEmpty()) {
+
+			TreeNode node = currentLevel.poll();
+			temp += node.val;
+			tempCounter++;
+
+			if (node.left != null) {
+				nextLevel.offer(node.left);
+			}
+
+			if (node.right != null) {
+				nextLevel.offer(node.right);
+			}
+
+			if (currentLevel.isEmpty()) {
+				// switch q's
+				currentLevel = nextLevel;
+				nextLevel = new LinkedList<>();
+
+				ans.add(temp / tempCounter);
+
+				tempCounter = 0;
+				temp = 0.0;
+
+			}
+		}
+
+		return ans;
+
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - Breath First Search
+class Solution {
+    func averageOfLevels(_ root: TreeNode?) -> [Double] {
+        guard let root = root else {
+            return []
+        }
+        
+        var result = [Double]()
+        var queue = [root]
+        
+        while !queue.isEmpty {
+            let count = queue.count
+            var sum = 0
+            for _ in 0..<count {
+                let node = queue.removeFirst()
+                sum += node.val
+                if let leftNode = node.left {
+                    queue.append(leftNode)
+                }
+                if let rightNode = node.right {
+                    queue.append(rightNode)
+                }
+            }
+            let avarage = Double(sum) / Double(count)
+            result.append(avarage)
+        }
+        
+        return result
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - DFS
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        map<int, pair<long, int>> info;
+        getLevelInfo(root, 0, info);
+
+        vector<double> avgs(info.size());
+        for (auto it = info.begin(); it != info.end(); it++) {
+            long total = it->second.first;
+            int nodes = it->second.second;
+            avgs[it->first] = ((double)total) / nodes;
+        }
+        return avgs;
+    }
+
+private:
+    void getLevelInfo(TreeNode* node, int l, map<int, pair<long, int>>& info) {
+        if (!node) return;
+        info[l].first += node->val;
+        info[l].second++;
+        getLevelInfo(node->left, l + 1, info);
+        getLevelInfo(node->right, l + 1, info);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My C solution with Time Limit Exceeded
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+/**
+ * Return an array of size *returnSize.
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+double* averageOfLevels(struct TreeNode* root, int* returnSize) {
+    double *tree_avg = malloc(*returnSize * sizeof(double));
+    int c=0;
+    struct TreeNode *parent,*current;
+    if(!tree_avg || !root)
+        return 0;
+    parent = NULL;
+    current = root;
+    tree_avg[c++]=current->val;   
+    while (current) {
+        if ((current->left) && (current->right)) {
+            tree_avg[c++] = (double)(((double)current->left->val + (double)current->right->val)/2);            
+            parent = current;
+            current = current->left;
+        } else {
+            if(parent) {
+                current = parent->right;
+                if (!(current->left) && !(current->right))
+                current= 0;
+            }
+        }
+        //printf("%lf\n",tree_avg[c]);        
+    }
+    *returnSize=c;
+    return tree_avg;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Javascript solution sharing
+var averageOfLevels = function(root) {
+    var sumArr = [];
+    var countArr = [];
+    var sum = function(node, level) {
+        if (!node) return
+        if (!sumArr[level]) sumArr[level] = 0;
+        sumArr[level] += node.val;
+        if (!countArr[level]) countArr[level] = 0;
+        countArr[level]++;
+        sum(node.left, level + 1);
+        sum(node.right, level + 1);
+    }
+    sum(root, 0);
+    var meanArr = sumArr.map((sum, level) => sum / countArr[level]);
+    return meanArr;
+};
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,593 @@
+Java 1-Line Solution via Regex and Stream
+public String[] findWords(String[] words) {
+    return Stream.of(words).filter(s -> s.toLowerCase().matches("[qwertyuiop]*|[asdfghjkl]*|[zxcvbnm]*")).toArray(String[]::new);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Easy Java with Explanation
+public class Solution {
+    public String[] findWords(String[] words) {
+        String[] strs = {"QWERTYUIOP","ASDFGHJKL","ZXCVBNM"};
+        Map<Character, Integer> map = new HashMap<>();
+        for(int i = 0; i<strs.length; i++){
+            for(char c: strs[i].toCharArray()){
+                map.put(c, i);//put <char, rowIndex> pair into the map
+            }
+        }
+        List<String> res = new LinkedList<>();
+        for(String w: words){
+            if(w.equals("")) continue;
+            int index = map.get(w.toUpperCase().charAt(0));
+            for(char c: w.toUpperCase().toCharArray()){
+                if(map.get(c)!=index){
+                    index = -1; //don't need a boolean flag. 
+                    break;
+                }
+            }
+            if(index!=-1) res.add(w);//if index != -1, this is a valid string
+        }
+        return res.toArray(new String[0]);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand solution in 7 lines for everyone
+def findWords(self, words):
+    line1, line2, line3 = set('qwertyuiop'), set('asdfghjkl'), set('zxcvbnm')
+    ret = []
+    for word in words:
+      w = set(word.lower())
+      if w.issubset(line1) or w.issubset(line2) or w.issubset(line3):
+        ret.append(word)
+    return ret
+
+
+----------------------------------------------------------------------------------------------------
+one-liner Ruby + Python
+def findWords(self, words):
+    return filter(re.compile('(?i)([qwertyuiop]*|[asdfghjkl]*|[zxcvbnm]*)$').match, words)
+
+----------------------------------------------------------------------------------------------------
+Solution in python using set
+class Solution(object):
+    def findWords(self, words):
+        """
+        :type words: List[str]
+        :rtype: List[str]
+        """
+        a=set('qwertyuiop')
+        b=set('asdfghjkl')
+        c=set('zxcvbnm')
+        ans=[]
+        for word in words:
+            t=set(word.lower())
+            if a&t==t:
+                ans.append(word)
+            if b&t==t:
+                ans.append(word)
+            if c&t==t:
+                ans.append(word)
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution
+class Solution {
+public:
+    vector<string> findWords(vector<string>& words) {
+        unordered_set<char> row1 {'q', 'w', 'e', 'r', 't', 'y','u', 'i', 'o', 'p'};
+        unordered_set<char> row2 {'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'}; 
+        unordered_set<char> row3 { 'z', 'x', 'c', 'v', 'b' ,'n', 'm'};
+        vector<unordered_set<char>> rows {row1, row2, row3};
+        
+        
+        vector<string> validWords;
+        for(int i=0; i<words.size(); ++i){
+            int row=0;
+            
+            for(int k=0; k<3; ++k){
+                if(rows[k].count((char)tolower(words[i][0])) > 0) row = k;
+            }
+            
+            validWords.push_back(words[i]);
+            for(int j=1; j<words[i].size(); ++j){
+                if(rows[row].count((char)tolower(words[i][j])) == 0){
+                    validWords.pop_back();
+                    break;
+                }
+            }
+            
+        }
+        return validWords;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ solution use bit manipulations
+class Solution {
+public:
+    vector<string> findWords(vector<string>& words) {
+        vector<int> dict(26);
+        vector<string> rows = {"QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"};
+        for (int i = 0; i < rows.size(); i++) {
+            for (auto c : rows[i]) dict[c-'A'] = 1 << i;
+        }
+        vector<string> res;
+        for (auto w : words) {
+            int r = 7;
+            for (char c : w) {
+                r &= dict[toupper(c)-'A'];
+                if (r == 0) break;
+            }
+            if (r) res.push_back(w);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Intuitive Javascript Solution
+var findWords = function(words) {
+    return words.filter((w) => {
+        // remove word from array if it fails matching all three rows
+        if (
+            !/^[qwertyuiop]*$/i.test(w) &&
+            !/^[asdfghjkl]*$/i.test(w) &&
+            !/^[zxcvbnm]*$/i.test(w)
+        ) return false;
+        
+        return true;
+    });
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with 3 hash tables
+public:
+	vector<string> findWords(vector<string>& words) {
+
+		std::unordered_set <char> dict1 = { 'q','Q','w','W','e','E','r','R','t','T','y','Y','u','U','i','I','o','O','p','P' };
+		std::unordered_set <char> dict2 = { 'a','A','s','S','d','D','f','F','g','G','h','H','j','J','k','K','l','L'};
+		std::unordered_set <char> dict3 = { 'z','Z','x','X','c','C','v','V','b','B','n','N','m','M'};
+
+		vector<string> res;
+
+		for (auto &word : words)
+		{
+			bool d1 = true, d2 = true, d3 = true;
+
+			for (auto & ch : word)
+			{
+				if (d1) {
+					auto it = dict1.find(ch);
+					if (it == dict1.end()) d1 = false;
+				}
+
+				if (d2) {
+					auto it = dict2.find(ch);
+					if (it == dict2.end()) d2 = false;
+				}
+
+				if (d3) {
+					auto it = dict3.find(ch);
+					if (it == dict3.end()) d3 = false;
+				}
+			}
+
+			if (d1 || d2 || d3) res.push_back(word);
+		}
+
+		return res;
+	}
+};
+
+----------------------------------------------------------------------------------------------------
+Share my AC Solution, Very easy understand
+public String[] findWords(String[] words) {
+	String[] base = {"qwertyuiop","asdfghjkl","zxcvbnm"};
+	List<String> list = new ArrayList<String>();
+	for (String string : words) {
+		for (String basStr : base) {
+			boolean find = true;
+			for (char c : string.toCharArray()) {
+				String low = String.valueOf(c).toLowerCase();
+				if (!basStr.contains(low)){
+					find = false;
+					break;
+				}
+			}
+			if (find) list.add(string);
+		}
+	}
+	String[] res = new String[list.size()];
+	for (int i = 0; i < res.length; i++) res[i] = list.get(i);
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+My cpp solution beats 100%
+class Solution {
+public:
+	vector<string> findWords(vector<string>& words) {
+		int m[] = { 2,3,3,2,1,2,2,2,1,2,2,2,3,3,1,1,1,1,2,1,1,3,1,3,1,3 };
+		vector<string> ans;
+		for (int i = 0; i < words.size(); i++) {
+			if (words[i].size() == 0)
+				continue;
+			int now = m[upper(words[i][0])];
+			bool is = true;
+			for (int j = 1; j < words[i].size(); j++) {
+				if (m[upper(words[i][j])] != now) {
+					is = false;
+					break;
+				}
+			}
+			if (is)
+				ans.push_back(words[i]);
+		}
+		return ans;
+	}
+	int upper(char a) {
+		if (a >= 'a'&&a <= 'z')
+			return a - 'a';
+		return a - 'A';
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java 4 ms solution using HashSet
+public class Solution {
+    public String[] findWords(String[] words) {
+        Set<Character> row1 = new HashSet<>();
+        Set<Character> row2 = new HashSet<>();
+        Set<Character> row3 = new HashSet<>();
+        
+        row1.add('q');
+        row1.add('w');
+        row1.add('e');
+        row1.add('r');
+        row1.add('t');
+        row1.add('y');
+        row1.add('u');
+        row1.add('i');
+        row1.add('o');
+        row1.add('p');
+        
+        row2.add('a');
+        row2.add('s');
+        row2.add('d');
+        row2.add('f');
+        row2.add('g');
+        row2.add('h');
+        row2.add('j');
+        row2.add('k');
+        row2.add('l');
+        
+        row3.add('z');
+        row3.add('x');
+        row3.add('c');
+        row3.add('v');
+        row3.add('b');
+        row3.add('n');
+        row3.add('m');
+        
+        List<String> result = new ArrayList<>();
+        
+        for(String word : words)
+        {
+            char[] charArray = word.toLowerCase().toCharArray();
+        
+            int lenOfWord = charArray.length;
+            
+            int count = 0;
+            
+            for(Character ch : charArray)
+            {
+                if(row1.contains(ch))
+                    count++;
+               else 
+                   break;
+
+            }
+            
+            if(count == lenOfWord)
+            {
+                result.add(word);
+                continue;
+            }
+            
+            count = 0;
+            
+            for(Character ch : charArray)
+            {
+                if(row2.contains(ch))
+                    count++;
+               else 
+                   break;
+            }
+            
+            if(count == lenOfWord)
+            {
+                result.add(word);
+                continue;
+            }
+            
+            count = 0;
+            
+            for(Character ch : charArray)
+            {
+                if(row3.contains(ch))
+                    count++;
+               else 
+                   break;
+            }
+            
+            if(count == lenOfWord)
+            {
+                result.add(word);
+            }
+        }
+        return result.toArray(new String[result.size()]);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java AC Solution, Easy to understand beats 95.67% in 2ms
+public class Solution 
+{
+    String[] rows = new String[]{"QWERTYUIOPqwertyuiop","ASDFGHJKLasdfghjkl","ZXCVBNMzxcvbnm"};
+        
+    public String[] findWords(String[] words) 
+    {
+        ArrayList<String> result = new ArrayList<String>();
+    
+        int currentRow = 0;
+        boolean found = true;
+        for(String s : words)
+        {
+            currentRow = getCurrentRow(s.charAt(0));
+            found = true;
+            for(char c: s.toCharArray())
+            {
+                if(rows[currentRow].indexOf(c) == -1)
+                {
+                    found = false;
+                    break;
+                }
+            }
+            if(found)
+               result.add(s);
+        }
+        
+        return result.toArray(new String[result.size()]);
+    }
+    
+    private int getCurrentRow(char c)
+    {
+       for(int rowNumber = 0; rowNumber < 3 ; rowNumber++)
+       {
+           if (rows[rowNumber].indexOf(c) != -1)
+           {
+               return rowNumber;
+           }
+       }
+       return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My JavaScript solution - how can I improve?
+/**
+ * @param {string[]} words
+ * @return {string[]}
+ */
+var findWords = function(words) {
+    var resultWords = [];
+    for (var i = 0; i < words.length; i++) {
+        if(isSameRow(words[i]))
+            resultWords.push(words[i]);
+    }
+    return resultWords;
+};
+
+/**
+ * @param {string} word
+ * @return {bool}
+ */
+var isSameRow = function(word) {
+    var rowNumber = getKeyboardRow(word.charAt(0));
+    for (var i = 1; i < word.length; i++) {
+        if(getKeyboardRow(word.charAt(i)) !== rowNumber)
+            return false;
+    }
+    return true;
+};
+
+/**
+ * @param {string} char
+ * @return {number}
+ */
+var getKeyboardRow = function(char) {
+    var currentChar = char.toLowerCase();
+    var charRowMap = {
+        "q": 1, "w": 1, "e": 1, "r": 1, "t": 1, "y": 1, "u": 1, "i": 1, "o": 1, "p": 1,
+        "a": 2, "s": 2, "d": 2, "f": 2, "g": 2, "h": 2, "j": 2, "k": 2, "l": 2,
+        "z": 3, "x": 3, "c": 3, "v": 3, "b": 3, "n": 3, "m": 3
+    }
+    return charRowMap[currentChar];
+};
+
+
+----------------------------------------------------------------------------------------------------
+Fast (95%, 2ms) and easy to understand java solution
+public class Solution {
+                                         // zyxwvutsrqponmlkjihgfedcba
+    private static final int ROW1 = 0b00000001010110111100000100010000;
+    private static final int ROW2 = 0b00000000000001000000111011101001;
+    private static final int ROW3 = 0b00000010101000000011000000000110;
+        
+    public String[] findWords(String[] words) {
+        String [] validWords = new String[words.length];
+        int validWordsFound = 0;
+        int wordLetterIndexes = 0;
+        for (String word: words) {
+            wordLetterIndexes = getLetterIndexes(word);
+            if ((wordLetterIndexes & ROW1) == wordLetterIndexes
+                || (wordLetterIndexes & ROW2) == wordLetterIndexes
+                || (wordLetterIndexes & ROW3) == wordLetterIndexes) {
+                    validWords[validWordsFound++] = word;
+                }
+        }
+        return Arrays.copyOf(validWords, validWordsFound);
+    }
+    
+    private static final int getLetterIndexes(String word) {
+        int letters = 0;
+        char c;
+        for (int i = 0; i < word.length(); i++) {
+            c = word.charAt(i);
+            letters |= 1 << ((c < 'a') ? c - 'A' : c - 'a');
+        }
+        return letters;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My Simple C# Solution for this Easy Problem
+public string[] FindWords(string[] words) {
+        
+        HashSet<char> row1 = new HashSet<char>(){'q','w','e','r','t','y','u','i','o','p'};
+        HashSet<char> row2 = new HashSet<char>(){'a','s','d','f','g','h','j','k','l'};
+        HashSet<char> row3 = new HashSet<char>(){'z','x','c','v','b','n','m'};
+        List<string> output = new List<string>();
+        
+        foreach(string word in words)
+        {
+            string wordLower = word.ToLower();
+            if(IsPresentInRow(wordLower,row1) || IsPresentInRow(wordLower,row2) || IsPresentInRow(wordLower,row3))
+            {
+               output.Add(word); 
+            }
+        }
+        return output.ToArray();
+    }
+    
+    private bool IsPresentInRow(string input, HashSet<char> currentRow)
+    {
+        if(string.IsNullOrEmpty(input))
+            return false;
+        
+        for(int i =0;i<input.Length;i++)
+        {
+            if(!currentRow.Contains(input[i]))
+                return false;
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Verbose Java solution (3ms)
+public class Solution {
+    private static String[] strs = {"qwertyuiop", "asdfghjkl", "zxcvbnm"};
+    
+    public String[] findWords(String[] words) {
+        List<String> res = new ArrayList<>();
+        
+        for (String word : words) {
+            if (word.length() == 0) continue;
+            
+            int row = 0;
+            for (; row < 3; row++) {
+                if (inRow(word.charAt(0), row)) break;
+            }
+            if (row >= 3) continue;
+            
+            boolean flag = true;
+            for (int i = 1; i < word.length(); i++) {
+                if (!inRow(word.charAt(i), row)) {
+                    flag = false;
+                    break;
+                }
+            }
+            
+            if (flag) {
+                res.add(word);
+            }
+        }
+        
+        return res.toArray(new String[res.size()]);
+    }
+    
+    private boolean inRow(char c, int row) {
+        if (strs[row].contains(Character.toLowerCase(c)+"")) return true;
+        else return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# Solution
+public string[] FindWords(string[] words) {
+     // alphabets a-z with row number assigned for each alphabet
+     int[] alp = new int[]{2,3,3,2,1,2,2,2,1,2,2,2,3,3,1,1,1,1,2,1,1,3,1,3,1,3};
+     List<string> result = new List<string>();
+     foreach(var item in words)
+     {
+         if(string.IsNullOrWhiteSpace(item))
+         continue;
+         string word = item.ToLower();
+         int v = alp[(int)(word[0]-'a')];
+         bool flag = true;
+        
+         for(int i=1;i<word.Length;i++)
+         {
+             if(alp[(int)(word[i]-'a')] != v)
+             {
+                 flag = false; 
+                break;
+             }
+         }
+         
+         if(flag)
+         result.Add(item);
+     }
+     
+     return result.ToArray();
+    }
+
+----------------------------------------------------------------------------------------------------
+One line python
+def findWords(words):
+        return [word for row in [set('qwertyuiop'), set('asdfghjkl'), set('zxcvbnm')] for word in words if set(word.lower()) <= row]
+
+
+----------------------------------------------------------------------------------------------------
+short c++ solution
+ vector<string> findWords(vector<string>& words) {
+       char ht[26]={1,0,0,1,2,1,1,1,2,1,1,1,0,0,2,2,2,2,1,2,2,0,2,0,2};
+       vector<string> res;
+       for(auto &s:words) {
+           char pre = 3;
+           for(char c:s) {
+               if (pre<3 && pre!=ht[tolower(c)-'a']) {
+                   pre = 3;
+                   break;
+               }
+               pre = ht[tolower(c)-'a'];
+           }
+           if(pre < 3) res.push_back(s);
+       }
+       return res;
+   }
+
+
+----------------------------------------------------------------------------------------------------

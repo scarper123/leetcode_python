@@ -1,0 +1,806 @@
+Easy O(n) Java Solution using Stack
+public class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        Stack<Integer> s1 = new Stack<Integer>();
+        Stack<Integer> s2 = new Stack<Integer>();
+        
+        while(l1 != null) {
+            s1.push(l1.val);
+            l1 = l1.next;
+        };
+        while(l2 != null) {
+            s2.push(l2.val);
+            l2 = l2.next;
+        }
+        
+        int sum = 0;
+        ListNode list = new ListNode(0);
+        while (!s1.empty() || !s2.empty()) {
+            if (!s1.empty()) sum += s1.pop();
+            if (!s2.empty()) sum += s2.pop();
+            list.val = sum % 10;
+            ListNode head = new ListNode(sum / 10);
+            head.next = list;
+            list = head;
+            sum /= 10;
+        }
+        
+        return list.val == 0 ? list.next : list;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(1) extra space except for output. Reverse output instead. Is this cheating?
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        int n1 = 0, n2 = 0, carry = 0;
+        ListNode *curr1 = l1, *curr2 = l2, *res = NULL;
+        while( curr1 ){ curr1=curr1->next; n1++; }
+        while( curr2 ){ curr2=curr2->next; n2++; } 
+        curr1 = l1; curr2 = l2;
+        while( n1 > 0 && n2 > 0){
+            int sum = 0;
+            if( n1 >= n2 ){ sum += curr1->val; curr1=curr1->next; n1--;}
+            if( n2 > n1 ){ sum += curr2->val; curr2=curr2->next; n2--;}
+            res = addToFront( sum, res );
+        }
+        curr1 = res; res = NULL;
+        while( curr1 ){
+            curr1->val += carry; carry = curr1->val/10;
+            res = addToFront( curr1->val%10, res );
+            curr2 = curr1; 
+            curr1 = curr1->next;
+            delete curr2;
+        }
+        if( carry ) res = addToFront( 1, res );
+        return res;
+    }
+    ListNode* addToFront( int val, ListNode* head ){
+        ListNode* temp = new ListNode(val);
+        temp->next = head;
+        return temp;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) recursive solution by counting the difference of length
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        int size1 = getLength(l1);
+        int size2 = getLength(l2);
+        ListNode head = new ListNode(1);
+        // Make sure l1.length >= l2.length
+        head.next = size1 < size2 ? helper(l2, l1, size2 - size1) : helper(l1, l2, size1 - size2);
+        // Handle the first digit
+        if (head.next.val > 9) {
+            head.next.val = head.next.val % 10;
+            return head;
+        }
+        return head.next;
+    }
+    // get length of the list
+    public int getLength(ListNode l) {
+        int count = 0;
+        while(l != null) {
+            l = l.next;
+            count++;
+        }
+        return count;
+    }
+    // offset is the difference of length between l1 and l2
+    public ListNode helper(ListNode l1, ListNode l2, int offset) {
+        if (l1 == null) return null;
+        // check whether l1 becomes the same length as l2
+        ListNode result = offset == 0 ? new ListNode(l1.val + l2.val) : new ListNode(l1.val);
+        ListNode post = offset == 0 ? helper(l1.next, l2.next, 0) : helper(l1.next, l2, offset - 1);
+        // handle carry 
+        if (post != null && post.val > 9) {
+            result.val += 1;
+            post.val = post.val % 10;
+        }
+        // combine nodes
+        result.next = post;
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+There is no maximum of INT in python, so.....
+def addTwoNumbers(self, l1, l2):
+
+        x1, x2 = 0, 0
+        while l1:
+            x1 = x1*10+l1.val
+            l1 = l1.next
+        while l2:
+            x2 = x2*10+l2.val
+            l2 = l2.next
+        x = x1 + x2
+        
+        head = ListNode(0)
+        if x == 0: return head
+        while x:
+            v, x = x%10, x//10
+            head.next, head.next.next = ListNode(v), head.next
+            
+        return head.next
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Solution without reverse
+ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+    vector<int> nums1, nums2;
+    while(l1) {
+        nums1.push_back(l1->val);
+        l1 = l1->next;
+    }
+    while(l2) {
+        nums2.push_back(l2->val);
+        l2 = l2->next;
+    }
+
+    int m = nums1.size(), n = nums2.size();
+    int sum = 0, carry = 0;
+
+    ListNode *head = nullptr, *p = nullptr;
+
+    for(int i = m - 1, j = n - 1; i >= 0 || j >= 0 || carry > 0; i--, j--) {
+        sum = carry;
+        if(i >= 0) 
+            sum += nums1[i];
+
+        if(j >= 0)
+            sum += nums2[j];
+
+        carry = sum / 10;
+
+        p = new ListNode(sum%10);
+        p->next = head;
+        head = p;
+    }
+
+    return head;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward O(n) Java Solution Without Modifying Input Lists
+public class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        
+        HashMap<Integer, Integer> hm1 = new HashMap<>(); //Store the 'index' and the value of List1
+        HashMap<Integer, Integer> hm2 = new HashMap<>(); //Store the 'index' and the value of List2
+        int i = 1, j = 1;
+        
+        while(l1 != null){
+            hm1.put(i, l1.val);
+            l1 = l1.next;
+            i++;
+        }
+        while(l2 != null){
+            hm2.put(j, l2.val);
+            l2 = l2.next;
+            j++;
+        }
+        
+        int carry = 0;
+        i--; j--;
+        ListNode head = null;
+        
+      //Create new nodes to the front of a new LinkedList
+        while(i > 0 || j > 0 || carry > 0){
+
+            int a = i > 0 ? hm1.get(i) : 0;
+            int b = j > 0 ? hm2.get(j) : 0;
+            int res = (a + b + carry) % 10;
+            
+            ListNode newNode = new ListNode(res);
+            newNode.next = head;
+            head = newNode;
+            
+            carry = (a + b + carry) / 10;
+            i--; j--;
+        }
+        return head;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java iterative O(1) space lastNot9 solution Changed from Plus One Linked List
+/* Carry is at most 1. 
+ * If the current node is 9, even if there is a carry, the previous node may get affected.
+ * If the current node is not 9, even if there is a carry after this, the previous node will not get affected.
+ */
+
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+    int len1 = getLength(l1), len2 = getLength(l2);
+    if(len1 < len2){ // swap l1 and l2 to make sure l1 is the longer one
+        ListNode tmp = l1; l1 = l2; l2 = tmp;
+    }
+    int diff = Math.abs(len1-len2);
+    
+    ListNode dummy = new ListNode(0);
+    ListNode tail = dummy;
+    ListNode lastnot9node = dummy;
+    
+    while(diff > 0){
+        // create new node
+        tail.next = new ListNode(l1.val);
+
+        // update lastnot9node
+        if(l1.val != 9) lastnot9node = tail.next;
+
+        // update tails
+        tail = tail.next;
+        l1 = l1.next;
+        diff--;
+    }
+
+    while(l1 != null){
+        int val = l1.val + l2.val;
+        
+        if(val >= 10){
+            val -= 10;
+            // update previous nodes
+            lastnot9node.val++;
+            lastnot9node = lastnot9node.next;
+            while(lastnot9node != null){
+                lastnot9node.val = 0;
+                lastnot9node = lastnot9node.next;
+            }
+            lastnot9node = tail;
+        }
+        
+        // create new node
+        tail.next = new ListNode(val);
+        
+        // update lastnot9node
+        if(val != 9) lastnot9node = tail.next;
+        
+        // update tails
+        tail = tail.next;
+        l1   = l1.next;
+        l2   = l2.next;
+    }
+    
+    if(dummy.val == 1) return dummy;
+    return dummy.next;
+}
+
+private int getLength(ListNode node){
+    int len = 0;
+    while(node != null){
+        len++;
+        node = node.next;
+    }
+    return len;
+}
+
+----------------------------------------------------------------------------------------------------
+9-liner C++ O(N1+N2) solution with stacks to store digits, no list modification
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        stack<int> s1, s2; // store digits in stack
+        for (; l1; l1 = l1->next) s1.push(l1->val); 
+        for (; l2; l2 = l2->next) s2.push(l2->val);
+        
+        ListNode *res = new ListNode(0), *tmp = NULL;
+        for (int sum = 0; !s1.empty()||!s2.empty(); tmp = new ListNode(sum/=10), tmp->next = res, res = tmp) {
+            if (!s1.empty()) sum += s1.top(), s1.pop(); // get digit sum
+            if (!s2.empty()) sum += s2.top(), s2.pop();
+            res->val = sum%10;
+        }
+        return res->val? res : res->next;        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Naive Python Solution
+class Solution(object):
+    def addTwoNumbers(self, l1, l2):
+        c1, c2 = '', ''
+        while l1:
+            c1 += str(l1.val)
+            l1 = l1.next
+        while l2:
+            c2 += str(l2.val)
+            l2 = l2.next
+        num = str(int(c1) + int(c2))
+        dummy = ListNode(0)
+        c = dummy
+        for i in range(len(num)):
+            c.next = ListNode(num[i])
+            c = c.next
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+C++ solution: linear time and O(1) space except answer itself (32ms, non-recursive)
+    int count(ListNode* n) {
+        int ret =0 ;
+        while(n) ++ret, n = n->next;
+        return ret;
+    }
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        int c1 = count(l1), c2 = count(l2);
+        if(c1 > c2) swap(c1,c2), swap(l1,l2);
+        ListNode head(0);
+        ListNode *n = &head, *frontier = &head;
+        for(int i=0;i<c2-c1;++i, l2 = l2->next) {
+            n = n->next = new ListNode(l2->val);
+            if(n->val < 9) frontier = n;
+        }
+        for(;l1;l1 = l1->next, l2 = l2->next) {
+            n = n->next = new ListNode(l1->val + l2->val);
+            if(n->val < 9) frontier = n;
+            else if(n->val > 9) {
+                frontier->val +=1;
+                frontier = frontier->next;
+                while(frontier != n) {
+                    frontier->val = 0;
+                    frontier = frontier->next;
+                }
+                n->val -= 10;
+            }
+        }
+        if(head.val) {
+            ListNode* n2 = new ListNode(1);
+            n2->next = head.next;
+            n = n2;
+        } else n = head.next;
+        return n;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution by Reversing LinkedList beating 96%
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode n1 = reverse(l1);
+        ListNode n2 = reverse(l2);
+        int carry = 0;
+        ListNode temp = n1;
+        ListNode pre = n1;
+        while(n1!= null || n2 != null || carry != 0){
+            int v1 = n1 == null? 0: n1.val;
+            int v2 = n2 == null? 0: n2.val;
+            if(n1 == null){
+                n1 = new ListNode((v1+v2+carry) % 10);
+                pre.next = n1;
+            }else{
+                n1.val = (v1+v2+carry) % 10;
+            }
+            carry = (v1+v2+carry)/10;
+            pre = n1;
+            n1 = n1 == null? null : n1.next;
+            n2 = n2 == null? null : n2.next;
+        }
+        return reverse(temp);
+    }
+    public ListNode reverse(ListNode head){
+        ListNode newHead = null;
+        while(head != null){
+            ListNode next = head.next;
+            head.next = newHead;
+            newHead = head;
+            head = next;
+        }
+        return newHead;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java, O(n), scanning twice, simple with comments
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) 
+    {
+        int countL1 = CountNode(l1);
+        int countL2 = CountNode(l2);
+        
+        //keept the longer1 at l2
+        if(countL1 > countL2 ) { ListNode cur1= l2; l2 = l1; l1 = cur1;}
+        //L1: 5--->6--->4
+        //L2: 7--->2--->4--->3
+        
+        ListNode pre = new ListNode(0); // store the most significant carr on
+
+        int delta = Math.abs(countL2 - countL1);
+        while(l2 != null)
+        {
+            ListNode curNode = new ListNode(l2.val);
+            l2 = l2.next;
+            
+            if(delta-- <= 0)
+            {
+                curNode.val += l1.val;
+                l1 = l1.next;
+            }
+            
+            curNode.next = pre;
+            pre = curNode;
+        }
+        // 0<---7<---7<---10<---7
+
+        // reverse the result list and deal with carryOn
+        int carryOn = 0;
+        ListNode head = pre;
+        pre = null;
+        while(head != null)
+        {
+            head.val += carryOn;
+            carryOn = head.val / 10;
+            head.val %= 10;
+            
+            ListNode next = head.next;
+            head.next = pre;
+            pre = head;
+            head = next;
+        }
+        // 0--->7<---8--->0--->7
+        
+        return pre.val == 0 ? pre.next : pre;
+    }
+    
+    private int CountNode(ListNode heard)
+    {
+        int count = 0;
+        while(heard != null) 
+        {
+            count++;
+            heard = heard.next;
+        }
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy O(n) recursion solution C++
+class Solution {
+public:
+    int addhelper(ListNode *l1, ListNode* l2, ListNode* result, int &len1, int &len2){
+        if(!l1 || !l2) return 0;
+        if(len1 == len2){
+            if(l1->next)
+                result->next = new ListNode(0);
+            int sum = l1->val + l2->val + addhelper(l1->next, l2->next, result->next, --len1, --len2);
+            result->val = sum % 10;
+            return sum / 10;
+        }else if(len1 > len2){
+            if(l1->next)
+                result->next = new ListNode(0);
+            int sum = l1->val + addhelper(l1->next, l2, result->next, --len1, len2);
+            result->val = sum % 10;
+            return sum / 10;
+        }else{
+            if(l2->next)
+                result->next = new ListNode(0);
+            int sum = l2->val + addhelper(l1, l2->next, result->next, len1, --len2);
+            result->val = sum % 10;
+            return sum / 10;
+        }
+    }
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        if(!l1) return l2;
+        if(!l2) return l1;
+        int len1 = 0, len2 = 0;
+        ListNode * head1 = l1, *head2 = l2;
+        while(l1){
+            l1 = l1->next;
+            ++ len1;
+        }
+        while(l2){
+            l2 = l2->next;
+            ++ len2;
+        }
+        ListNode *result = new ListNode(0);
+        int carry = 0;
+        ListNode * tmp = result;
+        carry = addhelper(head1, head2, tmp, len1, len2);
+        if(carry){
+            ListNode * result_f = new ListNode(carry);
+            result_f->next = result;
+            return result_f;
+        }else
+            return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C recursive solution - (22 ms) - no original list mod&#x2F;reversal
+#define LIST_FACT_UPD(fone_next, ftwo_next, fone, ftwo, h, level, delta) \
+	do {	(fone_next) = !(level) ? (fone) : (fone)->next;			     \
+		if ((level) == abs((delta))) (ftwo_next) = (h);			         \
+		if ((level) < abs((delta)))  (ftwo_next) = NULL;                 \
+		if ((level) > abs((delta)))  (ftwo_next) = (ftwo)->next;         \
+	} while(0);
+
+int list_sum(struct ListNode* h1, struct ListNode* h2, 
+	     struct ListNode* f1, struct ListNode* f2,
+	     struct ListNode** sum, int level, int delta)
+{
+	int carry = 0;
+	struct ListNode *dig, *f1next, *f2next;
+
+	if (!f1 && !f2) return (carry);
+	if (delta  > 0) LIST_FACT_UPD(f1next, f2next, f1, f2, h2, level, delta);
+	if (delta  < 0) LIST_FACT_UPD(f2next, f1next, f2, f1, h1, level, delta);
+	if (delta == 0) { 
+		f1next = f1->next; 
+		f2next = f2->next; 
+	}
+
+	carry = list_sum(h1, h2, f1next, f2next, sum, ++level, delta);	
+	/* no node needed for root call when delta != 0 */
+	if (!delta || level != 1) {
+		dig = (struct ListNode*)malloc(sizeof(struct ListNode));
+		dig->next = *sum;	
+		dig->val = (f1 ? f1->val : 0) + (f2 ? f2->val : 0) + carry;
+		carry = dig->val / 10;
+		dig->val %= 10;
+		*sum = dig;
+	}	
+	/* add one more node for carry at MSB case */	
+	if (carry && level == 1) {
+		dig = (struct ListNode*)malloc(sizeof(struct ListNode));
+		dig->next = *sum;	
+		dig->val = carry;
+		*sum = dig;
+	}
+	
+	return (carry);
+}
+
+int list_delta(struct ListNode** head1, struct ListNode** head2)
+{
+	int delta = 0;
+	struct ListNode* p1 = *head1, *p2 = *head2;
+
+	while (1) {
+		if (p1  && !p2) delta++; 
+		if (!p1 &&  p2) delta--; 
+		if (p2) p2 = p2->next;
+		if (p1) p1 = p1->next;
+		if (!p2 && !p1) break;
+	}
+
+	return (delta);
+}
+
+struct ListNode* addTwoNumbers(struct ListNode* l1, struct ListNode* l2) {
+	
+	struct ListNode* add = NULL;
+	struct ListNode* sum = NULL;
+	
+	if (l1 && l2)
+		list_sum(l1, l2, l1, l2, &sum, 
+				0, list_delta(&l1, &l2));    
+
+	return (sum);
+}```
+
+----------------------------------------------------------------------------------------------------
+AC follow up Java
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        Stack<ListNode> s1 = new Stack<>();
+        Stack<ListNode> s2 = new Stack<>();
+        Stack<ListNode> s3 = new Stack<>();
+        
+        while (l1 != null) {
+            s1.push(l1);
+            l1 = l1.next;
+        }
+        while (l2 != null) {
+            s2.push(l2);
+            l2 = l2.next;
+        }
+        
+        int carry = 0;
+        while (!s1.isEmpty() || !s2.isEmpty()) {
+            int val1 = s1.isEmpty() ? 0 : s1.pop().val;
+            int val2 = s2.isEmpty() ? 0 : s2.pop().val;
+            
+            int val = val1 + val2 + carry;
+            ListNode node = new ListNode(val % 10);
+            carry = val / 10;
+            s3.push(node);
+        }
+        if (carry == 1) s3.push(new ListNode(1));
+        ListNode dummy = new ListNode(0);
+        ListNode node = dummy;
+        while (!s3.isEmpty()) {
+            node.next = s3.pop();
+            node = node.next;
+        }
+        
+        return dummy.next;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Brilliant Java solution
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+     Stack<Integer> s1=new Stack();
+     Stack<Integer> s2=new Stack();
+     while(l1!=null){
+         s1.push(l1.val);
+         l1=l1.next;
+     }
+      while(l2!=null){
+         s2.push(l2.val);
+         l2=l2.next;
+     }
+     int c=0,s=0;
+     ListNode current=null;
+     
+     while(!s1.isEmpty()||!s2.isEmpty()){
+         
+         s=(s1.isEmpty()?0:s1.pop()) +( s2.isEmpty()?0:s2.pop()) + c;
+         c=s/10;
+         s=s%10;
+         ListNode p=new ListNode(s);
+         p.next=current;
+         current=p;
+     }
+     if(c>0){
+          ListNode p=new ListNode(c);
+         p.next=current;
+         current=p;
+     }
+      return current;  
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand O(n) C++ solution using vector
+class Solution {
+    vector<int> convertToVector(ListNode *head) {
+        vector<int> res;
+        while (head) {
+            res.push_back(head->val);
+            head = head->next;
+        }
+        return res;
+    }
+    ListNode* addTwoVector(vector<int> v1, vector<int> v2) {
+        ListNode *dummy = new ListNode(0), *node = NULL;
+        int i = v1.size() - 1, j = v2.size() - 1, sum = 0;
+        while (j >= 0 || i >= 0 || sum) {
+            if (i >= 0) sum += v1[i--];
+            if (j >= 0) sum += v2[j--];
+            node = new ListNode(sum % 10);
+            sum /= 10;
+            node->next = dummy->next;
+            dummy->next = node;
+        }
+        return dummy->next;
+    }
+public:
+    ListNode* addTwoNumbers(ListNode *l1, ListNode *l2) {
+        return addTwoVector(convertToVector(l1), convertToVector(l2));
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution o(N) using recursion + stack to avoid modifying the lists
+class Solution {
+public:
+
+    int GetLen(ListNode *l1)
+    {
+        return (l1 == NULL ? 0 : 1 + GetLen(l1->next));
+    }
+    
+    //
+    // Add assumes that l1 and l2 are of equal length
+    // 
+    ListNode *Add(ListNode *l1, ListNode *l2, int &C)
+    {
+        if(l1 == NULL)
+        {
+            return NULL;
+        }
+        
+        ListNode *Res = NULL;
+        
+        ListNode *Temp = Add(l1->next,l2->next,C);
+        Res = new ListNode(l1->val + l2->val + C);
+        C = (Res->val / 10);
+        Res->val %= 10;
+        Res->next = Temp;
+        return (Res);
+    }
+
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) 
+    {
+        int Len1 = GetLen(l1);
+        int Len2 = GetLen(l2);
+        
+        vector<ListNode*> Stack;
+        
+        ListNode *N1 = l1, *N2 = l2;
+        
+        while(Len1 > Len2)
+        {
+            Stack.push_back(N1);
+            N1 = N1->next;
+            Len1--;
+        }
+        
+        while(Len2 > Len1)
+        {
+            Stack.push_back(N2);
+            N2 = N2->next;
+            Len2--;
+        }
+        
+        int Carry = 0;    
+        ListNode *R1 = Add(N1,N2,Carry);
+        
+        while(Stack.empty() == false)
+        {
+            ListNode *Top = Stack.back();
+            Stack.pop_back();
+            
+            ListNode *Add = new ListNode(Carry + Top->val);
+            
+            Carry = (Add->val / 10);
+            Add->val %= 10;
+            Add->next = R1;
+            R1 = Add;
+        }
+        
+        if(Carry)
+        {
+            ListNode *Add = new ListNode(Carry);
+            Add->next = R1;
+            R1 = Add;
+        }
+        
+        return (R1);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+why it come up a runtime error about &quot;member access within null pointer of type &#x27;struct ListNode&#x27;&quot;?
+<p><img src="/uploads/files/1484880642436-upload-d41d29f9-5348-4d84-b77b-c1de0280b9b3.png" alt="" class="img-responsive img-markdown"/></p>
+<p>Line 57: member access within null pointer of type &#39;struct ListNode&#39;</p>
+<br/>
+highly appreciated  !
+
+----------------------------------------------------------------------------------------------------
+Javascript + Recursive + Cycle Linked list
+var addTwoNumbers = function(l1, l2) {
+    let createf=(v,nxt)=>{let n=new ListNode(v); n.next=nxt; return n;}
+        , f=(l1,h1,l2,h2)=> {
+            if(!l1.next && !l2.next) {
+                let s=l1.val+l2.val;
+                return {
+                    n:createf(s%10),
+                    carry: Math.floor(s/10)
+                }
+            }
+            
+            let r = f(l1.next||h1,
+                      l1.next?h1:h2,
+                      l2.next||h2,
+                      l2.next?h2:h1),
+                ignore1 = r.ignore1 || !l1.next,
+                ignore2 = r.ignore2 || !l2.next,
+                sum = (ignore1 ? 0 : l1.val)
+                    + (ignore2 ? 0 : l2.val)
+                    + r.carry
+                ;
+                
+            return {
+                    n:(ignore1&&ignore2&&sum==0)?r.n : createf(sum%10, r.n),
+                    carry: Math.floor(sum/10),
+                    ignore1: ignore1,
+                    ignore2: ignore2
+                };
+        },
+        r = f(l1,l2,l2,l1);
+        return r.carry == 0 ? r.n : createf(r.carry, r.n);
+        
+};
+
+
+----------------------------------------------------------------------------------------------------

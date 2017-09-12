@@ -1,0 +1,272 @@
+A n^2 Solution, Can we do better ?
+Here is a solution in Order(N^2). I got help from this post on 
+[stackoverflow][1] <br>
+Can we improve this time complexity ?
+
+    int threeSumClosest(vector<int> &num, int target) {        
+        vector<int> v(num.begin(), num.end()); // I didn't wanted to disturb original array.
+        int n = 0;
+        int ans = 0;
+        int sum;
+        
+        sort(v.begin(), v.end());
+        
+        // If less then 3 elements then return their sum
+        while (v.size() <= 3) {
+            return accumulate(v.begin(), v.end(), 0);
+        }
+        
+        n = v.size();
+        
+        /* v[0] v[1] v[2] ... v[i] .... v[j] ... v[k] ... v[n-2] v[n-1]
+         *                    v[i]  <=  v[j]  <= v[k] always, because we sorted our array. 
+         * Now, for each number, v[i] : we look for pairs v[j] & v[k] such that 
+         * absolute value of (target - (v[i] + v[j] + v[k]) is minimised.
+         * if the sum of the triplet is greater then the target it implies
+         * we need to reduce our sum, so we do K = K - 1, that is we reduce
+         * our sum by taking a smaller number.
+         * Simillarly if sum of the triplet is less then the target then we
+         * increase out sum by taking a larger number, i.e. J = J + 1.
+         */
+        ans = v[0] + v[1] + v[2];
+        for (int i = 0; i < n-2; i++) {
+            int j = i + 1;
+            int k = n - 1;
+            while (j < k) {
+                sum = v[i] + v[j] + v[k];
+                if (abs(target - ans) > abs(target - sum)) {
+                    ans = sum;
+                    if (ans == target) return ans;
+                }
+                (sum > target) ? k-- : j++;
+            }
+        }
+        return ans;
+    }
+
+<b>Edit:</b>Thanks @thr for pointing out that. I have corrected it and also renamed 'mx' by 'ans'.
+  [1]: http://stackoverflow.com/questions/2070359/finding-three-elements-in-an-array-whose-sum-is-closest-to-an-given-number
+
+----------------------------------------------------------------------------------------------------
+Java solution with O(n2) for reference
+Similar to 3 Sum problem, use 3 pointers to point current element, next element and the last element. If the sum is less than target, it means we have to add a larger element so next element move to the next. If the sum is greater, it means we have to add a smaller element so last element move to the second last element. Keep doing this until the end. Each time compare the difference between sum and target, if it is less than minimum difference so far, then replace result with it, otherwise keep iterating.
+
+    public class Solution {
+        public int threeSumClosest(int[] num, int target) {
+            int result = num[0] + num[1] + num[num.length - 1];
+            Arrays.sort(num);
+            for (int i = 0; i < num.length - 2; i++) {
+                int start = i + 1, end = num.length - 1;
+                while (start < end) {
+                    int sum = num[i] + num[start] + num[end];
+                    if (sum > target) {
+                        end--;
+                    } else {
+                        start++;
+                    }
+                    if (Math.abs(sum - target) < Math.abs(result - target)) {
+                        result = sum;
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution O(n^2) using sort
+Sort the vector and then no need to run *O(N^3)* algorithm as each index has a direction to move.
+
+The code starts from this formation.
+
+    ----------------------------------------------------
+    ^  ^                                               ^
+    |  |                                               |
+    |  +- second                                     third
+    +-first
+
+if  *nums[first] + nums[second] + nums[third]* is smaller than the *target*, we know we have to increase the sum. so only choice is moving the second index forward.
+
+    ----------------------------------------------------
+    ^    ^                                             ^
+    |    |                                             |
+    |    +- second                                   third
+    +-first
+
+
+if the *sum* is bigger than the *target*, we know that we need to reduce the *sum*. so only choice is moving '*third*' to backward. of course if the *sum* equals to *target*, we can immediately return the *sum*.
+
+    ----------------------------------------------------
+    ^    ^                                          ^
+    |    |                                          |
+    |    +- second                                third
+    +-first
+
+
+when *second* and *third* cross, the round is done so start next round by moving '*first*' and resetting *second* and *third*.
+
+    ----------------------------------------------------
+      ^    ^                                           ^
+      |    |                                           |
+      |    +- second                                 third
+      +-first
+
+while doing this, collect the *closest sum* of each stage by calculating and comparing delta. Compare *abs(target-newSum)* and *abs(target-closest)*. At the end of the process the three indexes will eventually be gathered at the end of the array.
+
+    ----------------------------------------------------
+                                             ^    ^    ^
+                                             |    |    `- third
+                                             |    +- second
+                                             +-first
+
+if no exactly matching *sum* has been found so far, the value in *closest* will be the answer.
+
+
+    int threeSumClosest(vector<int>& nums, int target) {
+        if(nums.size() < 3) return 0;
+        int closest = nums[0]+nums[1]+nums[2];
+        sort(nums.begin(), nums.end());
+        for(int first = 0 ; first < nums.size()-2 ; ++first) {
+            if(first > 0 && nums[first] == nums[first-1]) continue;
+            int second = first+1;
+            int third = nums.size()-1;            
+            while(second < third) {
+                int curSum = nums[first]+nums[second]+nums[third];
+                if(curSum == target) return curSum;
+                if(abs(target-curSum)<abs(target-closest)) {
+                    closest = curSum;
+                }
+                if(curSum > target) {
+                    --third;
+                } else {
+                    ++second;
+                }
+            }
+        }
+        return closest;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python O(N^2) solution
+    class Solution:
+        # @return an integer
+        def threeSumClosest(self, num, target):
+            num.sort()
+            result = num[0] + num[1] + num[2]
+            for i in range(len(num) - 2):
+                j, k = i+1, len(num) - 1
+                while j < k:
+                    sum = num[i] + num[j] + num[k]
+                    if sum == target:
+                        return sum
+                    
+                    if abs(sum - target) < abs(result - target):
+                        result = sum
+                    
+                    if sum < target:
+                        j += 1
+                    elif sum > target:
+                        k -= 1
+                
+            return result
+
+----------------------------------------------------------------------------------------------------
+12 lines concise and easy understand c++ solultion
+    class Solution {
+    public:
+        int threeSumClosest(vector<int>& nums, int target) {
+            sort(nums.begin(), nums.end());
+            int res = nums[0] + nums[1] + nums[2];
+            for(int i = 0; i < nums.size() - 2; i++){
+                int j = i + 1, k = nums.size() - 1;
+                while(j < k){
+                    int num = nums[i] + nums[j] + nums[k];
+                    if(abs(num - target) < abs(res - target)) res = num;
+                    if(num < target) j++;
+                    else k--;
+                }
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python solution (two-pointer).
+        
+    def threeSumClosest(self, nums, target):
+        nums.sort()
+        res = sum(nums[:3])
+        for i in xrange(len(nums)):
+            l, r = i+1, len(nums)-1
+            while l < r:
+                s = sum((nums[i], nums[l], nums[r]))
+                if abs(s-target) < abs(res-target):
+                    res = s
+                if s < target:
+                    l += 1
+                elif s > target:
+                    r -= 1
+                else: # break early 
+                    return res
+        return res
+
+----------------------------------------------------------------------------------------------------
+7ms and o(n^2) java solution
+My solution does not need compare each sum ,just need to compare possible sum ,so can save time.
+
+    public class Solution {
+    public int threeSumClosest(int[] nums, int target) {
+        Arrays.sort(nums);
+        int closest=nums[0]+nums[1]+nums[2];
+        int low,high;
+        for(int i=0;i<nums.length-1;i++){
+            low=i+1;
+            high=nums.length-1;
+            while(low<high){
+                if(nums[low]+nums[high]==target-nums[i]) return target;
+                else if(nums[low]+nums[high]>target-nums[i]){
+                    while(low<high&&nums[low]+nums[high]>target-nums[i]) high--;
+                    if(Math.abs(nums[i]+nums[low]+nums[high+1]-target)<Math.abs(closest-target))
+                        closest=nums[i]+nums[low]+nums[high+1];
+                }
+                else{
+                    while(low<high&&nums[low]+nums[high]<target-nums[i]) low++;
+                    if(Math.abs(nums[i]+nums[low-1]+nums[high]-target)<Math.abs(closest-target))
+                        closest=nums[i]+nums[low-1]+nums[high];
+                }
+            }
+        }
+        return closest;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Share my 24-line Java code (beats 94.57% run times)
+    public class Solution {
+        public int threeSumClosest(int[] nums, int target) {
+            Arrays.sort(nums);
+            int diff = Integer.MAX_VALUE, closest = 0;
+            for (int k=0; k<nums.length-2; ++k) {
+                for (int i=k+1, j=nums.length-1; i<j; ) {
+                    int sum = nums[k] + nums[i] + nums[j];
+                    if (sum == target) { return target; }
+                    else if (sum > target) {
+                        if (sum-target < diff) {
+                            diff = sum-target;
+                            closest = sum;
+                        }
+                        --j;
+                    } else {
+                        if (target-sum < diff) {
+                            diff = target-sum;
+                            closest = sum;
+                        }
+                        ++i;
+                    }
+                }
+            }
+            return closest;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,586 @@
+Java Oms with explanation
+    // Categorize the self-crossing scenarios, there are 3 of them: 
+    // 1. Fourth line crosses first line and works for fifth line crosses second line and so on...
+    // 2. Fifth line meets first line and works for the lines after
+    // 3. Sixth line crosses first line and works for the lines after
+    public class Solution {
+        public boolean isSelfCrossing(int[] x) {
+            int l = x.length;
+            if(l <= 3) return false;
+            
+            for(int i = 3; i < l; i++){
+                if(x[i] >= x[i-2] && x[i-1] <= x[i-3]) return true;  //Fourth line crosses first line and onward
+                if(i >=4)
+                {
+                    if(x[i-1] == x[i-3] && x[i] + x[i-4] >= x[i-2]) return true; // Fifth line meets first line and onward
+                }
+                if(i >=5)
+                {
+                    if(x[i-2] - x[i-4] >= 0 && x[i] >= x[i-2] - x[i-4] && x[i-1] >= x[i-3] - x[i-5] && x[i-1] <= x[i-3]) return true;  // Sixth line crosses first line and onward
+                }
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+The best submission in C searching for the crossing patterns is the key
+After drawing a few crossing cases ourselves, we can simply find out there are two basic patterns:
+
+ - x[i-1]<=x[i-3] && x[i]>=x[i-2] the ending circle line cross the beginning circle line in one circle;
+ - i>=5 && x[i-1]<=x[i-3] && x[i]>=x[i-2]-x[i-4] the second line of the next circle cross the the beginning of the previous circle between two adjacent circles;
+
+But still that is not over yet, how about some special cases? How about the first line of the next circle and the previous circle? Yeah, the beginning line of the next circle can overlap the the first line of the previous circle - another two adjacent circles case: 
+
+ - i>=4 && x[i-1]==x[i-3] && x[i]>=x[i-2]-x[i-4]
+
+Quite straightforward. Then we can test our patterns now, however soon we will find out that the second cases  is not strong enough to cover all possible situations - the second line of the next circle crossing the previous circle at the its first line
+
+ - [3,3,3,2,1,1] is an example here, so x[i-2]>=x[i-4] then must be added to our conditions;
+ - [3,3,4,4,10,4,4,,3,3] is another typical example for x[i-3]<=x[i-1]+x[i-5] condition, which also should be added to make the constrained conditions stronger;
+
+At last, we make it! Bang! End of story with a very terse, clean and efficient code as follows.
+
+----------
+
+
+    //AC - 0ms;
+    bool isSelfCrossing(int* x, int size)
+    {
+        for(int i = 3; i < size; i++)
+        {
+            if(x[i]>=x[i-2] && x[i-1]<=x[i-3]) return true;
+            if(i>=4 && x[i-1]==x[i-3] && x[i]+x[i-4]>=x[i-2]) return true;
+            if(i>=5 && x[i-2]-x[i-4]>=0 && x[i]>=x[i-2]-x[i-4] && x[i-1]>=x[i-3]-x[i-5] && x[i-1]<=x[i-3]) return true;
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+    public class Solution {
+        public boolean isSelfCrossing(int[] x) {
+            if (x.length <= 3) {
+                return false;
+            }
+            int i = 2;
+            // keep spiraling outward
+            while (i < x.length && x[i] > x[i - 2]) {
+                i++;
+            }
+            if (i >= x.length) {
+                return false;
+            }
+            // transition from spiraling outward to spiraling inward
+            if ((i >= 4 && x[i] >= x[i - 2] - x[i - 4]) ||
+                    (i == 3 && x[i] == x[i - 2])) {
+                x[i - 1] -= x[i - 3];
+            }
+            i++;
+            // keep spiraling inward
+            while (i < x.length) {
+                if (x[i] >= x[i - 2]) {
+                    return true;
+                }
+                i++;
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Another python...
+Checking out every six pack.
+
+**Solution 1**
+
+    def isSelfCrossing(self, x):
+        return any(d >= b > 0 and (a >= c or a >= c-e >= 0 and f >= d-b)
+                   for a, b, c, d, e, f in ((x[i:i+6] + [0] * 6)[:6]
+                                            for i in xrange(len(x))))
+
+**Solution 2**
+
+    def isSelfCrossing(self, x):
+        b = c = d = e = 0
+        for a in x:
+            if d >= b > 0 and (a >= c or a >= c-e >= 0 and f >= d-b):
+                return True
+            b, c, d, e, f = a, b, c, d, e
+        return False
+
+**Explanation**
+
+                b                              b
+       +----------------+             +----------------+
+       |                |             |                |
+       |                |             |                | a
+     c |                |           c |                |
+       |                | a           |                |    f
+       +----------->    |             |                | <----+
+                d       |             |                |      | e
+                        |             |                       |
+                                      +-----------------------+
+                                                   d
+
+Draw a line of length `a`. Then draw further lines of lengths `b`, `c`, etc. How does the `a`-line get crossed? From the left by the `d`-line or from the right by the `f`-line, see the above picture. I just encoded the criteria for actually crossing it.
+
+Two details:
+
+- In both cases, `d` needs to be at least `b`. In the first case to cross the `a`-line directly, and in the second case to get behind it so that the `f`-line can cross it. So I factored out `d >= b`.
+- The "special case" of the `e`-line stabbing the `a`-line from below is covered because in that case, the `f`-line "crosses" it (note that even if there is no actual `f`-line, my code uses `f = 0` and thus still finds that "crossing").
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution
+    class Solution
+    {
+    public:
+        bool isSelfCrossing(vector<int>& x)
+        {
+            x.insert(x.begin(), 4, 0);
+    
+            int len = x.size();
+            int i = 4;
+    
+            // outer spiral
+            for (; i < len && x[i] > x[i - 2]; i++);
+    
+            if (i == len) return false;
+    
+            // check border
+            if (x[i] >= x[i - 2] - x[i - 4])
+            {
+                x[i - 1] -= x[i - 3];
+            }
+    
+            // inner spiral
+            for (i++; i < len && x[i] < x[i - 2]; i++);
+    
+            return i != len;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Solution based on spiral direction status
+I solved this problem based on spiral direction status. Here is the accepted code: 
+
+ 	public static boolean isSelfCrossing(int[] x) {
+		if (x.length < 4)
+			return false;
+		
+		boolean inside = false;
+		for (int i = 3; i < x.length; i++) {
+			if(inside) {
+				if (x[i] >= x[i - 2])
+					return true;
+				continue;
+			}
+					
+			if(x[i-1] > x[i-3])
+				continue;
+
+			int x5 = i>=5 ? x[i-5] : 0;
+			int x4 = i>=4 ? x[i-4] : 0;
+			if(x[i-1] >= x[i-3] - x5) {
+				if(x[i] >= x[i-2] - x4)
+					return true;
+			}else {
+				if(x[i] >= x[i-2])
+					return true;
+			}
+			inside=true;
+		}
+		return false;
+	}
+
+For this question, to keep the line not crossed, it can be in following conditions: 
+
+1. Keep spiraling outside.
+2. Keep spiraling inside.
+3. Not crossing during transition from outside spiral into inside spiral. 
+
+And one observation is once it starts to spiral inside, it will never spiral outside.  
+
+Based on this observation, we keep one flag: inside which is initialized to false,
+
+During spiraling outside, and inside, the check is very simple: just check x[i] < x[i-2] for inside spiral. In outside spiral phase, as long as x[i-1] > x[i-3], it's not possible to cross in this step. 
+
+Once x[i-1] > x[i-3] condition is broken, we will trigger the transition period: In this period, it has two conditions, 
+
+1. If this turn back line is towards line x[i-5] (possible cross x[i-5])
+2. If this turn back line is not towards line x[i-5]. in that case, it will go towards x[i-3] instead. 
+
+We need to calculate the max line for x[i] for the two cases.
+
+When i<4 and i<5 corner case, to avoid many if/else we just prepend two additional steps as if they are moving 0 length. So assign x4 and x5 to 0 respectively.
+
+This solution compare to other solution based on 3 different crossing condition, it's slight better as it will only look back x[i-4] and x[i-4] during transition period (once only). In other two phases, it will only compare two edges. 
+
+
+
+----------------------------------------------------------------------------------------------------
+Re-post: 2 O(N) C++ 0ms solutions
+The first solution is well described in [KuangYuan's post][1] and the idea is to enumerate all the self-crossing cases. Basically, there are three cases
+Case1:  self-crossing is formed by the last 4 lines (like a closed rectangle)
+Case 2: self-crossing is formed by the last 5 lines (still like a closed rectangle with one edge having two moves)
+Case 3: self-crossing is formed by the last 6 lines (like two overlapped rectangles)
+
+    class Solution {
+    public:
+        bool isSelfCrossing(vector<int>& x) {
+            int len = x.size(),i;
+            for(i=3; i<len;++i)
+            {
+                if(x[i]>=x[i-2] && x[i-1] <= x[i-3]) return true; // case 1, the consecutive four lines form a cross
+                if(i>3 && x[i-1]==x[i-3] && x[i]+x[i-4]>=x[i-2]) return true; // case 2, the consecutive five lines form a cross
+                if(i>4 && x[i-2]>=x[i-4] && x[i-4]+x[i]>=x[i-2] && x[i-1]<=x[i-3] && x[i-5] + x[i-1]>=x[i-3]) return true;// case 3, the consecutive six lines form a cross
+            }
+            return false;
+        }
+    };
+
+The second solution is to categorize all the non-self-crossing cases: basically we can only have two valid cases: one is "grow spiral" (which means the curve expands like spiral and there is no boundaries in x and y axis) and the other is "shrink spiral" (which means the spiral curve becomes smaller and smaller and the boundaries in x and y axis are the last move in that direction). The self-crossing cases can only happen in the "shrink" case and it happens only when x[i]>=x[i-2]. The "grow" case can become a "shrink" case and that only happens when x[i]<=x[i-2]. The  "shrink" case can not change to a "grow" case.
+In the solution, we use a bool grow_spiral to indicate whether the current one is a "grow spiral". if before x[i], it is a  "shrink spiral", we only need to check if a self-crossing happen (i.e. x[i]>=x[i-2]); if it is a "grow spiral", we check if x[i] changes from "grow" to "shrink" (i.e. x[i]<=x[i-2]), we need to update the boundary x[i-1] (in some cases, it can be x[i-1]-x[i-3]). 
+
+
+    class Solution {
+    public:
+        bool isSelfCrossing(vector<int>& x) {
+            int len = x.size(), i;
+            if(len<=3) return false;
+            bool grow_spiral;
+
+            for(i=3, grow_spiral = x[2]>x[0]; i<len;++i)
+            {
+                if(!grow_spiral && x[i]>=x[i-2]) return true;//if it is a "shrink" case before x[i] and cross happens
+                if(grow_spiral && x[i]<=x[i-2])
+                { // if it is a grow case, and x[i] changes it to shrink
+                        grow_spiral = false;
+                        x[i-1] = x[i] + (i>=4?x[i-4]:0)<x[i-2]? x[i-1]:x[i-1]-x[i-3];// update boundary
+                }
+            }
+            return false;
+        }
+    };
+
+My special thank goes to  hohomi for pointing out one bug in Solution 2 and I believe I fixed it.
+
+
+  [1]: https://leetcode.com/discuss/88054/java-oms-with-explanation
+
+
+----------------------------------------------------------------------------------------------------
+Java O(N) O(1) 0ms solution with explanation
+There are only 3 scenarios where it won't cross itself.
+
+1. The distances of the moves parallel to each other keeps going up (growing spiral).
+2. The distances of the moves parallel to each other keeps going down (shrinking spiral).
+3. The distances of the moves parallel to each other first keeps going up, then keeps going down (shrinking spiral inside of the growing spiral), and never goes up.
+
+Our code just needs to check if there're any things violating the above rules.
+
+I feel there should be smarter approaches. Please reply as answer or comments. :P
+
+    public class Solution {
+        public boolean isSelfCrossing(int[] x) {
+            int a1, a2, a3, a4, a5;
+            
+            // if it's increasing
+            boolean up = false;
+            
+            if (x.length < 4) {
+                return false;
+            }
+            
+            a1 = 0;
+            a2 = x[0];
+            a3 = x[1];
+            a4 = x[2];
+            
+            if (a2 < a4) {
+                up = true;
+            }
+            else {
+                up = false;
+            }
+            
+            for (int i = 3; i < x.length; i++) {
+                a5 = x[i];
+                
+                if (!up && a5 >= a3) {
+                    return true;
+                }
+                else if (up && a5 <= a3) {
+                    // succeeded in turning into decreasing
+                    if (a5 + a1 < a3 || (i + 1 < x.length && x[i + 1] + a2 < a4)) {
+                        up = false;
+                    }
+                    // not end yet
+                    else if (i + 1 < x.length) {
+                        return true;
+                    }
+                }
+                
+                a1 = a2;
+                a2 = a3;
+                a3 = a4;
+                a4 = a5;
+            }
+            
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+An ASCII Art Explanation of This Problem and My C Solution
+    //           =   a l l    c a s e s   =
+    // 
+    //     case 1     case 2: expanding   case 3: collapsing
+    //                     (global)           (local)
+    //                  (not crossing)   (may not crossing)
+    // 
+    //    <------+     +------------+      +---------+
+    //           |     |            |      |         |
+    //           |     |  +-----+   |      |  +---+  |
+    //           |     |  |     |   |      |  |   |  :
+    //           #     |  |     #   |      |  v   |  :
+    //                 |  |         |      |      |  
+    //                 |  +---------+      +------+  
+    //                 |
+    //                 +--------->
+    // 
+    //     case 4: failed expanding                
+    //      
+    //      +----+
+    //      |    |
+    //      |  <----[2]----^     [2]: second failure
+    //      |    #         |
+    //      |             [1]    [1]: first  failure
+    //      |              |
+    //      +--------------+
+    // 
+    //     case 5: failed expanding & then collapsing
+    // 
+    //      +----+
+    //      |    |
+    //      |    |  +------+
+    //      |    #  | [C]  |     [C]: may be perfectly collapsed
+    //      |       +--->  |
+    //      |              |
+    //      +--------------+
+    // 
+    //     case 6: failed expanding                
+    // 
+    //         +---+
+    //         |   |
+    //         |   |
+    //         |   #
+    //         |
+    //       <---[2]----+        [2]: second failure
+    //         |        |
+    //         |       [1]       [1]: first  failure
+    //         |        |
+    //         +--------+
+    // 
+    //     case 7: failed expanding & then collapsing
+    // 
+    //         +------+
+    //         |      |
+    //         |      #
+    //         |
+    //         |  +-----------+
+    //         |  |  +-----+  |
+    //         |  |  +-->  | [1] [1]: failure
+    //         |  |        |  |
+    //         |  +--------+  |
+    //         +--------------+
+    // 
+    //    *notice: case 3 = case 6 + case 7
+    // 
+    //     case 8: docking!
+    // 
+    //         +-------+
+    //         |       |
+    //         |       #
+    //         |
+    //         |       ^
+    //         |       |
+    //         +-------+
+    // 
+    // #: starting point 
+    
+    // case 3
+    bool isPerfectCollapsing( int cur, int len, int *data )
+    {
+        while ( cur < len ) {
+            if ( data[cur] < data[cur-2] ) {
+                ++cur;
+            } else { return false; }
+        }
+        return true;
+    }
+    
+    bool isPerfect( int *data, int len )
+    {
+        // case 1
+        if ( len <= 2 ) { return true; }
+        // case 8
+        if ( len >= 5 &&
+             data[3]==data[1] &&
+             data[2]<=data[0]+data[4] )
+        {
+            return false;
+        }
+    
+        int cur = 2;
+        while ( cur < len && data[cur] > data[cur-2] ) {
+            ++cur;
+        }
+        if ( cur == len || cur == len-1 ) {
+            // case 2: perfect expanding
+            return true;
+        }
+    
+        // collapsed!
+        if ( cur == 2 || cur == 3 ) {
+            // case 3
+            return isPerfectCollapsing( ++cur, len, data );
+        }
+    
+        if ( data[cur]+data[cur-4] >= data[cur-2] ) {                    // case 4/5
+            if ( ++cur < len ) {
+                if ( data[cur]+data[cur-4] >= data[cur-2] ) {            // case 4
+                    return false;
+                } else { return isPerfectCollapsing(++cur, len, data); } // case 5
+            } else { return true; }
+        } else { return isPerfectCollapsing(++cur, len, data); }         // case 6/7
+    }
+    
+    bool isSelfCrossing( int *x, int xSize ) {
+        return !isPerfect( x, xSize );
+    }
+
+----------------------------------------------------------------------------------------------------
+A simple python solution with explanation
+This is based on dong.wang.1694's [second solution][1] with a little modification. 
+
+The basic idea is like this:
+1) When expanding, we never collide. 
+
+2) When shrinking, we collide when we go back too far. For example, if two steps ago, we went upward for 8, this time we can't go down for more than 7 or it is a collision.
+
+3) The tricky part is when transitioning from expanding to shrinking, we may get an early collision!!
+
+
+    class Solution(object):
+        def isSelfCrossing(self, x):
+
+            n = len(x)
+            x.append(0.5)        # let x[-1] = 0.5
+            if n < 4: return False
+            grow = x[2] > x[0]
+                
+            for i in range(3,n):
+                if not grow and x[i] >= x[i-2]: return True
+                if grow and x[i] <= x[i-2]:
+                    grow = False
+                    if x[i] + x[i-4] >= x[i-2]:
+                        x[i-1] -= x[i-3]
+            return False
+
+Graph
+    
+                                              +------------+
+        +---------+                           |            |
+        |         |                           |            |
+        |         |                           |            |
+        |         |                           |            |
+        |       i-4  <----+                   |            |
+    i-2 |         |       |                   |            +
+        |         |       |                   |
+        |                 |i                  |
+        |                 |                   |         <---------------+
+        |                 |                   |                         |
+        +---------+-------+                   |                         |
+                  ^                           |                         |
+                  |                           +-------------------------+
+                  |
+    
+    
+        x[i] + x[i-4] >= x[i-2]                  x[i] + x[i-4] < x[i-2]
+        Then, possible early collision,          nothing has to be changed
+        pretend we have started from
+        the plus sign point
+
+when x[3] == x\[1], we have to deal with a very special case. So we pretend we have started from a point 0.5 to the left of the origin making this case identical to what we have discussed above. 
+
+            1
+      +------------+
+      |            |
+      |            |
+      |            |0
+      |            |
+      |            |
+    2 |            |
+      |            +
+      |
+      |
+      |            ^
+      |            |
+      |            |
+      +------------+
+            3
+
+
+  [1]: https://leetcode.com/discuss/88196/re-post-2-o-n-c-0ms-solutions
+  [2]: https://leetcode.com/discuss/88075/java-o-n-logical-solution
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution
+This problem reminds me of an old snake game where snake eats its own tail..
+<p>It pretty clear that once x[i]<=x[i-2] the snake will become 'trapped' and eventually will eat itself. From there on we need to find conditions of when this happens. The easiest one is x[i]>=x[i-2]. The other 2 are a little tricker:<p>
+First one  is when snake catches it's tail at 0 degree angle. For example [1,1,2,1,1] <p>
+Second one when it catches it's tail at 90 degree angle. For example  [1,1,2,2,1,1]
+
+
+
+    public boolean isSelfCrossing(int[] x) {
+    	boolean snakeTrapped = false;
+    	for (int i=2;i<x.length;i++){
+    		if (snakeTrapped){
+    		     if (x[i]>=x[i-2])
+    			    return true;
+    			 else if (i>=4 && x[i-1]==x[i-3] && x[i-4]+x[i]>=x[i-2])
+    			     return true;
+    			 else if (i>=5 && x[i-3]-x[i-1]-x[i-5]<=0 && x[i-3]>x[i-5] && x[i]+x[i-4]>=x[i-2])
+    			     return true;
+    		}
+    		else if (x[i]<=x[i-2])
+    			snakeTrapped = true;
+    	}
+    	return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+5 lines cpp code with clear logic
+Basic observations:
+1. No crossing is produced when the path keeps going either 'inward' or 'outward'.
+2. A path without crossing is either one of the two above cases or a combination of both (an outward path transit into an inward path).
+
+    class Solution {
+    public:
+       bool isSelfCrossing(std::vector<int>& x) {
+          // started 'outside', walk until 'inside' a rectangle
+          int i; for(i=2; i<x.size()&&x[i]>x[i-2]; i++);
+          // out->in transition step
+          if( i>2 && x[i] >= x[i-2]-(i==3?0:x[i-4]) ) x[i-1] -= x[i-3];
+          // we are inside a rectangle now, check for crossing
+          for(i++; i<x.size()&&x[i]<x[i-2]; i++);
+          // crossing detected if end is not reached
+          return i<x.size();
+       }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy to understand 0MS C++ solution without obscure tricks

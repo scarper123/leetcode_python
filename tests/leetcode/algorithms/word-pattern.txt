@@ -1,0 +1,941 @@
+My clean Java solution
+The important thing is to consider all edge cases while thinking this problem through, including: negative integer, possible overflow, etc.
+
+Use HashMap to store a remainder and its associated index while doing the division so that whenever a same remainder comes up, we know there is a repeating fractional part.
+
+Please comment if you see something wrong or can be improved. Cheers!
+
+    public class Solution {
+        public String fractionToDecimal(int numerator, int denominator) {
+            if (numerator == 0) {
+                return "0";
+            }
+            StringBuilder res = new StringBuilder();
+            // "+" or "-"
+            res.append(((numerator > 0) ^ (denominator > 0)) ? "-" : "");
+            long num = Math.abs((long)numerator);
+            long den = Math.abs((long)denominator);
+            
+            // integral part
+            res.append(num / den);
+            num %= den;
+            if (num == 0) {
+                return res.toString();
+            }
+            
+            // fractional part
+            res.append(".");
+            HashMap<Long, Integer> map = new HashMap<Long, Integer>();
+            map.put(num, res.length());
+            while (num != 0) {
+                num *= 10;
+                res.append(num / den);
+                num %= den;
+                if (map.containsKey(num)) {
+                    int index = map.get(num);
+                    res.insert(index, "(");
+                    res.append(")");
+                    break;
+                }
+                else {
+                    map.put(num, res.length());
+                }
+            }
+            return res.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted cpp solution, with explainations
+    // upgraded parameter types
+    string fractionToDecimal(int64_t n, int64_t d) {
+        // zero numerator
+        if (n == 0) return "0";
+    
+        string res;
+        // determine the sign
+        if (n < 0 ^ d < 0) res += '-';
+    
+        // remove sign of operands
+        n = abs(n), d = abs(d);
+    
+        // append integral part
+        res += to_string(n / d);
+    
+        // in case no fractional part
+        if (n % d == 0) return res;
+    
+        res += '.';
+    
+        unordered_map<int, int> map;
+    
+        // simulate the division process
+        for (int64_t r = n % d; r; r %= d) {
+    
+            // meet a known remainder
+            // so we reach the end of the repeating part
+            if (map.count(r) > 0) {
+                res.insert(map[r], 1, '(');
+                res += ')';
+                break;
+            }
+    
+            // the remainder is first seen
+            // remember the current position for it
+            map[r] = res.size();
+    
+            r *= 10;
+    
+            // append the quotient digit
+            res += to_string(r / d);
+        }
+    
+        return res;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Short Java solution
+    public String fractionToDecimal(int numerator, int denominator) {
+        StringBuilder result = new StringBuilder();
+        String sign = (numerator < 0 == denominator < 0 || numerator == 0) ? "" : "-";
+        long num = Math.abs((long) numerator);
+        long den = Math.abs((long) denominator);
+        result.append(sign);
+        result.append(num / den);
+        long remainder = num % den;
+        if (remainder == 0)
+            return result.toString();
+        result.append(".");
+        HashMap<Long, Integer> hashMap = new HashMap<Long, Integer>();
+        while (!hashMap.containsKey(remainder)) {
+            hashMap.put(remainder, result.length());
+            result.append(10 * remainder / den);
+            remainder = 10 * remainder % den;
+        }
+        int index = hashMap.get(remainder);
+        result.insert(index, "(");
+        result.append(")");
+        return result.toString().replace("(0)", "");
+    }
+
+
+----------------------------------------------------------------------------------------------------
+0ms C++ Solution with Detailed Explanations
+Well, the key to this problem is on how to identify the recurring parts. After doing some examples using pen and paper, you may find that for the decimal parts to recur, **the remainders should recur**. So we need to maintain the remainders we have seen. Once we see a repeated remainder, we know that we have reached the end of the recurring parts and should enclose it with a `)`. However, we still need to insert the `(` to the correct position. So we maintain a mapping from each remainder to the position of the corresponding quotient digit of it in the recurring parts. Then we use this mapping to retrieve the starting position of the recurring parts.
+
+Now we have solved the trickiest part of this problem.
+
+There are some remaining problems to solve to achieve a bug-free solution.
+
+ 1. Pay attention to the sign of the result;
+ 2. Handle cases that may cause overflow like `numerator = -2147483648, denominator = -1` appropriately by using `long long`; 
+ 3. Handle all the cases of (1) no fractional part; (2) fractional part does not recur; and (3) fractional part recurs respectively.
+
+To handle problem 3, we divide the division process into the integral part and the fractional part. For the fractional part, if it does not recur, then the remainder will become `0` at some point and we could return. If it does recur, the method metioned in the first paragraph has already handled it.
+
+Taking all these into considerations, we have the following code, which takes 0 ms :-)
+
+    class Solution {
+    public:
+        string fractionToDecimal(int numerator, int denominator) {
+            if (!numerator) return "0";
+            string res;
+            if (numerator < 0 ^ denominator < 0) res += '-';
+            long numer = numerator < 0 ? (long)numerator * (-1) : (long)numerator;
+            long denom = denominator < 0 ? (long)denominator * (-1) : (long)denominator;
+            long integral = numer / denom;
+            res += to_string(integral);
+            long rmd = numer % denom;
+            if (!rmd) return res;
+            res += '.';
+            rmd *= 10;
+            unordered_map<long, long> mp; 
+            while (rmd) {
+                long quotient = rmd / denom;
+                if (mp.find(rmd) != mp.end()) { 
+                    res.insert(mp[rmd], 1, '(');
+                    res += ')';
+                    break;
+                }
+                mp[rmd] = res.size();
+                res += to_string(quotient);
+                rmd = (rmd % denom) * 10;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Clean Java Solution
+I don't understand why so many people tends to write "short" java solutions over "clear" java solution when performance stays the same.
+In order to be a good teammate, one should always write clean code instead of hacky code if performance stays the same.
+
+        
+      public String fractionToDecimal(int numerator, int denominator) {
+            boolean isNegative = (numerator < 0 && denominator > 0 || numerator > 0 && denominator < 0) ? true : false;
+            long numeratorL = Math.abs((long) numerator);
+            long denominatorL = Math.abs((long) denominator);
+            Map<Long, Integer> previousRemains = new HashMap<Long, Integer>();
+            StringBuilder sb = new StringBuilder();
+            long quotian = numeratorL / denominatorL;
+            sb.append(quotian);
+            
+            numeratorL %= denominatorL;
+        
+            if (numeratorL != 0) {
+                sb.append(".");
+            }
+            
+            int quotianIndex = 0;
+            while (numeratorL != 0) {
+                numeratorL *= 10;
+                quotian = Math.abs(numeratorL / denominatorL);
+                if (!previousRemains.containsKey(numeratorL)) {
+                    sb.append(quotian);
+                    previousRemains.put(numeratorL, quotianIndex++);
+                } else {
+                    int firstIndex = 1 + previousRemains.get(numeratorL) + sb.indexOf(".");
+                    sb.insert(firstIndex, '(');
+                    sb.append(")");
+                    break;
+                }
+                numeratorL %= denominatorL;
+            }
+            
+            if (isNegative) {
+                sb.insert(0, "-");
+            }
+            return sb.toString();
+        }
+
+----------------------------------------------------------------------------------------------------
+Do not use python as cpp, here&#x27;s a short version python code
+Though python is slow, It is easy to write
+
+    class Solution:
+    # @return a string
+    def fractionToDecimal(self, numerator, denominator):
+        n, remainder = divmod(abs(numerator), abs(denominator))
+        sign = '-' if numerator*denominator < 0 else ''
+        result = [sign+str(n), '.']
+        stack = []
+        while remainder not in stack:
+            stack.append(remainder)
+            n, remainder = divmod(remainder*10, abs(denominator))
+            result.append(str(n))
+
+        idx = stack.index(remainder)
+        result.insert(idx+2, '(')
+        result.append(')')
+        return ''.join(result).replace('(0)', '').rstrip('.')
+
+and there's no overflow
+
+----------------------------------------------------------------------------------------------------
+Simple and Short Solution in JAVA
+    public String fractionToDecimal(int numerator, int denominator) {
+        if (denominator == 0) return "";
+        StringBuilder str = new StringBuilder();
+        HashMap<Long, Integer> map = new HashMap<Long, Integer>();
+        if (numerator < 0 && denominator > 0 || numerator > 0 && denominator < 0) {
+            str.append('-');
+        }
+        long num = Math.abs((long)numerator);
+        long den = Math.abs((long)denominator);
+        long n = num/den;
+        long reminder = num % den;
+        str.append(n);
+        if (reminder == 0) return str.toString();
+        else str.append('.');
+        while(!map.containsKey(reminder)) {
+            map.put(reminder,str.length());
+            n = reminder*10/den;
+            reminder = reminder*10%den;
+            if (reminder != 0 || reminder == 0 && !map.containsKey(reminder)) {
+                str.append(n);
+            }
+        }
+        if (reminder != 0) {
+            str.insert(map.get(reminder),"(");
+            str.append(')');            
+        }
+        return str.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solution
+    class Solution:
+    # @return a string
+    def fractionToDecimal(self, numerator, denominator):
+        res=""
+        if numerator/denominator<0:
+            res+="-"
+        elif numerator%denominator==0:
+            return str(numerator/denominator)
+        numerator=abs(numerator)
+        denominator=abs(denominator)
+        res+=str(numerator/denominator)
+        res+="."
+        numerator%=denominator
+        i=len(res)
+        table={}
+        while numerator!=0:
+            if numerator not in table.keys():
+                table[numerator]=i
+            else:
+                i=table[numerator]
+                res=res[:i]+"("+res[i:]+")"
+                return res
+            numerator=numerator*10
+            res+=str(numerator/denominator)
+            numerator%=denominator
+            i+=1
+        return res
+
+Idea is to put every remainder into the hash table as a key, and the current length of the result string as the value. When the same remainder shows again, it's circulating from the index of the value in the table.
+
+----------------------------------------------------------------------------------------------------
+An intuitive solution in C beating 100% submissions, well-explained
+Beating 100% submission, why? no one ever submitted the C version so far. Here is my solution:
+
+ - determine the sign of the result;
+ - retrieve the integer part of the result - numerator/denominator;
+ - get all the decimals by the remainder -> numerator%denominator just as we do division in mathematics; but along with it we should record the remainder value and the corresponding string index collecting string (once we find the same remainder, we will know that we will run in a circle since the denominator is always the same, so then we have to <font color="#ff0000">bracket the inner digits up</font>) and return;
+
+> B.T.W. there is a customised hash-map structure to store the remainder and the string index
+
+Bang! End of story.
+
+----------
+    
+    #define LEN 10000
+    struct MyListNode
+    {
+        long long key;
+        int val;
+        struct MyListNode *next;
+    };
+    
+    void push(struct MyListNode* head, long long key, int val)
+    {
+        struct MyListNode *p = head;
+        while(p->next)
+            p = p->next;
+        struct MyListNode *t = (struct MyListNode*)malloc(sizeof(struct MyListNode));
+        t->key = key;
+        t->val = val;
+        p->next = t;
+    }
+    
+    int pop(struct MyListNode* head, long long key)
+    {
+        struct MyListNode *p = head->next;
+        while(p)
+        {
+            if(p->key == key)
+                return p->val;
+            p = p->next;
+        }
+        return 0;
+    }
+    
+    char* fractionToDecimal(int n, int d)
+    {
+        if(n == 0) return "0";
+        char *s = (char*)malloc(sizeof(char)*LEN);
+        int index = 0;
+        if((n<0 && d>0) || (n>0 && d<0)) s[index++] = '-'; //get the sign part;
+        long long numerator = (n==INT_MIN)? -1*(long long)n : abs(n); //get the positive format of numerator;
+        long long denominator = (d==INT_MIN)? -1*(long long)d : abs(d); //get the positive format of denominator;
+        long long integer = numerator/denominator; //collecting the integer part;
+        if(integer == 0)
+            s[index++] = '0';
+        else
+        {
+            char *t = (char*)malloc(sizeof(char)*LEN); //used to store the integer part in reverse order;
+            int index0 = 0;
+            while(integer)
+            {
+                t[index0++] = integer%10+'0';
+                integer /= 10;
+            }
+            for(int i = index0-1; i > -1; i--) //reverse it again, then s will store the integer part in normal sequence;
+                s[index++] = t[i];
+        }
+        long long remainder = numerator%denominator; //get the remainder by mod operator;
+        if(remainder == 0) 
+        {
+            s[index] = '\0';
+            return s;
+        }
+        s[index++] = '.'; //there are decimals;
+        struct MyListNode *head = (struct MyListNode*)malloc(sizeof(struct MyListNode)); //used to store the remainder digit index in string for recurring;
+        while(remainder)
+        {
+            int pre = pop(head, remainder);
+            if(pre) //check if this digit has already occurred, if so, add brackets;
+            {
+                for(int i = index; i > pre; i--)
+                    s[i] = s[i-1];
+                index++;
+                s[pre] = '(';
+                s[index++] = ')';
+                break;
+            }
+            push(head, remainder, index);
+            remainder *= 10; //imitating division process here, retrieving the high decimal digit;
+            s[index++] = remainder/denominator+'0';
+            remainder %= denominator;
+        }
+        s[index] = '\0';
+        return s;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+A clean C++ solution with 3ms
+    class Solution
+    {
+    public:
+    	string fractionToDecimal(int numerator, int denominator)
+    	{
+    		if(0 == numerator) return "0";// If the numerator is 0, the final result must be 0.
+    
+    		long long num = numerator;// One of the test case is denominator = 0x80000000, thus we must save its opposite
+    		long long den = denominator; // number in a long long variable.
+    
+    		bool b1 = num < 0;
+    		bool b2 = den < 0;
+    
+    		if(b1) num = - num;	// We convert both numerator and denominator into positive numbers.
+    		if(b2) den = -den;
+    
+    		string res = "";
+    		if(b1^b2) res += "-"; // Add a "-" if the numerator is positive and the denominator is negative or vice versa.
+    
+    		long long quo = num/den;
+    		long long rem = num%den;
+    
+    		//Calculate the integral part of the final result.
+    		if(quo > 0)
+    		{
+    			ostringstream oss;
+    			oss << quo;
+    			res += oss.str();
+    		}
+    		else 
+    		{
+    			res += "0";
+    		}
+    
+    		if(0 == rem) return res; // That the remainder is 0 means there isn't a fractional part of the result, 
+    		//so we return the integral part.
+    
+    		/*
+    		In the following, we record the numerator to be divided by the denominator and the length of the temporary result.
+    		If a numerator has been met before, circulation happens, so we stop the computation and insert a parathesis, and return 
+    		the result.
+    		*/
+    		num = rem;
+    
+    		unordered_map<long long, int> m;
+    		m[num] = res.size();
+    
+    		num *= 10;
+    		res.append(".");
+    		m[num] = res.size();
+    
+    		while(num > 0)
+    		{
+    			if(num < den)
+    			{// If the numerator is less than the denominator, we multiply the numerator with 10, and append a 'o'
+    				// to the result. And we record the numerator and the temporary size of the result.
+    				num *= 10;
+    				res.append("0");
+    				m[num] = res.size();
+    			}
+    
+    			if(num > den)
+    			{
+    				char ch = '0' + num/den; // Compute the quotient and push the quotient to the result.
+    				res.push_back(ch);
+    				num %= den; // Compute the remainder; 
+    				num *= 10; // multiply the remainder with 10, and it will be the new numerator.
+    				if(m.end() == m.find(num)) // This numerator occurs for the first time, so we record it.
+    				{
+    					m[num] = res.size();
+    				}
+    				else // Circulation happens, so we return the result.
+    				{
+    					string temp = res.substr(0, m[num]) + "(" + res.substr(m[num], string::npos) + ")";
+    					res = temp;
+    					break;
+    				}
+    			}
+    		}
+    		return res;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Online judge pass  -- java version
+     public class Solution {
+            public String fractionToDecimal(int numerator, int denominator) {
+                if (denominator == 0) {
+                    throw new IllegalArgumentException(" denominator can not be zero");
+                }
+                
+                // avoid overflow for minimum vlaue of interger
+                long newNum = (long) numerator;
+                long newDeNom = (long) denominator;
+        		
+        		StringBuilder sb = new StringBuilder();
+                
+                // detect sign
+                if ((newNum > 0 && newDeNom < 0) || (newNum <0 && newDeNom > 0)) {
+        		    sb.append("-");
+        		}
+        		// make sure it is postive value
+        		newNum = Math.abs(newNum);
+        		newDeNom = Math.abs(newDeNom);      
+                       
+                sb.append(newNum / newDeNom);
+                
+                long reminder = newNum % newDeNom;
+                Map<Long, Integer> reminderMap = new HashMap<>();
+                
+                if (reminder != 0) {
+                    sb.append(".");
+                }
+                
+                while (reminder != 0 && !reminderMap.containsKey(reminder)) {
+                    reminderMap.put(reminder, sb.length());
+                    reminder *= 10;
+                    sb.append(reminder / newDeNom);
+                    reminder = reminder % newDeNom; 
+                }
+                
+                if (reminderMap.containsKey(reminder)) {
+                    sb.insert(reminderMap.get(reminder), "(");
+                    sb.append(")");
+                }
+                return sb.toString();
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Fast and concise python solution using dictionary.
+    def fractionToDecimal(self, numerator, denominator):
+        sign = '-' if numerator * denominator < 0 else ''
+        head, remainder = divmod(abs(numerator), abs(denominator))
+        tail, seen = '', {}
+        while remainder != 0:
+            if remainder in seen:
+                tail = tail[: seen[remainder]] + '(' + tail[seen[remainder]:] + ')'
+                break
+            seen[remainder] = len(tail)
+            digit, remainder = divmod( remainder*10, abs(denominator) )
+            tail+=str(digit)
+        return sign + str(head) + (tail and '.' + tail)
+
+----------------------------------------------------------------------------------------------------
+Is there any good way to deal with the extreme edge case without converting int to long?
+As the title says. Is there any good way to deal with the extreme edge case without converting int to long?
+
+----------------------------------------------------------------------------------------------------
+My python code without using extra space
+The idea is pretty simple, the question is essentially the same with "Find the start point of a linked list cycle". I used the fast pointer and slow pointer trick.
+Below is my code with some explanation:
+
+    def fractionToDecimal(self, numerator, denominator):
+        n = numerator
+        d = denominator
+        if n % d == 0:
+            return str(n//d)
+        # Deal with negatives
+        if (abs(n)/n) * (abs(d)/d) < 0:
+            res = '-'
+            n = abs(n)
+            d = abs(d)
+        else:
+            res = ''
+        # Integer part
+        res = res + str(n//d) + '.'
+        n = n % d
+        # Start point of the "list"
+        frem = n
+        srem = n
+        firstTime = True
+        while frem != 0 and not (firstTime == False and frem == srem):
+            firstTime = False
+            srem = (srem * 10) % d
+            frem = (frem * 10) % d
+            if frem:
+                frem = (frem * 10) % d
+        # The fast pointer encounters a remainder of 0, so no cycle in the "list"
+        if frem == 0:
+            res += str((n * 10) // d)
+            rem = (n * 10) % d
+            while rem:
+                res += str((rem * 10) // d)
+                rem = (rem * 10) % d
+            return res
+        else:
+            # Find the start point of the cycle, meanwhile, generate the non recurring part
+            srem = n
+            while frem != srem:
+                res += str((srem * 10) // d)
+                srem = (srem * 10) % d
+                frem = (frem * 10) % d
+            res += '('
+            # Generate the recurring part
+            firstTime = True
+            while not (firstTime == False and srem == frem):
+                firstTime = False
+                res += str((srem * 10) // d)
+                srem = (srem * 10) % d
+            res += ')'
+            return res
+
+----------------------------------------------------------------------------------------------------
+Easy to understand C++ solution
+    class Solution {
+    public:
+        string fractionToDecimal(int numerator, int denominator) {
+            if(denominator == 0) return "";
+            if(numerator == 0) return "0"; 
+            unordered_map<long, int> appeared;
+            string ans;
+            
+            long p_int = abs((long)numerator / (long)denominator);
+            ans += string((numerator < 0) ^ (denominator < 0), '-'); 
+            ans += to_string(p_int);
+            long rem = abs((long)numerator % (long)denominator);
+            if(rem == 0) return ans;
+            ans += ".";
+            
+            while(rem){
+                appeared[rem] = ans.size();
+                rem *= 10;
+                ans += to_string(rem / abs((long)denominator));
+                rem %= abs((long)denominator);
+                if(appeared.find(rem) != appeared.end()){
+                    ans.insert(appeared[rem], "(");
+                    ans += ")";
+                    break;
+                }
+            }
+            
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution with explanation,second version
+my trick:
+1. use long to avoid overflow<br>
+2. use StringBuffer to build String<br>
+3.use class pair to keep track of numerator and denominator,if I find the same pair in the map,it means the fractional part is repeating.<br>
+4.  using `res=numeratorl/denominatorl;numeratorl=(numeratorl%denominatorl)*10;` to simulate division,`res` is the value to append to buffer.
+
+   
+     public class Solution {
+            public String fractionToDecimal(int numerator, int denominator) {
+	    	//to avoid overflow
+	    	long numeratorl=numerator, denominatorl=denominator;
+	        StringBuffer buffer=new StringBuffer();
+	        //handle negatives 
+	        if(numeratorl<0&&denominatorl>0)buffer.append('-');
+	        else if(numeratorl>0&&denominatorl<0)buffer.append('-');
+	        numeratorl=Math.abs(numeratorl);denominatorl=Math.abs(denominatorl);
+	        //map,key:pair to hold numerator and denominator;value:position of numerator/denominator 
+	        HashMap<pair, Integer>map=new HashMap<>();
+	        //handle integer part
+	        long res=numeratorl/denominatorl;
+	        numeratorl=(numeratorl%denominatorl)*10;
+			buffer.append(res);
+			if(numeratorl!=0)buffer.append('.');
+			//handle float part
+			while(numeratorl != 0){
+				res=numeratorl/denominatorl;
+				pair p=new pair(denominatorl,numeratorl);
+				if(map.get(p)!=null)
+				{
+					//handle repaeting part
+					buffer.insert(map.get(p).intValue(), '(');
+					buffer.append(')');
+					break;
+				}
+				map.put(p, buffer.length());
+				numeratorl=(numeratorl%denominatorl)*10;
+		        buffer.append(res);
+			}
+	        return buffer.toString();
+	    }
+	    //this class is used to hold numerator and denominator,override hashcode\equals
+	    private static class pair{
+	    	public long d;
+	    	public long n;
+	    	public pair(long d,long n) {
+	    		this.d=d;this.n=n;
+			}
+	    	@Override
+	    	public int hashCode() {
+	    		return Arrays.hashCode(new long[]{d,n});
+	    	}
+	    	@Override
+	    	public boolean equals(Object obj) {
+	    		pair p = (pair) obj;
+	    		return p.d==d&&p.n==n;
+	    	}
+	     }
+        }
+
+I make this problem complicated,because if numerator repeating,the fractional part is repeating.so class `pair` is not needed.I give my second version
+ 
+
+    public class Solution {
+    	    public String fractionToDecimal(int numerator, int denominator) {
+    	    	//to avoid overflow
+    	    	long numeratorl=numerator, denominatorl=denominator;
+    	        StringBuffer buffer=new StringBuffer();
+    	        //handle negetives 
+    	        if(numeratorl<0&&denominatorl>0)buffer.append('-');
+    	        else if(numeratorl>0&&denominatorl<0)buffer.append('-');
+    	        numeratorl=Math.abs(numeratorl);denominatorl=Math.abs(denominatorl);
+    	        //map,key:  numerator ,because denominator never changes;value:position of numerator/denominator 
+    	        HashMap<Long, Integer>map=new HashMap<>();
+    	        //handle integer part
+    	        long res=numeratorl/denominatorl;
+    	        numeratorl=(numeratorl%denominatorl)*10;
+    			buffer.append(res);
+    			if(numeratorl!=0)buffer.append('.');
+    			//handle flaot part
+    			while(numeratorl != 0){
+    				res=numeratorl/denominatorl;
+    				if(map.get(numeratorl)!=null)
+    				{
+    					//handle repaeting part
+    					buffer.insert(map.get(numeratorl).intValue(), '(');
+    					buffer.append(')');
+    					break;
+    				}
+    				map.put(numeratorl, buffer.length());
+    				numeratorl=(numeratorl%denominatorl)*10;
+    		        buffer.append(res);
+    			}
+    	        return buffer.toString();
+    	    }
+    	}
+
+----------------------------------------------------------------------------------------------------
+My java solution
+basic idea:
+
+1. for the input integer: positive and negative number matters? => yes, so check the sign first
+
+2. can get integer part directly by a/b, then deal with decimal part
+
+3. get remainder by a%b. the problem is: how to check the decimal part is repeated (or not)?
+
+4. for each loop, we can get the digit by remainder*10/b and update new remainder=remainder*10%b, if we get the same remainder again, previous result is repeated
+
+5. so, use a set to store the remainder(s) that already appeared and use queue to store int sequence that need to append to res
+
+6. check remainder for each loop, if 0, poll all elem in queue, if set contains the remainder (q...)
+
+7. but... the question comes again: example, if result is 0.123454545 or 1/7 = 0.123454545, need a parameter to store which digit the res starts to repeat.. extra info is needed when we store the remainder to "locate" its position
+
+8. back to step 5, define the map instead of set to store <remainder, position> position=i (each loop i++)
+	
+9. at last, check the remainder to know whether it's belong to "recurring" result or not
+
+
+        public static String fractionToDecimal(int numerator, int denominator) {
+    		String res = "";
+    		long a = Math.abs((long) numerator);
+    		long b = Math.abs((long) denominator);
+    		if ((denominator < 0 && numerator > 0) || (denominator > 0 && numerator < 0)) {
+    			res += "-";
+    		}
+    		long intPart= a / b;
+    		res += intPart;
+    		if (a % b == 0) {
+    			return res;
+    		}
+    		res += ".";
+    		long remainder = a % b;
+    		HashMap<Long, Integer> map = new HashMap<Long, Integer>();
+    		int i = 1;
+    		map.put(remainder, 1);
+    		Queue<Long> queue = new LinkedList<Long>();
+    		int begin = -1;
+    		while (remainder != 0) {
+    			i++;
+    			long tmp = remainder * 10 / b;
+    			remainder = remainder * 10 % b;
+    			if (map.containsKey(remainder)) {
+    				begin = map.get(remainder);
+    				queue.offer(tmp);
+    				break;
+    			} else {
+    				map.put(remainder, i);
+    				queue.offer(tmp);
+    			}
+    		}
+    		if (remainder == 0) {
+    			while (!queue.isEmpty()) {
+    				res += queue.poll();
+    			}
+    		} else {
+    			int j = 1;
+    			while (!queue.isEmpty()) {
+    				long cur = queue.poll();
+    				if (j != begin) {
+    					res += cur;
+    				} else {
+    					res = res + "(" + cur;
+    				}
+    				j++;
+    			}
+    			res += ")";
+    		}
+    		return res;
+    	}
+
+a little optimization can be done: define stringbuilder as the result
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution Using HashMap and StringBuilder
+    public String fractionToDecimal(int numerator, int denominator) {
+        long n=numerator;
+		long d=denominator;
+		if(n==0)return "0";
+        int sign=1;
+        if(numerator<0){sign=-sign;n=-n;}
+        if(denominator<0){sign=-sign;d=-d;}   
+        
+        StringBuilder sb=new StringBuilder();
+        if(sign==-1)sb.append("-");
+        sb.append(n/d);
+        n%=d;
+        if(n==0)return sb.toString();
+        sb.append(".");
+        
+        HashMap<Long,Integer>map=new HashMap();
+        List<Long>list=new ArrayList();
+        int index=0;
+        while(n!=0&&!map.containsKey(n)){
+            map.put(n,index++);
+            n*=10;
+            list.add(n/d);
+            n%=d;
+        }
+        //Divide process finished
+        if(n==0){ //No repeat
+            for(int i=0;i<list.size();i++){
+                sb.append(list.get(i));
+            }
+            return sb.toString();
+        }else{ //Has repeat
+            int startIndex=map.get(n);    
+            for(int i=0;i<startIndex;i++){
+                sb.append(list.get(i));
+            }
+            sb.append("(");
+            for(int i=startIndex;i<list.size();i++){
+                sb.append(list.get(i));
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA 1ms without using hash table
+  Actually there is no need to use a hash table.
+
+  I get this inspiration from the problem NO.142, Linked list Cycle II, imagine every remainder you take as a node when you perform the division. When you get the recurring decimals, the pattern will be the same as the pattern mentioned in Linked list Cydle II(Find the node which the cycle starts).
+ 
+  How to find that node we want? Suppose we have n nodes who are not in the cycle and m nodes who are in the cycle. We create two pointers. The first one moves one nodes per step, the second one moves two nodes per step. When the first one reaches the node that we want, the second one is n nodes ahead. For the second node, if it want to catch up the first node, it will have to move m-n steps ahead. So far the first node have moved for (m-n+n) = m steps and there are (m+n-m) = n steps left to reach the node which starts the cycle. The same thing is, it will take exactly n steps for the first node to reach that node. So we could use a pointer start from the beginning of the list and move all of them one nodes per step. When they reach the same node. That node is the node we want.
+
+  The actual code is as follows.
+
+public class Solution {
+
+    public String fractionToDecimal(int numerator, int denominator) {
+        
+        if(numerator==Integer.MIN_VALUE&&denominator==-1)
+            return "2147483648";
+        int dummy = numerator/denominator, lef = numerator%denominator;
+        String str = dummy+"";
+        if(dummy==0){
+            if((numerator>0&&denominator<0)||(numerator<0&&denominator>0))
+            str = "-" + str; // 0 does not have a negative mark in front of it, so we have to add that.
+        }
+        if(lef==0) return str; // this indicates the result is an integer.
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(str);
+        sb.append(".");
+        long left = lef<0? -lef : lef;
+        long denomin = denominator<0? -denominator : denominator;
+        if(denominator==Integer.MIN_VALUE){
+            denomin = Integer.MAX_VALUE;
+            denomin++; // without this, when the denominator is -214748648, it will cause a overflow.
+        }
+        long slow = mod(left,denomin), fast = mod(mod(left,denomin),denomin);
+        if(slow==0){ // no need to start the loop.
+            left = extend(left,denomin,sb);
+            return sb.toString();
+        }
+        
+        while(slow!=fast){
+            if(fast==0){  // this indicates there are no cycles.
+                while(left!=0)
+                    left = extend(left,denomin,sb);
+                return sb.toString();
+            }
+            slow = mod(slow,denomin);
+            fast = mod(mod(fast,denomin),denomin);
+        }
+        
+        slow = left;
+        while(slow!=fast){
+            slow = mod(slow,denomin);
+            fast = mod(fast,denomin);
+        }
+        while(left!=slow)
+            left = extend(left,denomin,sb);
+        sb.append("("); // the start of the cycle.
+        left = extend(left,denomin,sb);
+        while(left!=slow)
+            left = extend(left,denomin,sb);
+        sb.append(")");
+        return sb.toString();
+    }
+    
+    private long mod(long left, long denominator){
+        left = left * 10;      
+        return left%denominator;    
+    }
+    
+    private long extend(long left, long denominator, StringBuilder sb){
+        left = left * 10;      
+        sb.append(left/denominator);
+        return left%denominator;
+    }
+
+ }
+
+----------------------------------------------------------------------------------------------------
+This online judge question is not reasonable.
+The repeating pattern could not determined by first repeating number.
+
+for example, 1/6 = 0.1(6) maybe correct cause the first repeating number is 6.
+
+but 10/23 = 0.(43478260869565521739130) which you can see that 0,1,2,3,4,5,6,7,8,9 appears multiple times.
+
+----------------------------------------------------------------------------------------------------

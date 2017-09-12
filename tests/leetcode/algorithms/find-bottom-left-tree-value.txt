@@ -1,0 +1,842 @@
+Java DFS Solution with Explanation
+public class Solution {
+    public boolean makesquare(int[] nums) {
+    	if (nums == null || nums.length < 4) return false;
+        int sum = 0;
+        for (int num : nums) sum += num;
+        if (sum % 4 != 0) return false;
+        
+        Arrays.sort(nums);
+        reverse(nums);
+        
+    	return dfs(nums, new int[4], 0, sum / 4);
+    }
+    
+    private boolean dfs(int[] nums, int[] sums, int index, int target) {
+    	if (index == nums.length) {
+    	    if (sums[0] == target && sums[1] == target && sums[2] == target) {
+    		return true;
+    	    }
+    	    return false;
+    	}
+    	
+    	for (int i = 0; i < 4; i++) {
+    	    if (sums[i] + nums[index] > target) continue;
+    	    sums[i] += nums[index];
+            if (dfs(nums, sums, index + 1, target)) return true;
+    	    sums[i] -= nums[index];
+    	}
+    	
+    	return false;
+    }
+    
+    private void reverse(int[] nums) {
+        int i = 0, j = nums.length - 1;
+        while (i < j) {
+            int temp = nums[i];
+            nums[i] = nums[j];
+            nums[j] = temp;
+            i++; j--;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+cpp 6ms solution with DFS
+class Solution {
+    bool dfs(vector<int> &sidesLength,const vector<int> &matches, int index, const int target) {
+        if (index == matches.size())
+            return sidesLength[0] == sidesLength[1] && sidesLength[1] == sidesLength[2] && sidesLength[2] == sidesLength[3];
+        for (int i = 0; i < 4; ++i) {
+            if (sidesLength[i] + matches[index] > target) // first
+                continue;
+            int j = i;
+            while (--j >= 0) // third
+                if (sidesLength[i] == sidesLength[j]) 
+                    break;
+            if (j != -1) continue;
+            sidesLength[i] += matches[index];
+            if (dfs(sidesLength, matches, index + 1, target))
+                return true;
+            sidesLength[i] -= matches[index];
+        }
+        return false;
+    }
+public:
+    bool makesquare(vector<int>& nums) {
+        if (nums.size() < 4) return false;
+        int sum = 0;
+        for (const int val: nums) {
+            sum += val;
+        }
+        if (sum % 4 != 0) return false;
+        sort(nums.begin(), nums.end(), [](const int &l, const int &r){return l > r;}); // second
+        vector<int> sidesLength(4, 0);
+        return dfs(sidesLength, nums, 0, sum / 4);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS solution with various optimizations (sorting, sequential-partition, DP)
+public boolean makesquare(int[] nums) {
+    if (nums.length < 4) return false;
+        
+    int perimeter = 0;
+    for (int ele : nums) perimeter += ele;
+    if (perimeter % 4 != 0) return false;
+        
+    Arrays.sort(nums);
+    int side = perimeter / 4;
+        
+    for (int i = 0; i < 3; i++) {
+        if (!makesquareSub(nums, nums.length - 1, side, new HashSet<>())) return false;
+    }
+    
+    return true;
+}
+    
+private boolean makesquareSub(int[] nums, int i, int sum, Set<Integer> set) {
+    if (sum == 0) return true;
+    if (set.contains(sum) || i < 0) return false;
+    
+    if (nums[i] > 0 && nums[i] <= sum) {
+        nums[i] = -nums[i];
+        if (makesquareSub(nums, i - 1, sum + nums[i], set)) return true;
+        nums[i] = -nums[i];
+    }
+        
+    if (makesquareSub(nums, i - 1, sum, set)) return true;
+        
+    set.add(sum);
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ bit masking + DP solution with detailed comments
+bool makesquare(vector<int>& nums) {
+    int n = nums.size();
+
+    long sum = accumulate(nums.begin(), nums.end(), 0l);
+    if (sum % 4)
+        return false;
+    long sideLen = sum / 4;
+    // need to solve the problem of partitioning nums into four equal subsets each having
+    // sum equal to sideLen
+    vector<int> usedMasks;
+    // validHalfSubsets[i] == true iff the subset represented by bitmask i
+    // has sum == 2*sideLen, AND the subset represented by i can be further partitioned into
+    // two equal subsets. See below for how it is used.
+    vector<bool> validHalfSubsets(1<<n, false);
+
+    // E.g., if n = 5, (1 << 5 - 1) = 11111 represents the whole set
+    int all = (1 << n) - 1;
+    // go through all possible subsets each represented by a bitmask
+    for (int mask = 0; mask <= all; mask++) {
+        long subsetSum = 0;
+        // calculate the sum of this subset
+        for (int i = 0; i < 32; i++) {
+	    if ((mask >> i) & 1)
+		subsetSum += nums[i];
+        }
+	// if this subset has what we want
+	if (subsetSum == sideLen) {
+	    for (int usedMask : usedMasks) {
+	    // if this mask and usedMask are mutually exclusive
+	        if ((usedMask & mask) == 0) {
+		    // then they form a valid half subset whose sum is 2 * sideLen,
+                    // that can be further partitioned into two equal subsets (usedMask and mask)
+		    int validHalf = usedMask | mask;
+		    validHalfSubsets[validHalf] = true;
+		    // if in the past we concluded that the other half is also a valid
+		    // half subset, DONE!
+		    if (validHalfSubsets[all ^ validHalf])
+		        return true;
+	        }
+            }
+	    usedMasks.push_back(mask);
+        }
+    }
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Recursion Java solution. 66ms
+public boolean makesquare(int[] nums) {
+        Long sum=0l;
+        for(int x:nums){
+            sum=sum+x;
+        }
+        if(sum%4!=0||nums.length<4) return false;
+        long width=(sum/4);
+        Arrays.sort(nums);
+        long sum1=0,sum2=0,sum3=0,sum4=0;
+        return helper(nums,nums.length-1,sum1,sum2,sum3,sum4,width);
+        
+    }
+    public boolean helper(int[] a, int i,long sum1,long sum2,long sum3,long sum4, long width){
+        if(sum1>width||sum2>width||sum3>width||sum4>width) return false;
+        if(i==-1){
+            if(sum1==width&&sum2==width&&sum3==width&&sum4==width) return true;
+            else return false;
+        }
+//check a[i]  belonging to side1,side2,side3,side4
+        return helper(a,i-1,sum1+a[i],sum2,sum3,sum4,width)||
+        helper(a,i-1,sum1,sum2+a[i],sum3,sum4,width)||
+        helper(a,i-1,sum1,sum2,sum3+a[i],sum4,width)||
+        helper(a,i-1,sum1,sum2,sum3,sum4+a[i],width);
+    }
+````
+
+----------------------------------------------------------------------------------------------------
+Python DFS solution
+class Solution(object):
+    def makesquare(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        def dfs(nums, pos, target):
+            if pos == len(nums): return True
+            for i in range(4):
+                if target[i] >= nums[pos]:
+                    target[i] -= nums[pos]
+                    if dfs(nums, pos+1, target): return True
+                    target[i] += nums[pos]
+            return False
+        if len(nums) < 4 : return False
+        numSum = sum(nums)
+        nums.sort(reverse=True)
+        if numSum % 4 != 0: return False
+        target = [numSum/4] * 4;
+        return dfs(nums,0, target)
+
+
+----------------------------------------------------------------------------------------------------
+Python Explanation
+if len(A) < 4 or sum(A) % 4 or max(A) > sum(A) / 4:
+  return False
+
+T = sum(A) / 4
+N = len(A)
+A.sort()
+
+memo = {}
+def dp(mask, cur = T):
+  if (mask, cur) in memo: return memo[mask, cur]
+  if mask == 0: return cur == 0
+  if cur == 0: return dp(mask, T)
+
+  ans = False
+  for bit in xrange(N):
+    if mask & (1 << bit):
+      if A[bit] > cur:
+        break
+      if dp(mask ^ (1 << bit), cur - A[bit]):
+        ans = True
+        break
+  memo[mask, cur] = ans
+  return ans
+
+return dp(2**N - 1)
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DFS+DP solution
+public class Solution {
+	private Set<Integer> flags;
+
+	public boolean makesquare(int[] nums) {
+		if (nums.length == 0) return false;
+		int sum = 0;
+		for (int num : nums) {
+			sum += num;
+		}
+		if (sum % 4 != 0) return false;
+		flags = new HashSet<>();
+
+		dfs(nums, 0, sum / 4);
+
+		int len = (int) Math.pow(2, nums.length);
+		boolean[] dp = new boolean[len];
+		dp[0] = true;
+		for (int num : flags) {
+			for (int i = dp.length - 1; i >= 0; i--) {
+				if (dp[i] && (num&i)==0) {
+					dp[i | num] = true;
+				}
+			}
+		}
+		return dp[len - 1];
+	}
+
+	public void dfs(int[] nums, int flag, int sum) {
+		if (sum == 0) {
+			flags.add(flag);
+			return;
+		}
+		if (nums.length == 0) return;
+
+		if (nums[0] <= sum) {
+			dfs(Arrays.copyOfRange(nums, 1, nums.length), flag | (1 << nums.length - 1), sum - nums[0]);
+		}
+		dfs(Arrays.copyOfRange(nums, 1, nums.length), flag, sum);
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+9ms C++ DFS solution with smallest subsum check (detailed explanation)
+public:    
+    bool makesquare(vector<int>& nums) {
+      int sum;
+      if (nums.size() < 4 || (sum = accumulate(nums.begin(), nums.end(), 0))%4) return false;
+      return sortSmall(nums), dfs(nums.begin(), vector<int>(4,sum/4));
+    }
+private: // helpers   
+    // sort nums descendingly and calculate 4 smallest subsums
+    void sortSmall(vector<int>& nums) {
+      sort(nums.rbegin(), nums.rend());
+      small = { *((e=nums.end())-1), *(e-2), min(*(e-1)+*(e-2),*(e-3)), 
+                min(max(*(e-1)+*(e-2),*(e-3)),*(e-4)) };
+    }
+
+    // check if can partition into subsums {s[j]} starting at nums[i]
+    bool dfs(vector<int>::iterator i, const vector<int>& s) {
+      if (i == e) return true;
+      // check min condition
+      for (int j = 0; j < s.size(); ++j) if (small[j] > s[j]) return false; 
+      for (int j = 0; j < s.size(); ++j) {        
+        if (s[j] < *i || j && s[j] == s[j-1]) continue;
+        // build unique valid subsums
+        vector<int> ss(s); if (!(ss[j] -= *i)) ss.erase(ss.begin()+j);
+        if (sort(ss.begin(),ss.end()), dfs(i+1, ss)) return true;
+      }
+      return false;
+    }
+    
+    vector<int>::iterator e; // end of nums sorted descendingly
+    vector<int> small = vector<int>(4); // 4 smallest subsums
+
+
+----------------------------------------------------------------------------------------------------
+my C++ 9ms solution
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    bool makesquare(vector<int>& nums) {
+        n = nums.size() + 1;
+
+        long long sum = 0, a;
+        for (int x : nums)
+            sum += x;
+        if (sum % 4 != 0)
+            return false;
+        a = sum / 4;
+
+        vector<int> ans;
+        choice(0, nums, ans, 0, a);
+        int m = ans.size();
+        int ai, aj, ak, al;
+        for (int i = 0; i < m; ++i) {
+            ai = ans[i];
+            for (int j = i + 1; j < m; ++j) {
+                aj = ans[j];
+                if (ai & aj)
+                    continue;
+                aj |= ai;
+                for (int k = j + 1; k < m; ++k) {
+                    ak = ans[k];
+                    if (aj & ak)
+                        continue;
+                    ak |= aj;
+                    for (int l = k + 1; l < m; ++l) {
+                        al = ans[l];
+                        if (ak & al)
+                            continue;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+private:
+    int n;
+    void choice(int choc, vector<int>& nums, vector<int>& ans, int depth, int rest)
+    {
+        if (rest == 0) {
+            ans.push_back(choc);
+            return;
+        }
+        if (depth == n)
+            return;
+
+        int w = nums[depth];
+        if (rest >= w) {
+            choice(choc | (1 << depth), nums, ans, depth + 1, rest - w);
+        }
+        choice(choc, nums, ans, depth + 1, rest);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Golang solution using DFS with explanation
+func makesquare(nums []int) bool {
+    if len(nums) < 4 { return false }
+    sum:= 0
+    for i:=0; i < len(nums); i++ {
+        sum+=nums[i]
+    }
+    if(sum%4 != 0) {return false}
+    return findCombo(sum, 0, 0, 0, 0, 0, nums)
+}
+
+func findCombo(sum int, s1 int, s2 int, s3 int, s4 int, ind int, nums []int) bool {
+    if ind == len(nums) {
+        if s1 == s2 && s2 == s3 && s3 == s4 {return true}
+        return false
+    }    
+    if nums[ind] + s1 <= sum/4 {
+        if findCombo(sum, s1+nums[ind], s2, s3, s4, ind+1, nums) == true {
+            return true
+        }
+    }
+    if nums[ind] + s2 <= sum/4 {
+        if findCombo(sum, s1, s2 + nums[ind], s3, s4, ind+1, nums) == true {
+            return true
+        }
+    }
+    if nums[ind] + s3 <= sum/4 {
+        if findCombo(sum, s1, s2, s3 + nums[ind], s4, ind+1, nums) == true {
+            return true
+        }
+    }
+    if nums[ind] + s4 <= sum/4 {
+        if findCombo(sum, s1, s2, s3, s4+nums[ind], ind+1, nums) == true {
+            return true
+        }
+    }
+    return false
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+java dfs solution
+public class Solution {
+    public boolean makesquare(int[] nums) {
+        if (nums.length == 0) {
+            return false;
+        }
+        int sum = 0;
+        for (int i : nums) {
+            sum += i;
+        }
+        if (sum % 4 != 0) {
+            return false;
+        }
+        Arrays.sort(nums);
+        return dfs(nums, new boolean[nums.length], sum / 4, 0, 4, nums.length);
+    }
+    private boolean dfs(int[] nums, boolean[] visited, int edgeLen, int len, int n, int max) {
+        if (n == 0) {
+            return true;
+        }
+        if (len > edgeLen) {
+            return false;
+        }
+        if (len == edgeLen) {
+            return dfs(nums, visited, edgeLen, 0, n - 1, nums.length);
+        }
+        for (int i = max - 1; i >= 0; i--) {
+            if (visited[i]) {
+                continue;
+            }
+            visited[i] = true;
+            if (dfs(nums, visited, edgeLen, len + nums[i], n, i)) {
+                return true;
+            }
+            visited[i] = false;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+3ms C++ solution
+class Solution {
+public:
+    int cnt;
+    bool makesquare(vector<int>& nums) {
+        if (!nums.size()) return false;
+        
+        sort(nums.begin(), nums.end());
+        reverse(nums.begin(), nums.end());
+        
+        int sum = 0;
+        for (int n : nums) sum += n;
+        if (sum % 4) return false;
+        
+        int target = sum / 4;
+        cnt = 0;
+        
+        for (int i = 0; i < 4; i++) {
+            vector<int> path;
+            if (!dfs(nums, target, 0, path)) return false;
+            for (int j = path.size()-1; j >= 0; j--) {
+                nums.erase(nums.begin()+path[j]);
+            }
+        }
+        return true;
+    }
+    
+    bool dfs(vector<int>& nums, int target, int start, vector<int>& path) {
+        if (target == 0) {
+            return true;
+        }
+        
+        for (int i = start; i < nums.size(); i++) {
+            if (nums[i] > target) continue;
+            path.push_back(i);
+            if (dfs(nums, target-nums[i], i+1, path)) return true;
+            path.pop_back();
+        }
+        return false;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+15ms JAVA DFS solution
+public boolean makesquare(int[] nums) {
+        if (nums.length < 4) {
+            return false;
+        }
+        Arrays.sort(nums);
+        int sum = 0;
+        int max = 0;
+        for ( int num : nums) {
+            sum += num;
+            max = Math.max(max, num);
+        }
+        
+        int len = sum / 4;
+        if (sum % 4 != 0 || max > len) {
+            return false;
+        }
+        boolean[] isUsed = new boolean[nums.length];
+
+        for (int i = 0; i < 4; i++) {
+            boolean flag = dfs(isUsed, nums, len, nums.length - 1);
+            if (!flag) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean dfs(boolean[] isUsed, int[] nums, int target,int start) {
+        if (target < 0) {
+            return false;
+        }
+        if (target == 0) {
+            return true;
+        }
+        for (int i = start; i >= 0; i--) {
+            if (!isUsed[i]) {
+                isUsed[i] = true;
+                boolean flag = dfs(isUsed, nums, target - nums[i], i - 1);
+                if (flag) {
+                    return true;
+                } else {
+                    isUsed[i] = false;
+                }
+            }
+        }
+        return false;
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two different solutions
+public class Solution {
+    public boolean makesquare(int[] nums) {
+        int sum = 0, n = nums.length;
+        for (int num : nums) sum += num;
+        if (sum == 0 || n == 0 || (sum & 0b11) != 0) return false;
+        sum >>>= 2;
+        boolean[] dp = new boolean[1 << n];
+        List<Integer> parts = new ArrayList();
+        int all = (1 << n) - 1; // all possible choices
+        // try all choices, 1 mask is 1 choice
+        // time complexity O(2^n)
+        for (int mask = 0; mask <= all; mask++) {
+            int tmp = 0;
+            for (int i = 0; i < n; i++) { // retrieve "1", choose num at i
+                if (((mask >>> i) & 1) == 1)
+                    tmp += nums[i];
+            }
+            if (tmp == sum) { // check whether it is valid
+                for (int x : parts) {
+                    // check whether the new choice is conflit with others
+                    if ((mask & x) == 0) {
+                        // if there is an exist mask x has no conflit with current mask
+                        // mark their combination "mask1 + mask2" as true
+                        dp[mask | x] = true;
+                        // check whether there is another "mask3 + mask4" is valid
+                        // if there is, return true
+                        if (dp[all ^ (mask | x)]) {
+                            return true;
+                        }
+                    }
+                }
+                // record every kinds of equal-to-sum combination
+                parts.add(mask);
+            }
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 13ms solution - beats 99.15% Java solution
+private int[] resNums;
+
+public boolean makesquare(int[] nums) {
+    resNums = new int[nums.length];
+    if (nums.length == 0) return false;
+    
+    Arrays.sort(nums); 
+    
+    int sum = 0;
+    for (int num : nums) {
+        sum += num;
+    }
+    
+    if (sum % 4 != 0) return false;
+    int edgeLen = sum / 4;
+    
+    for (int i = 0; i < 4; i++) {
+        resNums = new int[nums.length];
+        
+        int start = nums.length - 1;
+        while(nums[start] == 0) start--;
+        if (findEdge(nums, edgeLen, start, 0) == false) return false;
+    
+        nums = resNums;
+    }
+    return true;
+}
+
+private boolean findEdge(int[] nums, int len, int start, int temp) {
+    if (temp == len) {
+        resNums = nums;
+        return true;
+    }
+    
+    for (int i = start; i >= 0; i--) {
+        if (temp + nums[i] <= len) {
+            
+            temp += nums[i];        
+            int memo = nums[i];
+            nums[i] = 0;
+
+            if (findEdge(nums, len, i - 1, temp)) return true;
+            
+            else {
+                nums[i] = memo;
+                temp -= nums[i];
+            }
+        }
+    }
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java sort + three times of DFS solution
+public class Solution {
+    public boolean makesquare(int[] nums) {
+        if (nums == null || nums.length < 4) {
+            return false;
+        }
+        Arrays.sort(nums);
+        int sum = 0;
+        for (int num : nums) {
+            sum += num;
+        }
+        if (sum % 4 != 0) {
+            return false;
+        }
+        int side = sum / 4;
+        if (nums[nums.length - 1] > side) {
+            return false;
+        }
+        Set<Integer> vIndices = new HashSet<>();
+        for (int i = 0; i < 3; i++) {
+            if (!dfs(nums, nums.length - 1, 0, side, vIndices)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean dfs(int[] nums, int index, int sum, int side, Set<Integer> vIndices) {
+        assert index >= 0;
+        assert sum < side;
+        if (!vIndices.contains(index) && sum + nums[index] <= side) {
+            vIndices.add(index);
+            if (sum + nums[index] == side || (index > 0 && dfs(nums, index - 1, sum + nums[index], side, vIndices))) {
+                return true;
+            } else {
+                vIndices.remove(index);
+            }
+        }
+        return index > 0 && dfs(nums, index - 1, sum, side, vIndices);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java cut branch fast solution
+    public boolean makesquare(int[] nums) {
+        int sum = 0, n = nums.length, i;
+        if (n == 0)
+            return false;
+        
+        for (i=0;i<n;i++)
+            sum += nums[i];
+        if (sum % 4 != 0)
+            return false;
+        int side = sum / 4;
+        int[] remains = new int[] {side, side, side, side};
+        Arrays.sort(nums);
+            
+        return canMake(nums, n-1, remains);
+    }
+    
+    public boolean canMake(int[] nums, int index, int[] remains) {
+        if (index < 0)
+            return true;
+        for (int i=0;i<4;i++) {
+            if (remains[i] >= nums[index]) {
+                remains[i] -= nums[index];
+                if (canMake(nums, index-1, remains)) {
+                    return true;
+                }
+                remains[i] += nums[index];
+            }
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Why does sorting in decreasing order reduce the complexity so drastically?
+bool cmp( int a , int b )
+{
+    return a > b ;
+}
+class Solution {
+public:
+    int n ;
+    bool solve( int pos , long long int a , long long int b , long long int c , long long int d , vector <int> & nums )
+    {
+        if( pos == n )
+            return !a && !b && !c &&!d ;
+        bool res = false ;
+        if( nums[pos] <= a )
+            res |= solve( pos + 1 , a - nums[pos] , b , c , d , nums ) ;
+        if( !res && nums[pos] <= b )
+            res |= solve( pos + 1 , a , b - nums[pos] , c , d , nums ) ;
+        if( !res && nums[pos] <= c )
+            res |= solve( pos + 1 , a , b , c - nums[pos] , d , nums ) ;
+        if( !res && nums[pos] <= d )
+            res |= solve( pos + 1 , a , b , c , d - nums[pos] , nums ) ;
+        return res ;
+    }
+    bool makesquare(vector<int>& nums) {
+        int i ;
+        //Extra
+        sort( nums.begin( ) , nums.end( ) , cmp ) ;
+        n = nums.size( ) ;
+        if( !n )
+            return false ;
+        long long int sum = 0 ;
+        for( i = 0 ; i < n ; i++ )
+            sum += nums[i] ;
+        if( sum % 4 )
+            return false ;
+        sum /= 4 ;
+        
+        return solve( 0 , sum , sum , sum , sum , nums ) ;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Backtracking solution like combination sum in java beat 90%
+public class Solution {
+    private boolean res = false;
+    
+    public boolean makesquare(int[] nums) {
+        int sum = 0;
+        for(int num : nums) {
+            sum += num;
+        }
+        
+        if(sum % 4 != 0 || sum == 0) {
+            return false;
+        }
+        
+        int target = sum / 4;
+        
+        Arrays.sort(nums);
+        if(nums[nums.length - 1] > target) {
+            return false;
+        }
+        
+        boolean[] used = new boolean[nums.length];
+        helper(nums, used, 0, 0, target, target);
+        
+        return res;
+    }
+    
+    public void helper(int[] nums, boolean[] used, int pos, int count, int remainder, int target) {
+        if(count == 3) {
+            res = true;
+            return;
+        }
+        
+        if(res || remainder < 0) {
+            return;
+        }
+        
+        if(remainder == 0) {
+            count++;
+            pos = 0;
+            remainder = target;
+        }
+        
+        for(int i = pos; i < nums.length; i++) {
+            if(used[i]) {continue;}
+            used[i] = true;
+            helper(nums, used, i + 1, count, remainder - nums[i], target);
+            used[i] = false;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

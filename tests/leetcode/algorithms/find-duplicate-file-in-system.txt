@@ -1,0 +1,721 @@
+C++ 6 lines DP O(N * m * n), 6 ms
+int findPaths(int m, int n, int N, int i, int j) {
+    unsigned int g[50][50] = {}, r[50];
+    while (N-- > 0)
+        for (auto k = 0; k <= m; ++k)
+            for (auto l = 0; l < n; ++l) {
+                auto tmp = r[l];
+                r[l] = (k == m ? 0 : ((k == 0 ? 1 : g[k - 1][l]) + (k == m - 1 ? 1 : g[k + 1][l])
+                    + (l == 0 ? 1 : g[k][l - 1]) + (l == n - 1 ? 1 : g[k][l + 1])) % 1000000007);
+                if (k > 0) g[k - 1][l] = tmp;
+            }
+    return g[i][j];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, DP with space compression
+public class Solution {
+    public int findPaths(int m, int n, int N, int i, int j) {
+        if (N <= 0) return 0;
+        
+        final int MOD = 1000000007;
+        int[][] count = new int[m][n];
+        count[i][j] = 1;
+        int result = 0;
+        
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        
+        for (int step = 0; step < N; step++) {
+            int[][] temp = new int[m][n];
+            for (int r = 0; r < m; r++) {
+                for (int c = 0; c < n; c++) {
+                    for (int[] d : dirs) {
+                        int nr = r + d[0];
+                        int nc = c + d[1];
+                        if (nr < 0 || nr >= m || nc < 0 || nc >= n) {
+                            result = (result + count[r][c]) % MOD;
+                        }
+                        else {
+                            temp[nr][nc] = (temp[nr][nc] + count[r][c]) % MOD;
+                        }
+                    }
+                }
+            }
+            count = temp;
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean Code - 8 Solutions (6 C++ &amp; 2 java)
+class Solution {
+public:
+    int findPaths(int m, int n, int N, int i, int j) {
+        int limit = 1000000007;
+        int paths = 0;
+        dfs(m, n, N, i, j, paths, limit);
+        return paths;
+    }
+
+private:
+    void dfs(int m, int n, int N, int i, int j, int& paths, int limit) {
+        if (N > 0 && paths < limit && i >= 0 && i < m && j >= 0 && j < n) {
+            if (i == 0 || i == m - 1 || j == 0 || j == n - 1) {
+                paths += i == 0;
+                paths += i == m - 1;
+                paths += j == 0;
+                paths += j == n - 1;
+                if (N == 0 || paths >= limit)
+                    return;
+            }
+
+            dfs(m, n, N - 1, i + 1, j, paths, limit);
+            dfs(m, n, N - 1, i - 1, j, paths, limit);
+            dfs(m, n, N - 1, i, j + 1, paths, limit);
+            dfs(m, n, N - 1, i, j - 1, paths, limit);
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Fast Python solution using NumPy
+import numpy as np
+
+class Solution(object):
+    def findPaths(self, m, n, N, i, j):
+        paths = np.zeros((m, n), dtype=object)
+        paths[i][j] = 1
+        out = 0
+        for _ in range(N):
+            prev = paths
+            paths = prev * 0
+            paths[1:] += prev[:-1]
+            paths[:-1] += prev[1:]
+            paths[:,1:] += prev[:,:-1]
+            paths[:,:-1] += prev[:,1:]
+            out += 4 * prev.sum() - paths.sum()
+        return out % (10**9 + 7)
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def findPaths(self, R, C, N, sr, sc):
+    MOD = 10**9 + 7
+    nxt = [[0] * C for _ in xrange(R)]
+    nxt[sr][sc] = 1
+    
+    ans = 0
+    for time in xrange(N):
+        cur = nxt
+        nxt = [[0] * C for _ in xrange(R)]
+        for r, row in enumerate(cur):
+            for c, val in enumerate(row):
+                for nr, nc in ((r-1, c), (r+1, c), (r, c-1), (r, c+1)):
+                    if 0 <= nr < R and 0 <= nc < C:
+                        nxt[nr][nc] += val
+                        nxt[nr][nc] %= MOD
+                    else:
+                        ans += val
+                        ans %= MOD
+        
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+Easy-understanding C++ &amp; Python solution with explanation
+class Solution(object):
+    dx = [-1,1,0,0]
+    dy = [0,0,-1,1]
+    lc = 1e9 + 7
+
+    def solve(self, i, j, step, dp, ans, m, n, N):
+        if i >= m or j >= n or i < 0 or j < 0:
+            return 1
+        if step == 0:
+            return 0
+        if dp[i*n +j][step - 1] == -1:
+            for k in xrange(4):
+                ans = (ans + self.solve(i + self.dx[k], j + self.dy[k], step-1, dp, 0, m, n, N) % self.lc) % self.lc
+            dp[i*n + j][step - 1] = ans
+        return int(dp[i*n + j][step - 1])
+        
+    def findPaths(self, m, n, N, i, j):
+        dp = [[-1 for t in xrange(N)] for k in xrange(m*n)]
+        return self.solve(i, j, N, dp, 0, m, n, N)
+
+
+----------------------------------------------------------------------------------------------------
+dp(m*n*N) time, java
+private int sum=0;
+    int [][]dirs={{1,0},{0,1},{-1,0},{0,-1}};
+    public int findPaths(int m, int n, int N, int i, int j) {
+        long [][][]dp=new long[m+2][n+2][N+1];
+        
+        dp[i+1][j+1][0]=1;
+        for(int k=0;k<N;k++){
+            for(int p=0;p<m+2;p++)
+            for(int q=0;q<n+2;q++)
+            {
+                for(int []d:dirs){
+                    int x=p+d[0],y=q+d[1];
+                    if(x>=1&&y>=1&&x<=m&&y<=n)
+                        dp[p][q][k+1]+=(dp[x][y][k]%(1000000007)+(1000000007))%(1000000007);
+                }
+                if(p==0||q==0||p==m+1||q==n+1)
+                {
+                    sum+=((long)dp[p][q][k+1]%(1000000007));
+                    sum=sum%(1000000007);
+                }
+            }
+        }
+        return (int)sum;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python 1 line solution
+def findPaths(self, m, n, N, x, y):
+        return reduce(lambda M, _:
+              [[(i == 0 or M[i - 1][j]) + (i + 1 == m or M[i + 1][j])
+              + (j == 0 or M[i][j - 1]) + (j + 1 == n or M[i][j + 1])
+              for j in range(n)] for i in range(m)], range(N),
+              [[0 for i in range(n)] for j in range(m)])[x][y] % (10 ** 9 + 7)
+
+----------------------------------------------------------------------------------------------------
+DP O(n*m*N) time O(n*m) space,  13 ms
+class Solution {
+int dx[4] = {0, 0, 1, -1};
+int dy[4] = {1, -1, 0 ,0};
+
+public:
+    long findPaths(int m, int n, int N, int i, int j) {
+        int mod = (10E8) + 7;
+        vector<vector<vector<long>>> dp(m, vector<vector<long>>(n, vector<long>(2)));
+        
+        for(int i=0; i<m; ++i){
+            ++dp[i][0][1];
+            ++dp[i][n-1][1];
+        }
+        
+        for(int j=0; j<n; ++j){
+            ++dp[0][j][1];
+            ++dp[m-1][j][1];
+        }
+        
+        
+        for(int k=2; k<=N; ++k){
+            for(int i=0; i<m; ++i){
+                for(int j=0; j<n; ++j){
+                    dp[i][j][k%2] = 0;
+                    for(int t=0; t<4; ++t){
+                        if(outOfBounds(m,n, i+dx[t], j+dy[t])){
+                            dp[i][j][k%2] = (dp[i][j][k%2]+1L) % mod;
+                        } else {
+                            dp[i][j][k%2] = (dp[i][j][k%2] + dp[i+dx[t]][j+dy[t]][(k-1)%2]) % mod;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return dp[i][j][N%2] % mod;
+    }
+    
+    bool outOfBounds(int m, int n, int i, int j){
+        return i < 0 || j < 0 || i >= m || j >= n;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Regarding the DFS method with memoization from the editorial solution.
+public class Solution {
+    public int findPaths(int m, int n, int N, int i, int j) {
+        int[][][] memo=new int[m][n][N+1];
+        return findPaths(m,n,N,i,j,memo);
+    }
+    public int findPaths(int m, int n, int N, int i, int j,int[][][] memo) {
+        if(i==m || j==n || i<0 ||j<0)
+            return 1;
+        if(N==0)
+            return 0;
+        if(memo[i][j][N]>0)
+            return memo[i][j][N];
+        memo[i][j][N]=findPaths(m,n,N-1,i-1,j,memo)+findPaths(m,n,N-1,i+1,j,memo)+findPaths(m,n,N-1,i,j-1,memo)+findPaths(m,n,N-1,i,j+1,memo);
+        return memo[i][j][N];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 3ms O(min(N^3, mnN)) Time, O(mn) Space Solution, w&#x2F; Explanation
+struct Solution {
+    const static int BASE = 1000000007;
+    int findPaths(int height, int width, int maxmove, const int si, const int sj) {
+        int grid[height][width];
+        memset(grid, 0, sizeof(int) * height * width);
+        int sum = 0;
+        for (int k = 0; k < maxmove; ++k)
+            for (int d = si - sj + k, r = k; d >= si - sj - k; d -= 2, r --)
+                for(int i = max(max(sj - r,0)+ d,0), j = i - d; i < height && j < width && i <= si + r; i ++, j ++)
+                {
+                    grid[i][j] = (k == 0);
+                    int bound = 4;
+                    if (i - 1 >= 0)
+                        grid[i][j] = (grid[i][j] + grid[i - 1][j]) % BASE, bound --;
+                    if (i + 1 < height)
+                        grid[i][j] = (grid[i][j] + grid[i + 1][j]) % BASE, bound --;
+                    if (j - 1 >= 0)
+                        grid[i][j] = (grid[i][j] + grid[i][j - 1]) % BASE, bound --;
+                    if (j + 1 < width)
+                        grid[i][j] = (grid[i][j] + grid[i][j + 1]) % BASE, bound --;
+                    sum = (sum + bound * (long long)grid[i][j]) % BASE;
+                }
+        return sum;
+    }
+};  
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP Solution N*n*m
+#include <bits/stdc++.h>
+
+using namespace std;
+
+const int mod = 1000000007;
+
+// time x y dir
+int dp[52][52][52];
+
+int dx[4] = {-1,0,1,0};
+int dy[4] = {0,1,0,-1};
+
+class Solution 
+{
+
+public:
+
+    int n,m,N,x,y;
+
+    bool checkIn(int X,int Y)
+    {
+        if(X>=0&&X<n&&Y>=0&&Y<m) return true;
+        return false;
+    }
+
+    int findPaths(int _n, int _m, int _N, int _x, int _y) 
+    {
+        this->n = _n; this->m = _m; this->N = _N; this->x = _x; this->y = _y;
+
+        memset(dp,0,sizeof(dp));
+
+        int ans=0;
+
+        for(int time=N-1;time>=0;time--)
+        {
+            for(int i=0;i<n;i++)
+            {
+                for(int j=0;j<m;j++)
+                {
+                    for(int k=0;k<4;k++)
+                    {
+                        int temp=0;
+                        int nx = i+dx[k];
+                        int ny = j+dy[k];
+
+                        if(checkIn(nx,ny))
+                        {
+                            temp = dp[time+1][nx][ny];
+                        }
+                        else
+                        {
+                            temp = 1;
+                        }
+
+                        dp[time][i][j] = (dp[time][i][j]+temp)%mod;
+                    }
+
+                }
+            }
+
+        }
+        return dp[0][x][y];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+DP Python (easy to understand)
+class Solution(object):
+    def findPaths(self, m, n, N, i, j):
+        # m x n board, can move max N times, start pos i, j
+        numWays = 0
+     
+        # next state just keeps track of what possible coordinates we can go from a given coordinate
+        nextStateDict = self.createNextStateDict(m, n)
+        
+        # keeps track of how many times we see a coordinate
+        # at start, we only see one coordinate, which are the start coordinates
+        posCount = {(i,j):1}    
+        
+        for _ in xrange(N):
+            new_pos_count = dict()
+            # iterate through all the positions
+            for pos in posCount:
+                # get all valid new positions from pos
+                validMoves = nextStateDict[pos]
+                numWays += (4 - len(validMoves)) * posCount[pos]    
+                
+                for newPos in validMoves:
+                    if newPos not in new_pos_count:
+                        new_pos_count[newPos] = 0
+                    new_pos_count[newPos] += posCount[pos]
+            posCount = new_pos_count
+        return numWays % (10**9 + 7)
+        
+    def getValidMoves(self, m, n, i, j):
+        # given pos (i,j), what next states can i be in?
+        posAfterOneMove = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
+        return [(a,b) for a,b in posAfterOneMove if (0 <= a < m) and (0 <= b < n)]
+    
+    def createNextStateDict(self, m, n):
+        # for each pos in board, get a dict of next possible states
+        d = dict()
+        for row in range(0, m):
+            for col in range(0, n):
+                d[(row,col)] = self.getValidMoves(m, n, row, col)
+        return d
+
+
+----------------------------------------------------------------------------------------------------
+C++ ugly solution...
+class Solution {
+  struct Int {
+    Int(int v) : v_(v) {}
+    int operator= (int v) { return v_ = v; }
+    operator int() { return v_; }
+    
+    int operator+(int v) {
+      return (v + v_) % ((int)pow(10, 9) + 7);
+    }
+    int operator+=(int v) {
+      return v_ = (v + v_) % ((int)pow(10, 9) + 7);
+    }
+    
+    int v_;
+  };
+  void Escape(vector<vector<Int>>& dp, Int& ret) {
+    int m = dp.size(), n = dp[0].size();
+    for (int i = 0; i < m; i++) {
+      ret += dp[i][0];
+      ret += dp[i][n - 1];
+    }
+    for (int j = 0; j < n; j++) {
+      ret += dp[0][j];
+      ret += dp[m - 1][j];
+    }
+  }
+public:
+  int findPaths(int m, int n, int N, int i, int j) {
+    vector<vector<Int>> dp(m, vector<Int>(n, 0));
+    dp[i][j] = 1;
+    Int ret = 0;
+    for (int k = 0; k < N; k++) {
+      Escape(dp, ret);
+      vector<Int> prev_level(n, 0);
+      for (int i = 0; i < m; i++) {
+        Int prev_num = 0;
+        for (int j = 0; j < n; j++) {
+          Int tmp = dp[i][j];
+          dp[i][j] = prev_num + prev_level[j];
+          if (i + 1< m)
+            dp[i][j] += dp[i + 1][j];
+          if (j + 1 < n)
+            dp[i][j] += dp[i][j + 1];
+          // update prev...
+          prev_num = tmp, prev_level[j] = tmp;
+        }
+      }
+    }
+    return ret;
+  }
+};
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DP solution O(N*m*n) Excellent DP Question!
+ public int findPaths(int m, int n, int N, int i, int j) {
+        int TAG = 1000000007;
+        if (N == 0) return 0;
+        if (m == 1 && n == 1) {
+            return 4;
+        }
+        if (m ==1) {
+            return solve(n, N, j, TAG);
+        }
+        if (n == 1) {
+            return solve(m, N, i, TAG);
+        }
+        long[][][] dp = new long[N + 1][m][n];
+        for (int k = 1; k <= N; k ++) {
+            for (int p = 0; p < m; p ++) {
+                for (int q = 0; q < n; q ++) {
+                    if (p == 0) {
+                        if (q == 0) {
+                            dp[k][p][q] = dp[k - 1][p][q + 1] + dp[k - 1][p + 1][q] + 2;
+                        }else if(q == n - 1) {
+                            dp[k][p][q] = dp[k - 1][p][q - 1] + dp[k - 1][p + 1][q] + 2;
+                        }else{
+                            dp[k][p][q] = dp[k - 1][p][q + 1] + dp[k - 1][p + 1][q] + dp[k - 1][p][q - 1] + 1;
+                        }
+                    }else if (p == m - 1) {
+                        if (q == 0) {
+                            dp[k][p][q] = dp[k - 1][p][q + 1] + dp[k - 1][p - 1][q] + 2;
+                        }else if(q == n - 1) {
+                            dp[k][p][q] = dp[k - 1][p][q - 1] + dp[k - 1][p - 1][q] + 2;
+                        }else{
+                            dp[k][p][q] = dp[k - 1][p][q + 1] + dp[k - 1][p - 1][q] + dp[k - 1][p][q - 1] + 1;
+                        }
+                    }else if (q == 0) {
+                        dp[k][p][q] = dp[k - 1][p][q + 1] + dp[k - 1][p - 1][q] + dp[k - 1][p + 1][q] + 1;
+                    }else if (q == n - 1){
+                        dp[k][p][q] = dp[k - 1][p + 1][q] + dp[k - 1][p - 1][q] + dp[k - 1][p][q - 1] + 1;
+                    }else{
+                        dp[k][p][q] = dp[k - 1][p + 1][q] + dp[k - 1][p - 1][q] + dp[k - 1][p][q - 1] + dp[k - 1][p][q + 1];
+                    }
+                    if (dp[k][p][q] > TAG) dp[k][p][q] %= TAG;
+                }
+            }
+        }
+        return (int) (dp[N][i][j] % TAG);
+    }
+
+    private int solve(int n, int N, int j, int TAG) {
+        long[][] dp = new long[N + 1][n];
+        for (int p = 1; p <= N; p ++) {
+            for (int q = 0; q < n; q ++) {
+                if (q == 0) {
+                    dp[p][q] = dp[p - 1][q + 1] + 3;
+                }else if (q == n - 1) {
+                    dp[p][q] = dp[p - 1][q - 1] + 3;
+                }else{
+                    dp[p][q] = dp[p - 1][q - 1] + dp[p - 1][q + 1] + 2;
+                }
+            }
+        }
+        return (int) (dp[N][j] % TAG);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Clear Java DP O(m*n*N) space O(m*n*N) time
+public class Solution {
+    long[][][] dp;
+    public int findPaths(int m, int n, int N, int i, int j) {
+        if (N == 0) {
+            return 0;
+        }
+        dp = new long[m][n][N];
+        for (int o = 0; o < m; o++) {
+            for (int p = 0; p < n; p++) {
+                for (int q = 0; q < N; q++) {
+                	dp[o][p][q] = -1l;
+                }
+            }
+        }
+        return (int) helper(m, n, N, i, j);
+    }
+    
+    long helper(int m, int n, int moves, int i, int j) {
+        if (i < 0 || i == m || j < 0 || j == n) {
+            // out
+            return 1;
+        }
+        if (moves == 0) {
+            // no moves
+            return 0;
+        }
+        if (dp[i][j][moves-1] == -1) {
+            // move to adjust and reduce moves
+            dp[i][j][moves - 1] = (helper(m,n,moves-1,i-1,j) + helper(m,n,moves-1,i+1,j)
+                + helper(m,n,moves-1,i,j-1) + helper(m,n,moves-1,i,j+1)) % 1000000007;
+        }
+        return dp[i][j][moves-1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+DP O(m*n*N) time O(m*n) space python
+class Solution(object):
+    def findPaths(self, m, n, N, i, j):
+        """
+        :type m: int
+        :type n: int
+        :type N: int
+        :type i: int
+        :type j: int
+        :rtype: int
+        """
+        if N==0:return 0
+        res=0
+        base=[[0 for _ in range(n)] for _ in range(m)]
+        
+        def getboundnum(m,n,i,j):
+            res=0
+            if i==0:res+=1
+            if j==0:res+=1
+            if i==m-1:res+=1
+            if j==n-1:res+=1
+            return res
+        for r in range(m):
+            if r==0 or r==m-1:
+                for c in range(n):
+                    base[r][c]=getboundnum(m,n,r,c)
+            else:
+                base[r][0]=getboundnum(m,n,r,0)
+                base[r][n-1]=getboundnum(m,n,r,n-1)
+        res+=base[i][j]
+        for _ in range(1,N):
+            mx=[[0 for _ in range(n)] for _ in range(m)]
+            for r in range(m):
+                for c in range(n):
+                    if r>0:
+                        mx[r-1][c]+=base[r][c]
+                    if r<m-1:
+                        mx[r+1][c]+=base[r][c]
+                    if c>0:
+                        mx[r][c-1]+=base[r][c]
+                    if c<n-1:
+                        mx[r][c+1]+=base[r][c]
+            res+=mx[i][j]
+            res%=1000000007
+            base=mx
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand c++ 9ms using 2*m*n space with explaination
+class Solution {
+public:
+    int findPaths(int m, int n, int N, int i, int j) {
+        vector<vector<size_t>> table(m, vector<size_t>(n, 0));
+        
+        size_t ans=0;
+        
+        for(int k=1; k<=N; k++)
+        {
+            vector<vector<size_t>> next(m, vector<size_t>(n, 0));
+            if(k==1)
+            {
+                for(int x=0; x<m; x++)
+                {
+                    for(int y=0; y<n; y++)
+                    {
+                        if(x==0)
+                            ++table[x][y];
+                        if(y==0)
+                            ++table[x][y];
+                        if(y==n-1)
+                            ++table[x][y];
+                        if(x==m-1)
+                            ++table[x][y];
+                      
+                    }
+                }
+            }
+            else
+            {
+                for(int x=0; x<m; x++)
+                {
+                    for(int y=0; y<n; y++)
+                    {
+                       size_t val=0;
+                      
+                       val+=(x==0?0:table[x-1][y]);
+                       
+                       val+=(y==0?0:table[x][y-1]);
+                       
+                       val+=(x==m-1?0:table[x+1][y]);
+                       
+                       val+=(y==n-1?0:table[x][y+1]);
+                       next[x][y]=val%mod;                      
+                    }
+                }
+                table=next;
+            }
+            ans=(ans+table[i][j])%mod;
+        }
+        return ans;
+    }
+    
+private:
+    const int mod=1e9+7;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python DP (beat over 95%) Time: O(N*m*n) Space: 2*(m+2)*(n+2)
+def findPaths(self, m, n, N, i, j):
+        """
+        :type m: int
+        :type n: int
+        :type N: int
+        :type i: int
+        :type j: int
+        :rtype: int
+        """
+
+        dp = [[1] * (n + 2)]        
+        for idx in range(m):
+            dp.append([1] + [0] * n + [1])
+        dp.append([1] * (n + 2))
+        for lev in range(0, N):
+            new = [[1] * (n + 2)]        
+            for idx in range(m):
+                new.append([1] + [0] * n + [1])
+            new.append([1] * (n + 2))
+            for p in range(1, m + 1):
+                for q in range(1, n + 1):
+                    new[p][q] = dp[p-1][q] + dp[p][q-1] + dp[p][q+1] + dp[p+1][q]
+            dp = new
+        return (dp[i+1][j+1]) % (10 ** 9 + 7)
+
+
+----------------------------------------------------------------------------------------------------
+What&#x27;s wrong with my solution? Cannot figure it out
+public class Solution {
+    long[][][] cached;
+
+    public int findPaths(int m, int n, int N, int i, int j) {
+        cached = new long[m + 1][n + 1][N + 1];
+        for (long[][] square : cached) {
+            for (long[] line : square) {
+                Arrays.fill(line, -1);
+            }
+        }
+        return (int) (paths(m, n, N, i, j) % 1000000007);
+    }
+
+    public long paths(int m, int n, int N, int i, int j) {
+        int count = 0;
+
+        if (i >= 0 && i < m && j >= 0 && j < n && N > 0) {
+            if (cached[i][j][N] != -1) return cached[i][j][N];
+            if (i == 0) count++;
+            if (i == m - 1) count++;
+            if (j == 0) count++;
+            if (j == n - 1) count++;
+            count += paths(m, n, N - 1, i + 1, j) + paths(m, n, N - 1, i - 1, j) + paths(m, n, N - 1, i, j + 1) + paths(m, n, N - 1, i, j - 1);
+            cached[i][j][N] = count;
+            return cached[i][j][N];
+        }
+        return 0;
+    }
+}
+
+----------------------------------------------------------------------------------------------------

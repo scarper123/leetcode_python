@@ -1,0 +1,1018 @@
+A general approach to backtracking questions in Java (Subsets, Permutations, Combination Sum, Palindrome Partioning)
+This structure might apply to many other backtracking questions, but here I am just going to demonstrate Subsets, Permutations, and Combination Sum.
+
+Subsets : [https://leetcode.com/problems/subsets/][1]
+
+    public List<List<Integer>> subsets(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list , List<Integer> tempList, int [] nums, int start){
+        list.add(new ArrayList<>(tempList));
+        for(int i = start; i < nums.length; i++){
+            tempList.add(nums[i]);
+            backtrack(list, tempList, nums, i + 1);
+            tempList.remove(tempList.size() - 1);
+        }
+    }
+
+
+Subsets II (contains duplicates) : [https://leetcode.com/problems/subsets-ii/][2]
+
+    public List<List<Integer>> subsetsWithDup(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int start){
+        list.add(new ArrayList<>(tempList));
+        for(int i = start; i < nums.length; i++){
+            if(i > start && nums[i] == nums[i-1]) continue; // skip duplicates
+            tempList.add(nums[i]);
+            backtrack(list, tempList, nums, i + 1);
+            tempList.remove(tempList.size() - 1);
+        }
+    } 
+
+
+----------
+
+Permutations : [https://leetcode.com/problems/permutations/][3]
+
+    public List<List<Integer>> permute(int[] nums) {
+       List<List<Integer>> list = new ArrayList<>();
+       // Arrays.sort(nums); // not necessary
+       backtrack(list, new ArrayList<>(), nums);
+       return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums){
+       if(tempList.size() == nums.length){
+          list.add(new ArrayList<>(tempList));
+       } else{
+          for(int i = 0; i < nums.length; i++){ 
+             if(tempList.contains(nums[i])) continue; // element already exists, skip
+             tempList.add(nums[i]);
+             backtrack(list, tempList, nums);
+             tempList.remove(tempList.size() - 1);
+          }
+       }
+    } 
+
+Permutations II (contains duplicates) : [https://leetcode.com/problems/permutations-ii/][4]
+
+    public List<List<Integer>> permuteUnique(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, new boolean[nums.length]);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, boolean [] used){
+        if(tempList.size() == nums.length){
+            list.add(new ArrayList<>(tempList));
+        } else{
+            for(int i = 0; i < nums.length; i++){
+                if(used[i] || i > 0 && nums[i] == nums[i-1] && !used[i - 1]) continue;
+                used[i] = true; 
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, used);
+                used[i] = false; 
+                tempList.remove(tempList.size() - 1);
+            }
+        }
+    }
+
+
+----------
+
+Combination Sum : [https://leetcode.com/problems/combination-sum/][5]
+
+    public List<List<Integer>> combinationSum(int[] nums, int target) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, target, 0);
+        return list;
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int remain, int start){
+        if(remain < 0) return;
+        else if(remain == 0) list.add(new ArrayList<>(tempList));
+        else{ 
+            for(int i = start; i < nums.length; i++){
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, remain - nums[i], i); // not i + 1 because we can reuse same elements
+                tempList.remove(tempList.size() - 1);
+            }
+        }
+    }
+
+Combination Sum II (can't reuse same element) : [https://leetcode.com/problems/combination-sum-ii/][6]
+
+    public List<List<Integer>> combinationSum2(int[] nums, int target) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        backtrack(list, new ArrayList<>(), nums, target, 0);
+        return list;
+        
+    }
+    
+    private void backtrack(List<List<Integer>> list, List<Integer> tempList, int [] nums, int remain, int start){
+        if(remain < 0) return;
+        else if(remain == 0) list.add(new ArrayList<>(tempList));
+        else{
+            for(int i = start; i < nums.length; i++){
+                if(i > start && nums[i] == nums[i-1]) continue; // skip duplicates
+                tempList.add(nums[i]);
+                backtrack(list, tempList, nums, remain - nums[i], i + 1);
+                tempList.remove(tempList.size() - 1); 
+            }
+        }
+    } 
+
+
+Palindrome Partitioning : [https://leetcode.com/problems/palindrome-partitioning/][7]
+
+    public List<List<String>> partition(String s) {
+       List<List<String>> list = new ArrayList<>();
+       backtrack(list, new ArrayList<>(), s, 0);
+       return list;
+    }
+    
+    public void backtrack(List<List<String>> list, List<String> tempList, String s, int start){
+       if(start == s.length())
+          list.add(new ArrayList<>(tempList));
+       else{
+          for(int i = start; i < s.length(); i++){
+             if(isPalindrome(s, start, i)){
+                tempList.add(s.substring(start, i + 1));
+                backtrack(list, tempList, s, i + 1);
+                tempList.remove(tempList.size() - 1);
+             }
+          }
+       }
+    }
+    
+    public boolean isPalindrome(String s, int low, int high){
+       while(low < high)
+          if(s.charAt(low++) != s.charAt(high--)) return false;
+       return true;
+    } 
+
+
+
+  [1]: https://leetcode.com/problems/subsets/
+  [2]: https://leetcode.com/problems/subsets-ii/
+  [3]: https://leetcode.com/problems/permutations/
+  [4]: https://leetcode.com/problems/permutations-ii/
+  [5]: https://leetcode.com/problems/combination-sum/
+  [6]: https://leetcode.com/problems/combination-sum-ii/
+  [7]: https://leetcode.com/problems/palindrome-partitioning/
+
+----------------------------------------------------------------------------------------------------
+My elegant recursive C++ solution with inline explanation
+This recursive solution is the my first response for this problem. I was surprised when I found no similar solution posted here. It is much easier to understand than DFS-based ones, at least in my opinion. Please find more explanations [here][1]. All comments are welcome.
+
+    class Solution {
+    public:
+        vector<vector<int> > permute(vector<int> &num) {
+    	    vector<vector<int> > result;
+    	    
+    	    permuteRecursive(num, 0, result);
+    	    return result;
+        }
+        
+        // permute num[begin..end]
+        // invariant: num[0..begin-1] have been fixed/permuted
+    	void permuteRecursive(vector<int> &num, int begin, vector<vector<int> > &result)	{
+    		if (begin >= num.size()) {
+    		    // one permutation instance
+    		    result.push_back(num);
+    		    return;
+    		}
+    		
+    		for (int i = begin; i < num.size(); i++) {
+    		    swap(num[begin], num[i]);
+    		    permuteRecursive(num, begin + 1, result);
+    		    // reset
+    		    swap(num[begin], num[i]);
+    		}
+        }
+    };
+
+
+  [1]: http://xiaohuiliucuriosity.blogspot.com/2014/12/permutations.html
+
+----------------------------------------------------------------------------------------------------
+My AC simple iterative java&#x2F;python solution
+the basic idea is, to permute n numbers, we can add the nth number into the resulting `List<List<Integer>>` from the n-1 numbers, in every possible position. 
+
+For example, if the input num[] is {1,2,3}: First, add 1 into the initial `List<List<Integer>>` (let's call it "answer"). 
+
+Then, 2 can be added in front or after 1. So we have to copy the List<Integer> in answer (it's just {1}), add 2 in position 0 of {1}, then copy the original {1} again, and add 2 in position 1. Now we have an answer of {{2,1},{1,2}}. There are 2 lists in the current answer.
+
+Then we have to add 3. first copy {2,1} and {1,2}, add 3 in position 0; then copy {2,1} and {1,2}, and add 3 into position 1, then do the same thing for position 3. Finally we have 2*3=6 lists in answer, which is what we want.
+
+    public List<List<Integer>> permute(int[] num) {
+        List<List<Integer>> ans = new ArrayList<List<Integer>>();
+        if (num.length ==0) return ans;
+        List<Integer> l0 = new ArrayList<Integer>();
+        l0.add(num[0]);
+        ans.add(l0);
+        for (int i = 1; i< num.length; ++i){
+            List<List<Integer>> new_ans = new ArrayList<List<Integer>>(); 
+            for (int j = 0; j<=i; ++j){            
+               for (List<Integer> l : ans){
+            	   List<Integer> new_l = new ArrayList<Integer>(l);
+            	   new_l.add(j,num[i]);
+            	   new_ans.add(new_l);
+               }
+            }
+            ans = new_ans;
+        }
+        return ans;
+    }
+
+-------------------------------------------------------------------------
+python version is more concise:
+
+    def permute(self, nums):
+        perms = [[]]   
+        for n in nums:
+            new_perms = []
+            for perm in perms:
+                for i in xrange(len(perm)+1):   
+                    new_perms.append(perm[:i] + [n] + perm[i:])   ###insert n
+            perms = new_perms
+        return perms
+
+----------------------------------------------------------------------------------------------------
+Share my short iterative JAVA solution
+    public List<List<Integer>> permute(int[] num) {
+        LinkedList<List<Integer>> res = new LinkedList<List<Integer>>();
+        res.add(new ArrayList<Integer>());
+        for (int n : num) {
+            int size = res.size();
+            for (; size > 0; size--) {
+                List<Integer> r = res.pollFirst();
+                for (int i = 0; i <= r.size(); i++) {
+                    List<Integer> t = new ArrayList<Integer>(r);
+                    t.add(i, n);
+                    res.add(t);
+                }
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Clean Code - Two recursive solutions
+**Bottom up? approach - 280ms**
+
+    public class Solution {
+       public List<List<Integer>> permute(int[] nums) {
+    		List<List<Integer>> permutations = new ArrayList<>();
+    		if (nums.length == 0) {
+    			return permutations;
+    		}
+    
+    		collectPermutations(nums, 0, new ArrayList<>(), permutations);
+    		return permutations;
+        }
+    
+    	private void collectPermutations(int[] nums, int start, List<Integer> permutation,
+     			List<List<Integer>>  permutations) {
+    		
+    		if (permutation.size() == nums.length) {
+    			permutations.add(permutation);
+    			return;
+    		}
+    
+    		for (int i = 0; i <= permutation.size(); i++) {
+    			List<Integer> newPermutation = new ArrayList<>(permutation);
+    			newPermutation.add(i, nums[start]);
+    			collectPermutations(nums, start + 1, newPermutation, permutations);
+    		}
+    	}
+    }
+
+***Code flow***
+
+    nums = 1,2,3
+
+    start = 0, permutation = []
+    i = 0, newPermutation = [1]
+    	start = 1, permutation = [1]
+    	i = 0, newPermutation = [2, 1]
+    		start = 2, permutation = [2, 1]
+    		i = 0, newPermutation = [3, 2, 1]
+    		i = 1, newPermutation = [2, 3, 1]
+    		i = 2, newPermutation = [2, 1, 3]
+    	i = 1, newPermutation = [1, 2]
+    		start = 2, permutation = [1, 2]
+    		i = 0, newPermutation = [3, 1, 2]
+    		i = 1, newPermutation = [1, 3, 2]
+    		i = 2, newPermutation = [1, 2, 3]
+
+**Base case and build approach - 524ms**
+
+    public class Solution {
+       public List<List<Integer>> permute(int[] nums) {
+    		return permute(Arrays.stream(nums).boxed().collect(Collectors.toList()));
+       }
+    
+    	private List<List<Integer>> permute(List<Integer> nums) {
+    		List<List<Integer>> permutations = new ArrayList<>();
+    		if (nums.size() == 0) {
+    			return permutations;
+    		}
+    		if (nums.size() == 1) {
+    			List<Integer> permutation = new ArrayList<>();
+    			permutation.add(nums.get(0));
+    			permutations.add(permutation);
+    			return permutations;
+    		}
+    		
+    		List<List<Integer>> smallPermutations = permute(nums.subList(1, nums.size()));
+    		int first = nums.get(0);
+    		for(List<Integer> permutation : smallPermutations) {
+    			for (int i = 0; i <= permutation.size(); i++) {
+    				List<Integer> newPermutation = new ArrayList<>(permutation);
+    				newPermutation.add(i, first);
+    				permutations.add(newPermutation);
+    			}
+    		}
+    		return permutations;
+    	}
+    }
+
+***Code flow***
+
+    nums = 1,2,3
+    
+    smallPermutations(2, 3)
+    	smallPermutations(3)
+    		return [[3]]
+    	first = 2
+     		permutation = [3]
+    			i = 0, newPermutation = [2, 3]
+    			i = 1, newPermutation = [3, 2]
+    	return [[2, 3], [3, 2]]
+    first = 1
+     	permutation = [2, 3]
+    		i = 0, newPermutation = [1, 2, 3]
+    		i = 1, newPermutation = [2, 1, 3]
+    		i = 2, newPermutation = [2, 3, 1]
+     	permutation = [3, 2]
+    		i = 0, newPermutation = [1, 3, 2]
+    		i = 1, newPermutation = [3, 1, 2]
+    		i = 2, newPermutation = [3, 2, 1]	
+
+
+
+----------------------------------------------------------------------------------------------------
+One-Liners in Python
+**Solution 1: *Recursive, take any number as first***
+
+Take any number as the first number and append any permutation of the other numbers.
+
+    def permute(self, nums):
+        return [[n] + p
+                for i, n in enumerate(nums)
+                for p in self.permute(nums[:i] + nums[i+1:])] or [[]]
+
+---
+
+**Solution 2: *Recursive, insert first number anywhere***
+
+Insert the first number anywhere in any permutation of the remaining numbers.
+
+    def permute(self, nums):
+        return nums and [p[:i] + [nums[0]] + p[i:]
+                         for p in self.permute(nums[1:])
+                         for i in range(len(nums))] or [[]]
+
+---
+
+**Solution 3: *Reduce, insert next number anywhere***
+
+Use `reduce` to insert the next number anywhere in the already built permutations.
+
+    def permute(self, nums):
+        return reduce(lambda P, n: [p[:i] + [n] + p[i:]
+                                    for p in P for i in range(len(p)+1)],
+                      nums, [[]])
+
+---
+
+**Solution 4: *Using the library***
+
+    def permute(self, nums):
+        return list(itertools.permutations(nums))
+
+That returns a list of tuples, but the OJ accepts it anyway. If needed, I could easily turn it into a list of lists:
+
+    def permute(self, nums):
+        return map(list, itertools.permutations(nums))
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution (DFS).
+        
+    # DFS
+    def permute(self, nums):
+        res = []
+        self.dfs(nums, [], res)
+        return res
+        
+    def dfs(self, nums, path, res):
+        if not nums:
+            res.append(path)
+            # return # backtracking
+        for i in xrange(len(nums)):
+            self.dfs(nums[:i]+nums[i+1:], path+[nums[i]], res)
+
+----------------------------------------------------------------------------------------------------
+Share my three different solutions
+    // method 1: standard backtracing solution
+    vector<vector<int> > permute(vector<int> &num) {
+        vector<vector<int> > ans;
+        permutation(num, 0, ans);
+        return ans;
+    }
+    
+    void permutation(vector<int> &num, int begin, vector<vector<int> > &ans) {
+        if (begin >= num.size()) {
+            ans.push_back(num);
+            return;
+        }
+        
+        // every number chosen to be the begin once
+        for (int i = begin; i < num.size(); ++i) {
+            swap(num[begin], num[i]);
+            permutation(num, begin+1, ans);
+            swap(num[begin], num[i]);
+        }
+    }
+    
+    // method 2: using next_permutation to iterate all the permutaions
+    vector<vector<int> > permute(vector<int> &num) {
+        vector<vector<int> > ans;
+        sort(num.begin(), num.end());
+        ans.push_back(num);
+        
+        while(next_permutation(num.begin(), num.end()))
+            ans.push_back(num);
+        return ans;
+    }
+    
+    // method 3: recursive dfs
+    vector<vector<int> > permute(vector<int> &num) {
+        vector<vector<int> > ans;
+        dfs(num, ans);
+        return ans;
+    }
+    
+    void dfs(vector<int> &num, vector<vector<int>> &ans) {
+        if (num.size() == 1) {
+            vector<int> tmp(num.begin(), num.end());
+            ans.push_back(tmp);
+            return;
+        }
+        
+        vector<vector<int> > ans1;
+        vector<int> num1(num.begin()+1, num.end());
+        dfs(num1, ans);
+        
+        for(int i = 0; i < ans.size(); ++i) {
+            for(int j = 0; j <= ans[i].size(); ++j) {
+                vector<int> tmp = ans[i];
+                tmp.insert(tmp.begin()+j, num[0]);
+                ans1.push_back(tmp);
+            }
+        }
+        
+        ans = ans1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy solution using code in nextPermutation (can be used in Permutations II without modification)
+Well, have you solved the [nextPermutation][1] problem? If so, your code can be used in this problem. The idea is fairly simple: 
+
+ 1. add `nums` to `res`; 
+ 2. generate the next permutation of `nums` using `nextPermutation()`, and add it to `res`;
+ 3. repeat 2 until the next permutation of `nums` returns to the original configuration.
+ 
+The code is as follows. 
+
+A final note, the following code can be applied to the problem of [Permutations II][2] without any modification since the cases of duplicates have already been handled in `nextPermutation()`. If you want to learn more about `nextPermutation()`, please visit [this solution][3].
+
+        bool nextPermutation(vector<int>& nums) {
+            int k = -1;
+            for (int i = nums.size() - 2; i >= 0; i--) {
+                if (nums[i] < nums[i + 1]) {
+                    k = i;
+                    break;
+                }
+            }
+            if (k == -1) {
+                reverse(nums.begin(), nums.end());
+                return false;
+            }
+            int l = -1;
+            for (int i = nums.size() - 1; i > k; i--) {
+                if (nums[i] > nums[k]) {
+                    l = i;
+                    break;
+                }
+            }
+            swap(nums[k], nums[l]);
+            reverse(nums.begin() + k + 1, nums.end());
+            return true;
+        }
+        vector<vector<int>> permute(vector<int>& nums) {
+            vector<vector<int> > res;
+            sort(nums.begin(), nums.end());
+            res.push_back(nums);
+            while (nextPermutation(nums))
+                res.push_back(nums);
+            return res;
+        }
+
+
+  [1]: https://leetcode.com/problems/next-permutation/
+  [2]: https://leetcode.com/problems/permutations-ii/
+  [3]: https://leetcode.com/discuss/38247/classic-simple-algorithm-from-wikipedia-implementation-12ms
+
+----------------------------------------------------------------------------------------------------
+My Java Accepted solution without additional space
+    public class Solution {
+        public List<List<Integer>> permute(int[] num) {
+            List<List<Integer>> result = new ArrayList<List<Integer>>();
+            permute(result, num, 0);
+            return result;
+        }
+        
+        private void permute(List<List<Integer>> result, int[] array, int start) {
+    		if (start >= array.length) {
+    			List<Integer> current = new ArrayList<Integer>();
+    			for (int a : array) {
+    			    current.add(a);
+    			}
+    			result.add(current);
+    		} else {
+    			for (int i=start; i<array.length; i++) {
+    				swap(array, start, i);
+    				permute(result, array, start+1);
+    				swap(array, start, i);
+    			}
+    		}
+    	}
+    	
+    	private void swap(int[] array, int i, int j) {
+    		int temp = array[i];
+    		array[i] = array[j];
+    		array[j] = temp;
+    	}
+    }
+
+I enumerate all the permutations in a generative way, the idea is that, at each position, I specify the element by swapping with values with a larger index. The value at the first position can swap with position 1,2,...,n-1, after each swap, I will do a recursion for the rest of the array. 
+
+The problem is that with this approach, the permutations may be out of order. 
+
+----------------------------------------------------------------------------------------------------
+&#91;leetcode-only&#93; &#91;test-case&#93; Don&#x27;t we need to consider the inputs that have same numbers in the collection?
+It seems the test cases of leetcode does not consider the inputs that have same numbers in the collection?
+For example, [1,3,3]. 
+
+----------------------------------------------------------------------------------------------------
+My C++ Solution Share
+It is obvious that **N numbers has N! permutations** .
+
+Here I assume an empty vector also has one permutation. It seems OJ didn't check the empty input case. Well, it doesn't matter.
+
+
+    class Solution {
+    public:
+        vector<vector<int> > permute(vector<int> &num) {
+            // Add an empty vector as the base case (empty input)
+        	vector<vector<int> > permutations(1, vector<int>());
+        	// Algrithm description:
+        	//	Insert the current number in different spaces of previous permutations
+        	for (vector<int>::size_type index = 0; index != num.size(); ++index)
+        	{
+        		vector<vector<int> > subPermutations(permutations);
+        		permutations.clear();
+        		for (vector<vector<int> >::size_type i = 0; i != subPermutations.size(); ++i)
+        		{
+        			for (int offset = 0; offset != subPermutations[i].size()+1; ++offset)
+        			{
+        				vector<int> temp(subPermutations[i]);
+        				temp.insert(temp.begin() + offset, num[index]);
+        				permutations.push_back(temp);
+        			}
+        		}
+        	}
+        	return permutations;
+        }
+    };
+
+All comments are welcome !
+
+----------------------------------------------------------------------------------------------------
+Java solution easy to understand (backtracking)
+public class Solution {
+    
+    List<List<Integer>> list;
+    
+    public List<List<Integer>> permute(int[] nums) {
+        
+        list = new ArrayList<>();
+        ArrayList<Integer> perm = new ArrayList<Integer>();
+        backTrack(perm,0,nums);
+        return list;
+    }
+    
+    void backTrack (ArrayList<Integer> perm,int i,int[] nums){
+        
+        //Permutation completes
+        if(i==nums.length){
+            list.add(new ArrayList(perm));
+            return;
+        }
+        
+        ArrayList<Integer> newPerm = new ArrayList<Integer>(perm);
+        
+       //Insert elements in the array by increasing index
+        for(int j=0;j<=i;j++){
+            newPerm.add(j,nums[i]);
+            backTrack(newPerm,i+1,nums);
+            newPerm.remove(j);
+        }
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Accepted Recursive Solution in Java
+    int len;
+    boolean[] used;
+    List<List<Integer>> result;
+    List<Integer> temp;
+    public List<List<Integer>> permute(int[] num) {
+        len = num.length;
+        used = new boolean[len];
+        result = new ArrayList<List<Integer>>();
+        temp = new ArrayList<>();
+        doPermute(num, 0);
+
+        return result;
+    }
+
+    public void doPermute(int[] in, int level) {
+        if (level == len) {
+            result.add(new ArrayList<Integer>(temp));
+            return;
+        }
+
+        for (int i = 0; i < len; i++) {
+            if (used[i]) {
+                continue;
+            }
+
+            temp.add(in[i]);
+            used[i] = true;
+            doPermute(in, level + 1);
+            used[i] = false;
+            temp.remove(level);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+New approach: directly find the kth permutation (k = 1...n!) with a simple loop
+# Explanation
+
+The general idea is the following (same as other solutions):
+
+ 1. We know there are `n!` possible permutations for `n` elements.
+ 2. Enumerate them one by one
+
+Most solutions use the previous permutation to generate the next permutation or build it recursively.
+I had the idea to calculate the `k`<sup>th</sup> permutation directly from the input. Steps are as follows:
+
+ 1. Build a list of all elements in ascending order.  
+The length of this list is `n` (i.e. not the original input size).
+ 2. Given `k` we know what the first element will be in the `k`<sup>th</sup> permutation of the current list.  
+There are `n` groups in the lexicographical order of all permutations of the list. Inside a group each permutation's first element is the same. Each group has `(n-1)!` elements, so an easy `k / (n-1)!` will give us the index.
+ 3. Append the selected element to the result, i.e. the next element in the `k`<sup>th</sup> permutation.
+ 4. Remove the selected element from the list.  
+ 5. Now the list has one less elements and we can **repeat from Step 2** with `k' = k % n!`,  
+that is the `k'`<sup>th</sup> permutation of the reduced list.
+
+Notice that it doesn't matter what the elements are because the indices are calculated.
+
+# Examples for `n = 1...4`
+
+    elements  k    indices
+    []        -    -       =----- trivial
+
+    [1]       0    0       =----- reduces to [] after selecting 1
+
+    [1,2]     0    0 0     =----- reduces to [2] after selecting 1
+    [2,1]     1    1 0     =----- reduces to [1] after selecting 2
+    
+    [1,2,3]   0    0 0 0   =\____ reduces to [2,3] after selecting 1
+    [1,3,2]   1    0 1 0   =/
+    [2,1,3]   2    1 0 0   =\____ reduces to [1,3] after selecting 2
+    [2,3,1]   3    1 1 0   =/
+    [3,1,2]   4    2 0 0   =\____ reduces to [1,2] after selecting 3
+    [3,2,1]   5    2 1 0   =/
+    
+    [1,2,3,4] 0    0 0 0 0 =\
+    [1,2,4,3] 1    0 0 1 0   \
+    [1,3,2,4] 2    0 1 0 0    \__ reduces to [2,3,4] after selecting 1
+    [1,3,4,2] 3    0 1 1 0    /
+    [1,4,2,3] 4    0 2 0 0   /
+    [1,4,3,2] 5    0 2 1 0 =/
+    [2,1,3,4] 6    1 0 0 0 =\
+    [2,1,4,3] 7    1 0 1 0   \
+    [2,3,1,4] 8    1 1 0 0    \__ reduces to [1,3,4] after selecting 2
+    [2,3,4,1] 9    1 1 1 0    /
+    [2,4,1,3] 10   1 2 0 0   /
+    [2,4,3,1] 11   1 1 1 0 =/
+    [3,1,2,4] 12   2 0 0 0 =\
+    [3,1,4,2] 13   2 0 1 0   \
+    [3,2,1,4] 14   2 1 0 0    \__ reduces to [1,2,4] after selecting 3
+    [3,2,4,1] 15   2 1 1 0    /
+    [3,4,1,2] 16   2 2 0 0   /
+    [3,4,2,1] 17   2 2 1 0 =/
+    [4,1,2,3] 18   3 0 0 0 =\
+    [4,1,3,2] 19   3 0 1 0   \
+    [4,2,1,3] 20   3 1 0 0    \__ reduces to [1,2,3] after selecting 4
+    [4,2,3,1] 21   3 1 1 0    /
+    [4,3,1,2] 22   3 2 0 0   /
+    [4,3,2,1] 23   3 2 1 0 =/
+
+# Code
+
+**The fact of `FACT`**: since the problem asks for **all** permutations we can be sure it won't ask for more than `12` elements, because `13!` is out of range for `int` and all lists are indexed by `int`s. Also `12!` permutations of `12` elements in `List<List>` is good `7GiB` worth of memory.
+
+    public class Solution {
+        private static final int[] FACT = { // 479001600 < 2147483647 < 6227020800
+            1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600
+        };
+        public List<List<Integer>> permute(int[] nums) {
+            Arrays.sort(nums);
+            List<List<Integer>> result = new ArrayList<>(nums.length);
+            for (int k = 0; k < FACT[nums.length]; ++k) {
+                result.add(permutation(nums, k));
+            }
+            return result;
+        }
+        List<Integer> permutation(int[] nums, int k) {
+            // k %= FACT[nums.length]; // in case you want to use it elsewhere
+            List<Integer> source = toList(nums);
+            List<Integer> result = new ArrayList(nums.length);
+            while (!source.isEmpty()) {
+                int f = FACT[source.size() - 1];
+                result.add(source.remove(k / f));
+                k %= f;
+            }
+            return result;
+        }
+        List<Integer> toList(int[] nums) {
+            List<Integer> result = new LinkedList<>();
+            for (int num : nums) {
+                result.add(num);
+            }
+            return result;
+        }
+    }
+
+# Analysis
+
+It's clear that we need to iterate `n!` times, because we're generating `n!` elements.
+The `permutation` method looks like `O(n)`, but sadly it's `O(n^2)` because `remove` takes `O(n)`:
+
+ * `LinkedList`  
+`i` steps to find the `i`<sup>th</sup> element and `O(1)` to remove it
+ * `ArrayList`  
+`O(1)` to find the `i`<sup>th</sup> element and `n-i` steps to remove the `i`<sup>th</sup> element
+ * keep `int[] nums` and `boolean[] removed`  
+we have to iterate over each removed item, so `O(n)`
+ * `Map<Integer, Integer>`  
+may be better, but we have to re-index all remaining elements
+ * **Is there a better data structure for this?**
+
+# Code variations
+
+In case you don't like the hardcoded `FACT`:
+
+    /* 12! = 479001600 < Integer.MAX_VALUE = 2147483647 < 13! = 6227020800 */
+    private static final int[] FACT = factorials(12);
+    static int[] factorials(int n) {
+        int[] f = new int[n+1];
+        f[0] = f[1] = 1;
+        for (int i = 2; i <= n; ++i) {
+            f[i] = f[i-1] * i;
+        }
+        return f;
+    }
+
+or it's even possible to calculate `n!` only once and keep reducing it, but then we have to pass an extra unrelated argument.
+
+    public List<List<Integer>> permute(int[] nums) {
+        Arrays.sort(nums);
+        List<List<Integer>> result = new ArrayList<>(nums.length);
+        int fact = factorial(nums.length);
+        for (int k = 0; k < fact; ++k) {
+            result.add(permutation(nums, fact, k));
+        }
+        return result;
+    }
+    List<Integer> permutation(int[] nums, int f, int k) {
+        if (nums.length == 0) return Collections.emptyList();
+        List<Integer> source = toList(nums);
+        List<Integer> result = new ArrayList(nums.length);
+        do {
+            k %= f;
+            f /= source.size();
+            result.add(source.remove(k / f));
+        } while (!source.isEmpty());
+        return result;
+    }
+    static int factorial(int n) {
+        if (n <= 1) return 1;
+        int result = n;
+        while (--n > 1) {
+            result *= n;
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+2ms Java solution beats 93%, I think it could be optimized
+    public class Solution {
+    public List<List<Integer>> permute(int[] nums) {
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+		perm(result,nums,0,nums.length-1);
+		return result;
+    }
+    public static void perm(List<List<Integer>> result, int[] nums, int start, int end){
+		if(start==end){
+			Integer[] ele = new Integer[nums.length];
+			for(int i=0; i<nums.length; i++){
+				ele[i] = nums[i];
+			}
+			result.add(Arrays.asList(ele));
+		}
+		else{
+			for(int i=start; i<=end; i++){
+				int temp = nums[start];
+				nums[start] = nums[i];
+				nums[i] = temp;
+				
+				perm(result, nums,start+1,end);
+				
+				temp = nums[start];
+				nums[start] = nums[i];
+				nums[i] = temp;
+			}
+		}
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+My AC Solution in C++, I think this is not dfs, is it?
+    class Solution {
+    public:
+    	vector<vector<int> > permute(vector<int> &num) {
+    		vector<vector<int>> result;
+    		if (num.size() == 0)
+    			return result;
+    		sort(num.begin(), num.end());
+    		permute(num, 0, result);
+    		return result;
+    	}
+    private:
+    	void permute(vector<int> &num, size_t start, vector<vector<int>> &result){
+    		if (start == num.size()-1){
+    			result.push_back(num);
+    		}
+    		else{
+    			for (size_t i = start; i < num.size(); i++){
+    				swap(num[start], num[i]);
+    				permute(num, start + 1, result);
+    				swap(num[start], num[i]);
+    			}
+    		}
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Share My C++ backtracksolution
+
+    class Solution {
+    public:
+        vector<vector<int> > permute(vector<int> &num) {
+        	vector<vector<int> > res;   // result
+        	vector<bool> flags( num.size(), false);    // bool, whether num[i] is choosed
+        	vector<int> path;     // num have been choosed
+        	backtrack(num, res, path, flags);   //backtrack
+        	return res;	
+        }
+    
+        void backtrack(vector<int> &num, vector<vector<int> > &res, 
+    	vector<int> path,vector<bool> flags)
+    {
+    	if( num.size() == path.size() )
+    	{
+    		res.push_back(path);
+    	}
+    	else
+    	{
+    		for( int i = 0; i < num.size(); i++ )
+    		{
+    			if( flags[i] == true )
+    				continue;
+    			else
+    			{
+    				path.push_back(num[i]);
+    				flags[i] = true;
+    				backtrack( num, res, path, flags );
+    				flags[i] = false;
+    				path.pop_back();
+    			}
+    			
+    		}
+    	}
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Backtracking Solution
+    public class Solution {
+    public List<List<Integer>> permute(int[] nums) {
+        List<List<Integer>> lists = new ArrayList<>();
+        if (nums == null || nums.length == 0) {
+            return lists;
+        }
+
+        dfs(nums, lists, new ArrayList<Integer>());
+        return lists;
+    }
+
+    private void dfs(int[] nums, List<List<Integer>> lists, List<Integer> cur) {
+        if (cur.size() == nums.length) {
+            List<Integer> list = new ArrayList<>(cur);
+            lists.add(list);
+        }
+
+        for (int i = 0; i < nums.length; i++) {
+            if (cur.contains(nums[i])) {
+                continue;
+            }
+            cur.add(nums[i]);
+            dfs(nums, lists, cur);
+            cur.remove(cur.size() - 1);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution, 12ms
+You can also view more solution on [Github](https://github.com/flexwang/CodeTest)
+
+	class Solution {
+	public:
+		vector<vector<int>> permute(vector<int>& nums) {
+			vector<vector<int>> ans;
+			permute(ans, nums, 0);
+			return ans;
+		}
+		
+		void permute(vector<vector<int>>& ans, vector<int>& perm, int begin)
+		{
+			if (begin == perm.size()) {
+				ans.push_back(perm);
+				return;
+			}
+			
+			for (int i=begin; i<perm.size(); i++) {
+				if (i!=begin && perm[i] == perm[begin]) continue;
+				swap(perm[i], perm[begin]);
+				permute(ans, perm, begin+1);
+				swap(perm[i], perm[begin]);
+			}
+			
+		}
+	};
+
+----------------------------------------------------------------------------------------------------

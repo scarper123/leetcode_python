@@ -1,0 +1,667 @@
+Short JAVA solution
+    public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int width = obstacleGrid[0].length;
+        int[] dp = new int[width];
+        dp[0] = 1;
+        for (int[] row : obstacleGrid) {
+            for (int j = 0; j < width; j++) {
+                if (row[j] == 1)
+                    dp[j] = 0;
+                else if (j > 0)
+                    dp[j] += dp[j - 1];
+            }
+        }
+        return dp[width - 1];
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ Dp solution , very simple!
+just use dp to find the answer , if there is a obstacle at (i,j), then dp[i][j] = 0. 
+time is O(n*m) , space is O(n*m) . 
+here is my code:
+
+    class Solution {
+    public:
+        int uniquePathsWithObstacles(vector<vector<int> > &obstacleGrid) {
+            int m = obstacleGrid.size() , n = obstacleGrid[0].size();
+            vector<vector<int>> dp(m+1,vector<int>(n+1,0));
+            dp[0][1] = 1;
+            for(int i = 1 ; i <= m ; ++i)
+                for(int j = 1 ; j <= n ; ++j)
+                    if(!obstacleGrid[i-1][j-1])
+                        dp[i][j] = dp[i-1][j]+dp[i][j-1];
+            return dp[m][n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms O(n) DP Solution in C++ with Explanations
+Well, this problem is similar to **Unique Paths**. The introduction of obstacles only changes the boundary conditions and make some points unreachable (simply set to `0`).
+
+Denote the number of paths to arrive at point `(i, j)` to be `P[i][j]`, the state equation is `P[i][j] = P[i - 1][j] + P[i][j - 1]` if `obstacleGrid[i][j] != 1` and `0` otherwise. 
+
+Now let's finish the boundary conditions. In the **Unique Paths** problem, we initialize `P[0][j] = 1, P[i][0] = 1` for all valid `i, j`. Now, due to obstacles, some boundary points are no longer reachable and need to be initialized to `0`. For example, if `obstacleGrid` is like `[0, 0, 1, 0, 0]`, then the last three points are not reachable and need to be initialized to be `0`. The result is `[1, 1, 0, 0, 0]`.
+
+Now we can write down the following (unoptimized) code. Note that we pad the `obstacleGrid` by `1` and initialize `dp[0][1] = 1` to unify the boundary cases. 
+
+    class Solution {
+    public:
+        int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+            int m = obstacleGrid.size(), n = obstacleGrid[0].size();
+            vector<vector<int> > dp(m + 1, vector<int> (n + 1, 0));
+            dp[0][1] = 1;
+            for (int i = 1; i <= m; i++)
+                for (int j = 1; j <= n; j++)
+                    if (!obstacleGrid[i - 1][j - 1])
+                        dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+            return dp[m][n];
+        } 
+    };
+
+Well, the code is accepted but it has some obvious redundancy. There are two major concerns:
+
+ 1. Each time when we update `path[i][j]`, we only need `path[i  - 1][j]` (at the same column) and `path[i][j - 1]` (at the left column), so it is unnecessary to maintain the full `m*n` matrix. Maintaining two columns is enough.
+ 2. There are some cases that the loop can be terminated earlier. Suppose `obstacleGrid = [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]`, then we can see that it is impossible to reach the bottom-right corner after updating the second column since the number of paths to reach each element in the second column is `0`.
+
+Taken these into considerations, we write down the following optimized code.
+    
+    class Solution {
+    public: 
+        int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+            int m = obstacleGrid.size();
+            int n = obstacleGrid[0].size();
+            vector<int> pre(m, 0);
+            vector<int> cur(m, 0);
+            for (int i = 0; i < m; i++) {
+                if (!obstacleGrid[i][0])
+                    pre[i] = 1;
+                else break;
+            }
+            for (int j = 1; j < n; j++) {
+                bool flag = false;
+                if (!obstacleGrid[0][j]) {
+                    cur[0] = pre[0];
+                    if (cur[0]) flag = true; 
+                }
+                else cur[0] = 0;
+                for (int i = 1; i < m; i++) {
+                    if (!obstacleGrid[i][j]) {
+                        cur[i] = cur[i - 1] + pre[i];
+                        if (cur[i]) flag = true;
+                    }
+                    else cur[i] = 0;
+                }
+                if (!flag) return 0;
+                swap(pre, cur);
+            }
+            return pre[m - 1];
+        }
+    }; 
+
+Further inspecting the above code, keeping two vectors only serve for the purpose of recovering `pre[i]`, which is simply `cur[i]` before its update. So we can use only one vector and the space is further optimized.
+
+    class Solution {
+    public:
+        int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+            int m = obstacleGrid.size();
+            int n = obstacleGrid[0].size();
+            vector<int> cur(m, 0);
+            for (int i = 0; i < m; i++) {
+                if (!obstacleGrid[i][0])
+                    cur[i] = 1;
+                else break;
+            }
+            for (int j = 1; j < n; j++) {
+                bool flag = false;
+                if (obstacleGrid[0][j])
+                    cur[0] = 0;
+                else flag = true;
+                for (int i = 1; i < m; i++) {
+                    if (!obstacleGrid[i][j]) {
+                        cur[i] += cur[i - 1]; 
+                        if (cur[i]) flag = true;
+                    }
+                    else cur[i] = 0; 
+                }
+                if (!flag) return 0;
+            }
+            return cur[m - 1];
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+Java Solution using Dynamic Programming, O(1) space
+    public class Solution {
+        public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+            
+            //Empty case
+            if(obstacleGrid.length == 0) return 0;
+            
+            int rows = obstacleGrid.length;
+            int cols = obstacleGrid[0].length;
+            
+            for(int i = 0; i < rows; i++){
+                for(int j = 0; j < cols; j++){
+                    if(obstacleGrid[i][j] == 1)
+                        obstacleGrid[i][j] = 0;
+                    else if(i == 0 && j == 0)
+                        obstacleGrid[i][j] = 1;
+                    else if(i == 0)
+                        obstacleGrid[i][j] = obstacleGrid[i][j - 1] * 1;// For row 0, if there are no paths to left cell, then its 0,else 1
+                    else if(j == 0)
+                        obstacleGrid[i][j] = obstacleGrid[i - 1][j] * 1;// For col 0, if there are no paths to upper cell, then its 0,else 1
+                    else
+                        obstacleGrid[i][j] = obstacleGrid[i - 1][j] + obstacleGrid[i][j - 1];
+                }
+            }
+            
+            return obstacleGrid[rows - 1][cols - 1];
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy Java solution, in-place, DP
+   
+The idea is simple, set all obstacles to be 0 while doing the DP. No extra space is used.
+
+     public class Solution {
+            public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+                int m = obstacleGrid.length;
+                int n = obstacleGrid[0].length;
+        
+                obstacleGrid[0][0]^=1;
+                for(int i = 1;i<m;i++){
+                    obstacleGrid[i][0]=(obstacleGrid[i][0]==1)? 0:obstacleGrid[i-1][0];
+                }
+                
+                for(int j = 1;j<n;j++){
+                    obstacleGrid[0][j] =(obstacleGrid[0][j]==1)? 0: obstacleGrid[0][j-1];
+                }
+                for(int i = 1;i<m;i++){
+                    for(int j =1;j<n;j++){
+                        obstacleGrid[i][j] =(obstacleGrid[i][j]==1)? 0: obstacleGrid[i-1][j]+obstacleGrid[i][j-1];
+                    }
+                }
+                return obstacleGrid[m-1][n-1];
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Accepted simple Python in-place solution
+As below. Any comments on how to make it shorter? Thx!
+
+    class Solution:
+        # @param obstacleGrid, a list of lists of integers
+        # @return an integer
+        def uniquePathsWithObstacles(self, obstacleGrid):
+            m = len(obstacleGrid)
+            n = len(obstacleGrid[0])
+            obstacleGrid[0][0] = 1 - obstacleGrid[0][0]
+            
+            for i in range(1, n):
+                if not obstacleGrid[0][i]:
+                    obstacleGrid[0][i] = obstacleGrid[0][i-1]
+                else:
+                    obstacleGrid[0][i] = 0
+                    
+            for i in range(1, m):
+                if not obstacleGrid[i][0]:
+                    obstacleGrid[i][0] = obstacleGrid[i-1][0]
+                else:
+                    obstacleGrid[i][0] = 0
+                    
+            for i in range(1, m):
+                for j in range(1, n):
+                    if not obstacleGrid[i][j]:
+                        obstacleGrid[i][j] = obstacleGrid[i][j-1]+obstacleGrid[i-1][j]
+                    else:
+                        obstacleGrid[i][j] = 0
+                        
+            return obstacleGrid[-1][-1]
+
+----------------------------------------------------------------------------------------------------
+Bottom up iterative solution, O(mn), no extra space
+     public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int m = obstacleGrid.length;
+        int n = obstacleGrid[0].length;
+        
+        for (int r = m - 1; r >= 0; r--) {
+            for (int c = n - 1; c >= 0; c--) {
+                if (obstacleGrid[r][c] == 1) obstacleGrid[r][c] = 0;
+                else {
+                    if (r == m - 1 && c == n - 1) obstacleGrid[r][c] = 1;
+                    else if (r == m - 1) obstacleGrid[r][c] = obstacleGrid[r][c + 1];
+                    else if (c == n - 1) obstacleGrid[r][c] = obstacleGrid[r + 1][c];
+                    else obstacleGrid[r][c] = obstacleGrid[r][c + 1] + obstacleGrid[r + 1][c];
+                }
+            }
+        }
+        
+        return obstacleGrid[0][0];
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(MN) time, O(1) space (use obstacleGrid)
+use obstacleGrid to save result
+
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int h = obstacleGrid.size();
+        if(h == 0) return 0;
+        int w = obstacleGrid[0].size();
+        if(w == 0) return 0;
+        if(obstacleGrid[0][0]) return 0;
+        
+        // first cell has 1 path
+        obstacleGrid[0][0] = 1;
+        
+        // first row all are '1' until obstacle (from left only)
+        for(int i=1; i<w; i++){
+            obstacleGrid[0][i] = obstacleGrid[0][i] ? 0 : obstacleGrid[0][i-1];
+        }
+
+        for(int j=1; j<h; j++){
+            // first column is like first row (from top only)
+            obstacleGrid[j][0] = obstacleGrid[j][0] ? 0 : obstacleGrid[j-1][0];
+            
+            // others are up+left
+            for(int i=1; i<w; i++){
+                obstacleGrid[j][i] = obstacleGrid[j][i] ? 0 : obstacleGrid[j-1][i] + obstacleGrid[j][i-1];
+            }
+        }
+        
+        return obstacleGrid[h-1][w-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my Java solution: O(m*n) time complexity, no extra space.
+Obviously, this is a DP problem.
+
+Let F(i,j) denotes the paths from top left to cell (i,j).
+
+
+If cell (i,j) has an obstacle, then F(i,j) = 0.
+else 
+
+
+for j>0, F(0,j) = F(0,j-1)
+   
+
+for i>0, F(i,0) = F(i-1,0)
+    
+
+for i>0&&j>0, F(i,j) = F(i-1,j)+F(i,j-1)
+
+We can take advantage of the obstacle array without using extra space.         
+
+        if(obstacleGrid==null||obstacleGrid.length==0)
+        	return 0;
+
+        for(int i=0;i<obstacleGrid.length;i++)
+        	for(int j=0;j<obstacleGrid[0].length;j++)
+        	{
+        		if(i==0)
+        		{
+        			if(j==0)
+        				obstacleGrid[0][0] = 1 - obstacleGrid[0][0];
+        			else
+        				obstacleGrid[0][j] = obstacleGrid[0][j]==1?0:obstacleGrid[0][j-1];
+        		}
+        		else 
+        		{
+        			if(j==0)
+        				obstacleGrid[i][0] = obstacleGrid[i][0]==1?0:obstacleGrid[i-1][0];
+        			else 
+        				obstacleGrid[i][j] = obstacleGrid[i][j]==1?0:(obstacleGrid[i-1][j]+obstacleGrid[i][j-1]);
+				}
+        	}
+        return obstacleGrid[obstacleGrid.length-1][obstacleGrid[0].length-1];
+
+----------------------------------------------------------------------------------------------------
+Simple Java DP solution
+    public class Solution {
+    public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int m = obstacleGrid.length;
+        int n = obstacleGrid[0].length;
+        int[][] s = new int[m][n];
+        s[0][0] = obstacleGrid[0][0]==0 ? 1:0;
+        if(s[0][0] == 0) return 0;
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(obstacleGrid[i][j] == 1) s[i][j] = 0;
+                else if(i==0){
+                    if(j>0) s[i][j] = s[i][j-1];
+                }
+                else if(j==0){
+                    if(i>0) s[i][j] = s[i-1][j];
+                }
+                else s[i][j] = s[i-1][j] + s[i][j-1];
+            }
+        }
+        return s[m-1][n-1];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+I saw many answers are using 2-D vector which is unnecessary. Check my 1-D vector solution
+
+    int uniquePathsWithObstacles(vector<vector<int> > &obstacleGrid) {
+        int width = obstacleGrid[0].size();
+        vector<int> result(width, 0);
+        result[0] = 1;
+
+        for (int i = 0; i <  obstacleGrid.size(); ++i) {
+            for (int j = 0; j < width; ++j) {
+                if (obstacleGrid[i][j] == 1)
+                    result[j] = 0;
+                else if (j > 0)
+                    result[j] += result[j-1];
+            }
+        }
+        return result[width-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand JAVA solution
+    public class Solution {
+    public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int m = obstacleGrid.length;
+        int n = obstacleGrid[0].length;
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                if(obstacleGrid[i][j] == 1) {
+                    obstacleGrid[i][j] = 0;
+                }
+                else {
+                    if(i == 0 && j == 0) obstacleGrid[i][j] = 1;
+                    else if(i == 0 && j > 0) obstacleGrid[i][j] = obstacleGrid[i][j-1];
+                    else if(i > 0 && j == 0) obstacleGrid[i][j] = obstacleGrid[i-1][j];
+                    else obstacleGrid[i][j] = obstacleGrid[i-1][j] + obstacleGrid[i][j-1];
+                }
+            }
+        }
+        return obstacleGrid[m-1][n-1];
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA solution, modified form uniquePath I
+modified form uniquePath I;
+set the upper and left boundary of the answer matrix to 1 until blocked;
+set any blocks to 0
+
+
+    public class Solution {
+        public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+            int width = obstacleGrid[0].length;
+            int lines = obstacleGrid.length;
+            int [][] answer = new int[lines][width];
+            
+           
+            
+            for(int j=0;j<width;j++){
+                if(obstacleGrid[0][j]==1){if(lines==1) return 0; break;}
+                else answer[0][j]=1;
+            }
+            
+            for(int i=0;i<lines;i++){
+                if(obstacleGrid[i][0]==1){if(width==1) return 0; break;}
+                else answer[i][0]=1;
+            }
+            
+            for(int i=1;i<lines;i++){
+                for(int j=1;j<width;j++){
+                    if(obstacleGrid[i][j]!=1){
+                        answer[i][j]=answer[i-1][j]+answer[i][j-1];
+                    }
+                }
+            }
+            
+            return answer[lines-1][width-1];
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Simple and clean DP solution,  easy to understand.
+   
+	public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+		int m = obstacleGrid.length, n = obstacleGrid[0].length;
+		int[][] path = new int[m][n];
+	
+		for (int i = 0; i < m; i++) {
+			if (obstacleGrid[i][0] == 1)  {
+				path[i][0] = 0;
+				//on the first column, if there is an obstacle, the rest are blocked. 
+				//no need to continue.
+				break;  
+			} else
+				path[i][0] = 1;
+		}
+		
+		for (int j = 0; j < n; j++) {
+			if (obstacleGrid[0][j] == 1)  {
+				path[0][j] = 0;
+				//First row, once obstacle found, the rest are blocked.
+				break; 
+			} else
+				path[0][j] = 1;
+		}
+		
+		for (int i = 1; i < m; i++) {
+			for (int j = 1; j < n; j++) {
+				if (obstacleGrid[i][j] == 1) 
+					path[i][j] = 0;
+				else
+					path[i][j] = path[i-1][j] + path[i][j-1];
+			}
+		}
+		return path[m-1][n-1];
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Simple 4ms DP C++ solution
+    class Solution {
+        public:
+            int uniquePathsWithObstacles(vector<vector<int>>& grid) {
+                int m = grid.size(), n = ( m == 0 ? 0 : grid[0].size());
+                if( !m || !n || grid[m-1][n-1] == 1 ) return 0;
+                vector<vector<int>> dp( m, vector<int>(n, 0));
+                for( int i = 0; i < m; i++ ) if( grid[i][0] != 1 ) dp[i][0] = 1; else break;
+                for( int i = 0; i < n; i++ ) if( grid[0][i] != 1 ) dp[0][i] = 1; else break;
+                for( int i = 1; i < m; i++ )
+                    for( int j = 1; j < n; j++ ) dp[i][j] = (( grid[i-1][j] == 1 ) ? 0 : dp[i-1][j]) + (( grid[i][j-1] == 1 ) ? 0 : dp[i][j-1]);
+                return dp[m-1][n-1];
+            }
+    };
+
+----------------------------------------------------------------------------------------------------
+Internal Error : OJ is not showing info related to this? what causes this error, any guess?
+Here is my code:
+
+	final static int rowMax = 100;
+	final static int colMax = 100;
+	int memorize[][] = new int[rowMax+2][colMax+2];
+	
+    public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+          Object orly = obstacleGrid;
+		  int nDim =2;
+		  int m =0;
+		  int n = 0;
+		  
+		    for (int i =0; i< nDim ;i++){
+		    	int len = Array.getLength(orly);
+		    	System.out.println("dim[" + i + "]=" + len);
+		    	if( i == 0){
+		    		m = len;
+		    	}else
+		    	{
+		    		n = len;
+		    	}
+		    	if(0<len){
+		    		orly = Array.get(orly, 0);
+		    	}
+		    }
+		    	if(m == 0 || n ==0)	    {
+		    	    return 0;
+		    	}
+		 return uniquePaths(m,n,obstacleGrid);
+    }
+    
+    public int uniquePaths(int m, int n,int[][] obstacleGrid) {
+		initializeMemorize();
+	       return uniquePaths(m,n,1,1,obstacleGrid);
+	}
+	    
+	    
+	private int  uniquePaths(int m, int n, int row, int column,int[][] obstacleGrid){
+		if(row == m && column == n){
+			return 1;
+		}
+		if(row > m || column > n ){
+			return 0;
+		}
+		if(obstacleGrid[row-1][column-1] == 1){
+			return 0;
+		}
+		if(memorize[row+1][column] == -1){
+			memorize[row+1][column] =uniquePaths(m,n,row+1,column,obstacleGrid);			
+		}
+		if(memorize[row][column+1] == -1){
+			memorize[row][column+1] =uniquePaths(m,n,row,column+1,obstacleGrid);
+		}
+		return memorize[row+1][column] + memorize[row][column+1];
+	}
+
+	private void initializeMemorize(){
+		for(int i=0;i<rowMax;i++){
+			for(int j=0;j<colMax;j++){
+				memorize[i][j]= -1;
+			}
+		}
+	}
+	
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution with cache - 54ms
+    class Solution:
+        # @param {integer[][]} obstacleGrid
+        # @return {integer}
+        def uniquePathsWithObstacles(self, obstacleGrid):
+            if not len(obstacleGrid) or not len(obstacleGrid[0]):
+                return 0
+    
+            cache = {}
+            m, n = len(obstacleGrid) - 1, len(obstacleGrid[0]) - 1
+    
+            return self.findPath(obstacleGrid, m, n, cache)
+    
+        def findPath(self, obstacleGrid, m, n, cache):
+            if (m, n) in cache:
+                return cache[(m, n)]
+            elif m < 0 or n < 0 or obstacleGrid[m][n] == 1:
+                return 0
+            elif m == 0 and n == 0:
+                return 1
+    
+            cache[(m, n)] = self.findPath(obstacleGrid, m - 1, n, cache) + self.findPath(obstacleGrid, m, n - 1, cache)
+    
+            return cache[(m, n)]
+
+
+
+----------------------------------------------------------------------------------------------------
+My simple C++ solution (7 lines) DP O(MN) time, O(N) space
+Everything is the same as unique path 1, except the recursive relationship needs to change to 
+pathN[i][j] = 0 if obstacleGrid !=0 (i.e. meet an obstacle), pathN[i][j] =  pathN[i][j-1] + pathN[i-1][j], otherwise.
+To simplify the code (i.e. to avoid unnecessary boudary check), we initialize pathN[i]=0 except pathN[1] =1,
+where pathN[i] represents the number of paths reaching the position [i-1] of the current row. With such initialization, we just need to go through each row (including the first row) from left to right to get the final results. 
+
+    class Solution {
+    public:
+        int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+            int M, N, row, col;
+            if( (M=obstacleGrid.size()) <= 0 || (N = obstacleGrid[0].size())<=0) return 0;
+            vector<int>  pathN(N+1, 0);
+    
+            for(row=0, pathN[1] = 1; row<M; ++row)
+                for(col=0; col<N; ++col)
+                   pathN[col+1] = obstacleGrid[row][col]?0:(pathN[col+1]+pathN[col]);
+            return pathN[N];       
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A little change based on Unique Path, java solution using DP
+    public class Solution {
+        public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+            int m = obstacleGrid.length;
+            int n = obstacleGrid[0].length;
+            int[][] dp = new int[m][n];
+            for(int i = 0; i < m; i ++) {
+                if(obstacleGrid[i][0] == 1) {
+                    dp[i][0] = 0;
+                    break;
+                } else {
+                    dp[i][0] = 1;
+                }
+            }
+            
+            for(int j = 0; j < n; j ++) {
+                if(obstacleGrid[0][j] == 1) {
+                    dp[0][j] = 0;
+                    break;
+                } else {
+                    dp[0][j] = 1;
+                }
+            }
+            
+            for(int i = 1; i < m; i ++) {
+                for(int j = 1; j < n; j ++) {
+                    if(obstacleGrid[i][j] == 1) {
+                        dp[i][j] = 0;
+                    } else {
+                        dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+                    }
+                }
+            }
+            return dp[m - 1][n - 1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+AC solution with little modification based on Unique path I
+    public class Solution {
+    public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int row=obstacleGrid.length;
+        int col=obstacleGrid[0].length;
+        int[][] res= new int[row][col];
+        for(int i=0;i<col;i++){
+            if(obstacleGrid[0][i]==0)
+                res[0][i]=1;
+            else 
+                break;//supoose ob[0][3]=1 then not only res[0][3]=0 but all grids behind it are also zeros(res[0][4], etc);
+        }
+        for(int i=0;i<row;i++){
+            if(obstacleGrid[i][0]==0)
+                res[i][0]=1;
+            else 
+                break;
+        }
+        
+        for(int i=1;i<row;i++){
+            for(int j=1;j<col;j++){
+                if(obstacleGrid[i][j]==0)
+                    res[i][j]=res[i-1][j]+res[i][j-1];
+                else 
+                    res[i][j]=0;
+                    
+            }
+        }
+        
+        return res[row-1][col-1];
+    }
+}
+
+----------------------------------------------------------------------------------------------------

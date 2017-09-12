@@ -1,0 +1,824 @@
+Java Code using PriorityQueue. similar to merge k array
+public int[] smallestRange(int[][] nums) {
+		PriorityQueue<Element> pq = new PriorityQueue<Element>(new Comparator<Element>() {
+			public int compare(Element a, Element b) {
+				return a.val - b.val;
+			}
+		});
+		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
+		for (int i = 0; i < nums.length; i++) {
+			Element e = new Element(i, 0, nums[i][0]);
+			pq.offer(e);
+			max = Math.max(max, nums[i][0]);
+		}
+		int range = Integer.MAX_VALUE;
+		int start = -1, end = -1;
+		while (pq.size() == nums.length) {
+
+			Element curr = pq.poll();
+			if (max - curr.val < range) {
+				range = max - curr.val;
+				start = curr.val;
+				end = max;
+			}
+			if (curr.idx + 1 < nums[curr.row].length) {
+				curr.idx = curr.idx + 1;
+				curr.val = nums[curr.row][curr.idx];
+				pq.offer(curr);
+				if (curr.val > max) {
+					max = curr.val;
+				}
+			}
+		}
+
+		return new int[] { start, end };
+	}
+
+	class Element {
+		int val;
+		int idx;
+		int row;
+
+		public Element(int r, int i, int v) {
+			val = v;
+			idx = i;
+			row = r;
+		}
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ priority_queue solution using iterators
+class Solution {
+public:
+    vector<int> smallestRange(vector<vector<int>>& nums) {
+        typedef vector<int>::iterator vi;
+        
+        struct comp {
+            bool operator()(pair<vi, vi> p1, pair<vi, vi> p2) {
+                return *p1.first > *p2.first;
+            }
+        };
+        
+        int lo = INT_MAX, hi = INT_MIN;
+        priority_queue<pair<vi, vi>, vector<pair<vi, vi>>, comp> pq;
+        for (auto &row : nums) {
+            lo = min(lo, row[0]);
+            hi = max(hi, row[0]);
+            pq.push({row.begin(), row.end()});
+        }
+        
+        vector<int> ans = {lo, hi};
+        while (true) {
+            auto p = pq.top();
+            pq.pop();
+            ++p.first;
+            if (p.first == p.second)
+                break;
+            pq.push(p);
+            
+            lo = *pq.top().first;
+            hi = max(hi, *p.first);
+            if (hi - lo < ans[1] - ans[0])
+                ans = {lo, hi};
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python, Heap-based solution
+right
+
+----------------------------------------------------------------------------------------------------
+Java 8, Sliding window
+public static int[] smallestRange(List<List<Integer>> nums) {
+        List<int[]> list = IntStream.range(0, nums.size())
+                .mapToObj( i -> nums.get(i).stream().map(x -> new int[]{x, i}))
+                .flatMap(y -> y)
+                .sorted(Comparator.comparingInt(p -> p[0])).collect(toList());
+        int[] counts = new int[nums.size()];
+        BitSet set = new BitSet(nums.size());
+        int start = -1;
+        int[] res = new int[2];
+        for(int i = 0; i < list.size(); i++) {
+            int[] p = list.get(i);
+            set.set(p[1]);
+            counts[p[1]] += 1;
+            if(start == -1) { start = 0; }
+            while(start < i && counts[list.get(start)[1]] > 1) {
+                counts[list.get(start)[1]]--;
+                start++;
+            }
+            if(set.cardinality() == nums.size()) {
+                if( (res[0] == 0 && res[1] == 0) || (list.get(i)[0] - list.get(start)[0]) < res[1] - res[0]) {
+                    res[0] = list.get(start)[0];
+                    res[1] = list.get(i)[0];
+                }
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def smallestRange(self, A):
+    A = [row[::-1] for row in A]
+    
+    ans = -1e9, 1e9
+    for left in sorted(reduce(set.union, map(set, A))):
+        right = -1e9
+        for B in A:
+            while B and B[-1] < left:
+                B.pop()
+            if not B:
+                return ans
+            right = max(right, B[-1])
+        if right - left < ans[1] - ans[0]:
+            ans = left, right
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+My JAVA accepted code with Priority Queue (revised, easier to read)
+list itemint[] res = new int[2];
+int minRangeSize = Integer.MAX_VALUE;
+if (nums == null) return res;
+PriorityQueue<MyNumber> queue = new PriorityQueue<MyNumber>
+  (nums.length, new Comparator<MyNumber>(){
+    public int compare(MyNumber myNum1, MyNumber myNum2) {
+        return myNum1.num - myNum2.num;
+    }
+});
+
+int maxValue = nums[0][0];
+for (int i = 0; i < nums.length; i++) {
+     maxValue = Math.max(maxValue, nums[i][0]);
+     MyNumber myNum = new MyNumber(nums[i][0], 0, i);
+     queue.offer(myNum);
+}
+
+while (!queue.isEmpty()) {
+     MyNumber myNum = queue.poll();
+     if (maxValue - myNum.num < minRangeSize) {
+         minRangeSize = maxValue - myNum.num;
+         res[0] = myNum.num;
+         res[1] = maxValue;
+     }
+
+    if (myNum.indexInArray == nums[myNum.arrNum].length - 1) {
+        break;
+    } else {
+        int cur = nums[myNum.arrNum][myNum.indexInArray + 1];
+        myNum = new MyNumber(cur, myNum.indexInArray + 1, myNum.arrNum);
+        maxValue = Math.max(maxValue, cur);
+        queue.offer(myNum);
+   }
+}
+return res;
+
+
+----------------------------------------------------------------------------------------------------
+Python heap solution with explanation
+def smallestRange(self, nums):
+    iters = [iter(l) for l in nums]
+    heap = [(next(it), i) for i,it in enumerate(iters)]
+    heapq.heapify(heap)
+
+    lo, hi = 0, float('inf')
+    rbound = max(heap)[0]
+    while True:
+        lbound, i = heap[0]
+        if rbound - lbound < hi - lo:
+            lo, hi = lbound, rbound
+        nxt = next(iters[i], None)
+        if nxt is None:
+            return [lo, hi]
+        rbound = max(rbound, nxt)
+        heapq.heappushpop(heap, (nxt,i))
+
+
+----------------------------------------------------------------------------------------------------
+C# accept solution
+public class Solution {
+    public int[] SmallestRange(IList<IList<int>> nums) {
+        var list = new List<int>();
+        int len = nums.Count;
+        var indexArr = new int[len];
+        for(int i = 0;i<len;i++){
+            indexArr[i] = nums[i].Count-1;
+            int index = FindIndex(list,i,nums,indexArr);
+            list.Insert(index,i);
+        }
+        //Console.WriteLine(string.Join(",",indexArr));
+        int[] result = new int[]{nums[list.First()][indexArr[list.First()]],nums[list.Last()][indexArr[list.Last()]]};
+        
+        while(true){
+            var lastIndex = list.Last();
+            if(--indexArr[lastIndex] == -1)
+                break;
+        	//Console.WriteLine(j+","+indexArr[j]);
+            list.RemoveAt(list.Count-1);
+            
+        	list.Insert(FindIndex(list,lastIndex,nums,indexArr),lastIndex);
+            
+        	int n1 = nums[list.First()][indexArr[list.First()]];
+        	int n2 = nums[list.Last()][indexArr[list.Last()]];
+            
+            if(n2-n1 < result[1]-result[0] || n2-n1 == result[1]-result[0] && n1 < result[0]){
+                result[0] = n1;
+                result[1] = n2;
+            }   
+            //Console.WriteLine(string.Join(",",list));
+        }
+        
+        return result;
+    }
+    
+    private int FindIndex(List<int> list,int index,IList<IList<int>> nums,int[] indexArr){
+        if(list.Count == 0)
+        	return 0;
+        
+        int low = 0;
+        int high = list.Count-1;
+        int v = nums[index][indexArr[index]];
+        while(low < high-1){
+            int mid = low + (high-low)/2;
+            
+            int mid_v = nums[list[mid]][indexArr[list[mid]]];
+            
+            if(mid_v == v)
+                return mid;
+            else if(mid_v < v)
+                low = mid;
+        	else
+                high = mid;
+        }
+        if(nums[list[low]][indexArr[list[low]]] >= v)
+            return low;
+        else if(nums[list[high]][indexArr[list[high]]]>= v)
+            return high;
+        else
+            return high+1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; 45ms O(n) space O(n) time sol, without priority queue, iterators, just vectors
+class Solution {
+public:
+    vector<int> smallestRange(vector<vector<int>>& nums) { 
+        vector<pair<int, int>> data;   // first: number, second: the list the num comes from
+        vector<int> hascover(nums.size(), 0);  // num of elements from each list in current range
+        vector<int> result;
+
+        for (int i=0; i<nums.size(); i++) {
+            for (int each: nums[i]) {
+                data.push_back({each, i});
+            }
+        }  
+        sort(data.begin(), data.end());
+
+        int minindex = 0;
+        int mindiff = INT_MAX;
+        int count = nums.size();  // nums of lists are in the range, 0 means all
+        
+        for (int i=0; i<data.size(); i++) {
+            if (hascover[data[i].second] == 0) count--;
+            hascover[data[i].second]++;
+            
+            while (count==0 && minindex <= i) {
+                int minnum = data[minindex].first;
+                int maxnum = data[i].first;
+                if (maxnum - minnum < mindiff) {
+                    mindiff = maxnum - minnum;
+                    result.clear();
+                    result.push_back(minnum);
+                    result.push_back(maxnum);
+                }
+                hascover[data[minindex].second]--;
+                if (hascover[data[minindex].second] == 0) count++;
+                minindex++;
+            }
+        }
+        return result;
+    }
+
+};
+
+----------------------------------------------------------------------------------------------------
+My accepted java code below using priorityQueue
+    PriorityQueue<MyNumber> queue = new PriorityQueue<MyNumber>(nums.length, new Comparator<MyNumber>(){
+            public int compare(MyNumber myNum1, MyNumber myNum2) {
+                return myNum1.num - myNum2.num;
+            }
+    });
+    
+    int maxValue = nums[0][0];
+    for (int i = 0; i < nums.length; i++) {
+        maxValue = Math.max(maxValue, nums[i][0]);
+        MyNumber myNum = new MyNumber(nums[i][0], 0, i);
+        queue.offer(myNum);
+    }
+    
+    while (!queue.isEmpty()) {
+        MyNumber myNum = queue.poll();
+        if (maxValue - myNum.num < minRangeSize) {
+            minRangeSize = maxValue - myNum.num;
+            res[0] = myNum.num;
+            res[1] = maxValue;
+        }
+        
+        if (myNum.indexInArray == nums[myNum.arrNum].length - 1) {
+            break;
+        } else {
+            int cur = nums[myNum.arrNum][myNum.indexInArray + 1];
+            myNum = new MyNumber(cur, myNum.indexInArray + 1, myNum.arrNum);
+            maxValue = Math.max(maxValue, cur);
+            queue.offer(myNum);
+        }
+    }
+    
+    
+    return res;
+
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - Runtime Error
+class Solution {
+    func smallestRange(_ nums: [[Int]]) -> [Int] {
+        var numLists = [[Num]]()
+        for (index, list) in nums.enumerated() {
+            numLists.append(Num.initNumArray(list, forListIndex: index))
+        }
+        let numList = numLists.flatMap { $0 }.sorted()
+        guard numList.count > 0 else { return [Int]() }
+        
+        var lowBound = Index(val: numList.first!.val, listIndex: numList.first!.listIndex)
+        var highBound = Index(val: numList.last!.val, listIndex: numList.last!.listIndex)
+        var minRangeValue = highBound.val - lowBound.val
+        
+        var range = [Index]()
+        
+        for num in numList {
+            
+            let indexNum = Index(val: num.val, listIndex: num.listIndex)
+            if let index = range.index(of: indexNum) {
+                range.remove(at: index)
+            }
+            range.append(indexNum)
+            
+            // if the sub-range contains elements from all lists
+            if range.count == nums.count {
+                let rangeVal = range.last!.val - range.first!.val
+                print("rangeVal: \(rangeVal) low: \(lowBound.val) high: \(highBound.val)")
+                if (rangeVal < minRangeValue) {
+                    lowBound = range.first!
+                    highBound = range.last!
+                    minRangeValue = rangeVal
+                    print("after modification: minRangeValue: \(minRangeValue) low: \(lowBound.val) high: \(highBound.val)")
+                }
+            }
+        }
+        
+        var rangeArray = [Int]()
+        rangeArray.append(lowBound.val)
+        rangeArray.append(highBound.val)
+        return rangeArray
+    }
+}
+
+struct Index: Hashable, Equatable {
+    var val: Int
+    var listIndex: Int
+
+    init(val: Int, listIndex: Int) {
+        self.val = val
+        self.listIndex = listIndex
+    }
+
+    static func == (lhs: Index, rhs: Index) -> Bool {
+        return lhs.listIndex == rhs.listIndex
+    }
+    
+    var hashValue: Int {
+        return listIndex
+    }
+
+}
+
+struct Num: Comparable {
+    var val: Int
+    var listIndex: Int
+    
+    init(val: Int, listIndex: Int) {
+        self.val = val
+        self.listIndex = listIndex
+    }
+    
+    static func initNumArray(_ array: [Int], forListIndex listIndex: Int) -> [Num] {
+        var output = [Num]()
+        for i in array {
+            output.append(Num(val:i, listIndex: listIndex))
+        }
+        
+        return output
+    }
+    
+    static func < (lhs: Num, rhs: Num) -> Bool {
+        return lhs.val < rhs.val
+    }
+    
+    static func == (lhs: Num, rhs: Num) -> Bool {
+        return lhs.val == rhs.val
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with priority_queue
+class Solution {
+public:
+    vector<int> smallestRange(vector<vector<int>>& nums) {
+        int curmax = INT_MIN;
+        auto sortpair = [](pair<int, int> &p1, pair<int, int> &p2) { return p1.first > p2.first;};
+        priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(sortpair)> pqpair(sortpair);
+        vector<int> idx(nums.size(), 0);
+        for(int i = 0; i < nums.size(); i++) {
+            if(nums[i].size() == idx[i]) continue;
+            pqpair.push({nums[i][0],i});
+            idx[i] = 1;
+            curmax = max(curmax, nums[i][0]);
+        }
+        int resstart = pqpair.top().first;
+        int resend = curmax;
+        while(idx[pqpair.top().second] < nums[pqpair.top().second].size()) {
+            int tmp = pqpair.top().second;
+            pqpair.pop();
+            pqpair.push({nums[tmp][idx[tmp]], tmp});
+            curmax = max(curmax, nums[tmp][idx[tmp]]);
+            idx[tmp]++;
+            if(resend - resstart > curmax - pqpair.top().first) {
+                resstart = pqpair.top().first;
+                resend = curmax;
+            }
+        }
+        return {resstart, resend};
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution using minheap!
+public class Solution {
+    class node{
+        int val;
+        int index;
+        int row;
+        node(int a,int b,int c){
+            this.val=a;
+            this.index=b;
+            this.row=c;
+        }
+    }
+    public int[] smallestRange(int[][] nums) {
+        PriorityQueue<node> pq=new PriorityQueue<>(1,new Comparator<node>(){
+               public int compare(node a,node b){
+                   return a.val-b.val;
+               }
+        });
+        
+        int[] res=new int[2];
+        res[0]=Integer.MAX_VALUE;
+        res[1]=Integer.MIN_VALUE;
+        
+        int[] temp=new int[2];
+        
+        for(int i=0;i<nums.length;i++){
+            pq.offer(new node(nums[i][0],0,i));
+            res[0]=Math.min(res[0],nums[i][0]);
+            res[1]=Math.max(res[1],nums[i][0]);
+        }
+        temp[0]=res[0];
+        temp[1]=res[1];
+        
+        while(!pq.isEmpty()){
+            node t=pq.poll();
+            int index=t.index;
+            int row=t.row;
+            if(index==nums[row].length-1){
+                break;
+            }
+            
+            pq.offer(new node(nums[row][index+1],index+1,row));
+            temp[0]=pq.peek().val;
+            temp[1]=Math.max(temp[1],nums[row][index+1]);
+            UpdateRange(res,temp);
+        }
+        return res;
+        
+    }
+    
+    public void UpdateRange(int[] res,int[] temp){
+        if(res[1]-res[0]>temp[1]-temp[0]){
+            res[0]=temp[0];
+            res[1]=temp[1];
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using Set with explanation
+class Solution{
+public:
+   vector<int> smallestRange(vector<vector<int>>& nums) {
+     
+       set<pair<int,int> > active; 
+       int diff,l,r; 
+       for(int i=0 ; i< nums.size() ; ++i)
+       		active.insert(make_pair(nums[i][0], i));
+
+       	l = active.begin()->first; r = active.rbegin()->first; 
+       	diff = r-l;
+
+       	while(active.begin()->first != nums[active.begin()->second].back())
+       	{
+       		int val = active.begin()->first;
+       		int row = active.begin()->second;
+       		active.erase(active.begin());
+
+       		active.insert({ *upper_bound(nums[row].begin(), nums[row].end(), val), row});
+
+       		if(active.rbegin()->first - active.begin()->first < diff)
+       		{
+       			diff = active.rbegin()->first-active.begin()->first; 
+       			l = active.begin()->first;  r = active.rbegin()->first;
+       		}
+       	}
+       	return {l,r};
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Like merge K sorted array using minHeap
+public class Solution {
+    public int[] smallestRange(List<List<Integer>> nums) {
+        int[] result = new int[2];
+        PriorityQueue<Pair> minHeap = new PriorityQueue<Pair>(new Comparator<Pair>(){
+            @Override
+            public int compare(Pair p1, Pair p2) {
+                return p1.val - p2.val;
+            }
+            
+        });
+        int endVal = Integer.MIN_VALUE;
+        int k = nums.size();
+        for (int i = 0; i < k; i++) {
+            endVal = Math.max(endVal, nums.get(i).get(0));
+            minHeap.offer(new Pair(i, 0, nums.get(i).get(0)));
+        }
+        int startVal = minHeap.peek().val;
+        result[0] = startVal;
+        result[1] = endVal;
+        while (!minHeap.isEmpty()) {
+            Pair curr = minHeap.poll();
+            int row = curr.row;
+            int col = curr.col + 1;
+            if (col < nums.get(row).size()) {
+                minHeap.offer(new Pair(row, col, nums.get(row).get(col)));
+                endVal = Math.max(endVal, nums.get(row).get(col));
+            }
+            else {
+                break;
+            }
+            startVal = minHeap.peek().val;
+            if (smallerRange(startVal, endVal, result)) {
+                result[0] = startVal;
+                result[1] = endVal;
+            }
+        }
+        return result;
+        
+    }
+    private boolean smallerRange(int startVal, int endVal, int[] result) {
+        if (endVal - startVal < result[1] - result[0]) {
+            return true;
+        }
+        else if (endVal - startVal == result[1] - result[0]) {
+            return startVal < result[0];
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+class Pair {
+    int row, col, val;
+    public Pair(int row, int col, int val) {
+        this.row = row;
+        this.col = col;
+        this.val = val;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+python O(N * log(K)) heap + FIFO queue
+class Solution(object):
+    def smallestRange(self, nums):
+        """
+        :type nums: List[List[int]]
+        :rtype: List[int]
+        """
+        tot = sum(map(len, nums))
+        from heapq import merge
+        from collections import deque
+        arrs = [ [(v, i) for v in arr] for i, arr in enumerate(nums) ]
+        pq = merge(*arrs)
+        sortedq = deque([])
+        cnts = [0] * len(nums)
+        seen = 0
+        minr = float('inf'), float('inf')
+        for _ in range(tot):
+            v, i = next(pq)
+            sortedq.append((v, i))
+            if cnts[i] == 0:
+                seen += 1            
+            cnts[i] += 1
+            while cnts[sortedq[0][1]] > 1:
+                cnts[sortedq[0][1]] -= 1
+                sortedq.popleft()
+            if seen >= len(nums):
+                minr = min(minr, ((sortedq[-1][0] - sortedq[0][0]), sortedq[0][0]))
+        return [minr[1], minr[1] + minr[0]]
+
+
+
+----------------------------------------------------------------------------------------------------
+Slide window solution without PriorityQueue
+    public int[] smallestRange(List<List<Integer>> nums) {
+        int k = nums.size();
+        List<int[]> list= new ArrayList<>();
+        for(int i = 0; i < k; i++) {
+            for(int x : nums.get(i)) {
+                list.add(new int[]{x, i});
+            }
+        }
+        Collections.sort(list, (a,b) -> (a[0] - b[0]));
+        int min = -1, max = 2000000, count = 0, pre = 0;
+        int[] flag = new int[k];
+        for(int i = 0; i < list.size(); i++) {
+            int[] e = list.get(i);
+            if (flag[e[1]]++ == 0) {
+                count++;
+                while(count == k) {
+                    if (e[0] - list.get(pre)[0] < max - min) {
+                        min = list.get(pre)[0];
+                        max = e[0];
+                    }
+                    if (--flag[list.get(pre++)[1]] == 0) count--;
+                }
+            }
+        }
+        
+        return new int[] {min, max};
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python with heapy, O(nlogk)
+import heapq
+class Solution(object):
+    def smallestRange(self, nums):
+        """
+        :type nums: List[List[int]]
+        :rtype: List[int]
+        """
+        q = []  # element in the heap: val, i, j, where val is nums[i][j]
+        max_val = nums[0][0]
+        for i in range(len(nums)):
+            heapq.heappush(q, (nums[i][0], i, 0))
+            max_val = max(max_val, nums[i][0])  # also remember max of the heap
+        min_range = [-10 ** 5, 10 ** 5]
+        while q:
+            min_val, i, j = heapq.heappop(q)
+            if max_val - min_val < min_range[1] - min_range[0] or (
+                                max_val - min_val == min_range[1] - min_range[0] and min_val < min_range[0]):
+                min_range = [min_val, max_val]
+            # push the next value in the ith array if any
+            if j + 1 < len(nums[i]):
+                max_val = max(max_val, nums[i][j + 1])
+                heapq.heappush(q, (nums[i][j + 1], i, j + 1))
+            else:  # ths ith array is exhausted
+                return min_range
+
+----------------------------------------------------------------------------------------------------
+Java Solution with maxHeap&amp;minHeap
+public class Solution {
+    public int[] smallestRange(List<List<Integer>> nums) {
+          PriorityQueue<int[]> min=new PriorityQueue<>(1,new Comparator<int[]>(){
+              public int compare(int[] n1,int[] n2){
+                  return nums.get(n1[0]).get(n1[1])-nums.get(n2[0]).get(n2[1]);
+              }              
+          });
+          
+          PriorityQueue<int[]> max=new PriorityQueue<>(1,new Comparator<int[]>(){
+              public int compare(int[] n1,int[] n2){
+                  return nums.get(n2[0]).get(n2[1])-nums.get(n1[0]).get(n1[1]);
+              }
+          });
+          
+          for(int i=0;i<nums.size();i++){
+                int[] tmp=new int[]{i,0};
+                min.offer(tmp);
+                max.offer(tmp);
+          }
+          int[] res=new int[]{Integer.MIN_VALUE,Integer.MAX_VALUE};
+          
+          while(min.size()==nums.size()){
+              int[] m1=max.peek();
+              int[] m2=min.poll();
+              if((long)nums.get(m1[0]).get(m1[1])-(long)nums.get(m2[0]).get(m2[1])<(long)res[1]-(long)res[0]){
+                  res[0]=nums.get(m2[0]).get(m2[1]);
+                  res[1]=nums.get(m1[0]).get(m1[1]);
+              }
+              
+              if(m2[1]+1<nums.get(m2[0]).size()){
+                  int[] m3=new int[]{m2[0],m2[1]+1};
+                  min.offer(m3);
+                  max.offer(m3);
+                  max.remove(m2);
+              }
+          }
+          
+          return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Code using TreeSet
+  public int[] smallestRange(List<List<Integer>> nums) {
+    int[] result = new int[2];
+    TreeSet<Pair> tree = new TreeSet<>();
+    for (List<Integer> list : nums) {
+      tree.add(new Pair(list));
+    }
+    int smallestRange = Integer.MAX_VALUE;
+    while (true) {
+      Pair first = tree.first();
+      Pair last = tree.last();
+      if (last.getValue() - first.getValue() < smallestRange) {
+        smallestRange = last.getValue() - first.getValue();
+        result[0] = first.getValue();
+        result[1] = last.getValue();
+      }
+      Pair pair = tree.pollFirst();
+      if (pair.increment()) {
+        tree.add(pair);
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  public static class Pair implements Comparable<Pair> {
+    private List<Integer> list;
+    private int index;
+
+    public Pair(List<Integer> list) {
+      this.list = list;
+    }
+
+    public boolean increment() {
+      if (index < list.size() - 1) {
+        ++index;
+        return true;
+      }
+      return false;
+    }
+
+    public int getValue() {
+      return list.get(index);
+    }
+
+    @Override
+    public int compareTo(Pair o) {
+      int i = list.get(index) - o.list.get(o.index);
+      return i == 0 ? 1 : i;
+    }
+  }
+
+
+----------------------------------------------------------------------------------------------------

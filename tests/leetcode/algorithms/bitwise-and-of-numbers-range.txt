@@ -1,0 +1,573 @@
+20ms Detailed Explained C++ Solutions (O(n) Space)
+This is a classic problem of Dynamic Programming. We define the state `dp[i][j]` to be the minimum number of operations to convert `word1[0..i - 1]` to `word2[0..j - 1]`. The state equations have two cases: the boundary case and the general case. Note that in the above notations, both `i` and `j` take values starting from `1`. 
+
+For the boundary case, that is, to convert a string to an empty string, it is easy to see that the mininum number of operations to convert `word1[0..i - 1]` to `""` requires at least `i` operations (deletions). In fact, the boundary case is simply:
+
+ 1. `dp[i][0] = i`; 
+ 2. `dp[0][j] = j`.
+
+Now let's move on to the general case, that is, convert a non-empty `word1[0..i - 1]` to another non-empty `word2[0..j - 1]`. Well, let's try to break this problem down into smaller problems (sub-problems). Suppose we have already known how to convert `word1[0..i - 2]` to `word2[0..j - 2]`, which is `dp[i - 1][j - 1]`. Now let's consider `word[i - 1]` and `word2[j - 1]`. If they are euqal, then no more operation is needed and `dp[i][j] = dp[i - 1][j - 1]`. Well, what if they are not equal?
+
+If they are not equal, we need to consider three cases: 
+
+ 1. Replace `word1[i - 1]` by `word2[j - 1]` (`dp[i][j] = dp[i - 1][j - 1] + 1 (for replacement)`);
+ 2. Delete `word1[i - 1]` and `word1[0..i - 2] = word2[0..j - 1]` (`dp[i][j] = dp[i - 1][j] + 1 (for deletion)`);
+ 3. Insert `word2[j - 1]` to `word1[0..i - 1]` and `word1[0..i - 1] + word2[j - 1] = word2[0..j - 1]` (`dp[i][j] = dp[i][j - 1] + 1 (for insertion)`).
+
+Make sure you understand the subtle differences between the equations for deletion and insertion. For deletion, we are actually converting `word1[0..i - 2]` to `word2[0..j - 1]`, which costs `dp[i - 1][j]`,  and then deleting the `word1[i - 1]`, which costs `1`. The case is similar for insertion.
+
+Putting these together, we now have: 
+
+ 1. `dp[i][0] = i`;
+ 2. `dp[0][j] = j`;
+ 3. `dp[i][j] = dp[i - 1][j - 1]`, if `word1[i - 1] = word2[j - 1]`;
+ 4. `dp[i][j] = min(dp[i - 1][j - 1] + 1, dp[i - 1][j] + 1, dp[i][j - 1] + 1)`, otherwise.
+
+The above state equations can be turned into the following code directly.
+
+    class Solution { 
+    public:
+        int minDistance(string word1, string word2) { 
+            int m = word1.length(), n = word2.length();
+            vector<vector<int> > dp(m + 1, vector<int> (n + 1, 0));
+            for (int i = 1; i <= m; i++)
+                dp[i][0] = i;
+            for (int j = 1; j <= n; j++)
+                dp[0][j] = j;  
+            for (int i = 1; i <= m; i++) {
+                for (int j = 1; j <= n; j++) {
+                    if (word1[i - 1] == word2[j - 1]) 
+                        dp[i][j] = dp[i - 1][j - 1];
+                    else dp[i][j] = min(dp[i - 1][j - 1] + 1, min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
+                }
+            }
+            return dp[m][n];
+        }
+    };
+
+Well, you may have noticed that each time when we update `dp[i][j]`, we only need `dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]`. In fact, we need not maintain the full `m*n` matrix. Instead, maintaing one column is enough. The code can be optimized to `O(m)` or `O(n)` space, depending on whether you maintain a row or a column of the original matrix.
+
+The optimized code is as follows.
+
+    class Solution { 
+    public:
+        int minDistance(string word1, string word2) {
+            int m = word1.length(), n = word2.length();
+            vector<int> cur(m + 1, 0);
+            for (int i = 1; i <= m; i++)
+                cur[i] = i;
+            for (int j = 1; j <= n; j++) {
+                int pre = cur[0];
+                cur[0] = j;
+                for (int i = 1; i <= m; i++) {
+                    int temp = cur[i];
+                    if (word1[i - 1] == word2[j - 1])
+                        cur[i] = pre;
+                    else cur[i] = min(pre + 1, min(cur[i] + 1, cur[i - 1] + 1));
+                    pre = temp;
+                }
+            }
+            return cur[m]; 
+        }
+    }; 
+
+Well, if you find the above code hard to understand, you may first try to write a two-column version that explicitly maintains two columns (the previous column and the current column) and then simplify the two-column version into the one-column version like the above code :-)
+
+----------------------------------------------------------------------------------------------------
+My O(mn) time and O(n) space solution using DP with explanation
+Use f[i][j] to represent the shortest edit distance between word1[0,i) and word2[0, j). Then compare the last character of word1[0,i) and word2[0,j), which are c and d respectively (c == word1[i-1], d == word2[j-1]):
+
+if c == d, then : f[i][j] = f[i-1][j-1]
+
+Otherwise we can use three operations to convert word1 to word2:
+
+(a) if we replaced c with d: f[i][j] = f[i-1][j-1] + 1;
+
+(b) if we added d after c: f[i][j] = f[i][j-1] + 1;
+
+(c) if we deleted c: f[i][j] = f[i-1][j] + 1;
+
+
+Note that f[i][j] only depends on f[i-1][j-1], f[i-1][j] and f[i][j-1], therefore we can reduce the space to O(n) by using only the (i-1)th array and previous updated element(f[i][j-1]). 
+
+
+
+     int minDistance(string word1, string word2) {
+        
+            int l1 = word1.size();
+            int l2 = word2.size();
+        
+            vector<int> f(l2+1, 0);
+            for (int j = 1; j <= l2; ++j)
+                f[j] = j;
+        
+            for (int i = 1; i <= l1; ++i)
+            {
+                int prev = i;
+                for (int j = 1; j <= l2; ++j)
+                {
+                    int cur;
+                    if (word1[i-1] == word2[j-1]) {
+                        cur = f[j-1];
+                    } else {
+                        cur = min(min(f[j-1], prev), f[j]) + 1;
+                    }
+        
+                    f[j-1] = prev;
+                    prev = cur;
+                }
+                f[l2] = prev;
+            }
+            return f[l2];
+        
+        }  
+
+
+Actually at first glance I thought this question was similar to Word Ladder and I tried to solve it using BFS(pretty stupid huh?). But in fact, the main difference is that there's a strict restriction on the intermediate words in Word Ladder problem, while there's no restriction in this problem.  If we added some restriction on intermediate words for this question, I don't think this DP solution would still work. 
+
+----------------------------------------------------------------------------------------------------
+Java DP solution - O(nm)
+Let following be the function definition :-
+
+f(i, j) := minimum cost (or steps) required to convert first i characters of word1 to first j characters of word2
+
+Case 1: word1[i] == word2[j], i.e. the ith the jth character matches.
+
+> f(i, j) = f(i - 1, j - 1)
+
+Case 2: word1[i] != word2[j], then we must either insert, delete or replace, whichever is cheaper
+
+> f(i, j) = 1 + min { f(i, j - 1), f(i - 1, j), f(i - 1, j - 1) }
+
+1. f(i, j - 1) represents insert operation
+2. f(i - 1, j) represents delete operation
+3. f(i - 1, j - 1) represents replace operation
+
+Here, we consider any operation from word1 to word2. It means, when we say insert operation, we insert a new character after word1 that matches the jth character of word2. So, now have to match i characters of word1 to j - 1 characters of word2. Same goes for other 2 operations as well.
+
+Note that the problem is symmetric. The insert operation in one direction (i.e. from word1 to word2) is same as delete operation in other. So, we could choose any direction.
+
+Above equations become the recursive definitions for DP.
+
+Base Case: 
+
+> f(0, k) = f(k, 0) = k
+
+Below is the direct bottom-up translation of this recurrent relation. It is only important to take care of 0-based index with actual code :-
+
+    public class Solution {
+        public int minDistance(String word1, String word2) {
+            int m = word1.length();
+            int n = word2.length();
+            
+            int[][] cost = new int[m + 1][n + 1];
+            for(int i = 0; i <= m; i++)
+                cost[i][0] = i;
+            for(int i = 1; i <= n; i++)
+                cost[0][i] = i;
+            
+            for(int i = 0; i < m; i++) {
+                for(int j = 0; j < n; j++) {
+                    if(word1.charAt(i) == word2.charAt(j))
+                        cost[i + 1][j + 1] = cost[i][j];
+                    else {
+                        int a = cost[i][j];
+                        int b = cost[i][j + 1];
+                        int c = cost[i + 1][j];
+                        cost[i + 1][j + 1] = a < b ? (a < c ? a : c) : (b < c ? b : c);
+                        cost[i + 1][j + 1]++;
+                    }
+                }
+            }
+            return cost[m][n];
+        }
+    }
+
+Time complexity : If n is the length of word1, m of word2, because of the two indented loops, it is O(nm)
+
+----------------------------------------------------------------------------------------------------
+Good pdf on edit distance problem. May be helpful.
+http://www.stanford.edu/class/cs124/lec/med.pdf
+
+----------------------------------------------------------------------------------------------------
+My Accepted Java Solution
+Hi: 
+
+This is a very interesting question and I found a [youtube video][1] that helps a lot.
+Basically the idea is to build up the solution step by step and keep track of the previous optimal solution in a 2D array. In this 2D array dp, dp[i][j] means the operation needed to transform word1(0, i) to word2(0,j). 
+
+There can be three conditions:
+
+1, word1[i] == word2[j] : then no operation needed. dp[i][j] == dp[i-1][j-1]
+
+2, Do one operation on word1[i-1][j]. dp[i][j] = dp[i-1][j] + 1
+
+3, Do one operation on word2[i][j-1]. dp[i][j] = dp[i][j-1] + 1
+
+for 2 and 3, the reason it works is that we know the optimal ways to transfrom word1(0,i) to word2(0,j-1) and word1(0,i-1) to word(0,j) ( Delete ("abc" to "ab") or Insert ("ab" to "abc") ). Now all we need to one more operation.
+
+The code will be:
+
+    public int minDistance(String word1, String word2) {
+        if (word1.equals(word2)) {
+            return 0;
+        }
+        if (word1.length() == 0 || word2.length() == 0) {
+            return Math.abs(word1.length() - word2.length());
+        }
+        int[][] dp = new int[word1.length() + 1][word2.length() + 1];
+        for (int i = 0; i <= word1.length(); i++) {
+            dp[i][0] = i;
+        }
+        for (int i = 0; i <= word2.length(); i++) {
+            dp[0][i] = i;
+        }
+        for (int i = 1; i <= word1.length(); i++) {
+            for (int j = 1; j <= word2.length(); j++) {
+                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = Math.min(dp[i-1][j-1], Math.min(dp[i-1][j], dp[i][j-1])) + 1;
+                }
+            }
+        }
+        return dp[word1.length()][word2.length()];
+    }
+
+ Remeber that we start from dp[0][0], which is an empty string to an empty string. 
+
+
+  [1]: https://www.youtube.com/watch?v=z_CB7Gih_Mg
+
+----------------------------------------------------------------------------------------------------
+Standard dp solution
+    int minDistance(string word1, string word2) {
+        int  m = word1.length(), n = word2.length();
+        if (m == 0) return n;
+        if (n == 0) return m;
+        
+        // table[i][j]: distance from words1.substr(0, i) to words2.substr(0, j) 
+        int table[m+1][n+1];
+        for (int i = 0; i <= m; ++i) table[i][0] = i;
+        for (int j = 0; j <= n; ++j) table[0][j] = j;
+        // table[i][j] is the min distance between the next three values
+        // from table[i-1][j], table[i][j-1], or table[i-1][j-1] to table[i][j]
+        for (int i = 1; i <= m; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                int cost = (word1[i-1] == word2[j-1] ? 0 : 1);
+                table[i][j] = min(min(table[i-1][j] + 1, table[i][j-1] + 1), table[i-1][j-1] + cost);
+            }
+        }
+        
+        return table[m][n];
+    }
+
+----------------------------------------------------------------------------------------------------
+My DP solution in C++ with comments.
+   
+
+    int minDistance(string word1, string word2) {
+        // DP talbe, i is the position in word1, and j is the position in word2
+        vector<vector<int>> distance(word1.length()+1, vector<int>(word2.length()+1, 0));
+        
+        // when i or j=0 means empty string, the distance is the length of another string
+        for(int i=0; i<distance.size(); i++)
+            for(int j=0; j< distance[0].size();j++){
+                if(i == 0)
+                    distance[i][j] = j;
+                else if(j == 0)
+                    distance[i][j] = i;
+            }
+        
+        // if word1[i]==word2[j], then the distance of i and j is the previous i and j
+        // otherwise we either replace, insert or delete a char
+        // when insert a char to word1 it means we are trying to match word1 at i-1 to word2 at j
+        // when delete a char from word1 it equals to insert a char to word2, which
+        // means we are trying to match word1 at i to word2 at j-1
+        // when replace a char to word1, then we add one step to previous i and j
+        for(int i=1; i< distance.size(); i++)
+            for(int j=1; j<distance[0].size(); j++){
+                if(word1[i-1] == word2[j-1])
+                    distance[i][j] = distance[i-1][j-1];
+                else
+                    distance[i][j] = 1+ min(distance[i-1][j-1], min(distance[i-1][j], distance[i][j-1]));
+            }
+            
+        return distance[word1.length()][word2.length()];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Dynamic Programming Solution in C++ with Algorithm Description
+**Algorithm Description**  
+
+
+----------
+
+ - Step 1:
+
+Set  n to be the length of *word1*;
+Set m to be the length of *word2*.  
+If n = 0, return m and exit.  
+If m = 0, return n  and exit.  
+Construct a matrix containing 0...n rows and 0...m columns.  
+  
+
+ - Step 2:
+
+Initialize the first row       to 0...n.  
+Initialize the first column to 0...m.  
+  
+
+ - Step 3:
+
+Examine each character of *word1* (i from 1 to  n).
+
+ - Step 4:
+
+Examine each character of *word2*  (j from 1 to m).
+
+ - Step 5:
+
+If word1[i] == word2[j], the cost = 0.  
+If word1[i] !=  word2[j], the cost = 1.  
+  
+
+ - Step 6:
+
+   
+Set cell A [i, j] of the matrix equal to the minimum of:  
+a) The cell immediately **above** plus 1:                               A[i - 1, j]    + 1.  
+b) The cell immediately **to the left** plus 1:                          A[i,  j - 1]    + 1.  
+c) The cell diagonally **above and to the left** plus the cost: A[i - 1, j - 1] + cost.  
+  
+
+ - Step 7:
+
+   
+After the iteration steps (3, 4, 5, 6) are complete, the distance is found in cell A[n, m]. 
+
+
+----------
+
+
+Here is the code:
+
+    int minDistance(string word1, string word2) {
+        // Step 1
+        int n = word1.size(), m = word2.size();
+        if (n == 0)  return m;
+        if (m == 0)  return n;
+        int A[n + 1][m + 1];
+
+        // Step 2
+        for (int i = 0; i <= n; ++i)  A[i][0] = i;
+        for (int j = 0; j <= m; ++j)  A[0][j] = j;
+        
+        for (int i = 1; i <= n; ++i) {  // Step 3
+            char word1_i = word1[i-1];
+            for (int j = 1; j <= m; ++j) {  // Step 4
+                char word2_j = word2[j-1];
+                int cost = (word1_i == word2_j) ? 0 : 1;  // Step 5
+                A[i][j] = min(min(A[i-1][j]+1, A[i][j-1]+1), A[i-1][j-1]+cost);// Step 6
+            }
+        }
+        return A[n][m];  // Step 7
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA DP solution with comments
+    public int minDistance(String word1, String word2) {
+    	// dp[i][j] : minimum steps to convert i long word1 and j long word2
+    	int dp[][] = new int[word1.length() + 1][word2.length() + 1];
+    
+    	for (int i = 0; i <= word1.length(); i++) dp[i][0] = i;    	
+    	for (int j = 0; j <= word2.length(); j++) dp[0][j] = j; 
+    	 
+    	for (int i = 1;i <= word1.length(); i++) {
+    		for (int j = 1; j<= word2.length(); j++) {
+    			if (word1.charAt(i-1) == word2.charAt(j-1))// <--
+    				dp[i][j] = dp[i-1][j-1];
+    			else 
+                    // dp[i-1][j-1] : replace word1(i) with word2(j), because word1(0, i-1) == word2(0, j-1);
+                    // dp[i  ][j-1] : delete word(j)
+                    // dp[i-1][j  ] : delete word(i), because word1(0, i-1) == word2(0, j)
+    				dp[i][j] = Math.min(dp[i-1][j-1], Math.min(dp[i][j-1], dp[i-1][j])) + 1; 
+    		}
+    	}
+    	return dp[word1.length()][word2.length()];
+    }
+
+----------------------------------------------------------------------------------------------------
+My clean java solution with O(n) space  in 17 lines
+    public class Solution {
+        public int minDistance(String word1, String word2) {
+            int[] d = new int[word2.length() + 1];
+            for (int i = 0; i <= word2.length(); ++i) d[i] = i;
+            for (int i = 1; i <= word1.length(); ++i) {
+                int prev = d[0];
+                d[0] = i;
+                for (int j = 1; j <= word2.length(); ++j) {
+                    int tmp = d[j];
+                    d[j] = Math.min(d[j - 1], d[j]) + 1;
+                    d[j] = Math.min(d[j], prev + (word1.charAt(i -1) == word2.charAt(j - 1) ? 0: 1));
+                    prev = tmp;
+                }
+            }
+            return d[word2.length()];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (O(m*n), O(n) space).
+        
+   
+
+    
+    # O(m*n) space
+    def minDistance1(self, word1, word2):
+        l1, l2 = len(word1)+1, len(word2)+1
+        dp = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
+        for i in xrange(l1):
+            dp[i][0] = i
+        for j in xrange(l2):
+            dp[0][j] = j
+        for i in xrange(1, l1):
+            for j in xrange(1, l2):
+                dp[i][j] = min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(word1[i-1]!=word2[j-1]))
+        return dp[-1][-1]
+                    
+    
+    # O(n) space with rolling array            
+    def minDistance(self, word1, word2):
+        l1, l2 = len(word1)+1, len(word2)+1
+        pre = [0 for _ in xrange(l2)]
+        for j in xrange(l2):
+            pre[j] = j
+        for i in xrange(1, l1):
+            cur = [i]*l2
+            for j in xrange(1, l2):
+                cur[j] = min(cur[j-1]+1, pre[j]+1, pre[j-1]+(word1[i-1]!=word2[j-1]))
+            pre = cur[:]
+        return pre[-1]
+
+----------------------------------------------------------------------------------------------------
+My none recursive solution
+Hello, I've finish this problem without recursion. Any comment on how i can improve on the code?   Thanks. 
+Is there a reason why people are doing recursive builds? (Space vs time?)
+
+
+    public class Solution {
+            public int minDistance(String word1, String word2) {
+                int [][] result = new int[word1.length()+1][word2.length()+1];
+                //set up deletion into null string;
+                for(int i=0;i<=word1.length();i++) result[i][0]=i;
+                for(int j=0;j<=word2.length();j++) result[0][j]=j;
+                for(int i=1;i<=word1.length();i++)
+                {
+                    for(int j=1;j<=word2.length();j++)
+                    {
+                        int del = result[i-1][j] +1;
+                        int ins = result[i][j-1] +1;
+                        int rep = result[i-1][j-1];
+                        if(word1.charAt(i-1)!=word2.charAt(j-1)) 
+                        {
+                            rep+=1;
+                        }
+                        int min = Math.min(del,ins);
+                        min = Math.min(min,rep);
+                        result[i][j]=min;
+                    }
+                }
+                return result[word1.length()][word2.length()];
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Regarding to the insert&#x2F;delete operation, does it have to be the end of the word or any position?
+Need clarification of the question..
+
+Regarding to the insert/delete operation, does it have to be the end of the word or any position?
+
+----------------------------------------------------------------------------------------------------
+AC Python 212 ms DP solution, O(mn) time O(n) space
+This is similar to the longest common subsequence problem. Dynamic programming is intuitive.
+
+    def minDistance(self, word1, word2):
+        if len(word1) == 0 or len(word2) == 0:
+            return max(len(word1), len(word2))
+        dist = range(len(word2) + 1)
+        for i in xrange(len(word1)):
+            dist_ij, dist[0] = i, i + 1
+            for j in xrange(len(word2)):
+                if word1[i] == word2[j]:
+                    dist_ij, dist[j + 1] = dist[j + 1], dist_ij
+                else:
+                    dist_ij, dist[j + 1] = dist[j + 1], min(dist[j], dist[j + 1], dist_ij) + 1
+        return dist[-1]
+
+
+    # 1146 / 1146 test cases passed.
+    # Status: Accepted
+    # Runtime: 212 ms
+    # 96.23%
+
+
+The relations of DP are
+
+    # keep the last char:      dist(i + 1, j + 1) = dist(i, j)
+    # insert the last char:    dist(i + 1, j + 1) = dist(i + 1, j) + 1
+    # replace the last char:   dist(i + 1, j + 1) = dist(i, j)     + 1
+    # remove the last char:    dist(i + 1, j + 1) = dist(i, j + 1) + 1
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward recursive solution
+The idea is kind of straightforward: for a given string, think of all possible first substrings that are converted to an integer. For example, for 
+
+    word
+we have the following possibilities:
+
+    w --> 1 (rem: ord)
+    wo --> 2 (rem: rd)
+    wor --> 3 (rem: d)
+    word --> 4 (rem: null)
+
+For each case, the remainder (subfix) is going through exactly the same procedure as `word`, which is obviously a recursion.
+
+Code in Java:
+
+    public class Solution {
+    public List<String> generateAbbreviations(String word) {
+        int L = word.length();
+        return generate(word, 0, L-1);
+    }
+    
+    private List<String> generate(String str, int left, int right) {
+        List<String> res = new ArrayList<>();
+        if(left>right) {
+            res.add("");
+            return res;
+        }
+        res.add(str.substring(left,right+1));
+        for(int start=left; start<=right; start++) { // i: the location where the first number starts
+            String strLeft = str.substring(left, start);
+            for(int end=start; end<=right; end++) {
+            	if(end!=right) {
+    	            List<String> listRight = generate(str, end+2, right);
+    	            for(String s : listRight)
+    	                res.add(strLeft + (end-start+1) + str.substring(end+1, end+2) + s);
+            	}
+            	else
+            		res.add(strLeft + (end-start+1));
+            }
+        }
+        return res;
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ standard solution

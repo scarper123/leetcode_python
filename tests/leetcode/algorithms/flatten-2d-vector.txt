@@ -1,0 +1,369 @@
+Is this question a joke?
+    public class Solution {
+    public int maxProfit(int[] prices) {
+        int total = 0;
+        for (int i=0; i< prices.length-1; i++) {
+            if (prices[i+1]>prices[i]) total += prices[i+1]-prices[i];
+        }
+        
+        return total;
+    }
+
+A simple code like this. The designer of this question must thought of something too complicated.
+
+----------------------------------------------------------------------------------------------------
+Three lines in C++, with explanation
+  First we post the code here.
+
+    int maxProfit(vector<int> &prices) {
+        int ret = 0;
+        for (size_t p = 1; p < prices.size(); ++p) 
+          ret += max(prices[p] - prices[p - 1], 0);    
+        return ret;
+    }
+
+Second, suppose the first sequence is "a <= b <= c <= d", the profit is "d - a = (b - a) + (c - b) + (d - c)" without a doubt.  And suppose another one is "a <= b >= b' <= c <= d", the profit is not difficult to be figured out as "(b - a) + (d - b')". So you just target at monotone sequences. 
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution if we&#x27;re not greedy
+Hi guys!
+
+The greedy pair-wise approach mentioned in other posts is great for this problem indeed, but if we're not allowed to buy and sell stocks within the same day it can't be applied (logically, of course; the answer will be the same). Actually, the straight-forward way of finding next local minimum and next local maximum is not much more complicated, so, just for the sake of having an alternative I share the code in Java for such case.
+
+    public int maxProfit(int[] prices) {
+        int profit = 0, i = 0;
+        while (i < prices.length) {
+            // find next local minimum
+            while (i < prices.length-1 && prices[i+1] <= prices[i]) i++;
+            int min = prices[i++]; // need increment to avoid infinite loop for "[1]"
+            // find next local maximum
+            while (i < prices.length-1 && prices[i+1] >= prices[i]) i++;
+            profit += i < prices.length ? prices[i++] - min : 0;
+        }
+        return profit;
+    }
+
+Happy coding!
+
+----------------------------------------------------------------------------------------------------
+Clear 1-line Python Solution
+Basically, if tomorrow's price is higher than today's, we buy it today and sell tomorrow. Otherwise, we don't. Here is the code:
+
+    class Solution(object):
+        def maxProfit(self, prices):
+            return sum(max(prices[i + 1] - prices[i], 0) for i in range(len(prices) - 1))
+
+----------------------------------------------------------------------------------------------------
+A simple solution with O(n) time and O(1) space
+ //now we try to improve the solution above.
+        //(a[i]-a[i-1])+(a[i-1]-a[i-2])=a[i]-a[i-2] which is the profits created by i and i-2
+        //so we travel from the end of the array and continually calculate the differece of i and i-1,
+        //we only sum those positive profits then the final results is the maximum profits
+
+        if(prices.size()==0|| prices.size()==1) return 0;
+        int max_pro=0;
+        for(int i=prices.size()-1;i>0;i--){
+            if(prices[i]-prices[i-1]>0) max_pro+=prices[i]-prices[i-1];
+        }
+        return max_pro;
+
+----------------------------------------------------------------------------------------------------
+Shortest and fastest solution with explanation. You can never beat this.
+For Buy and Sell 1, we were limited to 1 transaction, so we had to find the largest sum of contiguous ints in an array of price differences. 
+
+Q: Why does finding the most profitable transaction boils down to finding the largest sum of contiguous ints in the array of price differences?
+
+A: Define D[i] = Prices[i] - Prices[i-1] (difference between 2 consecutive prices)
+
+D[i] is essentially a "delta" trade. 
+
+A transaction is defined as buying at Prices[X] and selling at Prices[Y], 
+
+    the profit of the transaction
+    = Prices[Y] - Prices[X] 
+    = Prices[Y] - Prices[Y-1] +
+       Prices[Y-1] - Prices[Y-2] ...
+        ....
+       Prices[X+1] - Prices[X] 
+    = D[Y] + D[Y-1] + ... + D[X+1]
+    = sum of D from X+1 to Y
+   
+The problem is to find max(Prices[Y] - Prices[X]) which is equivalent to finding the largest sum of contiguous D's.
+
+To illustrate, if D[Y+1] is positive, it means  Prices[Y+1] > Prices[Y], which implies I should sell at Prices[Y+1] instead of Prices[Y]. Basically it means I just add D[Y+1] to D[Y] + ... + D[X+1].  
+
+Note that there could be a negative or zero D in the best running sequence. It doesn't matter so long the  sum of the sequence is the largest.
+
+Now we are allowed unlimited transactions. So if there is a negative D, we could just break the sequence into 2, that is, into 2 transactions so as to avoid the negative element. 
+
+This boils the whole problem down to adding up all positive sums of contiguous ints in D, which simplifies to  just adding up all the positive ints.
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            const size_t n = prices.size();
+            int ans = 0;
+            for (size_t i=1;i<n;i++)
+                ans += max(0,prices[i]-prices[i-1]);
+            return ans;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+8ms c++ solution with only 6 lines of code
+    int maxProfit(vector<int>& prices) {
+      if(prices.size() <= 1) return 0;
+
+      int res = 0;
+
+      for( size_t i = 1; i < prices.size(); i++)
+        if( prices[i] - prices[i-1] > 0 ) 
+          res += prices[i] - prices[i-1];
+      
+      return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why the greedy algorithm works (pairwise differences only)?
+Hello,
+
+I'd like to know why the greedy algorithm that takes pairwise profits if they are positive only?
+
+Thanks
+
+----------------------------------------------------------------------------------------------------
+Quite easy, share my C code with explanation
+###1. Calculate `prices[i+1]-prices[i]`
+
+###2. Turn the array `prices[] = [1,2,4,2,5,7,2,4,9,0]` into 
+`difference[] = [+1,+2,-2,+3,+2,-5,+2,+5,-9]`
+
+###3. Then add all positive numbers `sum = 1+2+3+2+2+5 = 15` in difference
+###4. Return `15`
+
+
+*The code is a simplified and optimized version.*
+
+#Code:
+
+    int maxProfit(int prices[], int n){
+        int profit = 0;
+        for(int i=0;i<n-1;i++){
+            int temp = prices[i+1]-prices[i];
+            if(temp>0)
+                profit += temp;
+        }
+        return profit;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple 4-line Solution - Sorry angie yunqi! :D
+    public int maxProfit(int[] prices) {
+        int result = 0;
+        for (int i = 1; i < prices.length; i++)
+            result += Math.max(prices[i] - prices[i - 1], 0);
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+A concise solution in Java
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            int len = prices.length;
+            int profit = 0;
+            for(int i = 1; i < len ; i++){
+                if(prices[i]-prices[i-1] <= 0){
+                    continue;
+                }
+                profit += prices[i]-prices[i-1];
+            }
+            return profit;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My 1 line Python solution
+The logic is pretty straight, we find all peaks and related bottom elements, then sum all peaks minus all bottoms.
+
+
+    class Solution:
+        # @param prices, a list of integer
+        # @return an integer
+        def maxProfit(self, prices):
+            return sum([y for x, y, z in zip(prices[0:-1], prices[1:], prices[2:] + [prices[-1]]) if y > x and y >= z]) - sum([y for x, y, z in zip([prices[0]] + prices[0:-2], prices[0:-1], prices[1:]) if y <= x and y < z]) if len(prices) > 0 else 0
+
+
+UPDATE:
+
+this version is more clear and simpler.
+
+    class Solution:
+        # @param prices, a list of integer
+        # @return an integer
+        def maxProfit(self, prices):
+            return sum([y - x for x, y in zip(prices[:-1], prices[1:]) if x < y])
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Another accepted Java solution
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            int profit = 0;
+            
+            for (int i = 1; i < prices.length; i++) 
+                profit += Math.max(0, prices[i] - prices[i - 1]);
+            
+            return profit;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 8ms O(n) time and O(1) space
+Actually it's much easier than the previous DP question. For this one, we just need to sum up all profits together.
+
+    int maxProfit(vector<int>& prices)
+    {
+	    int length = prices.size();
+	    if (!length)
+	    {
+		    return 0;
+	    }
+	    int profit = 0;
+	    int temp = 0;
+	    for (int i = length - 1; i > 0; i--)
+	    {
+		    temp = prices[i] - prices[i-1];
+		    if (temp > 0)
+		    {
+			    profit += temp;
+		    }
+	    }
+	
+	    return profit;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why the profit would not be used to buy stock next time?
+Judging from my code that has been accepted by the system, I think the limitation of the question is you can only hold 1 stock at most for any time. Which has not been clarified in the question description.
+
+For more complete question and answer to it, in fact case, the money in your account at the beginning is  determined. What you can do is to make maximum profit from this data. During the progress, you can use the profit you made to buy more stock next time.
+
+----------------------------------------------------------------------------------------------------
+Why buying on day i and selling it on day i+1 if P&#91;day i + 1&#93; &gt; P&#91;day i&#93; gauruntees optmiality
+Here is an explanation why
+
+Best time to buy and sell stocks II
+This time, multiple transactions are allowed with an exception that these transactions must not overlap. meaning once you buy, you must sell before you can buy again.
+
+Observations
+1) If you buy on day i and sell it on day j, (i < j) you may not make the greatest profit **during that time window**, as there might be day k (i < k < j) where P[day k] > P[day j]. you need to sell earlier. 
+
+2) if you buy on day i and sell it on day j (i < j), you may not make the greatest profit **POSSIBLE with that stock** because  there might be day k (i < k < j) where P[day k] > P[day j]. you are better off if you hold off and sell it on day k
+
+Optimality is garunteed if we avoid the two suboptimal transactions mentioned above
+
+Combining these two observations, we observe that this problem boils down to capturing all the positive differences between day[i] and day[i + 1] if and only if P[day i+1] > P[day i]. 
+
+
+This avoids the mistake of observation 1 (because you would have sold on day k already)
+
+ and essentially cancels out unnecessary transactions in case of observation 2. If you buy on day i and if P[day i + 2 ] > P[day i + 1]. conditions are satisfied and you end up doing the following
+
+total profit = (P[day i + 1] - P[day i]) + (P[day i + 2] - P[day i + 1]) = P[day i + 2] - P[day i], thus ensuring the maximum profit for the stock bought on day[i]
+
+
+comment if you still have questions
+
+
+----------------------------------------------------------------------------------------------------
+89ms Javascript solution...... JS is much faster than Java
+    var maxProfit = function(prices) {
+        var len = prices.length;
+        if(len <= 1) return 0;
+        var ret = 0;
+        for(var i = 1; i < len; i++) {
+            ret += Math.max(0, prices[i] - prices[i-1]);
+        }
+        return ret;
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple solution with concise explanation
+Assume we buy a stock yesterday, what will we do today? 
+
+ - If today's price is higher than yesterday, we can sell it right now and get profit.
+ - What's about tomorrow the price grows higher?We just buy today's stock, that's equal to that we buy yesterday and sell tomorrow. 
+ - What if today's price is lower than yesterday's? We just pretend we buy today's stock but not yesterday's .
+ - In a word, what's we should do is compare today's price to yesterday's.If higher,we get profit,
+set buy-in price to today's price.If lower, we don't get profit,and set buy-in price to today's price.
+
+
+
+  
+
+
+ 
+
+  ` int res=0,buy_in=prices[0];`
+  
+ ` for(int i=1;i<n;i++){`
+     
+  ` int profit = prices[i]-buy_in;`
+
+  `  if(profit>0)`
+
+   ` res += profit;`
+        
+    `buy_in = prices[i];`
+    
+    `}`
+
+    `return res;`
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Difference between this question and CLRS 4.1
+The problem being addressed in section 4.1 of CLRS is very much similar to this one. But when I applied "maximum subarray" , solution did not get accepted. I understand that maximum subarray maximizes contiguous sum. But I do not understand how to differentiate this problem from CLRS' problem statement.
+
+Thanks
+-------------------
+update: page from the book
+http://postimg.org/image/3ra3baa07/
+
+if you are not able to find the page, here is the pdf copy of book
+http://tberg.dk/books/Introduction_to_algorithms_3rd_edition.pdf
+page 89 (for pdf viewer)
+(for printed book page no. 68)
+
+----------------------------------------------------------------------------------------------------
+8ms Easy C++ Solution
+This problem is similar to [Best Time to Buy and Sell Stock][1]. Given `prices`, we find the day (denoted as `buy`) of the first local minimum and the day (denoted as `sell`) of the first local maximum (note that we initialize `sell` to be `buy + 1` each time to guarantee the transaction is valid). Then we earn the profit `prices[sell] - prices[buy]`, after which we update `buy` to be `sell + 1` to check for the remaining `prices`.
+
+The code is as follows.
+
+    class Solution {
+    public: 
+        int maxProfit(vector<int>& prices) {
+            int buy = 0, sell = 0, profit = 0, n = prices.size();
+            while (buy < n && sell < n) {
+                while (buy + 1 < n && prices[buy + 1] < prices[buy])
+                    buy++; 
+                sell = buy; 
+                while (sell + 1 < n && prices[sell + 1] > prices[sell])
+                    sell++;
+                profit += prices[sell] - prices[buy];
+                buy = sell + 1;
+            }
+            return profit;
+        }
+    };
+
+[1]: https://leetcode.com/problems/best-time-to-buy-and-sell-stock/ 
+
+----------------------------------------------------------------------------------------------------

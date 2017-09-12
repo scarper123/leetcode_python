@@ -1,0 +1,757 @@
+Clean iterative solution with two binary searches (with explanation)
+The problem can be simply broken down as two binary searches for the begining and end of the range, respectively:
+
+First let's find the left boundary of the range. We initialize the range to [i=0, j=n-1]. In each step, calculate the middle element [mid = (i+j)/2]. Now according to the relative value of A[mid] to target, there are three possibilities:
+
+   1. If A[mid] < target, then the range must begins on the ***right*** of mid (hence i = mid+1 for the next iteration)
+   2. If A[mid] > target, it means the range must begins on the ***left*** of mid (j = mid-1)
+   3. If A[mid] = target, then the range must begins ***on the left of or at*** mid  (j= mid)
+
+Since we would move the search range to the same side for case 2 and 3, we might as well merge them as one single case so that less code is needed:
+
+   2*. If A[mid] >= target, j = mid;
+
+Surprisingly, 1 and 2* are the only logic you need to put in loop while (i < j). When the while loop terminates, the value of i/j is where the start of the range is. Why? 
+
+No matter what the sequence originally is, as we narrow down the search range, eventually we will be at a situation where there are only two elements in the search range. Suppose our target is 5, then we have only 7 possible cases:
+
+    case 1: [5 7] (A[i] = target < A[j])
+	case 2: [5 3] (A[i] = target > A[j])
+    case 3: [5 5] (A[i] = target = A[j])
+    case 4: [3 5] (A[j] = target > A[i])
+    case 5: [3 7] (A[i] < target < A[j])
+	case 6: [3 4] (A[i] < A[j] < target)
+	case 7: [6 7] (target < A[i] < A[j])
+
+For case 1, 2 and 3, if we follow the above rule, since mid = i => A[mid] = target in these cases, then we would set j = mid. Now the loop terminates and i and j both point to the first 5.  
+
+For case 4, since A[mid] < target, then set i = mid+1. The loop terminates and both i and j point to 5.
+
+For all other cases, by the time the loop terminates, A[i] is not equal to 5. So we can easily know 5 is not in the sequence if the comparison fails.
+
+In conclusion, when the loop terminates, if A[i]==target, then i is the left boundary of the range; otherwise, just return -1;
+
+For the right of the range, we can use a similar idea. Again we can come up with several rules:
+
+   1. If A[mid] > target, then the range must begins on the ***left*** of mid (j = mid-1)
+   2. If A[mid] < target, then the range must begins on the ***right*** of mid (hence i = mid+1 for the next iteration)
+   3. If A[mid] = target, then the range must begins ***on the right of or at*** mid  (i= mid) 
+
+Again, we can merge condition 2 and 3 into:
+
+    2* If A[mid] <= target, then i = mid;
+
+However, the terminate condition on longer works this time. Consider the following case:
+
+    [5 7], target = 5
+	
+Now A[mid] = 5, then according to rule 2, we set i = mid. This practically does nothing because i is already equal to mid. As a result, the search range is not moved at all!
+
+The solution is by using a small trick: instead of calculating mid as mid = (i+j)/2, we now do:
+
+    mid = (i+j)/2+1
+	
+Why does this trick work? When we use mid = (i+j)/2, the mid is rounded to the lowest integer. In other words, mid is always *biased* towards the left. This means we could have i == mid when j - i == mid, but we NEVER have j == mid. So in order to keep the search range moving, you must make sure the new i is set to something different than mid, otherwise we are at the risk that i gets stuck. But for the new j, it is okay if we set it to mid, since it was not equal to mid anyways. Our two rules in search of the left boundary happen to satisfy these requirements, so it works perfectly in that situation. Similarly, when we search for the right boundary, we must make sure i won't get stuck when we set the new i to i = mid. The easiest way to achieve this is by making mid *biased* to the right, i.e. mid = (i+j)/2+1.
+
+All this reasoning boils down to the following simple code:
+
+    vector<int> searchRange(int A[], int n, int target) {
+        int i = 0, j = n - 1;
+        vector<int> ret(2, -1);
+        // Search for the left one
+        while (i < j)
+        {
+            int mid = (i + j) /2;
+            if (A[mid] < target) i = mid + 1;
+            else j = mid;
+        }
+        if (A[i]!=target) return ret;
+        else ret[0] = i;
+        
+        // Search for the right one
+        j = n-1;  // We don't have to set i to 0 the second time.
+        while (i < j)
+        {
+            int mid = (i + j) /2 + 1;	// Make mid biased to the right
+            if (A[mid] > target) j = mid - 1;  
+            else i = mid;				// So that this won't make the search range stuck.
+        }
+        ret[1] = j;
+        return ret; 
+    }
+
+----------------------------------------------------------------------------------------------------
+A very simple Java solution, with only one binary search algorithm
+    public class Solution {
+    	public int[] searchRange(int[] A, int target) {
+    		int start = Solution.firstGreaterEqual(A, target);
+    		if (start == A.length || A[start] != target) {
+    			return new int[]{-1, -1};
+    		}
+    		return new int[]{start, Solution.firstGreaterEqual(A, target + 1) - 1};
+    	}
+    
+    	//find the first number that is greater than or equal to target.
+    	//could return A.length if target is greater than A[A.length-1].
+    	//actually this is the same as lower_bound in C++ STL.
+    	private static int firstGreaterEqual(int[] A, int target) {
+    		int low = 0, high = A.length;
+    		while (low < high) {
+    			int mid = low + ((high - low) >> 1);
+    			//low <= mid < high
+    			if (A[mid] < target) {
+    				low = mid + 1;
+    			} else {
+    				//should not be mid-1 when A[mid]==target.
+    				//could be mid even if A[mid]>target because mid<high.
+    				high = mid;
+    			}
+    		}
+    		return low;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+9-11 lines O(log n)
+Solution 1 : **Divide and Conquer with early breaks** : 56 ms
+
+The O(log n) time isn't quite obvious, so I'll explain it below. Or you can take the challenge and prove it yourself :-)
+
+    def searchRange(self, nums, target):
+        def search(lo, hi):
+            if nums[lo] == target == nums[hi]:
+                return [lo, hi]
+            if nums[lo] <= target <= nums[hi]:
+                mid = (lo + hi) / 2
+                l, r = search(lo, mid), search(mid+1, hi)
+                return max(l, r) if -1 in l+r else [l[0], r[1]]
+            return [-1, -1]
+        return search(0, len(nums)-1)
+
+The `search` helper function returns an index range just like the requested `searchRange` function, but only searches in `nums[lo..hi]`. It first compares the end points and immediately returns `[lo, hi]` if that whole part of `nums` is full of `target`, and immediately returns `[-1, -1]` if `target` is outside the range. The interesting case is when `target` can be in the range but doesn't fill it completely.
+
+In that case, we split the range in left and right half, solve them recursively, and combine their results appropriately. Why doesn't this explode exponentially? Well, let's call the numbers in the left half `A, ..., B` and the numbers in the right half `C, ..., D`. Now if one of them immediately return their `[lo, hi]` or `[-1, -1]`, then this doesn't explode. And if neither immediately returns, that means we have `A <= target <= B` and `C <= target <= D`. And since `nums` is sorted, we actually have `target <= B <= C <= target`, so `B = C = target`. **The left half thus ends with `target` and the right half starts with it.** I highlight that because it's important. Now consider what happens further. The left half gets halved again. Call the middle elements `a` and `b`, so the left half is `A, ..., a, b, ..., B`. Then `a <= target` and:
+
+ - If `a < target`, then the call analyzing `A, ..., a` immediately returns `[-1, -1]` and we only look further into `b, ..., B` **which is again a part that ends with `target`**.
+ - If `a == target`, then `a = b = ... = B = target` and thus the call analyzing `b, ..., B` immediately returns its `[lo, hi]` and we only look further into `A, ..., a` **which is again a part that ends with `target`**.
+
+Same for the right half `C, ..., D`. So in the beginning of the search, as long as `target` is only in at most one of the two halves (so the other immediately stops), we have a single path. And if we ever come across the case where `target` is in both halves, then we split into *two* paths, but then each of those remains a single path. And both paths are only O(log n) long, so we have overall runtime O(log n).
+
+This is btw based on [us917's solution](https://leetcode.com/discuss/4238/can-solution-be-obtained-in-one-pass?show=4425#a4425).
+
+---
+
+Solution 2 : **Two binary searches** : 56 ms
+
+    def searchRange(self, nums, target):
+        def search(n):
+            lo, hi = 0, len(nums)
+            while lo < hi:
+                mid = (lo + hi) / 2
+                if nums[mid] >= n:
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
+        lo = search(target)
+        return [lo, search(target+1)-1] if target in nums[lo:lo+1] else [-1, -1]
+
+Here, my helper function is a simple binary search, telling me the first index where I could insert a number `n` into `nums` to keep it sorted. Thus, if `nums` contains `target`, I can find the first occurrence with `search(target)`. I do that, and if `target` isn't actually there, then I return `[-1, -1]`. Otherwise, I ask `search(target+1)`, which tells me the first index where I could insert `target+1`, which of course is one index behind the last index containing `target`, so all I have left to do is subtract 1.
+
+---
+
+Solution 3 : **Two binary searches, using the library**
+
+Binary search is so good and common that many languages have it in their standard library and you just need to figure out how to apply it to the problem at hand.
+
+**Python:**
+
+    def searchRange(self, nums, target):
+        lo = bisect.bisect_left(nums, target)
+        return [lo, bisect.bisect(nums, target)-1] if target in nums[lo:lo+1] else [-1, -1]
+
+**C++:**
+
+    vector<int> searchRange(vector<int>& nums, int target) {
+        auto bounds = equal_range(nums.begin(), nums.end(), target);
+        return *bounds.first != target ? vector<int> {-1, -1} :
+                                         vector<int> {bounds.first - nums.begin(),
+                                                      bounds.second - nums.begin() - 1};
+    }
+
+Or:
+
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int lo = lower_bound(nums.begin(), nums.end(), target) - nums.begin();
+        if (nums[lo] != target)
+            return vector<int> {-1, -1};
+        int hi = upper_bound(nums.begin(), nums.end(), target) - nums.begin() - 1;
+        return vector<int> {lo, hi};
+    }
+
+**Java:**
+
+Well, Java decided to be annoying and offer `Arrays.binSearch` but with *"If the array contains multiple elements with the specified value, there is no guarantee which one will be found"*. So it's useless for us. I'm not good at Java, though, so maybe I'm overlooking a way to still make it work. If you manage to do so, please let me know.
+
+----------------------------------------------------------------------------------------------------
+Simple and strict O(logn) solution in Java using recursion
+    public class Solution {
+        public int[] searchRange(int[] A, int target) {
+            int[] range = {A.length, -1};
+            searchRange(A, target, 0, A.length - 1, range);
+            if (range[0] > range[1]) range[0] = -1; 
+            return range;
+        }
+        
+        public void searchRange(int[] A, int target, int left, int right, int[] range) {
+            if (left > right) return;
+            int mid = left + (right - left) / 2;
+            if (A[mid] == target) {
+                if (mid < range[0]) {
+                    range[0] = mid;
+                    searchRange(A, target, left, mid - 1, range);
+                }
+                if (mid > range[1]) {
+                    range[1] = mid;
+                    searchRange(A, target, mid + 1, right, range);
+                }
+            } else if (A[mid] < target) {
+                searchRange(A, target, mid + 1, right, range);
+            } else {
+                searchRange(A, target, left, mid - 1, range);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy java O(logn) solution
+There must be two indices in the array. Which means, we can just simply apply to binary search twice to find each index of the target element.
+
+
+    public class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        int[] result = new int[2];
+        result[0] = findFirst(nums, target);
+        result[1] = findLast(nums, target);
+        return result;
+    }
+    
+    private int findFirst(int[] nums, int target){
+        int idx = -1;
+        int start = 0;
+        int end = nums.length - 1;
+        while(start <= end){
+            int mid = (start + end) / 2;
+            if(nums[mid] >= target){
+                end = mid - 1;
+            }else{
+                start = mid + 1;
+            }
+            if(nums[mid] == target) idx = mid;
+        }
+        return idx;
+    }
+    
+    private int findLast(int[] nums, int target){
+        int idx = -1;
+        int start = 0;
+        int end = nums.length - 1;
+        while(start <= end){
+            int mid = (start + end) / 2;
+            if(nums[mid] <= target){
+                start = mid + 1;
+            }else{
+                end = mid - 1;
+            }
+            if(nums[mid] == target) idx = mid;
+        }
+        return idx;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ binary search solution (lower_bound implementation).
+        
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int idx1 = lower_bound(nums, target);
+        int idx2 = lower_bound(nums, target+1)-1;
+        if (idx1 < nums.size() && nums[idx1] == target)
+            return {idx1, idx2};
+        else
+            return {-1, -1};
+    }
+    
+    int lower_bound(vector<int>& nums, int target) {
+        int l = 0, r = nums.size()-1;
+        while (l <= r) {
+            int mid = (r-l)/2+l;
+            if (nums[mid] < target)
+                l = mid+1;
+            else
+                r = mid-1;
+        }
+        return l;
+    }
+
+----------------------------------------------------------------------------------------------------
+The standard and clean c++ binary search implementation.
+Yeah, binary search is quite simple, but many people write complex and error-prone code.
+
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int start = 0, end = nums.size(), mid, left, right;
+        while (start < end) {
+            mid = (start + end) / 2;
+            if (nums[mid] >= target)
+                end = mid;
+            else
+                start = mid + 1;
+        }
+        left = start;
+        start = 0, end = nums.size();
+        while (start < end) {
+            mid = (start + end) / 2;
+            if (nums[mid] > target)
+                end = mid;
+            else
+                start = mid + 1;
+        }
+        right = start;
+        return left == right ? vector<int> {-1,-1} : vector<int> {left,right-1};
+    }
+
+----------------------------------------------------------------------------------------------------
+Search for the position target-0.5 and target+0.5, a simple python code with a little trick
+    class Solution:
+    # @param A, a list of integers
+    # @param target, an integer to be searched
+    # @return a list of length 2, [index1, index2]
+    def searchRange(self, arr, target):
+        start = self.binary_search(arr, target-0.5)
+        if arr[start] != target:
+            return [-1, -1]
+        arr.append(0)
+        end = self.binary_search(arr, target+0.5)-1
+        return [start, end]
+
+    def binary_search(self, arr, target):
+        start, end = 0, len(arr)-1
+        while start < end:
+            mid = (start+end)//2
+            if target < arr[mid]:
+                end = mid
+            else:
+                start = mid+1
+        return start
+
+for search the target+0.5 position we add something whatever to the list end
+ to get the right position for the edge case
+
+take ([0,1,2,3,4,5], 5) for example:
+
+we append 0 to the list end
+
+[0,1,2,3,4,5,0]
+
+[4,5,0]# start now is 4, end is 6, mid is 5,  start = mid+1 = 6, end the while loop
+
+finally we get the 5.5 position == start == 6
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my Concise Java O(logN) solution, just 1 time Binary Search, easy to understand
+This solution is to find the start and end index of target number with using just one time binary search
+    
+    public int[] searchRange(int[] nums, int target) {
+    		int[] res = {-1, -1};
+    		int lo = 0, hi = nums.length - 1;
+    
+    		//lo is the start index of target
+    		//hi is the end index of target
+    		while(nums[lo] < nums[hi]) {
+    			int mid = lo + (hi - lo)/2;
+    			if(nums[mid] > target) {//target is in the left half
+    				hi = mid - 1;
+    			} else if(nums[mid] < target) {// target is in the right half
+    				lo = mid + 1;
+    			} else {//find target, then need to find the start and end point
+    				if(nums[lo] == nums[mid]) {
+    					hi--;
+    				}else {
+    					lo++;
+    				}
+    			}
+    		}
+    		//check whether find the target number
+    		if(nums[lo] == nums[hi] && nums[lo]== target) {
+    			res[0] = lo;
+    			res[1] = hi;
+    		}
+    		
+    		return res;
+    	}
+
+----------------------------------------------------------------------------------------------------
+If the elements of the whole array is the same as the target, can we do it in a O(logn) time?
+If the elements of the whole array is the same as the target, can we do it in a O(logn) time?
+
+----------------------------------------------------------------------------------------------------
+My 2 binary search solution without too many &quot;if&quot; checks
+
+
+        public int[] searchRange(int[] A, int target) {
+        int[] ret = {-1, -1};
+        
+        // the first binary search to find the left boundary
+        int l = 0, r = A.length-1;
+        while(l < r) {
+            int mid = (l+r)/2;
+            if (A[mid] < target)
+                l = mid + 1;
+            else
+                r = mid;
+        }
+        
+        // if target can not be found, return {-1, -1}
+        if (A[l] != target)
+            return ret;
+        
+        ret[0] = l;
+        // second binary search to find the right boundary
+        r = A.length-1;
+        while(l < r) {
+            // mid is calculated differently
+            int mid = (l + r+1)/2;
+            if (A[mid] > target)
+                r = mid - 1;
+            else
+                l = mid;
+        }
+        ret[1] = l;
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java AC solution
+I see some of the answers involving two separate methods for finding first index position and last index position. I just combine them into one method and use boolean to check whether it is the last index that we are looking for. 
+
+
+    public int[] searchRange(int[] A, int target) {
+    	int start = findPosition(A, target, false);
+    	int end = findPosition(A, target, true);
+    	return new int[]{start, end};
+    }
+
+    private int findPosition(int[] A, int target, boolean isLast) {
+    	int low = 0, high = A.length-1, index = -1;
+    	while (low <= high) {
+    		int mid = low + ((high - low) >> 1);
+    		if(isLast){
+    			if (A[mid] <= target) low = mid + 1;
+    			else high = mid-1;
+    		} else{
+    			if (A[mid] < target) low = mid + 1;
+    			else high = mid-1;
+    		}
+    		if(A[mid] == target) index = mid; /** update index */
+    	}
+    	return index;
+    }
+
+----------------------------------------------------------------------------------------------------
+Readable C++11 solution
+    class Solution {
+    public:
+        vector<int> searchRange(int A[], int n, int target) {
+            vector<int> ans(2);
+            ans[0] = lowerBound(A, A + n, target) - A;
+            ans[1] = upperBound(A, A + n, target) - A - 1;
+            if (ans[0] > ans[1]) {
+                ans[0] = ans[1] = -1;
+            }
+            return ans;
+        }
+        
+        int *lowerBound(int *a, int *b, int target)
+        {
+            return binarySearch(a, b, target, [](int a, int b) { return a < b; });
+        }
+        
+        int *upperBound(int *a, int *b, int target)
+        {
+            return binarySearch(a, b, target, [](int a, int b) { return a <= b; });
+        }
+        
+        int *binarySearch(int *a ,int *b, int target, function<bool(int, int) > cmp)
+        {
+            int l = 0, r = b - a;
+            while (l < r) { 
+                int mid = l + ((r - l) >> 1);
+                if (cmp(a[mid], target)) {
+                    l = mid + 1;
+                } else {
+                    r = mid;
+                }
+            }
+            return a + l;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+The insert position trick
+Just imagine where we should insert target+0.5 and target-0.5 into this array.
+
+    class Solution {
+    public:
+        vector<int> searchRange(vector<int>& nums, int target) {
+            int t = insertPosition(nums, target - 0.5);
+            if (target != nums[t]) {
+                return {-1, -1};
+            }
+            return {t, insertPosition(nums, target + 0.5) - 1};
+        }
+    private:
+        int insertPosition(vector<int>& nums, double target) {
+            int l = 0;
+            int r = nums.size() - 1;
+            while (l <= r) {
+                int mid = l + ((r - l) >> 1);
+                if (target < nums[mid]) {
+                    r = mid - 1;
+                } else {
+                    l = mid + 1;
+                }
+            }
+            return l;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+16-line Python solution, symmetric and clean binary search, 52ms
+    def searchRange(self, nums, target):
+        def binarySearchLeft(A, x):
+            left, right = 0, len(A) - 1
+            while left <= right:
+                mid = (left + right) / 2
+                if x > A[mid]: left = mid + 1
+                else: right = mid - 1
+            return left
+
+        def binarySearchRight(A, x):
+            left, right = 0, len(A) - 1
+            while left <= right:
+                mid = (left + right) / 2
+                if x >= A[mid]: left = mid + 1
+                else: right = mid - 1
+            return right
+            
+        left, right = binarySearchLeft(nums, target), binarySearchRight(nums, target)
+        return (left, right) if left <= right else [-1, -1]
+
+----------------------------------------------------------------------------------------------------
+Simple O(log n) JAVA Solution
+public class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        int left = 0;
+        int right = nums.length - 1;
+        while(left <= right){
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target){
+                if(nums[left] == target && nums[right] == target)
+                    return new int[]{left, right};
+                else if(nums[left] != target)
+                    left++;
+                else
+                    right--;
+            }else if(nums[mid] < target)
+                left = mid + 1;
+            else 
+                right = mid - 1;
+        }
+        
+        return new int[]{-1, -1};
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My worst case O(logn) solution(C++)
+The algorithm I used is basically finding lower and upper bounds of index of target in the array using binary search twice. Since the difference between the two binary searches is only about how to handle A[mid] == target, I just wrote one function doing the binary search, using a flag as a parameter indicating whether it is to find lower bound or not.
+
+
+
+    int searchBoundary(int A[], int n, int target, bool isLower)
+    {
+        int start = 0;
+        int end = n-1;
+        if (n == 0)
+            return -1;
+        while (start < end) {
+            int mid = start + (end - start) / 2;
+            if (target < A[mid])
+                end = mid - 1;
+            else if (target > A[mid])
+                start = mid + 1;
+            else if (isLower) {
+                end = mid;
+            } else {
+                if (mid == start) {
+                    return (A[end] == target) ? end : start;
+                }
+                start = mid;
+            }
+         }
+        if (A[start] == target)
+            return start;
+        else
+            return -1;
+    }
+    
+    vector<int> searchRange(int A[], int n, int target) {
+        vector<int> result{-1, -1};
+        int lower = searchBoundary(A, n, target, true);
+        if (lower != -1) {
+            result.clear();
+            result.push_back(lower);
+            result.push_back(searchBoundary(A, n, target, false));
+        }
+        return result;
+    }
+
+I noticed there's another solution that searches the target+0.1 and target-0.1.  Although it is quite a smart idea, I don't think it is extensible for the array of double numbers.  
+
+----------------------------------------------------------------------------------------------------
+The idea from knaive&#x27;s idea(O(logn))
+Basically, I write the code from knaive's idea(https://oj.leetcode.com/discuss/529/the-elements-the-whole-array-the-same-the-target-can-logn-time).
+
+Absolutely. You can choose two double numbers T-0.5 and T+0.5 for target T, and then binary search positions for the two double numbers in the integer array(suppose the position are a and b respectively), then the answer is [a, b-1]. For example, for input [5,7,7,8,8,10], you can search position for number 7.5 and 8.5 using binary-search, and the result is 3 and 5, by which the answer [3,4] is easily obtained.
+
+
+    vector<int> searchRange(int A[], int n, int target) 
+    {
+        bool found = false;
+        int mid = binarySearch(A,n,target,found);
+        if(!found)
+           return vector<int>(2,-1);
+
+        int low = binarySearch(A,n,target-0.5,found);
+        low++;
+        
+        int high = binarySearch(A,n,target+0.5,found);
+        vector<int> res;
+        res.push_back(low);
+        res.push_back(high);
+        return res;
+        
+    }
+    
+    int binarySearch(int A[],int n,float target,bool &found)
+    {
+        int low = 0, high = n-1,mid = 0;
+        while(low<=high)
+        {
+            mid = (high-low)/2 + low;
+            if((float)A[mid]==target) 
+            {
+                found = true;
+                return mid;
+            }
+            else if(A[mid]>target)
+                high = mid-1;
+            else
+                low = mid+1;
+        }
+        
+        return high;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My 4 ms C language solution
+       int* searchRange(int* s, int ns, int tar, int* returnSize) 
+        {
+            *returnSize=2;
+        	int *res = (int*)calloc(2, sizeof(int));
+        	res[0] = res[1] = -1;
+        	int i = 0;
+        	int j = ns - 1;
+        	int m;
+        	int flag;
+        	while (i <= j)
+        	{
+        		m = (i + j) / 2;
+        		if (i == j)
+        			break;
+        		if (s[m] < tar)
+        			i = m + 1;
+        		else
+        			j = m; 
+        	}
+        	if (tar == s[m])
+        		res[0] = m;
+        	else
+        		return res;
+        	for (i=m, j = ns - 1; i <= j;)
+        	{
+        		m = (i + j) / 2;
+        		flag = (i + j) % 2;
+        		if (flag)
+        			++m;
+        		if (i == j)
+        			break;
+        		if (s[m] > tar)
+        			j = m - 1;
+        		else
+        			i = m;
+        	}
+        	res[1] = m;
+        	return res;
+        }
+
+Use binary search to find the low boundary and high boundary directly with 2 steps. In step 2 to find the high boundary with i == low boundary is known. "flag" is used to set the middle point(m)+1 when i+j is odd number.
+
+----------------------------------------------------------------------------------------------------
+Java 1ms solution,  recursive binary search, structure clear and simple, code style better
+    public int[] searchRange(int[] nums, int target) {
+        if(nums==null || nums.length==0){
+            return new int[]{-1,-1};
+        }
+        else{
+            return new int[]{
+                getLeftBoundary(nums,0, nums.length-1,target),
+                getRightBoundary(nums,0, nums.length-1,target)
+            };
+        }
+    }
+    private int getLeftBoundary(int[] nums, int start, int end, int target){
+        if(start==end){
+            if(nums[start]==target){
+                return start;
+            }
+            return -1;
+        }
+        int mid = (start+end)/2;
+        if(nums[mid]<target){
+            return getLeftBoundary(nums, mid+1, end, target);
+        }
+        else{
+            return getLeftBoundary(nums, start, mid, target);
+        }
+    }
+    private int getRightBoundary(int[] nums, int start, int end, int target){
+        if(start==end){
+            if(nums[start]==target){
+                return start;
+            }
+            return -1;
+        }
+
+        int mid = end-(end-start)/2;
+        if(nums[mid]>target){
+            return getRightBoundary(nums, start, mid-1, target);
+        }
+        else{
+            return getRightBoundary(nums, mid, end, target);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

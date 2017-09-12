@@ -1,0 +1,711 @@
+Super Simple and Easy to Understand Solution
+This is a very simple and easy to understand solution. I traverse right and increment rowBegin, then traverse down and decrement colEnd, then I traverse left and decrement rowEnd, and finally I traverse up and increment colBegin.
+
+The only tricky part is that when I traverse left or up I have to check whether the row or col still exists to prevent duplicates. If anyone can do the same thing without that check, please let me know!
+
+Any comments greatly appreciated.
+
+    public class Solution {
+        public List<Integer> spiralOrder(int[][] matrix) {
+            
+            List<Integer> res = new ArrayList<Integer>();
+            
+            if (matrix.length == 0) {
+                return res;
+            }
+            
+            int rowBegin = 0;
+            int rowEnd = matrix.length-1;
+            int colBegin = 0;
+            int colEnd = matrix[0].length - 1;
+            
+            while (rowBegin <= rowEnd && colBegin <= colEnd) {
+                // Traverse Right
+                for (int j = colBegin; j <= colEnd; j ++) {
+                    res.add(matrix[rowBegin][j]);
+                }
+                rowBegin++;
+                
+                // Traverse Down
+                for (int j = rowBegin; j <= rowEnd; j ++) {
+                    res.add(matrix[j][colEnd]);
+                }
+                colEnd--;
+                
+                if (rowBegin <= rowEnd) {
+                    // Traverse Left
+                    for (int j = colEnd; j >= colBegin; j --) {
+                        res.add(matrix[rowEnd][j]);
+                    }
+                }
+                rowEnd--;
+                
+                if (colBegin <= colEnd) {
+                    // Traver Up
+                    for (int j = rowEnd; j >= rowBegin; j --) {
+                        res.add(matrix[j][colBegin]);
+                    }
+                }
+                colBegin ++;
+            }
+            
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A concise C++ implementation based on Directions
+When traversing the matrix in the spiral order, at any time we follow one out of the following four directions: RIGHT DOWN LEFT UP. Suppose we are working on a 5 x 3 matrix as such:
+
+0  1   2   3   4   5
+    6   7   8   9   10
+   11 12 13 14 15
+
+Imagine a cursor starts off at (0, -1), i.e. the position at '0', then we can achieve the spiral order by doing the following:
+
+1. Go right 5 times 
+2. Go down 2 times
+3. Go left 4 times
+4. Go up 1 times.
+5. Go right 3 times
+6. Go down 0 times -> quit
+  
+Notice that the directions we choose always follow the order 'right->down->left->up', and for horizontal movements, the number of shifts follows:{5, 4, 3}, and vertical movements follows {2, 1, 0}. 
+
+Thus, we can make use of a direction matrix that records the offset for all directions, then an array of two elements that stores the number of shifts for horizontal and vertical movements, respectively. This way, we really just need one for loop instead of four.
+
+Another good thing about this implementation is that: If later we decided to do spiral traversal on a different direction (e.g. Counterclockwise), then we only need to change the Direction matrix; the main loop does not need to be touched.
+
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<vector<int> > dirs{{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        vector<int> res;
+        int nr = matrix.size();     if (nr == 0) return res;
+        int nc = matrix[0].size();  if (nc == 0) return res;
+        
+        vector<int> nSteps{nc, nr-1};
+        
+        int iDir = 0;   // index of direction.
+        int ir = 0, ic = -1;    // initial position
+        while (nSteps[iDir%2]) {
+            for (int i = 0; i < nSteps[iDir%2]; ++i) {
+                ir += dirs[iDir][0]; ic += dirs[iDir][1];
+                res.push_back(matrix[ir][ic]);
+            }
+            nSteps[iDir%2]--;
+            iDir = (iDir + 1) % 4;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+0ms Clear C++ Solution
+The idea is just to add the elements in the spiral order. First the up-most row (`u`), then the right-most column (`r`), then the down-most row (`d`), and finally the left-most column (`l`). After finishing a row or a column, update the corresponding variable to continue the process.
+
+The code is as follows.
+
+    class Solution {
+    public:
+        vector<int> spiralOrder(vector<vector<int>>& matrix) {
+            if (matrix.empty()) return {};
+            int m = matrix.size(), n = matrix[0].size();
+            vector<int> spiral(m * n);
+            int u = 0, d = m - 1, l = 0, r = n - 1, k = 0;
+            while (true) {
+                // up
+                for (int col = l; col <= r; col++) spiral[k++] = matrix[u][col];
+                if (++u > d) break;
+                // right
+                for (int row = u; row <= d; row++) spiral[k++] = matrix[row][r];
+                if (--r < l) break;
+                // down
+                for (int col = r; col >= l; col--) spiral[k++] = matrix[d][col];
+                if (--d < u) break;
+                // left
+                for (int row = d; row >= u; row--) spiral[k++] = matrix[row][l];
+                if (++l > r) break;
+            }
+            return spiral;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1-liner in Python
+Inefficient for large matrices, but here I got it accepted in 40 ms, one of the fastest Python submissions.
+
+    def spiralOrder(self, matrix):
+        return matrix and list(matrix.pop(0)) + self.spiralOrder(zip(*matrix)[::-1])
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution by mutating the matrix
+The con is mutating the matrix, if this is not allowed, we can make a deep copy of the matrix first. And of course it comes with the additional memory usage.
+
+      
+    def spiralOrder(self, matrix):
+        ret = []
+        while matrix:
+            ret += matrix.pop(0)
+            if matrix and matrix[0]:
+                for row in matrix:
+                    ret.append(row.pop())
+            if matrix:
+                ret += matrix.pop()[::-1]
+            if matrix and matrix[0]:
+                for row in matrix[::-1]:
+                    ret.append(row.pop(0))
+        return ret
+
+----------------------------------------------------------------------------------------------------
+Elegant and fast Java solution (240ms)
+        public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> spiralList = new ArrayList<>();
+        if(matrix == null || matrix.length == 0) return spiralList;
+        
+        // declare indices
+        int top = 0;
+        int bottom = matrix.length - 1;
+        int left = 0;
+        int right = matrix[0].length - 1;
+        
+        while(true){
+            // 1. print top row
+            for(int j=left; j <=right;j++){
+                spiralList.add(matrix[top][j]);
+            }
+            top++;
+            if(boundriesCrossed(left,right,bottom,top))
+                break;
+            
+            // 2. print rightmost column
+            for(int i=top; i <= bottom; i++){
+                spiralList.add(matrix[i][right]);
+            }
+            right--;
+            if(boundriesCrossed(left,right,bottom,top))
+                break;
+                
+            // 3. print bottom row
+            for(int j=right; j >=left; j--){
+                spiralList.add(matrix[bottom][j]);
+            }
+            bottom--;
+            if(boundriesCrossed(left,right,bottom,top))
+                break;    
+                
+            // 4. print leftmost column
+            for(int i=bottom; i >= top; i--){
+                spiralList.add(matrix[i][left]);
+            }
+            left++;
+            if(boundriesCrossed(left,right,bottom,top))
+                break;    
+        }// end while true
+        
+        return spiralList;
+    }
+    
+    private boolean boundriesCrossed(int left,int right,int bottom,int top){
+        if(left>right || bottom<top)
+            return true;
+        else
+            return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Python 32ms solution
+    def spiralOrder(self, matrix):
+        if not matrix or not matrix[0]:
+            return []
+        ans = []
+        m, n = len(matrix), len(matrix[0])
+        u, d, l, r = 0, m - 1, 0, n - 1
+        while l < r and u < d:
+            ans.extend([matrix[u][j] for j in xrange(l, r)])
+            ans.extend([matrix[i][r] for i in xrange(u, d)])
+            ans.extend([matrix[d][j] for j in xrange(r, l, -1)])
+            ans.extend([matrix[i][l] for i in xrange(d, u, -1)])
+            u, d, l, r = u + 1, d - 1, l + 1, r - 1
+        if l == r:
+            ans.extend([matrix[i][r] for i in xrange(u, d + 1)])
+        elif u == d:
+            ans.extend([matrix[u][j] for j in xrange(l, r + 1)])
+        return ans
+
+
+    # 22 / 22 test cases passed.
+    # Status: Accepted
+    # Runtime: 32 ms
+    # 100%
+
+
+----------------------------------------------------------------------------------------------------
+Clean Java, readable, human friendly code
+    public class Solution {
+        public List<Integer> spiralOrder(int[][] matrix) {
+            List<Integer> res = new ArrayList<Integer>();
+            if(matrix.length == 0 || matrix[0].length == 0) return res;
+            
+            int top = 0;
+            int bottom = matrix.length-1;
+            int left = 0;
+            int right = matrix[0].length-1;
+            
+            while(true){
+                for(int i = left; i <= right; i++) res.add(matrix[top][i]);
+                top++;
+                if(left > right || top > bottom) break;
+                
+                for(int i = top; i <= bottom; i++) res.add(matrix[i][right]);
+                right--;
+                if(left > right || top > bottom) break;
+                
+                for(int i = right; i >= left; i--) res.add(matrix[bottom][i]);
+                bottom--;
+                if(left > right || top > bottom) break;
+                
+                for(int i = bottom; i >= top; i--) res.add(matrix[i][left]);
+                left++;
+                if(left > right || top > bottom) break;
+            }
+            
+            return res;
+        }
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+An easy to understand solution
+This solution use a most left up point and a most right bottom point to act as limiters, and traverse around directly. I think it's quite easy to understand.
+
+    public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> list = new LinkedList<Integer>();
+        if (matrix == null) return list;
+        int m = matrix.length;
+        if (m == 0) return list;
+        int n = matrix[0].length;
+        int x0 = 0, y0 = 0; // most left up point
+        int x1 = m-1, y1 = n-1; // most right bottom point
+        int x = 0, y = 0;
+        while(x0 < x1 && y0 < y1) {
+            x = x0; // after one loop, (x, y) goes back to original position, must set them 'forward'
+            y = y0;
+            // traverse around
+            while (y < y1) list.add(matrix[x][y++]);
+            while (x < x1) list.add(matrix[x++][y]);
+            while (y > y0) list.add(matrix[x][y--]);
+            while (x > x0) list.add(matrix[x--][y]);
+            // move limiters to center
+            x0++; 
+            y0++;
+            x1--;
+            y1--;
+        }
+        x = x0;
+        y = y0;
+        // deal with one row or col left case
+        if (x0 == x1 && y0 <= y1) {
+            while (y <= y1) list.add(matrix[x][y++]);
+        } else if (y0 == y1 && x0 <= x1) {
+            while (x <= x1) list.add(matrix[x++][y]);
+        }
+        return list;
+    } 
+
+----------------------------------------------------------------------------------------------------
+Concise solution in Java
+After each iteration the scope of each for loop is reduced. The if condition before the two last loops is to avoid duplicates.
+
+
+     public List<Integer> spiralOrder(int[][] mtx) {
+        List<Integer> ret=new LinkedList<>();
+        if(mtx.length==0)return ret;
+        int m=mtx.length;
+        int n=mtx[0].length;
+        int min=Math.min(m,n);
+        for(int b=0;b<Math.ceil(min/2.);b++){
+            for(int a=b;a<n-b;a++)ret.add(mtx[b][a]);
+            for(int a=b+1;a<m-b;a++)ret.add(mtx[a][n-b-1]);
+            if(b!=m-b-1)for(int a=n-b-2;a>=b;a--)ret.add(mtx[m-b-1][a]);
+            if(n-b-1!=b)for(int a=m-b-2;a>b;a--)ret.add(mtx[a][b]);
+        }
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+0ms c++ solution, take turns to move in 4 directions
+    class Solution {
+    public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector <int> res;        
+        int rowSize = matrix.size();
+        if (rowSize==0) return res;
+        int colSize = matrix[0].size();
+        int lb=0,rb=colSize-1,ub=0,db=rowSize-1;// left bound, right bound, up bound, down bound;
+        int direction = 0;
+        int col=0,row=0;
+        while (lb<=rb && ub<=db){
+            res.push_back(matrix[row][col]);
+            switch (direction){
+                case 0:  //  right
+                    if (col>=rb) {direction = 1;row=row+1;ub++;} else col=col+1;
+                    break;
+                case 1: // down
+                    if (row>=db) {direction = 2;col=col-1;rb--;} else row=row+1;
+                    break;
+                case 2: // left
+                    if (col<=lb) {direction = 3;row=row-1;db--;} else col=col-1;
+                    break;
+                default:  // up
+                    if (row<=ub) {direction = 0;col=col+1;lb++;} else row=row-1;
+            }
+        }
+        return res;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Very Easy to Understand Python Solution
+    def spiralOrder(self, matrix):
+        res = []
+        if not matrix:
+            return []
+        i,j,di,dj = 0,0,0,1
+        m, n = len(matrix),len(matrix[0])
+        for v in xrange(m * n):
+            res.append(matrix[i][j])
+            matrix[i][j] = ''
+            if matrix[(i+di)%m][(j+dj)%n] == '':
+                di, dj = dj, -di
+            i += di
+            j += dj
+        return res
+
+----------------------------------------------------------------------------------------------------
+7 lines, recursive python solution (+ 5 lines solution w&#x2F;o recursion)
+(1). Initial
+
+>1, 2, 3
+
+>4, 5, 6
+
+>7, 8, 9
+
+(2). The first row, [1, 2, 3], is used
+
+>4, 5, 6
+
+>7, 8, 9
+
+(3). Rotate the rest into:
+
+>6, 9
+
+>5, 8
+
+> 4, 7
+
+(4). Use the first row after rotation. Got [1, 2, 3, 6, 9, ... ] and just keep going !
+
+    def spiralOrder(self, matrix):
+
+        result = []
+
+        def helper(mat):
+            if mat:
+                result.extend(mat[0])
+                helper(self.rotate_counter(mat[1:]))
+
+        helper(matrix)
+        return result
+
+    def rotate_counter(self, mat):
+        return zip(*mat)[::-1]
+
+p.s. I isolate the rotation function for readability.                 
+p.s. fixed the redundancy & added a while-loop version under the suggestion of StefanPochmann
+
+    def spiralOrder(self, matrix):    #a while-loop version
+
+        result = []
+
+        while matrix:
+            result.extend(matrix.pop(0))
+            matrix = zip(*matrix)[::-1]    #rotate the remaining matrix counter-clockwise
+            
+        return result
+
+----------------------------------------------------------------------------------------------------
+23 line clear and simple C++ solution
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> res;
+        if (matrix.empty()) return res;
+        const int nx[] = {0, 1, 0, -1};
+        const int ny[] = {1, 0, -1, 0};
+        int x = 0, y = -1;
+        int m = matrix.size(), n = matrix[0].size();
+        int i = 0;
+        
+        while (m > 0 && n>0) {
+            int k;
+            if (i%2 == 0) k = n, m--;
+            else k = m, n--;
+                
+            while (k--) {
+                x += nx[i]; y += ny[i];
+                res.push_back(matrix[x][y]);
+            }
+            
+            i = (i+1)%4; //direction
+        }
+        
+        return res;
+    }
+
+variable i control the direction of next movement, nx and ny holds the offset of next step
+
+----------------------------------------------------------------------------------------------------
+Simple Structed Java Solution with O(m * n) complexity
+The idea is the same as the solution on [programcreek][1]. 
+Code is long, but the idea and structure is simple.
+Feast yourself!
+
+    public class Solution {
+    public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> list = new ArrayList<Integer>();
+        if (matrix.length == 0) return list;
+        
+        int m = matrix.length; //width
+        int n = matrix[0].length; //height
+        int x = 0, y = 0;
+        
+        while (m > 0 && n > 0) {
+            //If there is only one row or one column, then just put this row/column into the list
+            if (m == 1) {
+                for (int i = 0; i < n; i++) {
+                    list.add(matrix[x][y++]);
+                }
+                break;
+            } else if (n == 1) {
+                for (int i = 0; i < m; i++) {
+                    list.add(matrix[x++][y]);
+                }
+                break;
+            }
+            
+            //left to right
+            for (int i = 0; i < n - 1; i++) {
+                list.add(matrix[x][y++]);
+            } 
+            
+            //up to down
+            for (int i = 0; i < m - 1; i++) {
+                list.add(matrix[x++][y]);
+            }
+            
+            //right to left
+            for (int i = 0; i < n - 1; i++) {
+                list.add(matrix[x][y--]);
+            } 
+            
+            //down to up
+            for (int i = 0; i < m - 1; i++) {
+                list.add(matrix[x--][y]);
+            }
+            
+            m = m - 2;
+            n = n - 2;
+            x++;
+            y++;
+        }
+        return list;
+    }
+}
+
+
+  [1]: http://www.programcreek.com/2013/01/leetcode-spiral-matrix-java/
+
+----------------------------------------------------------------------------------------------------
+Java-Simple and Clean Solution
+   //     1    2    3   4  5  
+                          
+//                14   15   16  17  6
+                          
+//        13   18   19  20  7
+        
+//       12   11   10  9  8  
+
+//      direction =0 left to right  
+//      direction =1 top to bottom  
+//      direction =2 right to left  
+//      direction =3 bottom to top  
+
+public class Solution {
+
+    public List<Integer> spiralOrder(int[][] matrix) {
+            List<Integer> result = new ArrayList<Integer>();
+            if(matrix.length == 0) return result;
+            int left=0,right=matrix[0].length-1,top=0,bottom=matrix.length-1,direction=0;
+            while(left <= right && top <= bottom){
+                if(direction == 0){
+                    for(int i=left;i<= right;i++){
+                        result.add(matrix[top][i]);
+                    }
+                    top++;
+                }
+                else if(direction == 1){
+                    for(int i=top;i<=bottom;i++){
+                        result.add(matrix[i][right]);
+                    }
+                    right--;
+                }
+                else if(direction == 2){
+                    for(int i=right;i>=left;i--){
+                        result.add(matrix[bottom][i]);
+                    }
+                    bottom--;
+                    
+                }
+                else if(direction == 3){
+                    for(int i=bottom;i>=top;i--){
+                        result.add(matrix[i][left]);
+                    }
+                    left++;
+                }
+                direction=(direction+1) % 4;
+            }
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Straightforward java solution
+    public class Solution {
+    public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> list = new ArrayList<Integer>();
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return list;
+        int row = matrix.length;
+        int col = matrix[0].length;
+        int left = 0, right = col-1;
+        int top = 0, bottom = row-1;
+        while(true){
+            for(int i = left; i<=right; i++){
+                list.add(matrix[top][i]);
+            }
+            top++;
+            if(top > bottom) break;
+            for(int i = top; i<=bottom; i++){
+                list.add(matrix[i][right]);
+            }
+            right--;
+            if(right < left) break;
+            for(int i = right; i>=left; i--){
+                list.add(matrix[bottom][i]);
+            }
+            bottom--;
+            if(bottom < top) break;
+            for(int i = bottom; i>=top; i--){
+                list.add(matrix[i][left]);
+            }
+            left++;
+            if(left > right) break;
+        }
+        return list;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Why do I always get Runtime Error without any details
+I tested my code on my own machine and it works fine. However, after submitting my code to leetcode, the result always says Runtime Error without any details. I don't know why this happens. 
+
+----------------------------------------------------------------------------------------------------
+Simple java solution
+
+    public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> res = new ArrayList<Integer>();
+        if (matrix.length == 0 || matrix[0].length == 0) {return res;}
+        int left = 0, right = matrix[0].length - 1;
+        int top = 0, bottom = matrix.length - 1;
+        int tag = 0, row = top, col = left;
+        // int m = 0;
+        for (int m = 0; m < matrix.length * matrix[0].length; m++) {
+            if (tag == 0) {
+                res.add(matrix[row][col]);
+                if (col == right) {
+                    tag = 1;
+                    top++;
+                    row = top;
+                } else {col++;}
+            } else if (tag == 1) {
+                res.add(matrix[row][col]);
+                if (row == bottom) {
+                    tag = 2;
+                    right--;
+                    col = right;
+                } else {row++;}
+            } else if (tag == 2) {
+                res.add(matrix[row][col]);
+                if (col == left) {
+                    tag = 3;
+                    bottom--;
+                    row = bottom;
+                } else {col--;}
+            } else {
+                res.add(matrix[row][col]);
+                if (row == top) {
+                    tag = 0;
+                    left++;
+                    col = left;
+                } else {row--;}
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+40 ms Python solution. Top&#x2F;Right&#x2F;Bottom&#x2F;Left, peeling off layers.
+    class Solution(object):
+        def spiralOrder(self, matrix):
+
+            if matrix == []:
+              return matrix
+    
+            l = 0
+            r = len(matrix[0]) - 1
+            t = 0
+            b = len(matrix) - 1
+    
+            ret = []
+            while l < r and t < b:
+            	# top
+            	for i in range(l, r):
+            		ret.append(matrix[t][i])
+            	# right
+            	for i in range(t, b):
+            		ret.append(matrix[i][r])
+            	# bottom
+            	for i in range(r, l, -1):
+            		ret.append(matrix[b][i])
+            	# left
+            	for i in range(b, t, -1):
+            		ret.append(matrix[i][l])
+    
+    	        l += 1
+    	        r -= 1 
+    	        t += 1
+    	        b -= 1
+    
+    	    # single square
+            if l == r and t == b:
+            	ret.append(matrix[t][l])
+            # vertical line
+           	elif l == r:
+           		for i in range(t, b + 1):
+           			ret.append(matrix[i][l])
+           	# horizontal line
+           	elif t == b:
+           		for i in range(l, r + 1):
+           			ret.append(matrix[t][i])
+           	return ret
+
+Any crits appreciated. Wondering about reducing the edge case checks at the end. 
+
+----------------------------------------------------------------------------------------------------

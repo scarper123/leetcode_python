@@ -1,0 +1,508 @@
+Java solution, DP
+class Solution {
+    public int strangePrinter(String s) {
+        int n = s.length();
+        if (n == 0) return 0;
+        
+        int[][] dp = new int[101][101];
+        for (int i = 0; i < n; i++) dp[i][i] = 1;
+        
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < n - i; j++) {
+                dp[j][j + i] = i + 1;
+                for (int k = j + 1; k <= j + i; k++) {
+                    int temp = dp[j][k - 1] + dp[k][j + i];
+                    if (s.charAt(k - 1) == s.charAt(j + i)) temp--;
+                    dp[j][j + i] = Math.min(dp[j][j + i], temp);
+                }
+            }
+        }
+        return dp[0][n - 1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward DP with Explanation
+def strangePrinter(self, S):
+    memo = {}
+    def dp(i, j):
+        if i > j: return 0
+        if (i, j) not in memo:
+            ans = dp(i+1, j) + 1
+            for k in xrange(i+1, j+1):
+                if S[k] == S[i]:
+                    ans = min(ans, dp(i, k-1) + dp(k+1, j))
+            memo[i, j] = ans
+        return memo[i, j]
+
+    return dp(0, len(S) - 1)
+
+
+----------------------------------------------------------------------------------------------------
+Same as Remove Boxes
+<p>checkout 546. Remove Boxes, it is almost the same question</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^3) short DP Solution
+class Solution {
+    public int strangePrinter(String s) {
+        int n=s.length();
+        int[][] f=new int[n][n];
+        for (int i=n-1;i>=0;i--) 
+            for (int j=i;j<n;j++) 
+            {
+                f[i][j]=(i==j)?1:1+f[i+1][j];
+                for (int k=i+1;k<=j;k++) 
+                    if (s.charAt(k)==s.charAt(i)) f[i][j]=Math.min(f[i][j],f[i+1][k-1]+f[k][j]);
+            }
+        return (n==0?0:f[0][n-1]);
+    }  
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 29ms DP solution
+#include <string>
+#include <cmath>
+
+class Solution
+{
+private:
+    int f[100][100];
+    
+private:
+    int dfs(const std::string& s, int l, int r)
+    {
+        if (l > r) return 0;
+        if (f[l][r]) return f[l][r];
+        f[l][r] = dfs(s, l, r - 1) + 1;
+        for (int i = l; i < r; ++i)
+        {
+            if (s[i] == s[r])
+            {
+                f[l][r] = std::min(f[l][r], dfs(s, l, i) + dfs(s, i + 1, r - 1));
+            }
+        }
+        return f[l][r];
+    }
+    
+public:
+    int strangePrinter(std::string s)
+    {
+        memset(f, 0, sizeof(f));
+        int len = (int)s.size();
+        return dfs(s, 0, len - 1);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^3) DP Solution with Explanation and Simple Optimization
+StringBuilder sb = new StringBuilder();
+for (int i = 0; i < s.length(); i++) {
+    if (i > 0 && s.charAt(i) == s.charAt(i - 1)) {
+        continue;
+    }
+    sb.append(s.charAt(i));
+}
+s = sb.toString();
+
+
+----------------------------------------------------------------------------------------------------
+C++, DP 15ms with detailed explanation, O(n^3)
+class Solution {
+public:
+    int strangePrinter(string s) {
+        int n = s.size();
+        vector<vector<int>> dp(n+1, vector<int>(n+1, 0));
+        return helper(s, dp, 0, n);
+    }
+private:
+    int helper(string& str, vector<vector<int>>& dp, int s, int e) {
+        if (s >= e) return 0;
+        if (dp[s][e]) return dp[s][e];
+        // handle leading and trailing characters of str[s]
+        // Note the range is left inclusive [s,e) [l,r)
+        int l = s, r = e;
+        while (l < e && str[l] == str[s]) l++;
+        while (r > l && str[r-1] == str[s]) r--;
+        dp[s][e] = 1+helper(str, dp, l, r);
+        for (int i = l; i < r; i++) {
+            if (str[i] == str[s]) {
+                dp[s][e] = min(dp[s][e], helper(str,dp,l,i)+helper(str,dp,i,r));
+                while (i < e && str[i] == str[s]) i++;
+            }   
+        }
+        return dp[s][e];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DP solution
+class Solution {
+    public int strangePrinter(String s) {
+        if(s.isEmpty()) return 0;
+        
+        int[][] dp = new int[100][100];
+
+        //boundary case, substring with len 1, i.e. char at each index
+        for(int i = 0; i < 100; i++){
+            dp[i][i] = 1;
+        }
+        
+        for(int len = 2; len <= s.length(); len++){
+            for(int start = 0; start + len <= s.length(); start++){
+                dp[start][start+len-1] = len;
+                for(int split = start + 1; split <= start + len -1; split++){
+                    int result = dp[start][split-1] + dp[split][start + len -1];
+                    if(s.charAt(start) == s.charAt(split)){
+                        result --;
+                    }
+                    dp[start][start+len-1] = Math.min(result, dp[start][start+len-1]);
+                }
+            }
+        }
+        
+        
+        return dp[0][s.length()-1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Wrong OJ result for Python
+<p>&#34;abcabccb&#34;<br/>
+expected: 5<br/>
+OJ&#39;s answer is 4</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java DP + Memorization
+   public int strangePrinter(String s) {
+        if (s == null || s.length() == 0) {
+            return 0;
+        }
+
+        int size = s.length();
+        int[][] dp = new int[size][size];
+
+        for (int i = 0; i < size; i++) {
+            dp[i][i] = 1;
+        }
+
+        return helper(dp, 0, size - 1, s);
+
+    }
+
+    private int helper(int[][] dp, int x, int y, String s) {
+        int size = s.length();
+
+        if (x < 0 || x >= size || y < 0 || y >= size) {
+            return 0;
+        } else if (x > y) {
+            return 0;
+        } else if (dp[x][y] != 0) {
+            return dp[x][y];
+        } else {
+
+            if (s.charAt(y) != s.charAt(y - 1)) {
+                dp[x][y] = helper(dp, x, y - 1, s) + 1;
+            } else {
+                dp[x][y] = helper(dp, x, y-1, s);
+            }
+
+            for (int i = 0; i < y; i++) {
+                if (s.charAt(i) == s.charAt(y)) {
+                    dp[x][y] = Math.min(dp[x][y], helper(dp, x, i, s) + helper(dp, i + 1, y - 1, s));
+                }
+            }
+
+            return dp[x][y];
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python DP Solution
+class Solution:
+    def helper(self, s, e):
+        if s > e:
+            return 0
+        if self.dp[s][e] >= 0:
+            return self.dp[s][e]
+        self.dp[s][e] = self.helper(s, e - 1) + 1
+        for i in range(s, e):
+            if self.string[i] == self.string[e]:
+                self.dp[s][e] = min(self.dp[s][e], self.helper(s, i) + self.helper(i + 1, e - 1))
+        return self.dp[s][e]
+    def strangePrinter(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        self.string = s
+        n = len(self.string)
+        self.dp = [[-1] * n for _ in range(n)]
+        return self.helper(0, n - 1)
+
+
+----------------------------------------------------------------------------------------------------
+Python iterative DP O(n^3) Solution. BUT GOT AN TLE
+class Solution:
+    def strangePrinter(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        length = len(s)
+        if length == 0: return 0
+
+        times = [[0]*length for i in range(length)]
+
+        for i in range(length):
+            times[i][i] = 1
+
+        #offset to control  first calculate times[1][2], times[2][3]... then times[1][3]
+        offset = 1                    
+        while offset <= length-1:
+            for i in range(0,length):
+
+                if i+offset >= length: break
+
+                for j in range(i+1, i+offset+1):
+
+                    if s[j] == s[i]:
+                        times[i][j] = times[i][j-1]
+                    else:
+                        times[i][j] = times[i][j-1]+1
+
+                    for k in range(i+1, j):
+                        times[i][j] = min(times[i][j], times[i][k-1]+times[k][j])
+
+            offset += 1
+
+
+        return times[0][len(s)-1]
+
+
+----------------------------------------------------------------------------------------------------
+python O(n^3) iterative dp solution
+class Solution(object):
+    def strangePrinter(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        n = len(s)
+        dp = [[0] * n for i in xrange(n)]
+        for i in xrange(n):
+            dp[i][i] = 1
+        for l in xrange(1, n):
+            for i in xrange(n-l):
+                dp[i][i+l] = l + 1
+                for j in xrange(i+1, i+l+1):
+                    t = dp[i][j-1] + dp[j][i+l]
+                    if s[i] == s[j]:
+                        t -= 1
+                    if t < dp[i][i+l]:
+                        dp[i][i+l] = t
+        return dp[0][-1] if s else 0
+
+
+----------------------------------------------------------------------------------------------------
+O(n^3) dp, AC as Python, but TLE as Python3, any idea?
+class Solution:
+    def strangePrinter(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        if not s:
+            return 0
+        lll = len(s)
+        dp = [[0] * lll for _ in range(lll)]
+        for x in range(0, lll):
+            dp[x][x] = 1
+
+        for step in range(1, lll):
+            for i in range(0, lll - step):
+                dp[i][i + step] = step + 1
+                for k in range(0, step):
+                    cur = dp[i][i + k] + dp[i + k + 1][i + step]
+                    if s[i + step] == s[i]:
+                        cur -= 1
+                    if t < dp[i][i + step]:
+                        dp[i][i + step] = cur
+                #print('%s %s %s' % (i, i + step, dp[i][i + step]))
+        return dp[0][lll - 1]
+
+
+----------------------------------------------------------------------------------------------------
+Very short java dp
+public int strangePrinter(String s) {
+        int[][] mem = new int[s.length()][s.length()];
+        for (int i = s.length() - 1; i >= 0; i--) {
+            for (int j = i; j < s.length(); j++) {
+                mem[i][j] = j - i + 1;
+                for (int k = i; k < j; k++) {
+                    mem[i][j] = Math.min(mem[i][j], mem[i][k] + mem[k + 1][j] - (s.charAt(k) == s.charAt(j) ? 1 : 0));
+                }
+            }
+        }
+        return s.isEmpty() ? 0 : mem[0][s.length() - 1];
+}
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution using recursive way + DP!
+class Solution {
+    public int strangePrinter(String s) {
+          if(s==null || s.length()<1){
+              return 0;
+          }
+          char[] array = s.toCharArray();
+          Integer[][][] dp = new Integer[s.length()][s.length()][27];   
+          
+          return searchMin(dp,array,0,array.length-1,0);
+    }
+    
+    public int searchMin(Integer[][][] dp,char[] array,int left,int right,int background){
+        if(left>right){
+            return 0;
+        }else if(left==right){
+            if(array[left]-'a'+1==background){
+                return 0;
+            }else{
+                return 1;
+            }
+        }
+        
+        if(dp[left][right][background]!=null){
+            return dp[left][right][background];
+        }
+        
+        char c = array[left];
+        int add = (array[left]-'a'+1==background) ? 0 : 1;
+        int sum = add+searchMin(dp,array,left+1,right,background);
+        
+        for(int i=left+1;i<=right;i++){
+            if(array[i]==c){
+                sum=Math.min(sum,add+searchMin(dp,array,left+1,i,array[left]-'a'+1)+searchMin(dp,array,i+1,right,background));
+            }
+        }
+        
+        dp[left][right][background]=sum;
+        return sum;
+        
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Can someone please reword the question?
+<p>This might be a dumb question. But I can&#39;t seem to understand the constraints of the question:</p>
+<ul>
+<li>
+<p>The printer can only print a sequence of the same character each time.</p>
+</li>
+<li>
+<p>At each turn, the printer can print new characters starting from and ending at any places, and will cover the original existing characters.</p>
+</li>
+</ul>
+<p>For example:<br/>
+For the string &#34;abcabc&#34;, the answer is 5<br/>
+Why can&#39;t we print &#34;aaaa&#34; covering &#39;a&#39; to &#39;a&#39;, then &#34;bbbb&#34; covering &#39;b&#39; to &#39;b&#39; and then &#34;cccc&#34; covering &#39;c&#39; to &#39;c&#39;. making  it 3.</p>
+<p>Trivially the answer will end up to be the # of unique chars in the string, which obviously is not the case!</p>
+<p>Can someone please reword the question?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java, DP, Average O(N^2), 35ms, with brief explanation
+class Solution {
+    public int strangePrinter(String s) {
+        if (s == null || s.length() == 0) return 0;
+        int len = s.length();
+        int[] prevIndexes = new int[len]; //the index of previous appearence of charAt(i);
+        Arrays.fill(prevIndexes, -1);
+        HashMap<Character, Integer> map = new HashMap<>();
+        for(int i = 0; i<len; i++){
+           char ch = s.charAt(i);
+            if (map.containsKey(ch)) {
+                if(map.get(ch)==i-1) prevIndexes[i] = prevIndexes[i-1]; //no need to check continuous same chars
+                else prevIndexes[i] = map.get(ch);
+            } 
+            map.put(ch, i);
+        }
+        
+        int[][] dp = new int[len+1][len]; //length, start Index
+        Arrays.fill(dp[1], 1); //always print once for length=1 substring
+        for (int i = 2; i<=len; i++){ //length
+            for (int j = 0; j<len; j++){ //start position
+                int end = j+i-1;
+                if(end >= len) break;
+                if(s.charAt(end) == s.charAt(end-1)) dp[i][j] = dp[i-1][j]; //print the last char together with the previous char
+                else {
+                    dp[i][j] = dp[i-1][j]+1; //print the last char
+                    int prevIdx = prevIndexes[end]; // previous appearance of the last char
+                    while (prevIdx >=j) { //Important: has to check all previous appearance of the last char
+                        int prefixLen = prevIdx+1-j;
+                        dp[i][j] = Math.min(dp[i][j], dp[prefixLen][j]+dp[i-1-prefixLen][prevIdx+1]);//print the last char together with previous appearance
+                        prevIdx = prevIndexes[prevIdx];
+                    }
+                }
+            }
+        }
+        return dp[len][0];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 16ms short DP with a simple optimization. And an open question
+//Open question: I think if there only 2 letters, not 26. 
+//There is a O(n) solution.
+//Can anyone prove it?
+
+class Solution {
+	
+public:
+	int strangePrinter(string s) {
+		if (s.empty()) return 0;
+
+		//remove consecutive duplicates
+		string t(1, s[0]);
+		for (int i = 1; i < s.size(); ++i)
+			if (s[i] != t.back()) t.push_back(s[i]);
+
+		//dp[j][i] is the result for [i, j] of the input string. Yes, it is dp[j][i], NOT dp[i][j]
+		int N = t.size();
+		vector<vector<int>> dp(N, vector<int>(N, 0));
+		dp[0][0] = 1;
+
+		for (int i = 1; i < N; ++i)
+		{
+			for (int j =i; j>=0; --j) //walk backwards
+			{
+				dp[i][j] = dp[i - 1][j] + 1;
+
+				for (int k = j; k < i; k++)
+				{
+					if (t[k] == t[i])
+					{
+						dp[i][j] = min(dp[i][j], dp[k][j] + dp[i-1][k+1]);
+					}
+				}
+		    }
+		}
+
+		return dp[N - 1][0];
+
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------

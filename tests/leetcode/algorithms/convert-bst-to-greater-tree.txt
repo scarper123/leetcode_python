@@ -1,0 +1,711 @@
+Proper O(1) space
+    private void inorder(TreeNode root) {
+        TreeNode node = root;
+        while (node != null) {
+            if (node.left == null) {
+                handleValue(node.val);
+                node = node.right;
+            } else {
+                TreeNode prev = node.left;
+                while (prev.right != null && prev.right != node)
+                    prev = prev.right;
+                if (prev.right == null) {
+                    prev.right = node;
+                    node = node.left;
+                } else {
+                    prev.right = null;
+                    handleValue(node.val);
+                    node = node.right;
+                }
+            }
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java 4ms Beats 100% Extra O(1) solution - No Map
+public class Solution {
+    Integer prev = null;
+    int count = 1;
+    int max = 0;
+    public int[] findMode(TreeNode root) {
+        if (root == null) return new int[0];
+        
+        List<Integer> list = new ArrayList<>();
+        traverse(root, list);
+        
+        int[] res = new int[list.size()];
+        for (int i = 0; i < list.size(); ++i) res[i] = list.get(i);
+        return res;
+    }
+    
+    private void traverse(TreeNode root, List<Integer> list) {
+        if (root == null) return;
+        traverse(root.left, list);
+        if (prev != null) {
+            if (root.val == prev)
+                count++;
+            else
+                count = 1;
+        }
+        if (count > max) {
+            max = count;
+            list.clear();
+            list.add(root.val);
+        } else if (count == max) {
+            list.add(root.val);
+        }
+        prev = root.val;
+        traverse(root.right, list);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+What does &quot;mode&quot; mean?
+<p>What does &#34;mode&#34; mean?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java AC Solution
+public class Solution {
+    Map<Integer, Integer> map; 
+    int max = 0;
+    public int[] findMode(TreeNode root) {
+        if(root==null) return new int[0]; 
+        this.map = new HashMap<>(); 
+        
+        inorder(root); 
+        
+        List<Integer> list = new LinkedList<>();
+        for(int key: map.keySet()){
+            if(map.get(key) == max) list.add(key);
+        }
+        
+        int[] res = new int[list.size()];
+        for(int i = 0; i<res.length; i++) res[i] = list.get(i);
+        return res; 
+    }
+    
+    private void inorder(TreeNode node){
+        if(node.left!=null) inorder(node.left);
+        map.put(node.val, map.getOrDefault(node.val, 0)+1);
+        max = Math.max(max, map.get(node.val));
+        if(node.right!=null) inorder(node.right); 
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+11-liner C++ O(N) time O(1) extra space In-Order Traversal (detailed explanation)
+    vector<int> modes;
+    
+    vector<int> findMode(TreeNode* r) {
+      int mfq/*max freq*/, pre/*previous val*/, cnt/*duplicates count*/;
+      getMaxFreq(r, mfq=0, pre, cnt=0); // in-order traversal to get max frequency
+      getMode(r, mfq, pre, cnt=0);      // in-order traversal to get all modes
+      return modes;
+    }
+    
+    void getMaxFreq(TreeNode* r, int& mfq, int& pre, int& cnt) {
+      if (!r) return;
+      getMaxFreq(r->left, mfq, pre, cnt);
+      getMaxFreq(r->right, mfq=max(mfq,cnt), pre=r->val, ++(cnt*=(r->val==pre)));
+    }
+    
+    void getMode(TreeNode* r, const int mfq, int& pre, int& cnt) {
+      if (!r) return;
+      getMode(r->left, mfq, pre, cnt);
+      if (mfq == ++(cnt*=(r->val==pre))) modes.push_back(r->val);
+      getMode(r->right, mfq, pre=r->val, cnt);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Explanation
+count = {}
+count[node.val] = count.get(node.val, 0) + 1
+
+
+----------------------------------------------------------------------------------------------------
+C++, DFS. Time: O(n), Space: O(n).
+class Solution {
+public:
+    vector<int> findMode(TreeNode* root) {
+        unordered_map<int, int> map;
+        vector<int> result;
+        int modeCount = getModeCount(root, map);
+        
+        for(pair<int,int> p : map) {
+            if(p.second == modeCount) {
+                result.push_back(p.first);
+            }
+        }
+        
+        return result;
+        
+    }
+    
+    /**
+     * Traverse the tree using depth first search.
+     * Return the mode count (i.e. The count of a repeated number that occurs the most.) of the tree.
+     */
+    int getModeCount(TreeNode* root, unordered_map<int, int> &map) {
+        if(root == NULL)
+            return 0;
+        
+        if(map.find(root->val) == map.end()) {
+            map.insert(pair<int, int>(root->val, 1));
+        }
+        else {
+            map[root->val]++;
+        }
+        
+        return max(map[root->val], max(getModeCount(root->left, map), getModeCount(root->right, map)));
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+5ms Java simple inorder traverse solution, I&#x27;m not sure whether it didn&#x27;t use extra space.
+public class Solution {
+    public int[] findMode(TreeNode root) {
+        if(root==null){
+            return new int[0];
+        }
+        this.cur=new LinkedList<Integer>();
+        traverse(root);
+        int[] res=new int[cur.size()];
+        int i=0;
+        Iterator<Integer> itr=cur.iterator();
+        while(itr.hasNext()){
+            res[i++]=itr.next();
+        }
+        return res;
+    }
+    private void traverse(TreeNode root){
+        if(root==null){
+            return;
+        }
+        traverse(root.left);
+        if(root.val==pre){
+            count++;
+        }
+        else{
+            count=1;
+        }
+        if(count>=max){
+            if(count>max){
+                cur.clear();
+            }
+            max=count;
+            if(cur.isEmpty()||root.val!=cur.getLast()){
+                cur.add(root.val);
+            }
+        }
+        pre=root.val;
+        traverse(root.right);
+    }
+    private int max=0, count=0, pre=Integer.MIN_VALUE;
+    private LinkedList<Integer> cur;
+}
+
+
+----------------------------------------------------------------------------------------------------
+4ms Java solution beats 100% O(1) space(recursion stack space doesn&#x27;t count)
+public class Solution {
+    List<Integer> ans = new ArrayList<>();
+    Integer pre;
+    int maxFreq = 0, curFreq = 0;
+    public int[] findMode(TreeNode root) {
+        traverse(root);
+        int[] res = new int[ans.size()];
+        for (int i = 0; i < res.length; i++) res[i] = ans.get(i);
+        return res;
+    }
+    
+    private void traverse(TreeNode root) {
+        if (root == null) {
+            return;
+        }
+        //inorder traversal
+        traverse(root.left);
+        if (pre != null && root.val == pre) {
+            curFreq++;
+        } else {
+            curFreq = 1;
+        }
+        if (curFreq == maxFreq) {
+            ans.add(root.val);
+        } else if (curFreq > maxFreq) {
+            maxFreq = curFreq;
+            ans = new ArrayList<>();
+            ans.add(root.val);
+        } 
+
+        pre = root.val;
+        traverse(root.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+from collections import defaultdict
+class Solution(object):
+    def helper(self, root, cache):
+        if root == None:
+            return
+        cache[root.val] += 1
+        self.helper(root.left, cache)
+        self.helper(root.right, cache)
+        return
+    
+    def findMode(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[int]
+        """
+        if root == None:
+            return []
+        cache = defaultdict(int)
+        self.helper(root, cache)
+        max_freq = max(cache.values())
+        result = [k for k,v in cache.items() if v == max_freq]
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Ugly but straight forward Java solution
+public class Solution {
+    int max = 0;
+    
+    public int[] findMode(TreeNode root) {
+        if (root == null) return new int[0];
+        Map<Integer, Integer> map = new LinkedHashMap<>();
+        traverse(root, map);
+        
+        List<Integer> res = new ArrayList<>();
+        for (int key: map.keySet()) {
+            if (map.get(key) == max) {
+                res.add(key);
+            }
+        }
+        
+        int[] result = new int[res.size()];
+        for (int i = 0; i < res.size(); i++) {
+            result[i] = res.get(i);
+        }
+        
+        return result;
+    }
+    
+    private void traverse(TreeNode root, Map<Integer, Integer> map) {
+        if (root == null) return;
+        
+        Integer value = map.getOrDefault(root.val, 0) + 1;
+        max = Math.max(max, value);
+        map.put(root.val, value);
+        
+        traverse(root.left, map);
+        traverse(root.right, map);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ O(N) solution
+class Solution {
+public:
+    vector<int> findMode(TreeNode* root) {
+        unordered_map<int,int> counts;
+        int max = 0;
+        utill(root, counts, max);
+        
+        vector<int> modes;
+        for(auto& y : counts){
+            if(y.second == max) modes.push_back(y.first);
+        }
+        return modes;
+    }
+    
+    void utill(TreeNode* r, unordered_map<int,int> &counts, int &max){
+        if(r == nullptr) return;
+        
+        ++counts[r->val];
+        max = std::max(max, counts[r->val]);
+        utill(r->left, counts, max);
+        utill(r->right, counts, max);
+    }
+    
+};
+
+----------------------------------------------------------------------------------------------------
+Recursion Solution - O(1) Space (if recursion stack space does not count)
+class Solution {
+public:
+    vector<int> findMode(TreeNode* root) {
+        vector<int> ans;
+        if(!root) return ans;
+        
+        int max_freq = 0, cnt = 0;
+        TreeNode *prev = NULL;
+        
+        helper(root, ans, max_freq, prev, cnt);
+        
+        if(cnt == max_freq) ans.push_back(prev->val);
+        
+        return ans;
+    }
+    
+private:
+    void helper(TreeNode *root, vector<int> &ans, int &max_freq, TreeNode *&prev, int &cnt) {
+        if(!root) return;
+        
+        helper(root->left, ans, max_freq, prev, cnt);
+        
+        if(prev && prev->val == root->val) {
+            if(++cnt > max_freq) ans.clear(), max_freq = cnt;
+        }
+        else if(prev && prev->val != root->val) {
+            if(cnt == max_freq) ans.push_back(prev->val);
+            cnt = 1;
+        }
+        else max_freq = cnt = 1;
+        
+        prev = root;
+        
+        helper(root->right, ans, max_freq, prev, cnt);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C# - iterative 1 pass - O(1) space - O(n) time - with clear explanation
+    public int[] FindMode(TreeNode root) 
+    {
+        if (root == null) return new int[0];
+        
+        TreeNode node = root;
+        Stack<TreeNode> stack = new Stack<TreeNode>();
+        
+        int currVal = root.val - 1;
+        int currCnt = 0;
+        int maxCnt = 0;
+        HashSet<int> maxVals = new HashSet<int>();
+        
+        while (node != null || stack.Count > 0)
+        {
+            if (node != null)
+            {
+                stack.Push(node);
+                node = node.left;
+            }
+            else
+            {
+                TreeNode x = stack.Pop();
+
+                // --------------------------------------------
+                // visit
+                if (x.val != currVal) currCnt = 0;
+                
+                currCnt++;
+                currVal = x.val;
+                
+                if (currCnt == maxCnt)
+                {
+                    maxVals.Add(currVal);
+                }
+                else if (currCnt > maxCnt)
+                {
+                    maxCnt = currCnt;
+                    maxVals.Clear();
+                    maxVals.Add(currVal);
+                }
+                // end visit
+                // --------------------------------------------
+
+                // go right
+                node = x.right;
+            }
+        }
+        
+        return maxVals.ToArray();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java 8ms O(n) Time O(n) Space
+    int highestCount, numWithHighestCount, i;
+    Map<Integer, Integer> valToNumberAppearance  = new HashMap<Integer, Integer>();
+    
+    public int[] findMode(TreeNode root) {
+        populateMap(root);
+        int[] res = new int[numWithHighestCount];
+        for (Map.Entry<Integer, Integer> entry : valToNumberAppearance.entrySet()) 
+            if (entry.getValue() == highestCount) res[i++] = entry.getKey();
+        return res;
+    }
+    
+    public void populateMap(TreeNode cur) {
+        Integer curOcurrences = valToNumberAppearance.getOrDefault(cur.val, 0);
+        valToNumberAppearance.put(cur.val, ++curOcurrences);
+        if (curOcurrences > highestCount) {
+            highestCount = curOcurrences;
+            numWithHighestCount = 1;
+        }
+        else if (curOcurrences == highestCount) numWithHighestCount++;
+        if (cur.left != null) populateMap(cur.left);
+        if (cur.right != null) populateMap(cur.right);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java inorder recursive solution beats 99% with explanation
+// Duplicated number of this node must be the largest in left subtree (right most) or the smallest in the right subtree (left most)
+// Right most in left tree, visited just before this node
+// Left most in right tree, visited just after this node */
+    
+    int preNode = 0;
+    int max = 0;
+    int currMax = 0;
+    public int[] findMode(TreeNode root) {
+        HashSet<Integer> set = new HashSet<>();
+        findMode_helper(root, set);
+        Iterator<Integer> it = set.iterator();
+        int[] result = new int[set.size()];
+        int i = 0;
+        while(it.hasNext()) {
+            result[i] = it.next();
+            i++;
+        }
+        return result;
+    }
+    
+    private void findMode_helper(TreeNode root, HashSet<Integer> set) {
+        if (root == null) return;
+        findMode_helper(root.left, set); // after visiting left subtree, preNode is the right most node in the left subtree
+        if (preNode == root.val) {
+            currMax++;
+        } else {
+            currMax = 1;
+        }
+        if (currMax >= max) {
+            if (currMax > max) {
+                set.clear();
+            }
+            max = currMax;
+            set.add(root.val);
+        }
+        preNode = root.val; // this node will be visited just before the left most node in the right subtree
+        findMode_helper(root.right, set);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Straight forward solution
+public int[] findMode(TreeNode root) {
+        if(root == null) return new int[0];
+        List<Integer> res = new ArrayList<Integer>();
+        HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+        helper(res, root, map);
+        
+        HashSet<Integer> set = new HashSet<Integer>(res);
+        int[] ret = new int[set.size()];
+        Iterator it = set.iterator();
+        int i = 0;
+        while(it.hasNext()){
+            ret[i ++] = (int)it.next();
+        }
+        return ret;
+    }
+    public void helper(List<Integer> res, TreeNode root, HashMap<Integer, Integer> map){
+        if(root == null) return ;
+        helper(res, root.left, map);
+        
+        map.put(root.val, map.getOrDefault(root.val, 0) + 1);
+        if(res.size() == 0 || map.get(res.get(0)) == map.get(root.val)){
+            res.add(root.val);
+        }else if(map.get(root.val) > map.get(res.get(0))){
+            res.clear();
+            res.add(root.val);
+        }
+        
+        helper(res, root.right, map);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python easy understand solution
+def findMode(self, root):
+    """
+    :type root: TreeNode
+    :rtype: List[int]
+    """
+    if not root:return []
+    stack=[root]
+    dic={}
+    while stack:
+        node=stack.pop()
+        dic[node.val]=dic.get(node.val,0)+1
+        if not node.left and not node.right:continue
+        if node.left:
+            stack.append(node.left)
+        if node.right:
+            stack.append(node.right)
+    max_val=max(dic.values())
+    result=[]
+    for key in dic.keys():
+        if dic[key]==max_val:
+            result.append(key)
+    return result
+
+----------------------------------------------------------------------------------------------------
+C++ O(1) space, no recursion, no stack, 12ms, beats 98.5%
+vector<int> findMode(TreeNode* root) {
+    vector<int> modes;
+    
+    int count = 0;
+    int countMax = 0;
+    bool hasVisited = false;
+    int preVal;
+
+    TreeNode* cur = root;
+    TreeNode* pre = NULL;
+    while (cur) {
+        if (cur->left) {
+            pre = cur->left;
+            while (pre->right && pre->right != cur) {
+                pre = pre->right;
+            }
+
+            if (pre->right) {
+                pre->right = NULL;
+
+                if (hasVisited) {
+                    if (preVal == cur->val) {
+                        ++count;
+                    }
+                    else {
+                        preVal = cur->val;
+                        count = 1;
+                    }
+
+                    if (countMax < count) {
+                        countMax = count;
+                        modes.clear();
+                        modes.push_back(cur->val);
+                    }
+                    else if (countMax == count) {
+                        modes.push_back(cur->val);
+                    }
+                }
+                else {
+                    count = countMax = 1;
+                    preVal = cur->val;
+                    modes.push_back(cur->val);
+                    hasVisited = true;
+                }
+
+                cur = cur->right;
+            }
+            else {
+                pre->right = cur;
+                cur = cur->left;
+            }
+        }
+        else {
+            if (hasVisited) {
+                if (preVal == cur->val) {
+                    ++count;
+                }
+                else {
+                    preVal = cur->val;
+                    count = 1;
+                }
+
+                if (countMax < count) {
+                    countMax = count;
+                    modes.clear();
+                    modes.push_back(cur->val);
+                }
+                else if (countMax == count) {
+                    modes.push_back(cur->val);
+                }
+            }
+            else {
+                count = countMax = 1;
+                preVal = cur->val;
+                modes.push_back(cur->val);
+                hasVisited = true;
+            }
+
+            cur = cur->right;
+        }
+    
+    }
+
+    return modes;
+}
+
+
+----------------------------------------------------------------------------------------------------
+very easy to understand 4ms O(1) solution with detailed explanation
+public class Solution {
+     int size;
+     int count;
+     TreeNode pre;
+     int local_count;
+    
+    public  int[] findMode(TreeNode root) {
+        if (root == null) {
+            return new int[0];
+        }
+        
+        size = 0;
+        count = 0;
+        local_count = 0;
+        
+        helper(root, null);
+        int[] res = new int[size];
+        local_count = 0; // reset the local_count var
+        helper(root, res);
+        
+        return res;
+    }
+    
+    private void helper(TreeNode cur, int[] res) {
+        if (cur == null) {
+        	return;
+        }
+        
+        helper(cur.left, res);
+        
+        if (pre != null && pre.val == cur.val) {
+        	local_count++;
+        }  else {
+        	local_count = 1;
+        }
+        
+       // only in the first pass, we calculate the count and size
+        if (res == null) {
+        	if (local_count > count) {
+        		count = local_count;
+        		size = 0;
+        	}
+        	if (local_count == count) {
+        		size++;
+        	}
+        }
+        
+        if (res != null && local_count == count) {
+            res[--size] = cur.val;
+        }
+        
+        pre = cur;
+        
+        helper(cur.right, res);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

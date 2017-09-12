@@ -1,0 +1,666 @@
+My short c++ solution, O(1) space, and O(n) time
+
+Put each number in its right place.
+
+For example:
+
+When we find 5, then swap it with A[4].
+
+At last, the first place where its number is not right, return the place + 1.
+
+    class Solution
+    {
+    public:
+        int firstMissingPositive(int A[], int n)
+        {
+            for(int i = 0; i < n; ++ i)
+                while(A[i] > 0 && A[i] <= n && A[A[i] - 1] != A[i])
+                    swap(A[i], A[A[i] - 1]);
+            
+            for(int i = 0; i < n; ++ i)
+                if(A[i] != i + 1)
+                    return i + 1;
+            
+            return n + 1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my O(n) time, O(1) space solution
+## Share my O(n)/O(1) solution ##
+
+----------
+The basic idea is ***for any k positive numbers (duplicates allowed), the first missing positive number must be within [1,k+1]***. The reason is like you put k balls into k+1 bins, there must be a bin empty, the empty bin can be viewed as the missing number. 
+
+----------
+
+ 1. Unfortunately, there are 0 and negative numbers in the array, so firstly I think of using partition technique (used in quick sort) to put all positive numbers together in one side. This can be finished in O(n) time, O(1) space. 
+ 2. After partition step, you get all the positive numbers lying within A[0,k-1]. Now, According to the basic idea, I infer the first missing number must be within [1,k+1]. I decide to use A[i] (0<=i<=k-1) to indicate whether the number (i+1) exists. But here I still have to main the original information A[i] holds. Fortunately, A[i] are all positive numbers, so I can set them to negative to indicate the existence of (i+1) and I can still use abs(A[i]) to get the original information A[i] holds.
+ 3. After step 2, I can again scan all elements between A[0,k-1] to find the first positive element A[i], that means (i+1) doesn't exist, which is what I want.
+
+----------
+
+     public int firstMissingPositive(int[] A) {
+        int n=A.length;
+        if(n==0)
+            return 1;
+        int k=partition(A)+1;
+        int temp=0;
+        int first_missing_Index=k;
+        for(int i=0;i<k;i++){
+            temp=Math.abs(A[i]);
+            if(temp<=k)
+                A[temp-1]=(A[temp-1]<0)?A[temp-1]:-A[temp-1];
+        }
+        for(int i=0;i<k;i++){
+            if(A[i]>0){
+                first_missing_Index=i;
+                break;
+            }
+        }
+        return first_missing_Index+1;
+    }
+    
+    public int partition(int[] A){
+        int n=A.length;
+        int q=-1;
+        for(int i=0;i<n;i++){
+            if(A[i]>0){
+                q++;
+                swap(A,q,i);
+            }
+        }
+        return q;
+    }
+    
+    public void swap(int[] A, int i, int j){
+        if(i!=j){
+            A[i]^=A[j];
+            A[j]^=A[i];
+            A[i]^=A[j];
+        }
+    }
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+----------------------------------------------------------------------------------------------------
+O(1) space Java Solution
+The key here is to use swapping to keep constant space and also make use of the length of the array, which means there can be at most n positive integers. So each time we encounter an valid integer, find its correct position and swap. Otherwise we continue.
+
+    public class Solution {
+        public int firstMissingPositive(int[] A) {
+            int i = 0;
+            while(i < A.length){
+                if(A[i] == i+1 || A[i] <= 0 || A[i] > A.length) i++;
+                else if(A[A[i]-1] != A[i]) swap(A, i, A[i]-1);
+                else i++;
+            }
+            i = 0;
+            while(i < A.length && A[i] == i+1) i++;
+            return i+1;
+        }
+        
+        private void swap(int[] A, int i, int j){
+            int temp = A[i];
+            A[i] = A[j];
+            A[j] = temp;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A very nice solution (from Ants Aasma &#64;stackoverflow)
+time complexity is O(N) and space complexity is O(1). <br>
+Link: http://stackoverflow.com/questions/1586858/find-the-smallest-integer-not-in-a-list <br>
+Posted by Ants Aasma on Oct 20 '09.
+
+The code is pasted here: <br>
+
+    #Pass 1, move every value to the position of its value
+    for cursor in range(N): 
+        target = array[cursor]
+        while target < N and target != array[target]:
+            new_target = array[target]
+            array[target] = target
+            target = new_target
+    
+    #Pass 2, find first location where the index doesn't match the value
+    for cursor in range(N):
+        if array[cursor] != cursor:
+            return cursor
+    return N
+
+----------------------------------------------------------------------------------------------------
+My c++ solution (4 ms)
+    class Solution {
+    public:
+        int firstMissingPositive(vector<int>& nums) {
+            for(int i=0; i<nums.size(); i++){
+                if(i+1==nums[i]) continue;
+                int x = nums[i];
+                while(x>=1 && x<=nums.size() && x!=nums[x-1]){
+                    swap(x, nums[x-1]);
+                }
+            }
+            for(int i=0; i<nums.size(); i++){
+                if(i+1!=nums[i])    return i+1;
+            }
+            return nums.size()+1;
+        }
+    };
+
+Since we can not use extra space, so thinking about using the nums vector itself to record a positive number occurred. 
+
+
+----------------------------------------------------------------------------------------------------
+Beat 100% Fast Elegant Java Index-Based Solution with Explanation
+The basic idea is to traversal and try to move the current value to position whose index is exactly the value (swap them). Then travelsal again to find the first unusal value, which can not be corresponding to its index.
+
+    public int firstMissingPositive(int[] nums) {
+
+		int i = 0, n = nums.length;
+		while (i < n) {
+            // If the current value is in the range of (0,length) and it's not at its correct position, 
+            // swap it to its correct position.
+            // Else just continue;
+			if (nums[i] >= 0 && nums[i] < n && nums[nums[i]] != nums[i])
+				swap(nums, i, nums[i]);
+			else
+				i++;
+		}
+		int k = 1;
+
+        // Check from k=1 to see whether each index and value can be corresponding.
+		while (k < n && nums[k] == k)
+			k++;
+
+        // If it breaks because of empty array or reaching the end. K must be the first missing number.
+		if (n == 0 || k < n)
+			return k;
+		else   // If k is hiding at position 0, K+1 is the number. 
+			return nums[0] == k ? k + 1 : k;
+
+	}
+
+	private void swap(int[] nums, int i, int j) {
+		int temp = nums[i];
+		nums[i] = nums[j];
+		nums[j] = temp;
+	}
+
+----------------------------------------------------------------------------------------------------
+O(n) time, O(1) space C++
+Idea is to swap each positive integer you encounter to its "rightful" place at index (x-1) where x is the integer. It's O(n) because you visit each integer in at most 2 unique loop iterations. 
+
+    class Solution {
+    public:
+        int firstMissingPositive(int A[], int n) {
+            int i,j;
+            for(i=0;i<n;i++){
+                int cur=A[i];
+                // if in place or non-pos or out of bounds, skip.
+                if(cur==i+1||cur<=0||cur>n)continue;
+                swap(A[i],A[cur-1]);
+                // if not the same, then reprocess it.
+                if(A[i]!=A[cur-1])
+                    i--;
+            }
+            
+            for(i=0;i<n;i++)
+                if(A[i]!=i+1) 
+                    return i+1;
+            return n+1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear Java solution
+    public int firstMissingPositive(int[] nums) {
+        int start = 0;
+        int end = nums.length - 1;
+        while (start <= end) {
+            int index = nums[start] - 1;
+            if (index == start)
+                start++;
+            else if (index < 0 || index > end || nums[start] == nums[index])
+                nums[start] = nums[end--];
+            else {
+                nums[start] = nums[index];
+                nums[index] = index + 1;
+            }
+        }
+        return start + 1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise O(N) solution
+    // ignore all the negative, > n
+    // put the other value back to its order position A[A[i]-1]
+    int firstMissingPositive(int A[], int n) {
+        if (n == 0) return 1;
+        for (int i = 0; i != n; ) {
+            if (A[i] != i + 1 && A[i] > 0 && A[i] <= n && A[A[i]-1] != A[i])
+                swap(A[i], A[A[i] - 1]);
+            else ++i;
+        }
+        
+        for (int i = 0; i != n; ++i)
+            if (A[i] != i + 1) return i + 1;
+        return n+1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python O(1) space,  O(n) time solution with explanation
+     def firstMissingPositive(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+         Basic idea:
+        1. for any array whose length is l, the first missing positive must be in range [1,...,l+1], 
+            so we only have to care about those elements in this range and remove the rest.
+        2. we can use the array index as the hash to restore the frequency of each number within 
+             the range [1,...,l+1] 
+        """
+        nums.append(0)
+        n = len(nums)
+        for i in range(len(nums)): #delete those useless elements
+            if nums[i]<0 or nums[i]>=n:
+                nums[i]=0
+        for i in range(len(nums)): #use the index as the hash to record the frequency of each number
+            nums[nums[i]%n]+=n
+        for i in range(1,len(nums)):
+            if nums[i]/n==0:
+                return i
+        return n
+
+----------------------------------------------------------------------------------------------------
+Why most  people solve this problem under the assumption A&#91;i&#93; &lt;= n
+I find that most solutions online assume that array A itself as a hashtable.
+
+My question is how can you guarantee all element in A is not greater than n,which is the array's size.
+
+??????
+
+for example
+
+A = { 7, 8 , 9,  11,12 }, n = 5
+
+all A[i] is greater than n
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with integers encode trick explained
+This is not the most concise solution but it has one trick that may be useful for many beginners that allows to encode two integers into one with possibility to decode it to both integers back. Once you know it you will always use it as it allows to avoid tuples of integers (as java lacks such structure in its libraries) and use just one integer to represent two.
+
+So, if we have two integers `k` and `m` and `m` is always less than some `n` - we can encode both into one integer using formula:
+
+    r = k * n + m
+    (m < n)
+
+and now to retrieve them use the following:
+
+    k = r / n
+    m = r % n
+
+And just to repeat: this trick is possible only if `m` is strictly less than `n`
+
+Using this trick we can solve many interview tasks that require constant space and have some array which contains integers less than size or array `n`. If this array requires some extra information for every item, but we cannot loose the initial item value - this can be solved either creating new array (simple) or just encoding initial value and new value directly in the array.
+
+**Turning back to the task:** 
+
+We want to "seriallize" all values to their indices. So "1" will come to `nums[0]`, "2" - `nums[1]` etc. After this we can easily find the "gap". This is an easy task if we could use extra memory for another array. But we cannot. So we can use the "encoding" scheme offered above:
+
+1.clean every non-relevant item from the array to match the restriction `m < n`:
+ 
+
+    int n = nums.length;
+    for (int i = 0; i < n; i++) {
+         if (nums[i] <= 0 || nums[i] > n) nums[i] = 0;
+    }
+2.Encode all items to their matching positions:
+
+    int m = n + 1;
+    for (int i = 0; i < n; i++) {
+        // retrieve the value that initially was at index i (it could be overwritten by encoding)
+        int prev = nums[i] % m;
+        if (prev > 0) 
+            // encode it using formula k * n + m, where for 'm' we also use decoding schema
+            nums[prev - 1] = (prev * m) + nums[prev - 1] % m;
+    }
+
+3.Find the gap:
+
+    for (int i = 0; i < n; i++) {
+        if (nums[i] / m != i + 1) return i + 1;
+    }
+
+All in one:
+
+    public int firstMissingPositive(int[] nums) {
+        int n = nums.length;
+        int m = n + 1;
+        for (int i = 0; i < n; i++) {
+            if (nums[i] <= 0 || nums[i] > n) nums[i] = 0;
+        }
+        for (int i = 0; i < n; i++) {
+            int prev = nums[i] % m;
+            if (prev > 0) 
+                nums[prev - 1] = (prev * m) + nums[prev - 1] % m;
+        }
+        for (int i = 0; i < n; i++) {
+            if (nums[i] / m != i + 1) return i + 1;
+        }
+        return m;
+    }
+
+----------------------------------------------------------------------------------------------------
+(C and Python)Modify the array to do it in O(n) time and O(1) space
+If there are queries after each insert operation, [disjoint-set][1] is able to answer each query in `O(log(alpha(n)))` time and `O(max(element in the array))` space,  but for this problem, only one query after all the insertion finished,  the time complexity should be `O(n)` and `O(1)` space, some simple method is in need.
+
+Even though it is not a good idea to modify the value of the origin array, this is the only space that is available, which means it must be made used of.  Then if it is possible to sort the element which is between `1...n`, then just loop over the sorted array, the job is done.
+
+Comparison  sort is `O(n logn)`, it is too slow. So the `bucket sort` is the only way. As only the elements between 1...n are useful, each element `w` should be put into the `w th` position of the array. As it is possible there is some other element `v` in the `w th` position, take the `v` out before overwriting and then iteratively use the same logic on `v` and go on.
+
+    def firstMissingPositive(self, A):
+      n = len(A)
+      for index in xrange(n):
+        element = A[index]
+        while True:
+          if element <= 0 or element > n or element == A[element - 1]:
+            break
+          A[element - 1], element = element, A[element - 1]
+      for index in xrange(n):
+        if A[index] != index + 1:
+          return index + 1
+      return n + 1
+
+Time complexity:  each element is looped 2 times and swapped 1 time, so the whole time compexity is `O(n)`
+
+Space: `O(1)` apparently
+
+---
+
+A pure recursive `C` solution, which has the same time and space complexity.
+
+    void rotate(int A[], int n, int start){
+      if(start <= 0 || start > n){
+        return;
+      }
+      if(A[start - 1] == start){
+        return;
+      }
+      int nxt = A[start - 1];
+      A[start - 1] = start;
+      rotate(A, n, nxt);
+    }
+    
+    int firstMissingPositive(int A[], int n) {
+      int i;
+      for(i = 0; i < n; ++i){
+        rotate(A, n, A[i]);
+      }
+      for(i = 0; i < n; ++i){
+        if(A[i] != i + 1){
+          return i + 1;
+        }
+      }
+      return n + 1;
+    }
+
+
+
+  [1]: http://en.wikipedia.org/wiki/Disjoint-set_data_structure
+
+----------------------------------------------------------------------------------------------------
+Sharing my 2ms C solution
+In the worst case, this will take 2N iterations.  Satisfies O(N) runtime and O(1) space requirements. 
+
+I got the idea from doing this in JavaScript, first, by popping off any out-of-bounds or duplicate values after moving them to the end of the array.  In the end I got rid of the pop operation and used a partition index, instead.  The neat thing is that it doesn't require a second loop to find the answer. 
+
+
+    void swap(int* nums, int j, int k) {
+        int tmp = nums[k];
+        nums[k] = nums[j];
+        nums[j] = tmp;
+    }
+    
+    int firstMissingPositive(int* nums, int numsSize) {
+        int i = 0;
+        int p = numsSize;
+
+        while (i < p) {
+            if (nums[i] == i+1)  ++i; // already in the right place,
+            else if (nums[i] <= 0 || nums[i] > p || nums[i] == nums[nums[i]-1]) {
+                swap(nums, i, --p); // out of range or duplicate, put it at the end
+            } else {
+                swap(nums, i, nums[i]-1); // within range; put it in the right place.
+            }
+        }
+
+        return p + 1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Accepted - no swap, just use &quot;push&quot;
+number i should be in index i-1 of nums.
+keep pushing number A into its right place, and push out the existing number B from this place and continue push number B into its right place again.
+
+i.e. start from the first number 3
+ 
+Index:0, 1, 2, 3,  4
+
+Array: 3, 4, 5, 1, -1  curr number 3
+
+Array: 3, 4, 3, 1, -1 push 3 to index 2, the number being pushed out is 5
+
+Array: 3, 4, 3, 1, 5  push 5 to index 4, the number being pushed out is -1, so we stop.
+
+Array: 3, 4, 3, 4, 5  next number is 4, push 4 to index 3, the number being pushed out is 1
+
+Array: 1, 4, 3, 4, 5  push 1 to index 0, the number being pushed out is 3
+
+Array: 1, 4, 3, 4, 5  since 3 is already at index 2 (right place), we stop
+
+check next number is 3 (already right place), then 4 (right place), then 5 (right place), stop.
+
+Now we compare each number with its index, should be number == index+1, otherwise the number is the first missing positive.
+
+    public class Solution {
+        public int firstMissingPositive(int[] nums) {
+            // nums[i] -> i+1
+            int next;
+            for (int i = 0 ; i < nums.length; i++) {
+                int curr = nums[i];
+                if (curr > 0 && curr != i+1 && curr <= nums.length) {
+                    do {
+                        next = nums[curr-1];
+                        nums[curr-1] = curr;
+                        curr = next;
+                    } while (curr > 0 && curr <= nums.length && nums[curr-1] != curr);
+                }
+            }
+            int j;
+            for (j = 0; j < nums.length; j++) {
+                if (nums[j] != j+1)
+                    break;
+            }
+            return j+1;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A hashmap based solution, but in-place
+A[] is an array, but we can also treat it as an hashmap,
+If A[i] > 0, it mean i+1 exist,
+If A[i] < 0,  it mean i + 1 does not.
+Here is the code
+
+    class Solution {
+    public:
+        int firstMissingPositive(int A[], int n) {
+            /* first iteration: change all the value out of bound to (n + 1) */
+        	const int out_of_bound = n + 1;
+        	for (int i = 0; i < n; ++i)
+        		if (A[i] <= 0)
+        			A[i] = out_of_bound;
+    
+    		/* second iteration: construct a hash map. map<int, int>, first argument is index
+    		 * second argument: if positive, it exist, else, it doesn't. e.g. A[0] = 4,
+    		 * A[0] (i.e. 1) exist */
+    	 	for (int i = 0; i < n; ++i) {
+    	 		int abs_i = abs(A[i]);
+    	 		if (abs_i <= n)
+    	 			A[abs_i-1] = -abs(A[abs_i-1]);
+    	 	}
+    
+    	 	/* third iteration: check the first positive value in A[] */
+    	 	for (int i = 0; i < n; ++i) {
+    	 		if (A[i] > 0)
+    	 			return i + 1; 
+    	 	}
+    	 	return n + 1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java - simple solution - with documentation
+This code takes advantage of two insights: 
+
+ 1. Numbers greater then n can be ignored because the missing integer must be in the range 1..n+1
+ 2. If each cell in the array were to contain positive integers only, we can use the negative of the stored number as a flag to mark something (in this case the flag indicates this index was found in some cell of the array)
+
+        public class Solution {
+        public int firstMissingPositive(int[] nums) {
+            int n = nums.length;
+            
+            // 1. mark numbers (num < 0) and (num > n) with a special marker number (n+1) 
+            // (we can ignore those because if all number are > n then we'll simply return 1)
+            for (int i = 0; i < n; i++) {
+                if (nums[i] <= 0 || nums[i] > n) {
+                    nums[i] = n + 1;
+                }
+            }
+            // note: all number in the array are now positive, and on the range 1..n+1
+            
+            // 2. mark each cell appearing in the array, by converting the index for that number to negative
+            for (int i = 0; i < n; i++) {
+                int num = Math.abs(nums[i]);
+                if (num > n) {
+                    continue;
+                }
+                num--; // -1 for zero index based array (so the number 1 will be at pos 0)
+                if (nums[num] > 0) { // prevents double negative operations
+                    nums[num] = -1 * nums[num];
+                }
+            }
+            
+            // 3. find the first cell which isn't negative (doesn't appear in the array)
+            for (int i = 0; i < n; i++) {
+                if (nums[i] >= 0) {
+                    return i + 1;
+                }
+            }
+            
+            // 4. no positive numbers were found, which means the array contains all numbers 1..n
+            return n + 1;
+        }
+        }
+
+----------------------------------------------------------------------------------------------------
+As O(n) solution and O(1) space is must only way is to &quot;sort array in O(n) time with optimal space and time overheads&quot;
+It is certain that to get **O(n) time complexity** and to do in **constant space**  O(n) time complexity sorting technique need to be used, any of the following sorts counting sort, radix sort, bucket sort can be used. 
+
+As the input array can contain **negative integers**  counting sort may not be applied here as  we use keys as index in counting sort and it has memory overhead too, but when the input array has many **duplicates** then counting sort performs better it's good to discuss such trade offs with interviewer.
+
+Radix sort is a specific type of bucket sort, It starts with the top n-bit or n-digits and may sort those buckets using a radix sort until every entry is sorted. So if the elements in the input array are single digit integers in the **range [-9,9]** then essentially  radix sort and bucket sort are similar.
+
+Bucket sort is the best sorting technique that might be used here because when the **input is uniformly** **distributed over a range**(here the elements of the input array are in range [-9,9]) bucket sort performs in O(n) time complexity and O(1) space complexity.
+
+**Counting sort** -- simple buckets, simple processing, memory overhead, performs well when input has many duplicates.
+
+**Radix sort** -- simple buckets, sophisticated processing, speed overhead (and still need additional static memory)
+
+**Bucket sort** -- sophisticated buckets, simple processing, requires dynamic memory, good in average compared to counting and radix sorts.
+
+
+     class Solution {
+        public:
+            int firstMissingPositive(int A[], int n) {
+                for (int i = 0; i < n; ++i)
+                {
+                    int digit = A[i];
+                    while (digit <= n && digit > 0 && A[digit - 1] != digit)
+                    {
+                        swap(A[digit - 1], A[i]);
+                        digit = A[i];
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    if (A[i] != i + 1)
+                    {
+                        return i + 1;
+                    }
+                }
+                return n + 1;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Share my thoughts. 4ms soln.
+At beginning, I was thinking: 
+
+ 1. it requires O(n), means no sorting/binary searching. You should only go through the numbers then get the result.
+ 2. no extra memory, means you can not use bit vector to indicate if any number exists.
+
+So, the first idea came into my mind is bit manipulation. But, after tried and thought it again, bit manipulation doesn't help here. Because the numbers can be duplicated. Re-visited the problem, I found one critical point: it's asking the smallest missing positive number. It means I can reorder the numbers to let the nums[0]=1, nums[1]=2... etc. Actually, I spent more than 30 minutes on bit manipulation direction. Once I found the solution, it only took about 10 minutes to code.
+
+    class Solution {
+    public:
+    int firstMissingPositive(vector<int>& nums) {
+        int size=nums.size();
+        for(int i=0; i<size;){
+            if(nums[i]>0 && nums[i]<=size && nums[i]!=nums[nums[i]-1]){
+                swap(nums[i], nums[nums[i]-1]);
+            }
+            else{
+                ++i;
+            }
+        }
+        int i=0;
+        for(; i<size && nums[i]==i+1; ++i);
+        return i+1;
+    }};
+
+----------------------------------------------------------------------------------------------------
+Simple method with a little trick
+Firstly,the answer must be among [1..n+1]. so all numbers less than 0 or greater than n could be discared.(change them to 0).
+Then, if "i" appeared, we modify a[i-1] to -a[i-1]-1. In this way, we could do it with constant extra space.
+
+    class Solution {
+    public:
+        int firstMissingPositive(vector<int>& nums) {
+            vector<int> &a=nums;
+            int n=a.size();
+            if(n==0) return 1;
+            for(int i=0;i<n;i++) if(a[i]<0||a[i]>n) a[i]=0;
+            for(int i=0;i<n;i++)
+            {
+                if(a[i]==0 || a[i]==-1) continue;
+                int t=(a[i]>0)?(a[i]-1):(-a[i]-2);
+                if(a[t]>=0) a[t]=-a[t]-1;
+            }
+            for(int i=0;i<n;i++) if(a[i]>=0) return i+1;
+            return n+1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

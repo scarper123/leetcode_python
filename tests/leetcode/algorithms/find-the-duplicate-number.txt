@@ -1,0 +1,544 @@
+Find the maximum by binary search (recursion and iteration)
+Consider that each local maximum is one valid peak.
+My solution is to find one local maximum with binary search.
+Binary search satisfies the O(logn) computational complexity.
+
+Binary Search: recursion
+
+    class Solution {
+    public:
+
+    int findPeakElement(const vector<int> &num) {
+        return Helper(num, 0, num.size()-1);
+    }
+    int Helper(const vector<int> &num, int low, int high)
+    {
+        if(low == high)
+            return low;
+        else
+        {
+            int mid1 = (low+high)/2;
+            int mid2 = mid1+1;
+            if(num[mid1] > num[mid2])
+                return Helper(num, low, mid1);
+            else
+                return Helper(num, mid2, high);
+        }
+    }
+    };
+
+Binary Search: iteration
+
+    class Solution {
+    public:
+        int findPeakElement(const vector<int> &num) 
+        {
+            int low = 0;
+            int high = num.size()-1;
+            
+            while(low < high)
+            {
+                int mid1 = (low+high)/2;
+                int mid2 = mid1+1;
+                if(num[mid1] < num[mid2])
+                    low = mid2;
+                else
+                    high = mid1;
+            }
+            return low;
+        }
+    };
+
+Sequential Search:
+
+    class Solution {
+    public:
+        int findPeakElement(const vector<int> &num) {
+            for(int i = 1; i < num.size(); i ++)
+            {
+                if(num[i] < num[i-1])
+                {// <
+                    return i-1;
+                }
+            }
+            return num.size()-1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(logN) Solution JavaCode
+
+This problem is similar to Local Minimum. And according to the given condition, num[i] != num[i+1], there must exist a O(logN) solution. So we use binary search for this problem.
+
+ - If  num[i-1] < num[i] > num[i+1], then num[i] is peak
+ - If num[i-1] < num[i] < num[i+1], then num[i+1...n-1] must contains a peak
+ - If num[i-1] > num[i] > num[i+1], then num[0...i-1] must contains a peak
+ - If num[i-1] > num[i] < num[i+1], then both sides have peak
+(n is num.length)
+
+Here is the code
+
+    public int findPeakElement(int[] num) {    
+        return helper(num,0,num.length-1);
+    }
+    
+    public int helper(int[] num,int start,int end){
+        if(start == end){
+            return start;
+        }else if(start+1 == end){
+            if(num[start] > num[end]) return start;
+            return end;
+        }else{
+            
+            int m = (start+end)/2;
+            
+            if(num[m] > num[m-1] && num[m] > num[m+1]){
+    
+                return m;
+    
+            }else if(num[m-1] > num[m] && num[m] > num[m+1]){
+    
+                return helper(num,start,m-1);
+    
+            }else{
+    
+                return helper(num,m+1,end);
+    
+            }
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution and explanation using invariants
+I find it useful to reason about binary search problems using invariants. While there are many solutions posted here, neither of them provide (in my opinion) a good explanation about why they work. I just spent some time thinking about this and I thought it might be a good idea to share my thoughts.
+
+Assume we initialize left = 0, right = nums.length - 1. The invariant I'm using is the following:
+
+**nums[left - 1] < nums[left] && nums[right] > nums[right + 1]**
+
+That basically means that in the current interval we're looking, [left, right] the function started increasing to left and will eventually decrease at right. The behavior between [left, right] falls into the following 3 categories:
+
+1) nums[left] > nums[left + 1]. From the invariant, nums[left - 1] < nums[left] => left is a peak
+
+2) The function is increasing from left to right i.e. nums[left] < nums[left + 1] < .. < nums[right - 1] < nums[right]. From the invariant, nums[right] > nums[right + 1] => right is a peak
+
+3) the function increases for a while and then decreases (in which case the point just before it starts decreasing is a peak) e.g. 2 5 6 3 (6 is the point in question)
+
+
+As shown, if the invariant above holds, there is at least a peak between [left, right]. Now we need to show 2 things:
+
+I) the invariant is initially true. Since left = 0 and right = nums.length - 1 initially and we know that nums[-1] = nums[nums.length] = -oo, this is obviously true
+
+II) At every step of the loop the invariant gets reestablished. If we consider the code in the loop, we have mid = (left + right) / 2 and the following 2 cases:
+
+a) nums[mid] < nums[mid + 1]. It turns out that the interval [mid + 1, right] respects the invariant (nums[mid] < nums[mid + 1] -> part of the cond + nums[right] > nums[right + 1] -> part of the invariant in the previous loop iteration)
+
+b) nums[mid] > nums[mid + 1]. Similarly, [left, mid] respects the invariant (nums[left - 1] < nums[left] -> part of the invariant in the previous loop iteration and nums[mid] > nums[mid + 1] -> part of the cond)
+
+As a result, the invariant gets reestablished and it will also hold when we exit the loop. In that case we have an interval of length 2 i.e. right = left + 1. If nums[left] > nums[right], using the invariant (nums[left - 1] < nums[left]), we get that left is a peak. Otherwise right is the peak (nums[left] < nums[right] and nums[right] < nums[right + 1] from the invariant).
+
+    public int findPeakElement(int[] nums) {
+        int N = nums.length;
+        if (N == 1) {
+            return 0;
+        }
+       
+        int left = 0, right = N - 1;
+        while (right - left > 1) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] < nums[mid + 1]) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        
+        return (left == N - 1 || nums[left] > nums[left + 1]) ? left : right;
+    }
+
+
+I hope this makes things clear despite the long explanation. 
+
+
+----------------------------------------------------------------------------------------------------
+A concise standard binary search solution
+    int findPeakElement(const vector<int> &num) {
+        if (num.size() <= 1) return 0;
+        int mid = 0, l = 0, h = num.size() - 1;
+        
+        while (l < h) {
+            mid = (l + h) / 2;
+            if (num[mid] > num[mid + 1])
+                h = mid;
+            else if (num[mid] < num[mid + 1])
+                l = mid + 1;
+        }
+        
+        return l;
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing a more standard Binary Search C++ Solution
+    class Solution {
+    public:
+        int findPeakElement(const vector<int> &num) {
+            int low = 0, high = num.size() - 1;
+            while (low < high - 1) {
+                int mid = (low + high) / 2;
+                if (num[mid] > num[mid - 1] && num[mid] > num[mid + 1]) 
+                    return mid;
+                else if (num[mid] > num[mid + 1]) 
+                        high = mid - 1;
+                     else 
+                        low = mid + 1;    
+            }
+            return num[low] > num[high] ? low : high;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My clean and readable python solution
+    Basic Idea: Binary search
+
+    Elaboration: 
+     if an element(not the right-most one) is smaller than its right neighbor, then there must be a peak element on its right, because the elements on its right is either 
+       1. always increasing  -> the right-most element is the peak
+       2. always decreasing  -> the left-most element is the peak
+       3. first increasing then decreasing -> the pivot point is the peak
+       4. first decreasing then increasing -> the left-most element is the peak  
+
+       Therefore, we can find the peak only on its right elements( cut the array to half)
+
+       The same idea applies to that an element(not the left-most one) is smaller than its left neighbor.
+
+
+
+    Conditions:
+         1. array length is 1  -> return the only index 
+         2. array length is 2  -> return the bigger number's index 
+         3. array length is bigger than 2 -> 
+               (1) find mid, compare it with its left and right neighbors  
+               (2) return mid if nums[mid] greater than both neighbors
+               (3) take the right half array if nums[mid] smaller than right neighbor
+               (4) otherwise, take the left half
+    
+    Run time: O(logn)
+    Memory: constant
+    Test cases: 
+         [1]
+         [1,2]
+         [2,1]
+         [1,2,3]
+         [3,2,1]
+         [2,1,3]
+    
+    
+    def findPeakElement(self, nums):
+        left = 0
+        right = len(nums)-1
+    
+        # handle condition 3
+        while left < right-1:
+            mid = (left+right)/2
+            if nums[mid] > nums[mid+1] and nums[mid] > nums[mid-1]:
+                return mid
+                
+            if nums[mid] < nums[mid+1]:
+                left = mid+1
+            else:
+                right = mid-1
+                
+        #handle condition 1 and 2
+        return left if nums[left] >= nums[right] else right
+
+----------------------------------------------------------------------------------------------------
+Java Short and Neat Code - 10 line.
+        public int findPeakElement(int[] a) {
+            int low = 0, mid = 0, high = a.length - 1;
+            while(low < high) {
+                mid = low + (high-low)/2;
+                if(a[mid] < a[mid+1]) low = mid+1;
+                else high = mid;
+            }
+            return low;
+        }
+
+----------------------------------------------------------------------------------------------------
+Java - Binary-Search Solution
+public class Solution {
+    public int findPeakElement(int[] num) {
+        int l = 0;
+        int r = num.length-1;
+        int mid = r/2;
+        while (l<r){
+            if(num[mid]<num[mid+1]){
+                l=mid+1;
+            }else{
+                r=mid;
+            }
+            mid=(l+r)/2;
+        }
+        return l;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+General binary search in Java
+We want to check mid and mid+1 elements. `if(nums[mid] < nums[mid+1])`, `lo = mid + 1`, otherwise `hi = mid`.  The reason is that when there are even or odd number of elements, the mid element is always going to have a next one `mid+1`.  We don't need to consider the case when there is less than 1 element as it is not valid case for this problem.  Finally we return `lo` as it will always be a solution since it goes to `mid+1` element in the first case, which is larger.
+
+    public int findPeakElement(int[] nums) {
+        int n = nums.length;
+        int lo = 0, hi = n - 1;
+        while(lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if(nums[mid] < nums[mid+1]) {
+                lo = mid + 1; 
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
+    }
+
+----------------------------------------------------------------------------------------------------
+My O(log(n)) Java solution using binary search
+    public class Solution {
+        public int findPeakElement(int[] num) {
+            for (int i = 0, j = num.length - 1, mid = j / 2; i < j; mid = (i + j) / 2) {
+                if (mid == i) { return num[mid] > num[j] ? mid : j; }
+                i = num[mid] < num[mid + 1] ? mid : i;
+                j = num[mid] > num[mid + 1] ? mid : j;
+            }
+            return 0;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Incompatible types: int&#91;&#93; cannot be converted to List&lt;Integer&gt;
+I don't get why I got this error while I never used an array in my answer.
+
+I think they edited the question, because the beginning of the solution is "public int findPeakElement(List nums) {" and in the answers, I saw people using an array of int.
+
+I tried using an array it doesn't work either.
+
+----------------------------------------------------------------------------------------------------
+The following code looks ok. But the judge say I get the wrong ans for &#91;1,2&#93; input. ?
+        int findPeakElement(const vector<int> &num)
+       {
+            if( 0 == num.size())
+                return -1;
+            size_t start, end, mid;
+            start = 0;
+            end = num.size()-1;
+            while( start < (end-1))
+            {
+                mid = (start+end)/2;
+                if(num[mid-1]<num[mid] && num[mid]>num[mid+1])
+                    return mid;
+                else if (num[mid-1]<num[mid] && num[mid]<num[mid+1])
+                    start = mid;
+                else if (num[mid-1]>num[mid] && num[mid]>num[mid+1])
+                    end = mid;
+                else
+                    start = mid; // or end = mid;
+            }
+            return num[start]>num[end] ? start : end ;
+        }
+    	
+        void test_findPeakElement()
+       {
+    		
+            vector<int> num;
+            num.push_back(1);
+            num.push_back(2);
+    	    cout<<findPeakElement(num);
+        }
+
+----------------------------------------------------------------------------------------------------
+Binary search solution
+My binary search solution:
+
+    public int findPeakElement(int[] num) {
+        int n = num.length;
+        if (n <= 1) return 0;
+        // handle the first and last element in num[]
+        if (num[0] > num[1]) return 0;
+        if (num[n - 1] > num[n - 2]) return n - 1;
+        int left = 1, right = n - 2;
+        while (left < right) {
+            int mid = (left + right) >> 1;
+            if (num[mid] > num[mid - 1] && num[mid] > num[mid + 1]) {
+                return mid;
+            } else if (num[mid] > num[mid + 1]) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return left;
+    }
+
+----------------------------------------------------------------------------------------------------
+Neat Java Solution
+    public class Solution {
+        public int findPeakElement(int[] num) {
+            int low = 0;
+            int high = num.length - 1;
+            while (low < high) {
+                int mid = (low + high + 1)/2;
+                if (mid == 0 || num[mid] > num[mid-1]) {
+                    low = mid;
+                } else {
+                    high = mid-1;
+                }
+            }
+            return low;
+        }
+    }
+Mainly use binary search, change `mid` a little bit from the traditional one to avoid infinite loop. 
+
+----------------------------------------------------------------------------------------------------
+Simple 8 ms C++ Solution Using Binary Search
+   
+
+     class Solution {
+    public:
+        int findPeakElement(const vector<int> &num) {
+            int left = 0;
+            int right = num.size()-1;
+            while(left<right){
+                int mid = (right+left)/2;
+                if(num[mid]<num[mid+1]){
+                    left = mid+1;
+                }
+                else right = mid;
+            }
+            return right;
+        }
+    };
+
+This problem is a binary search,but we should do a litte change.
+
+the PeakElement is the largest in the neighbor,when our elment is small than the next one it means that the 
+peak is in the [mid+1,left],else the peak is in the [right,mid].
+
+----------------------------------------------------------------------------------------------------
+My logn answer in C++
+    class Solution {
+    public:
+        int findPeakElement(vector<int>& nums) 
+        {
+            if(nums.size() <= 1)
+                return 0;
+            return peakIndex(nums, 0, nums.size() - 1);
+        }
+        
+        int peakIndex(vector<int>& nums, int begin, int end)
+        {
+            if(begin > end)
+                return -1;
+            int mid = (begin + end) / 2;
+            int left = (mid - 1) < 0 ? INT_MIN : nums[mid - 1];
+            int right = (mid + 1) > (nums.size() - 1) ? INT_MIN : nums[mid + 1];
+            
+            if(nums[mid] > right && nums[mid] > left)
+                return mid;
+            if(mid > 0 && nums[mid - 1] > nums[mid])
+                return peakIndex(nums, begin, mid - 1);
+            else
+                return peakIndex(nums, mid + 1, end);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Tricky problem tricky solution !
+This problem seems easy .....  But I can not solve it quikly .... AS I can not figure out how to 
+
+find the refered peek element in O(logN) time.
+
+After seeing others' posts ....  I want to say it is so tricky to analyze it ......
+
+We just check the mid and mid+1 element and recheck the bigger side as the bigger side will have 
+
+the peak element for sure.
+
+Here is one C++ CODE:
+
+    class Solution {
+    public:
+        int findPeakElement(vector<int>& nums) {
+            int start=0, end=nums.size()-1;
+            while(end>start){
+                int mid=(start+end)/2;
+                if(nums[mid] < nums[mid+1])  start=mid+1;
+                else end=mid;
+            }
+            return start;
+        }
+    };
+
+
+Thanks to  @gangan  
+
+You can also use the brute force traversal to find the peek element.
+
+    class Solution {
+    public:
+        int findPeakElement(vector<int>& nums) {
+            for(int i=1; i<nums.size(); i++){
+                if(nums[i]<nums[i-1])
+                    return i-1;
+            }
+            return nums.size()-1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My simple C++ logn solution
+Since nums[-1] = nums[n] = INT_MIN, a valid solution is guaranteed to exist.
+
+    class Solution {
+    public:
+        int findPeakElement(vector<int>& nums) {
+            int l = 0, r = nums.size();
+            while (l+1 < r) {
+                int m = (l+r)/2;
+                if (m && nums[m] < nums[m-1])
+                    r = m;
+                else
+                    l = m;
+            }
+            return l;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java binary search solution
+    public static class Solution {
+      
+      public int findPeakElement(int[] nums) {
+          return helper(nums, 0, nums.length - 1);
+      }
+      
+      int helper(int[] a, int lo, int hi) {
+        if (lo > hi)
+          return -1;
+        
+        int mid = lo + (hi - lo) / 2;
+        
+        // if we are so lucky
+        if ((mid == 0 || a[mid - 1] < a[mid]) && (mid == a.length - 1 || a[mid] > a[mid + 1]))
+          return mid;
+        
+        if (a[mid] < a[mid + 1])
+          return helper(a, mid + 1, hi);
+        else
+          return helper(a, lo, mid - 1);
+      }
+    
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My binary search java solution

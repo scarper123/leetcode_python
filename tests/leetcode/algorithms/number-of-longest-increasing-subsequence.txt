@@ -1,0 +1,581 @@
+&#91;Java&#x2F;C++&#93; Simple dp solution with explanation
+    int findNumberOfLIS(vector<int>& nums) {
+        int n = nums.size(), res = 0, max_len = 0;
+        vector<pair<int,int>> dp(n,{1,1});            //dp[i]: {length, number of LIS which ends with nums[i]}
+        for(int i = 0; i<n; i++){
+            for(int j = 0; j <i ; j++){
+                if(nums[i] > nums[j]){
+                    if(dp[i].first == dp[j].first + 1)dp[i].second += dp[j].second;
+                    if(dp[i].first < dp[j].first + 1)dp[i] = {dp[j].first + 1, dp[j].second};
+                }
+            }
+            if(max_len == dp[i].first)res += dp[i].second;
+            if(max_len < dp[i].first){
+                max_len = dp[i].first;
+                res = dp[i].second;
+            }
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++, DP with explanation, O(n^2)
+class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        int n = nums.size(), maxlen = 1, ans = 0;
+        vector<int> cnt(n, 1), len(n, 1);
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < i; j++) {
+                if (nums[i] > nums[j]) {
+                    if (len[j]+1 > len[i]) {
+                        len[i] = len[j]+1;
+                        cnt[i] = cnt[j];
+                    }
+                    else if (len[j]+1 == len[i]) 
+                        cnt[i] += cnt[j];
+                }
+            }
+            maxlen = max(maxlen, len[i]);
+        }
+        // find the longest increasing subsequence of the whole sequence
+       // sum valid counts
+        for (int i = 0; i < n; i++) 
+            if (len[i] == maxlen) ans += cnt[i];
+        return ans;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Python DP with explanation (Beats 88%)
+class Solution(object):
+    def findNumberOfLIS(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        dp = [[1, 1] for i in range(len(nums))]
+        max_for_all = 1
+        for i, num in enumerate(nums):
+            max_len, count = 1, 0
+            for j in range(i):
+                if nums[j] < num:
+                    if dp[j][0] + 1 > max_len:
+                        max_len = dp[j][0] + 1
+                        count = 0 
+                    if dp[j][0] == max_len - 1:
+                        count += dp[j][1]
+            dp[i] = [max_len, max(count, dp[i][1])]
+            max_for_all = max(max_len, max_for_all)
+        return sum([item[1] for item in dp if item[0] == max_for_all])
+
+
+----------------------------------------------------------------------------------------------------
+Java with explanation, easy to understand
+class Solution {
+    public int findNumberOfLIS(int[] nums) {
+        if (nums == null || nums.length == 0)
+            return 0;
+        int[] maxLens = new int[nums.length];// length of longest increasing sequence start from i
+        int[] counts = new int[nums.length]; // number of length of longest increasing sequence start from i
+        int maxLen = 1; // length of longest increasing subsequnce
+        maxLens[nums.length-1] = 1;
+        counts[nums.length-1] = 1;
+
+        for(int i = nums.length -2; i>=0; i--){//Backward iteration, i is used as the first character
+            int curMax = 1;
+            int count = 1;
+            for(int j = i+1; j < nums.length; j++) {//j is used as the second character
+                if(nums[i] < nums[j]){//increasing number
+                    if (curMax == maxLens[j]+1)//means have another way to reach the same max length increasing sequence
+                        count += counts[j];  //Important: not ++
+                    else if (curMax < maxLens[j]+1){
+                        count = counts[j]; 
+                        curMax = maxLens[j]+1; 
+                    }
+                }
+            }
+            maxLens[i] = curMax;
+            counts[i] = count;
+            maxLen = Math.max(maxLen, curMax);
+        }
+        int count = 0;
+        for(int i = 0; i< maxLens.length; i++){//check each possible start position
+            if (maxLens[i] == maxLen)
+                count += counts[i];
+        }
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ memoization with explanation
+class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        if(nums.empty()) return 0;
+        vector<unordered_map<int,int>>ans{2, unordered_map<int,int>()};
+        for(int i = 0; i < nums.size(); i++)
+        {
+            for(int j = 0; j + 1 < ans.size(); j++)
+            {
+                for(auto & k : ans[j])
+                    if(nums[i] > k.first)
+                        ans[j+1][nums[i]] += k.second;
+                if(j == 0 ) ans[j][nums[i]]++;
+            }
+            if(ans.back().size() > 0)
+                ans.push_back(unordered_map<int,int>());
+        }
+        while(ans.back().empty()) ans.pop_back();
+        int ret = 0;
+        for(auto & e : ans.back())
+            ret += e.second;
+        return ret;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java solution, DP
+class Solution {
+    public int findNumberOfLIS(int[] nums) {
+        if (nums == null || nums.length == 0) return 0;
+        int n = nums.length;
+        
+        int[] dp = new int[n];
+        int[] next = new int[n];
+        dp[n - 1] = 1; next[n - 1] = 1;
+        int len = 1;
+        for (int i = n - 2; i >= 0; i--) {
+            int max = 0, cnt = 0;
+            for (int j = i + 1; j < n; j++){
+                if (nums[j] > nums[i]){
+                    max = Math.max(max, dp[j]);
+                }
+            }
+            dp[i] = max + 1;
+            len = Math.max(len, dp[i]);
+            if (dp[i] == 1) next[i] = 1;
+            else {
+                for(int j = i + 1; j < n; ++j){
+                    if(nums[j] > nums[i] && dp[j] == max){
+                        next[i] += next[j];
+                    }
+                }
+            }
+        }
+        
+        int res = 0;
+        for (int i = 0; i < n; ++i) {
+            if (dp[i] == len){
+                res += next[i];
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand java n^2, can anyone give a nlogn solution?
+public int findNumberOfLIS(int[] nums) {
+    if(nums.length<=1)return nums.length;
+    int[] lis = new int[nums.length];  //Length of LIS
+    int[] count = new int[nums.length]; //Number of solutions for current LIS length
+    Arrays.fill(lis,1);
+    Arrays.fill(count,1);
+    int max=0;
+    for (int i = 1; i <nums.length; i++) {
+        for (int j = 0; j <i; j++) {
+            if(nums[j]<nums[i]){ //increasing pair
+                if(lis[i]-1==lis[j]){//another same length, add number of solutions to it
+                    count[i]+=count[j];
+                }else if(lis[j]>=lis[i]){//a longer LIS found, reset the count to the new one
+                    lis[i]=lis[j]+1;
+                    count[i]=count[j];
+                }
+            }
+        }
+        max = Math.max(max, lis[i]);//update maximum
+    }
+    int res = 0;
+    for (int i = 0; i <nums.length; i++) { //count number of final results
+        if(lis[i]==max)res+=count[i];
+    }
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+Python DP with comments (runtime beats 87%)
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+java solution, hashmap
+class Solution {
+    public int findNumberOfLIS(int[] nums) {
+        List<Map<Integer, Integer>> maps = new ArrayList<>(nums.length);
+        int maxLength = 1;
+        for (int i = 0; i < nums.length; i++) {
+            Map<Integer, Integer> map = new HashMap<>();
+            maps.add(i, map);
+            map.put(1, 1);
+            for (int j = 0; j < i; j++) {
+                if (nums[j] < nums[i]) {
+                    for (Map.Entry<Integer, Integer> e : maps.get(j).entrySet()) {
+                        int l = e.getKey() + 1;
+                        maxLength = Math.max(maxLength, l);
+                        map.compute(l, (k, v) -> ((v == null) ? 0 : v) + e.getValue());
+                    }
+                }
+            }
+        }
+        int count = 0;
+        for (Map<Integer, Integer> map : maps) {
+            for (Map.Entry<Integer, Integer> e : map.entrySet()) {
+                if (e.getKey() == maxLength) {
+                    count += e.getValue();
+                }
+            }
+        }
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java DP using 2 arrays
+<p>The array dp&#91;i&#93; is used to keep the maximum length of increasing subsequence ending in i, while count&#91;i&#93; keeping the number of the sequence with maximum length ending in i. Straightforward DP.</p>
+<pre>public int findNumberOfLIS(int&#91;&#93; nums) {
+        if(nums.length&lt;=1){
+        return nums.length;
+        }
+        int&#91;&#93; dp = new int&#91;nums.length&#93;;
+        int&#91;&#93; count = new int&#91;nums.length&#93;;
+        dp&#91;0&#93; = 1;
+        count&#91;0&#93; = 1;
+        int result = 1;
+        for(int i = 1;i&lt;nums.length;i++){
+            dp&#91;i&#93; = 1;
+            for(int j = i-1;j&gt;=0;j--){
+                if(nums&#91;i&#93;&gt;nums&#91;j&#93;){
+                    dp&#91;i&#93; = Math.max(dp&#91;i&#93;,dp&#91;j&#93;+1);
+                    result = Math.max(dp&#91;i&#93;,result);
+                }
+            }
+            if(dp&#91;i&#93; == 1){
+                count&#91;i&#93; = 1;
+            }
+            else{
+                for(int j = i-1;j&gt;=0;j--){
+                    if(nums&#91;i&#93;&gt;nums&#91;j&#93; &amp;&amp; dp&#91;i&#93; == dp&#91;j&#93;+1){
+                        count&#91;i&#93;+=count&#91;j&#93;;
+                    }
+                }
+            }
+        }
+        int max = 0;
+        for(int i = 0;i&lt;dp.length;i++){
+            if(dp&#91;i&#93; == result){
+                max+=count&#91;i&#93;;
+            }
+        }
+        return max;
+    }</pre>
+
+----------------------------------------------------------------------------------------------------
+Java  DP and counts, with Explanation
+public static int findNumberOfLIS(int[] nums) {
+        if(nums.length <= 1) return nums.length;
+        Map<Integer, Integer> resultLengthToCounts = new HashMap<>();
+        resultLengthToCounts.put(1, 1);
+        int maxResultLength = 1;
+        int[] dp = new int[nums.length];
+        int[] counts = new int[nums.length];
+        dp[0] = 1;
+        counts[0] = 1;
+        for(int i = 1; i < nums.length; i++) {
+            int maxLen = 1;
+            int count = 0;
+            for(int j = i-1; j >= 0; j--) {
+                if(nums[i] > nums[j]) {
+                    if (1 + dp[j] == maxLen) count += counts[j];
+                    if (1 + dp[j] > maxLen) {
+                        count = counts[j];
+                        maxLen = 1 + dp[j];
+                    }
+                }
+            }
+            counts[i] = (count == 0 ? 1 : count);
+            dp[i] = maxLen;
+            resultLengthToCounts.put(maxLen, resultLengthToCounts.getOrDefault(maxLen, 0) + counts[i]);
+            maxResultLength = maxLen > maxResultLength ? maxLen : maxResultLength;
+        }
+        return resultLengthToCounts.get(maxResultLength);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+JAVA +DP(with table int&#91;&#93;&#91;&#93;)
+public int findNumberOfLIS(int[] nums) {
+    // make table
+    int[][] dic = new int[nums.length][nums.length];
+
+    // init for length of 1 subsequences
+    for(int i = 0; i< nums.length; i++) {
+        dic[0][i]= 1;
+    }
+    
+    // start with subsequence length 2
+    for(int size = 1; size < nums.length; size++) {
+        // full search(can be improved I think)
+        for(int i = 0; i < nums.length; i++) {
+            // if can not be reached frin size - 1, conintue
+            if(dic[size-1][i] == 0) {
+                continue;
+            }
+            // anchor. must be bigger.
+            int anchor = nums[i];
+            // count of the reachable length of (size-1) subsequence
+            int lastCount = dic[size-1][i];
+            // must be in right side !
+            for(int j = i + 1; j< nums.length; j++) {
+                // if it's bigger,
+                if(anchor < nums[j]) {
+                    // += the reachable counts
+                    dic[size][j] += lastCount;
+                }
+            }      
+        }
+    }
+    
+    // decreasing order.
+    for(int i = nums.length - 1 ; i >= 0 ; i--) {
+        int sum = 0;
+        for(Integer e : dic[i]) {
+            sum += e;
+        }
+        // if there is any reachable count, return it.
+        if(sum > 0 ) {
+            return sum;
+        }
+    }
+    return 0;
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++, DP method with detailed explanation
+    int findNumberOfLIS(vector<int>& nums) {
+        int m = nums.size();        
+        //dp[i][0]: store max length when end of subsequence is i;
+        //dp[i][1]: num of max length subsequence when end is i;
+        vector<vector<int>>dp(m, vector<int>(2, 1));
+        int mx = 1;//to record the max length of subsequence
+        for(int i = 1; i < m; i++){
+            for(int j = 0; j < i; j++){
+                if(nums[i] <= nums[j]) continue; 
+                if(dp[i][0] > dp[j][0] + 1) continue;
+                if(dp[i][0] < dp[j][0] + 1) {
+                    dp[i][0] = dp[j][0] + 1;
+                    dp[i][1] = dp[j][1];
+                }
+                else if(dp[i][0] == dp[j][0] + 1) dp[i][1] += dp[j][1];
+                mx = max(mx, dp[i][0]);
+            }
+        }
+        int cnt = 0;
+        for(int i = 0; i < m; i++){
+            if(dp[i][0] == mx) cnt += dp[i][1]; 
+        }
+        return cnt;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Finally, Java, nlogn.
+public int findNumberOfLIS(int[] nums) {
+    if(nums.length<=1)return nums.length;
+    int[] dp = new int[nums.length];
+    int sp=0;
+    ArrayList<ArrayList<Node>> sol = new ArrayList<>();
+    //main loop starts
+    for(int i=0;i<nums.length;i++){
+        int l = 0, r=sp;
+        while(l!=r){
+            int mid = (l+r)/2;
+            if(dp[mid]<nums[i])l=mid+1;
+            else r=mid;
+        }
+        dp[l]=nums[i];
+        if(l==sp)++sp;
+        collect(sol,nums[i],l);
+    }
+    int res = 0;
+    for(Node i:sol.get(sol.size()-1)){
+        res+=i.count;
+    }
+    return res;
+}
+
+public void collect(ArrayList<ArrayList<Node>> sol, int val, int dest){
+    if(dest==sol.size())sol.add(new ArrayList<Node>());
+    Node cur = new Node(val,0);
+    if(dest==0)cur.count=1;
+    else{
+        for(Node i:sol.get(dest-1)){
+            if(i.val<cur.val)cur.count+=i.count;
+        }
+    }
+    sol.get(dest).add(cur);
+}
+public static class Node {
+    int count, val;
+    public Node(int val, int count){
+        this.val=val;
+        this.count=count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Manipulating with List, no DP
+class Solution {
+    public int findNumberOfLIS(int[] nums) {
+        if (nums == null || nums.length == 0) return 0;
+        List<List<Node>> longest = new ArrayList<>();
+        
+        for (int i = 0; i < nums.length; i++) {
+            int index = BS(longest, nums[i]);
+            if (index == longest.size()) {
+                List<Node> list = new ArrayList<>();
+                list.add(new Node(nums[i], getCnt(longest, index, nums[i])));
+                longest.add(list);
+            } else {
+                List<Node> list = longest.get(index);
+                list.add(new Node(nums[i], getCnt(longest, index, nums[i])));
+            }
+        }
+        int res = 0;
+        List<Node> last = longest.get(longest.size() - 1);
+        for (int i = 0; i < last.size(); i++) res += last.get(i).cnt;
+        return res;
+    }
+    
+    private int getCnt(List<List<Node>> longest, int index, int target) {
+        if (index == 0) return 1;
+        int res = 0;
+        List<Node> pre = longest.get(index - 1);
+        for (int i = pre.size() - 1; i >= 0; i--) {
+            if (pre.get(i).val < target) res += pre.get(i).cnt;
+            else return res;
+         }
+        return res;
+    }
+    
+    private int BS(List<List<Node>> list, int target) {
+        int i = 0, j = list.size() - 1;
+        while (i <= j) {
+            int mid = i + (j - i) / 2;
+            int size = list.get(mid).size();
+            if (list.get(mid).get(size - 1).val >= target) j = mid - 1;
+            else i = mid + 1;
+        }
+        return i;
+    }
+    
+    public static class Node {
+        int val;
+        int cnt;
+        public Node(int val, int cnt) {
+            this.val = val;
+            this.cnt = cnt;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - DP
+class Solution {
+    func findNumberOfLIS(_ nums: [Int]) -> Int {
+        let count = nums.count
+        var result = 0
+        var maxLen = 0
+        var lens = [Int](repeatElement(0, count: count))
+        var counts = [Int](repeatElement(0, count: count))
+        
+        for i in 0..<count {
+            lens[i] = 1
+            counts[i] = 1
+            for j in 0..<i {
+                if nums[i] > nums[j] {
+                    if lens[i] == lens[j] + 1 {
+                        counts[i] += counts[j]
+                    } else if lens[i] < lens[j] + 1 {
+                        lens[i] = lens[j] + 1
+                        counts[i] = counts[j]
+                    }
+                }
+            }
+            
+            if lens[i] == maxLen {
+                result += counts[i]
+            } else if lens[i] > maxLen {
+                maxLen = lens[i]
+                result = counts[i]
+            }
+        }
+        
+        return result
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+class Solution:
+    def findNumberOfLIS(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        if nums == []:
+            return 0
+        LIS, cnt = [1]*len(nums), [1]*len(nums)
+        for i in range(1, len(nums)):
+            for j in range(0,i):
+                if nums[i] > nums[j]:
+                    if LIS[i] == LIS[j]+1:
+                        cnt[i] += cnt[j]
+                    elif LIS[i] < LIS[j]+1:
+                        cnt[i] = cnt[j]
+                        LIS[i] = LIS[j]+1
+        return sum((y for x,y in zip(LIS, cnt) if x==max(LIS)))
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple dp solution beats 100% now!
+    int findNumberOfLIS(vector<int>& nums) {
+        if(nums.size()<2) return nums.size();
+        vector<vector<int>> dp(nums.size(), {1, 1});
+        int len=1, res=0;
+        for(int i=1;i<nums.size();i++) {
+            for(int j=0;j<i;j++) {
+                if(nums[j]<nums[i]) {
+                    if(dp[i][0]<dp[j][0]+1) dp[i]={dp[j][0]+1, dp[j][1]};
+                    else if(dp[i][0]==dp[j][0]+1) dp[i][1]+=dp[j][1];
+                }
+            }
+            len=max(len, dp[i][0]);
+        }
+        for(int i=0;i<dp.size();i++) {
+            if(dp[i][0]==len) res+=dp[i][1];
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,549 @@
+Share some of my ideas.
+I have thought for a long time and got two ideas:
+
+ - If car starts at A and can not reach B. Any station between A and B 
+    can not reach B.(B is the first station that A can not reach.)
+ - If the total number of gas is bigger than the total number of cost. There must be a solution. 
+ - (Should I prove them?)
+
+Here is my solution based on those ideas:
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int start(0),total(0),tank(0);
+            //if car fails at 'start', record the next station
+            for(int i=0;i<gas.size();i++) if((tank=tank+gas[i]-cost[i])<0) {start=i+1;total+=tank;tank=0;}
+            return (total+tank<0)? -1:start;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My AC is O(1) space O(n) running time solution. Does anybody have posted this solution?
+I have got one solution to this problem. I am not sure whether somebody has already posted this solution.
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+    
+           int start = gas.size()-1;
+           int end = 0;
+           int sum = gas[start] - cost[start];
+           while (start > end) {
+              if (sum >= 0) {
+                 sum += gas[end] - cost[end];
+                 ++end;
+              }
+              else {
+                 --start;
+                 sum += gas[start] - cost[start];
+              }
+           }
+           return sum >= 0 ? start : -1;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Proof of &quot;if total gas is greater than total cost, there is a solution&quot;. C++
+We prove the following statement. 
+If sum of all `gas[i]-cost[i]` is greater than or equal to `0`, then there is a start position you can travel the whole circle. 
+Let `i` be the index such that the the partial sum 
+
+    gas[0]-cost[0]+gas[1]-cost[1]+...+gas[i]-cost[i]
+is the smallest, then the start position should be `start=i+1` ( `start=0` if `i=n-1`). Consider any other partial sum, for example,
+
+    gas[0]-cost[0]+gas[1]-cost[1]+...+gas[i]-cost[i]+gas[i+1]-cost[i+1]
+Since `gas[0]-cost[0]+gas[1]-cost[1]+...+gas[i]-cost[i]` is the smallest, we must have 
+
+    gas[i+1]-cost[i+1]>=0
+
+in order for `gas[0]-cost[0]+gas[1]-cost[1]+...+gas[i]-cost[i]+gas[i+1]-cost[i+1]` to be greater.
+The same reasoning gives that 
+
+     gas[i+1]-cost[i+1]>=0
+     gas[i+1]-cost[i+1]+gas[i+2]-cost[i+2]>=0
+     .......
+     gas[i+1]-cost[i+1]+gas[i+2]-cost[i+2]+...+gas[n-1]-cost[n-1]>=0
+What about for the partial sums that wraps around?
+
+    gas[0]-cost[0]+gas[1]-cost[1]+...+gas[j]-cost[j] + gas[i+1]-cost[i+1]+...+gas[n-1]-cost[n-1]
+    >=
+    gas[0]-cost[0]+gas[1]-cost[1]+...+gas[i]-cost[i] + gas[i+1]-cost[i+1]+...+gas[n-1]-cost[n-1]
+    >=0
+The last inequality is due to the assumption that the entire sum of `gas[k]-cost[k]` is greater than or equal to 0.
+So we have that all the partial sums 
+
+    gas[i+1]-cost[i+1]>=0,
+    gas[i+1]-cost[i+1]+gas[i+2]-cost[i+2]>=0,
+    gas[i+1]-cost[i+1]+gas[i+2]-cost[i+2]+...+gas[n-1]-cost[n-1]>=0,
+    ...
+    gas[i+1]-cost[i+1]+...+gas[n-1]-cost[n-1] + gas[0]-cost[0]+gas[1]-cost[1]+...+gas[j]-cost[j]>=0,
+    ...
+Thus `i+1` is the position to start. Coding using this reasoning is as follows:
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+            int n=gas.size();
+            int total(0),subsum(INT_MAX),start(0);
+            for(int i=0;i<n;++i){
+                total+=gas[i]-cost[i];
+                if(total<subsum) {
+                    subsum=total;
+                    start=i+1;
+                }
+            }
+            return (total<0) ? -1: (start%n); 
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Fully-commented O(n) C++ solution enabled by a single observation of mine
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int i, j, n = gas.size();
+    
+            /*
+             * If start from i, stop before station x -> no station k from i + 1 to x - 1 can reach x.
+             * Bcoz if so, i can reach k and k can reach x, then i reaches x. Contradiction.
+             * Thus i can jump directly to x instead of i + 1, bringing complexity from O(n^2) to O(n).
+             */
+            // start from station i
+            for (i = 0; i < n; i += j) {
+                int gas_left = 0;
+                // forward j stations
+                for (j = 1; j <= n; j++) {
+                    int k = (i + j - 1) % n;
+                    gas_left += gas[k] - cost[k];
+                    if (gas_left < 0)
+                        break;
+                }
+                if (j > n)
+                    return i;
+            }
+    
+            return -1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My one pass solution.
+    class Solution {
+    public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int size=gas.size();
+        int sum=0;
+        int res=0;
+        int total=0;
+        for(int i=0; i<size; ++i){
+            sum+=gas[i]-cost[i];
+            if(sum<0){
+                total+=sum;
+                sum=0;
+                res=i+1;
+            }
+        }
+        total+=sum;
+        return total<0?-1:res;
+    }};
+
+The idea is simple. 
+
+ 1. Whenever the sum is negative, reset it and let the car start from next point. 
+ 2. In the mean time, add up all of the left gas to total. If it's negative finally, return -1 since it's impossible to finish.
+ 3.  If it's non-negative, return the last point saved in res;
+
+
+----------------------------------------------------------------------------------------------------
+My O(N) time, O(1) extra space solution.
+    public class Solution {
+    public int canCompleteCircuit(int[] gas, int[] cost) {
+        for(int i = 0; i < gas.length; i++) {
+            gas[i] -= cost[i];
+        }
+        int sum = 0;
+        int result = 0;
+        int n = gas.length;
+        for(int i = 0; i < n * 2 - 1; i++) {
+            sum += gas[i % n];
+            if(sum < 0) {
+                result = i + 1;
+                if(result >= n) {
+                    return -1;
+                }
+                sum = 0;
+            }
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java Linear Solution with O(1) space, explanation and Math proof
+The algorithm is pretty easy to understand. Imagine we take a tour around this circle, the only condition that we can complete this trip is to have more fuel provided than costed in total. That's what the first loop does.
+
+If we do have more fuel provided than costed, that means we can always find a start point around this circle that we could complete the journey with an empty tank. Hence, we check from the beginning of the array, if we can gain more fuel at the current station, we will maintain the start point, else, which means we will burn out of oil before reaching to the next station, we will start over at the next station.
+
+    public int canCompleteCircuit(int[] gas, int[] cost) {
+        int tank = 0;
+        for(int i = 0; i < gas.length; i++)
+            tank += gas[i] - cost[i];
+        if(tank < 0)
+            return - 1;
+            
+        int start = 0;
+        int accumulate = 0;
+        for(int i = 0; i < gas.length; i++){
+            int curGain = gas[i] - cost[i];
+            if(accumulate + curGain < 0){
+                start = i + 1;
+                accumulate = 0;
+            }
+            else accumulate += curGain;
+        }
+        
+        return start;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise 8ms C++ solution with explanation
+The idea is to keep track of how much gas we are carrying as we enter each city. When a complete circuit is made, if the amount we're carrying is less than 0, making a circuit without running out of gas is impossible (the route takes more gas than it provides overall). However, if the carry is nonnegative at the end, the route is possible, so we just need to know where to start: we should start where the carry amount was at a minimum, because it will never be less than that on the rest of the route.
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int carry = 0;
+            pair<size_t, int> city_carry(0, 0);
+            for (size_t i = 1; i < gas.size(); ++i) {
+                carry += gas[i - 1] - cost[i - 1];
+                if (carry < city_carry.second) {
+                    city_carry = {i, carry};
+                }
+            }
+            carry += gas[gas.size()-1] - cost[gas.size()-1];
+            return carry >= 0 ? city_carry.first : -1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Possibly the MOST easiest approach, O(N), one variable, Python
+    def canCompleteCircuit(self, gas, cost):
+        """
+        :type gas: List[int]
+        :type cost: List[int]
+        :rtype: int
+        """
+        if len(gas) == 0 or len(cost) == 0 or sum(gas) < sum(cost):
+            return -1
+        position = 0
+        balance = 0 # current tank balance
+        for i in range(len(gas)):
+            balance += gas[i] - cost[i] # update balance
+            if balance < 0: # balance drops to negative, reset the start position
+                balance = 0
+                position = i+1
+        return position
+
+
+
+----------------------------------------------------------------------------------------------------
+11ms - c++ solution. visiting each station once.
+        
+    class Solution
+    {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost)
+        {
+            // Start from an arbitrarily chosen index, let's say 0.
+            // Accumulate the remaining gas (gas - cost).
+            //
+            // If there is enough gas to advance to the next station 
+            // then advance to the next station (i++). Continue to do this
+            // expanding the range of traveled stations until we have 
+            // circled back to the starting point(found a solution)
+            // or we have ran out of gas.
+            // 
+            // If we ran out of gas it means that we should have entered the
+            // range with more gas, so we expand the current range to the left
+            // in hope to accumulate enough gas.
+            // 
+            // And so on, expand to the right if we have gas, expand to the 
+            // left if we don't have gas.
+            // 
+            // Once we completed a circle we have the left side of the range (j)
+            // as the starting station index.
+            //
+    
+            if (gas.size() == 0 || cost.size() == 0 || gas.size() != cost.size())
+            {
+                return -1;
+            }
+    
+            int i = 0; // Right side of the range. 
+            int j = gas.size(); // Left side of the range
+            int crt = 0; // Current index to be added to the range.
+            // It might be confusing that the right side of the range starts
+            // at 0 and the left side starts at gas.size(). 
+            // The range of stations is given by the indexes:
+            // j, j+1, j+2, ... , gas.size() - 1, 0, 1, 2, ..., i.
+    
+            int gasSum = 0; // Remaining gas in the tank
+    
+            while (i != j)
+            {
+                gasSum += gas[crt] - cost[crt];
+    
+                if (gasSum >= 0)
+                {
+                    // Move right
+                    i = i + 1;
+                    crt = i;
+                }
+                else
+                {
+                    // Move left
+                    j = j - 1;
+                    crt = j;
+                }
+            }
+    
+            if (gasSum >= 0)
+            {
+                j = j % gas.size();
+                return j;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple O(n) Java solution with comments
+	int canCompleteCircuit(int[] gas, int[] cost) {
+		int total = 0, tank = 0, index = 0;
+		for (int i = 0; i < cost.length; i++) {
+			int cur = gas[i] - cost[i];			
+
+			tank += cur;
+			if (tank < 0) {//if sum < 0, index can only start from i + 1
+				index = i + 1;
+				tank = 0;
+			}
+			total += cur;			
+		}		
+		return total < 0 ? -1 : index;
+	}
+
+----------------------------------------------------------------------------------------------------
+The question is super unclear
+Hi
+can anyone please explain with giving some examples also to make it clear what is asked? thanks
+
+----------------------------------------------------------------------------------------------------
+This solution got accepted, but I think the problem needs some clarification.
+Here's my code:
+
+    public int canCompleteCircuit(int[] gas, int[] cost) {
+        // IMPORTANT: Please reset any member data you declared, as
+        // the same Solution instance will be reused for each test case.
+        int tank = 0;
+        int counter = 0;
+        int curIndex = 0;
+        int ret = 0;
+        boolean reset = true;
+        while(tank >= 0 && counter < gas.length){
+            if(reset){
+                if(gas[curIndex]-cost[curIndex]>=0){
+                    tank += gas[curIndex]-cost[curIndex];
+                    counter++;
+                    ret = curIndex;
+                    reset = false;
+                }
+                else if(curIndex == gas.length-1) return -1;
+                curIndex++;
+            }
+            else{
+                tank+=gas[curIndex]-cost[curIndex];
+                if(tank < 0){
+                    if(ret == gas.length-1) return -1;
+                    tank = 0;
+                    counter = 0;
+                    ret = curIndex;
+                    reset = true;
+                }
+                else{
+                    counter++;
+                    curIndex++;
+                }
+            }
+            if(curIndex == gas.length) curIndex = 0;
+        }
+        return ret;
+    }
+
+The idea is if we start at any ith station, where ith station has positive gas-cost,and we fail at kth station(total gas < 0), starting from any station between ith and kth will not be possible. Thus, when we fail at k, next time we try to start at a station after k, where the station has positive gas-cost, and see if we can finish the circuit from there. If at the end of the gas/cost array the gas - cost value is still negative or starting at the end of the array is still not a valid solution, we return -1;
+
+In this way we can reduce the run time to linear time. Is there a better solution?
+
+I think the following two things might need some clarification in the problem:
+
+1. Since the gas stations are on a circle, can we travel backward? I did not count the case when traveling to the left direction of the array works but traveling to the right does not work. In my understanding, at ith station, the cost to travel to the right will be cost[i] but the cost to travel to the left will be cost[i-1]. 
+
+2. How do we define "complete the circuit"? It seems that the circuit is regarded as completed if we can start at ith station and arrive at ith station eventually, not just i-1th station. Initially I had this line:
+
+    if(gas.length == 1) return 0;
+
+but it failed the test case "[4], [5]". 
+
+----------------------------------------------------------------------------------------------------
+The quesion need more information.
+For example, I start from 4th station, the last station will be the 3rd one, do I need travel from 3rd to the 4th as 4th is the starting station?
+
+----------------------------------------------------------------------------------------------------
+My solution is pretty straightforward, am I missing anything?
+My solution is accepted. The idea is if the sum of the gas is greater than the sum of cost, there must be a solution.
+
+Next, accumulate the "surplus" or "deficit" along the circle, at one point, you will have the biggest deficit. Starting from the next station, you will never run into deficit so you can travel around the circle.
+
+The solution is so straightforward, makes me wonder am I missing anything?
+
+**Added: Proof of existence of solution when the sum of gas is on less than the sum of cost**
+
+With that assumption, let's check the situation where there is only one station Greatest Net Deficit (GND)
+Note that the net surplus(NS) is the result of all the previous stations, a negative NS mean the car can not reach the next station.. If we start from the station from the station with the GND, which put the NS for that station at 0, then the NS will be positive for all station except the starting station, which can be positive or zero. Any way, the car can travel the circle.
+
+Next assume there are k station with equal GND, if we start from the first of them K1, we'll arrive in the next GND station K2 with 0 gas left, which means we can take K1-K2 path out of the circle without affecting our solution. Keep doing that we'll get back to the previous situation. So we know that there will be a least one solution given the sum of gas is greater than the sum of the cost.
+    
+     int canCompleteCircuit(vector<int> &gas, vector<int> &cost) 
+    {
+    
+            int totalgas = 0;
+            int totalcost = 0;
+            int maxdiff = 0;
+            int station = 0;
+            int diff = 0;
+            for (int i = 0; i < gas.size(); i++) {
+                totalgas += gas[i];
+                totalcost += cost[i];
+                diff = totalgas - totalcost;
+                if (diff < maxdiff) {
+                    maxdiff = diff;
+                    station = i;
+                }
+            }
+            if (totalcost > totalgas)
+                return -1;
+            station +=1;
+            if (station == gas.size())
+                station = 0;
+            return station;
+            
+        }
+
+----------------------------------------------------------------------------------------------------
+My solution in O(n) time
+The idea is to keep track of the sum of all (gas[i] - cost[i]) (a random start would work), in the end, if sum >= 0, we can complete the circle. The position to  start is the one next of the minimum of the sum. I actually don't know how to prove this, but it is accepted.
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int len = gas.size();
+            if(len == 0) return -1;
+            int min = gas[0] - cost[0];
+            int sum = min;
+            int pos = 1%len;
+            for(int i = 1; i < len; ++i){
+                sum += gas[i] - cost[i];
+                if(min > sum){
+                    min = sum;
+                    pos = (i+1)%len;
+                } 
+            }
+            if(sum < 0) return -1;
+            return pos;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Find the minimum, then you are done!
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int loc = 0;
+            int sum=0;
+            int min=INT_MAX;
+            //find the minimum 
+            for(int i =0; i<gas.size(); ++i){
+                sum+=gas[i]-cost[i];
+                if(sum<min){
+                    min = sum;
+                    loc=i;
+                }
+            }
+            
+            if(sum>=0) return (loc+1)%gas.size();
+            else return -1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My simple C++ O(n) solution
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+            vector<int> diff;
+            int size = gas.size();
+            for(int i=0; i<size; i++) {
+                diff.push_back(gas[i]-cost[i]);
+            }
+            for(int i=0; i<size; i++) {
+                if(diff[i]>=0) {
+                    int sum = 0, count = 0;
+                    while(sum>=0&&count<size) {
+                        sum += diff[(i+count)%size];
+                        count++;
+                    }
+                    if(count==size&&sum>=0) return i;
+                    else i = i+count-1;
+                }
+            }
+            return -1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+&quot;Travel around&quot; means the car starts from i and finally goto i again?
+Or the car just visit every gas station once?
+
+----------------------------------------------------------------------------------------------------
+Share my simple o(n) solution
+My idea is simple, try to travel 2 rounds. We set the start at the 0 at the begin.If we can not move to the next station, we reset the start as the next station. If we can move to the next station and find that next station is our start, we return next position.
+
+I also try to go backward and the result is same cause test data is not very strong. for example, gas(1, 2), cost(2, 1), we can not go forward, but we can go backward. The problem should clarify that whether we can go backward or not.
+
+    class Solution {
+    public:
+        int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+            int n = gas.size(), gas_amount = 0, start = 0;
+            for (int i = 0; i < n * 2; ++i){
+                int c = i % n, next = (c + 1) % n;
+                if (gas_amount + gas[c] - cost[c] >= 0){
+                    gas_amount = gas_amount + gas[c] - cost[c];
+                    if (next == start)
+                        return start;
+                }
+                else {
+                    gas_amount = 0;
+                    start = next;
+                }
+            }
+            return -1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

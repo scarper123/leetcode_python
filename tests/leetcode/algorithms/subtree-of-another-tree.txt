@@ -1,0 +1,658 @@
+Java Solution, BFS
+public class Solution {
+    public int[][] updateMatrix(int[][] matrix) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        Queue<int[]> queue = new LinkedList<>();
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    queue.offer(new int[] {i, j});
+                }
+                else {
+                    matrix[i][j] = Integer.MAX_VALUE;
+                }
+            }
+        }
+        
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        
+        while (!queue.isEmpty()) {
+            int[] cell = queue.poll();
+            for (int[] d : dirs) {
+                int r = cell[0] + d[0];
+                int c = cell[1] + d[1];
+                if (r < 0 || r >= m || c < 0 || c >= n || 
+                    matrix[r][c] <= matrix[cell[0]][cell[1]] + 1) continue;
+                queue.add(new int[] {r, c});
+                matrix[r][c] = matrix[cell[0]][cell[1]] + 1;
+            }
+        }
+        
+        return matrix;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 33ms solution with two sweeps in O(n)
+public List<List<Integer>> updateMatrix(List<List<Integer>> matrix) {
+        List<List<Integer>> answer = new LinkedList();
+		if(matrix.size() == 0) return answer;
+		int[][] array = new int[matrix.size()][matrix.get(0).size()];
+		int i = 0, j = 0;
+		for(List<Integer> list : matrix) {
+			for(Integer x : list) {
+				if(x == 0) {
+					array[i][j] = 0;
+				}
+				else {
+					int left = Integer.MAX_VALUE - 1, top = Integer.MAX_VALUE - 1;
+					if(i - 1 >= 0) top = array[i - 1][j];
+					if(j - 1 >= 0) left = array[i][j - 1];
+					array[i][j] = Math.min(Integer.MAX_VALUE - 1, Math.min(top, left) + 1);
+				}
+				j++;
+			}
+			j = 0;
+			i++;
+		}
+		for(int k = array.length - 1; k >= 0; k--) {
+			for(int m = array[0].length - 1; m >= 0; m--) {
+				if(array[k][m] != 0 && array[k][m] != 1) {
+					int down = Integer.MAX_VALUE - 1, right = Integer.MAX_VALUE - 1;
+					if(k + 1 < array.length) down = array[k + 1][m];
+					if(m + 1 < array[0].length) right = array[k][m + 1];
+					array[k][m] = Math.min(array[k][m], Math.min(down, right) + 1);
+				}
+			}
+		}
+		for(int[] l : array) {
+			List<Integer> tmp = new LinkedList();
+			for(int n : l) {
+				tmp.add(n);
+			}
+			answer.add(tmp);
+		}
+		return answer;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short solution - Each path needs at most one turn
+down,right,down,right
+
+----------------------------------------------------------------------------------------------------
+Can you change the input and return type to be a int&#91;&#93;&#91;&#93; for Java ?
+<p>List seems to be weird. Other similar matrix problems all use int&#91;&#93;&#91;&#93;. why is this special?</p>
+
+
+----------------------------------------------------------------------------------------------------
+18-line C++ DP Solution, O(n), Easy to Understand
+class Solution {
+public:
+    vector<vector<int>> updateMatrix(vector<vector<int>>& matrix) {
+        int h=matrix.size(), w=matrix[0].size();
+        vector<vector<int>> dp(h,vector<int>(w,INT_MAX));
+        for(int times=0;times<=1;times++) // two passes, first forward then backward
+            for(int i=times?h-1:0;times?i>=0:i<h;times?i--:i++) 
+                for(int j=times?w-1:0;times?j>=0:j<w;times?j--:j++)
+                        if(matrix[i][j]==0)
+                            dp[i][j]=0;
+                        else {
+                            if(i&&dp[i-1][j]!=INT_MAX&&dp[i][j]>dp[i-1][j]+1) // look up
+                                dp[i][j]=dp[i-1][j]+1;
+                            if(j&&dp[i][j-1]!=INT_MAX&&dp[i][j]>dp[i][j-1]+1) // look left
+                                dp[i][j]=dp[i][j-1]+1;
+                            if(i<h-1&&dp[i+1][j]!=INT_MAX&&dp[i][j]>dp[i+1][j]+1) // look down
+                                dp[i][j]=dp[i+1][j]+1;
+                            if(j<w-1&&dp[i][j+1]!=INT_MAX&&dp[i][j]>dp[i][j+1]+1) // look right
+                                dp[i][j]=dp[i][j+1]+1;
+                        }
+        return dp;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution beat 99% (use DP)
+public int[][] updateMatrix(int[][] matrix) {
+    if (matrix.length == 0 || matrix[0].length == 0) {
+        return matrix;
+    }
+    int[][] dis = new int[matrix.length][matrix[0].length];
+    int range = matrix.length * matrix[0].length;
+    
+    for (int i = 0; i < matrix.length; i++) {
+        for (int j = 0; j < matrix[0].length; j++) {
+            if (matrix[i][j] == 0) {
+                dis[i][j] = 0;
+            } else {
+                int upCell = (i > 0) ? dis[i - 1][j] : range;
+                int leftCell = (j > 0) ? dis[i][j - 1] : range;
+                dis[i][j] = Math.min(upCell, leftCell) + 1;
+            }
+        }
+    }
+    
+    for (int i = matrix.length - 1; i >= 0; i--) {
+        for (int j = matrix[0].length - 1; j >= 0; j--) {
+            if (matrix[i][j] == 0) {
+                dis[i][j] = 0;
+            } else {
+                int downCell = (i < matrix.length - 1) ? dis[i + 1][j] : range;
+                int rightCell = (j < matrix[0].length - 1) ? dis[i][j + 1] : range;
+                dis[i][j] = Math.min(Math.min(downCell, rightCell) + 1, dis[i][j]);
+            }
+        }
+    }
+    
+    return dis;
+}
+
+----------------------------------------------------------------------------------------------------
+Python, Simple with Explanation
+def updateMatrix(self, A):
+    R, C = len(A), len(A[0])
+    def neighbors(r, c):
+        for cr, cc in ((r-1,c),(r+1,c),(r,c-1),(r,c+1)):
+            if 0 <= cr < R and 0 <= cc < C:
+                yield cr, cc
+                
+    q = collections.deque([((r, c), 0) 
+            for r in xrange(R) 
+            for c in xrange(C) 
+            if A[r][c] == 0])
+    seen = {x for x,_ in q}
+    ans = [[0]*C for _ in A]
+    while q:
+        (r, c), depth = q.popleft()
+        ans[r][c] = depth
+        for nei in neighbors(r, c):
+            if nei not in seen:
+                seen.add(nei)
+                q.append((nei, depth + 1))
+    
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+python BFS solution
+class Solution(object):
+    def updateMatrix(self, matrix):
+        q, m, n = [], len(matrix), len(matrix[0])
+        for i in xrange(m):
+            for j in xrange(n):
+                if matrix[i][j] != 0:
+                    matrix[i][j] = 0x7fffffff
+                else:
+                    q.append((i, j))
+        for i, j in q:
+            for r, c in ((i, 1+j), (i, j-1), (i+1, j), (i-1, j)):
+                z = matrix[i][j] + 1
+                if 0 <= r < m and 0 <= c < n and matrix[r][c] > z:
+                    matrix[r][c] = z
+                    q.append((r, c))
+        return matrix
+
+----------------------------------------------------------------------------------------------------
+Java DFS solution beat %95
+public class Solution {
+    public int[][] updateMatrix(int[][] matrix) {
+        if(matrix.length==0) return matrix;
+        
+        for(int i = 0; i<matrix.length; i++)
+            for(int j = 0; j<matrix[0].length; j++)
+                if(matrix[i][j]==1&&!hasNeiberZero(i, j,matrix)) 
+                    matrix[i][j] = matrix.length+matrix[0].length+1;
+        
+        for(int i = 0; i<matrix.length; i++)
+            for(int j = 0; j<matrix[0].length; j++)
+                if(matrix[i][j]==1)
+                    dfs(matrix, i, j, -1);
+        
+        return matrix;
+    }
+    private void dfs(int[][] matrix, int x, int y, int val){
+        if(x<0||y<0||y>=matrix[0].length||x>=matrix.length||matrix[x][y]<=val)
+            return;
+        
+        if(val>0) matrix[x][y] = val;
+        
+        dfs(matrix, x+1, y, matrix[x][y]+1);
+        dfs(matrix, x-1, y, matrix[x][y]+1);
+        dfs(matrix, x, y+1, matrix[x][y]+1);
+        dfs(matrix, x, y-1, matrix[x][y]+1);
+        
+    }
+    private boolean hasNeiberZero(int x, int y, int[][] matrix){
+        if(x>0&&matrix[x-1][y]==0) return true;
+        if(x<matrix.length-1&&matrix[x+1][y]==0) return true;
+        if(y>0&&matrix[x][y-1]==0) return true;
+        if(y<matrix[0].length-1&&matrix[x][y+1]==0) return true;
+        
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;542. 01 Matrix&#93; C++_BFS_queue
+class Solution {
+public:
+vector<pair<int,int> > dir = {{1,0},{-1,0},{0,1},{0,-1}};
+vector<vector<int> > updateMatrix(vector<vector<int> >& matrix) {
+    if(matrix.empty()) return matrix;
+    int m = matrix.size();
+    int n = matrix[0].size();
+    vector<pair<int,int>> zeros;
+    for(int i = 0; i < m; ++i){
+        for(int j = 0; j < n; ++j){
+            if(matrix[i][j] == 0){
+                zeros.push_back({i,j});
+            }else{
+                matrix[i][j] = INT_MAX;
+            }
+        }
+    }
+    int pos = 0;
+    while(pos < zeros.size()){
+        auto xy = zeros[pos++];
+        int i = xy.first, j = xy.second;
+        for(auto d : dir){
+            int ii = i + d.first, jj = j + d.second;
+            if(ii < m && ii >= 0 && jj < n && jj >= 0){
+                if(matrix[ii][jj] >= matrix[i][j] + 1){
+                    matrix[ii][jj] = matrix[i][j] + 1;
+                    zeros.push_back({ii,jj});
+                }
+            }
+        }
+    }
+    return matrix;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java in-place DP two traversal AC solution. O(mn) No BFS needed.
+public class Solution {
+    public List<List<Integer>> updateMatrix(List<List<Integer>> matrix) {
+        final int MAX = matrix.size() + matrix.get(0).size();
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix.get(i).size(); j++) {
+                if (matrix.get(i).get(j) == 0) {
+                    continue;
+                }
+                int left = j == 0 ? MAX : matrix.get(i).get(j - 1);
+                int up = i == 0 ? MAX : matrix.get(i - 1).get(j);
+                matrix.get(i).set(j, Math.min(left, up) + 1);
+            }
+        }
+        
+        for (int i = matrix.size() - 1; i >= 0; i--) {
+            for (int j = matrix.get(i).size() - 1; j >= 0; j--) {
+                if (matrix.get(i).get(j) == 0) {
+                    continue;
+                }
+                int right = j == matrix.get(i).size() - 1 ? MAX : matrix.get(i).get(j + 1);
+                int down = i == matrix.size() - 1 ? MAX : matrix.get(i + 1).get(j);
+                matrix.get(i).set(j, Math.min(matrix.get(i).get(j), Math.min(right, down) + 1));
+            }
+        }
+        return matrix;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# Solution, BFS
+public class Solution 
+{
+    public int[,] UpdateMatrix(int[,] matrix) 
+    {
+        var row = matrix.GetLength(0);
+        var col = matrix.GetLength(1);
+
+        if (row == 0) return new int[0,0];
+        
+        var result = new int[row,col];
+
+       for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                if (matrix[i, j] == 0) continue;
+                
+                var distance = UpdateMatrixBFS(matrix, i, j);
+                result[i, j] = distance;
+            }
+        }
+
+        return result;
+    }
+
+    private int UpdateMatrixBFS(int[,] matrix, int startX, int startY)
+    {
+        var row = matrix.GetLength(0);
+        var col = matrix.GetLength(1);
+
+        var directions = new int[,]{{0,1}, {0,-1}, {1,0}, {-1,0}};
+
+        var queue = new Queue<Tuple<int,int>>();
+
+        queue.Enqueue(Tuple.Create(startX, startY));
+        var distance = 1;
+        while(queue.Any())
+        {
+            var size = queue.Count;
+
+            for (int z = 0; z < size; z++)
+            {
+                var cur = queue.Dequeue();
+
+                for(int i = 0; i < directions.GetLength(0); i++)
+                {
+                    var directionX = directions[i,0];
+                    var directionY = directions[i,1];
+
+                    var nextX = cur.Item1 + directionX;
+                    var nextY = cur.Item2 + directionY;
+
+                    if (nextX < 0 || nextX >= row || nextY < 0 || nextY >= col) continue;
+                    
+                    if (matrix[nextX, nextY] == 0) return distance;
+                    
+                    queue.Enqueue(Tuple.Create(nextX, nextY));
+                }
+            }
+
+            distance++;
+        }
+
+        return distance;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, time complexity O(n), no auxiliary space.
+public class Solution {
+    public int[][] updateMatrix(int[][] matrix) {
+        int rowL = matrix.length;
+        int colL = matrix[0].length;
+        int longer = Math.max(rowL, colL);
+        int[][] result = new int[rowL][colL];
+        fromUpLeftToRightDown(matrix, result, rowL, colL, longer);
+        fromRightDownToUpLeft(matrix, result, rowL, colL, longer);
+        return result;
+    }
+    private void fromUpLeftToRightDown(int[][]matrix, int[][]result, int rowL, int colL, int longer) {
+        for (int i = 0; i < rowL; i++) {
+            for (int j = 0; j < colL; j++) {
+                if (matrix[i][j] == 0) {
+                    result[i][j] = 0;
+                } else if (i == 0 && j == 0) {
+                    result[i][j] = longer;
+                } else if (i == 0) {
+                    result[i][j] = 1 + result[i][j - 1];
+                } else if (j == 0) {
+                    result[i][j] = 1 + result[i - 1][j];
+                } else {
+                    result[i][j] = 1 + Math.min(result[i][j - 1], result[i - 1][j]);
+                }
+            }
+        }
+    }
+    private void fromRightDownToUpLeft(int[][]matrix, int[][]result, int rowL, int colL, int longer) {
+        for (int i = rowL - 1; i >= 0; i--) {
+            for (int j = colL - 1; j >= 0; j--) {
+                if (matrix[i][j] == 0 || (i == rowL - 1 && j == colL - 1)) {
+                    continue;
+                } else if (i == rowL - 1) {
+                    result[i][j] = Math.min(result[i][j], 1 + result[i][j + 1]);
+                } else if (j == colL - 1) {
+                    result[i][j] = Math.min(result[i][j], 1 + result[i + 1][j]);
+                } else {
+                    result[i][j] = Math.min(result[i][j], Math.min(1 + result[i][j + 1], 1 + result[i + 1][j]));
+                }
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python DP solution O(n)
+    def updateMatrix(self, matrix):
+        """
+        :type matrix: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        dic = {}
+        if not matrix or not matrix[0]:
+            return matrix
+        h,w = len(matrix),len(matrix[0])
+        mask = [[10000]*w for i in xrange (h)]
+        for i in xrange (h):
+            for j in xrange (w):
+                if matrix[i][j] != 0:
+                    mask[i][j] = min(mask[i][j],mask[i-1][j]+1,mask[i][j-1]+1)
+                else:
+                    mask[i][j] = 0
+        for i in xrange (h-1,-1,-1):
+            for j in xrange (w-1,-1,-1):
+                if matrix[i][j] != 0:
+                    if i < h-1:
+                        mask[i][j] = min(mask[i][j],mask[i+1][j] + 1)
+                    if j < w-1:
+                        mask[i][j] = min(mask[i][j],mask[i][j+1] + 1)
+        return mask
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS 71ms
+public class Solution {
+    public List<List<Integer>> updateMatrix(List<List<Integer>> matrix) {
+        
+        for(int row = 0; row < matrix.size(); row ++)
+            for(int col = 0; col < matrix.get(0).size(); col++)
+                if(matrix.get(row).get(col) == 1 && noAdjZero(matrix, row, col))
+                        matrix.get(row).set(col, 10000);
+            
+        for(int row = 0; row < matrix.size(); row ++)
+            for(int col = 0; col < matrix.get(0).size(); col++)
+                DFS(matrix, row, col);
+        
+        return matrix;
+    }
+    
+    public boolean noAdjZero(List<List<Integer>> matrix, int row, int col){
+        int[][] direction = new int[][]{{-1,0},{1,0},{0,-1},{0,1}};
+        
+        for(int[] d : direction){
+            int newRow = row + d[0], newCol = col + d[1];
+            if(newRow < 0 || newRow >= matrix.size() || newCol < 0 || newCol >= matrix.get(0).size())   continue;
+            
+            if(matrix.get(newRow).get(newCol) == 0) return false;
+        }
+        return true;
+    }
+    
+    public void DFS(List<List<Integer>> matrix, int row, int col){
+        int[][] direction = new int[][]{{-1,0},{1,0},{0,-1},{0,1}};
+        
+        for(int[] d : direction){
+            int newRow = row + d[0], newCol = col + d[1];
+            if(newRow < 0 || newRow >= matrix.size() || newCol < 0 || newCol >= matrix.get(0).size())   continue;
+            
+            if(matrix.get(newRow).get(newCol) > matrix.get(row).get(col) + 1){
+                matrix.get(newRow).set(newCol,matrix.get(row).get(col) + 1);
+                DFS(matrix, newRow, newCol);
+            }
+        }
+    }
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+Any idea why my BFS solution gets TLE?
+public class Solution {
+    int[] dx = {-1, 1, 0, 0};
+    int[] dy = {0, 0, -1, 1};
+    public int[][] updateMatrix(int[][] matrix) {
+        int[][] result = new int[matrix.length][matrix[0].length]; 
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] == 0) {
+                    result[i][j] = 0;
+                } else {
+                    BFS(matrix, i, j, result);
+                }
+            }
+        }
+        return result;
+    }
+    private void BFS(int[][] matrix, int i, int j, int[][] result) {
+        boolean[][] visited = new boolean[matrix.length][matrix[0].length];
+        Queue<int[]> q = new LinkedList<>();
+        visited[i][j] = true;
+        q.offer(new int[]{i, j});
+        int level = 1, min = Integer.MAX_VALUE;
+        while (!q.isEmpty() && min == Integer.MAX_VALUE) {
+            int size = q.size();
+            for (int k = 0; k < size && min == Integer.MAX_VALUE; k++) {
+                if (min == Integer.MAX_VALUE) {
+                    int[] curr = q.poll();
+                    for (int d = 0; d < 4; d++) {
+                        int x = curr[0] + dx[d], y = curr[1] + dy[d];
+                        if (x < 0 || x >= matrix.length || y < 0 || y >= matrix[0].length || visited[x][y]) {
+                            continue;
+                        }
+                        if (matrix[x][y] == 0) {
+                            min = Math.min(min, level);
+                            break;
+                        }
+                        visited[x][y] = true;
+                        q.offer(new int[]{x, y});
+                    }     
+                }
+            }
+            level++;
+        }
+        result[i][j] = min;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+dfs. faster  than the top bfs solution
+    private boolean[][] mark = null;
+    private int[][] mtx = null;
+    private int m = 0;
+    private int n = 0;
+    private int cnt = 0;  // visited nodes.
+
+    public int[][] updateMatrix(int[][] matrix) {
+        m = matrix.length;
+        if (0 == m) return matrix;
+
+        n = matrix[0].length;
+        if (0 == n) return matrix;
+
+        mark = new boolean[m][n];
+        mtx = matrix;
+        
+        int marker = 0;
+        while (cnt != m * n) {
+            for (int row = 0; row < m; ++row) {
+                for (int col = 0; col < n; ++col) {
+                    if (!mark[row][col] && marker == mtx[row][col])  {
+                        dfs(marker, row, col);
+                    }
+                }
+            }
+            --marker;
+        }
+
+        for (int row = 0; row < m; ++row) {
+            for (int col = 0; col < n; ++col) {
+                mtx[row][col] = -mtx[row][col];
+            }
+        }
+
+        return mtx;
+    }
+
+    private void dfs(int marker, int row, int col) {
+        mark[row][col] = true;
+        ++cnt;
+
+        if (row + 1 < m)  {
+            if (!mark[row + 1][col] && mtx[row + 1][col] == marker) dfs(marker,row + 1, col);
+            else if (1 == mtx[row + 1][col]) mtx[row + 1][col] = marker - 1;
+        }
+
+        if (row -1 >= 0)  {
+            if (!mark[row - 1][col] && mtx[row - 1][col] == marker) dfs(marker,row - 1, col);
+            else if (1 == mtx[row - 1][col]) mtx[row - 1][col] = marker - 1;
+        }
+
+        if (col + 1 < n)  {
+            if (!mark[row][col + 1] && mtx[row][col + 1] == marker) dfs(marker,row, col + 1);
+            else if (1 == mtx[row][col + 1]) mtx[row][col + 1] = marker - 1;
+        }
+
+        if (col - 1 >= 0)  {
+            if (!mark[row][col - 1] && mtx[row][col - 1] == marker) dfs(marker,row, col - 1);
+            else if (1 == mtx[row][col - 1]) mtx[row][col - 1] = marker - 1;
+        }
+
+    }
+
+
+----------------------------------------------------------------------------------------------------
+20ms Same DP idea but faster
+public int[][] updateMatrix(int[][] m) {
+        int[][] dp = new int[m.length][m[0].length];
+        for(int i = 0; i < m.length; i++){
+            for(int j = 0; j < m[0].length; j++){
+                if(m[i][j] == 1){
+                    if(i == 0 || j == 0){
+                        int x = i == 0 ? Integer.MAX_VALUE : dp[i - 1][j];
+                        int y = j == 0 ? Integer.MAX_VALUE : dp[i][j - 1];
+                        int temp = Math.min(x, y);
+                        dp[i][j] = temp == Integer.MAX_VALUE ? temp : temp + 1;
+                    }else{
+                        int temp = Math.min(dp[i - 1][j], dp[i][j - 1]);
+                        dp[i][j] = temp == Integer.MAX_VALUE ? temp : temp + 1;
+                    }
+                }
+            }
+        }
+        for(int i = dp.length - 1; i >= 0; i--){
+            for(int j = dp[0].length - 1; j >= 0; j--){
+                if(m[i][j] == 1){
+                    if(i + 1 >= dp.length || j + 1 >= dp[0].length){
+                        int x = i + 1 >= dp.length ? Integer.MAX_VALUE : dp[i + 1][j];
+                        int y = j + 1 >= dp[0].length ? Integer.MAX_VALUE : dp[i][j + 1];
+                        int temp = Math.min(x, y);
+                        dp[i][j] = temp == Integer.MAX_VALUE ? dp[i][j] : Math.min(dp[i][j], temp + 1);
+                    }else{
+                        int temp = Math.min(dp[i + 1][j], dp[i][j + 1]);
+                        dp[i][j] = temp == Integer.MAX_VALUE ? dp[i][j] : Math.min(dp[i][j], temp + 1);
+                    }
+                }
+            }
+        }
+        return dp;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Please use brackets &#91;&#93; instead of parentheses () to describe inclusive interval
+<p>It generates misunderstandings. Good problem though.</p>
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,428 @@
+My 4 Line java solution
+    public class Solution {
+        public int minDepth(TreeNode root) {
+            if(root == null) return 0;
+            int left = minDepth(root.left);
+            int right = minDepth(root.right);
+            return (left == 0 || right == 0) ? left + right + 1: Math.min(left,right) + 1;
+           
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My concise c++ solution
+
+
+    class Solution {
+    public:
+        int minDepth(TreeNode *root) {
+            if(!root) return 0;
+            if(!root->left) return 1 + minDepth(root->right);
+            if(!root->right) return 1 + minDepth(root->left);
+            return 1+min(minDepth(root->left),minDepth(root->right));
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Why expected result for input of {1,2}  is 2? Shouldn&#x27;t it be 1?
+Why expected result for input of {1,2}  is 2? Shouldn't it be 1?
+
+----------------------------------------------------------------------------------------------------
+3 lines in Every Language
+We need to add the smaller one of the child depths - except if that's zero, then add the larger one. The first Python solution is the clearest because it lets me directly say exactly that.
+
+**Python versions:**
+
+    def minDepth(self, root):
+        if not root: return 0
+        d = map(self.minDepth, (root.left, root.right))
+        return 1 + (min(d) or max(d))
+
+    def minDepth(self, root):
+        if not root: return 0
+        d, D = sorted(map(self.minDepth, (root.left, root.right)))
+        return 1 + (d or D)
+
+**C++ versions:**
+
+    int minDepth(TreeNode* root) {
+        if (!root) return 0;
+        int L = minDepth(root->left), R = minDepth(root->right);
+        return 1 + (min(L, R) ? min(L, R) : max(L, R));
+    }
+
+    int minDepth(TreeNode* root) {
+        if (!root) return 0;
+        int L = minDepth(root->left), R = minDepth(root->right);
+        return 1 + (L && R ? min(L, R) : max(L, R));
+    }
+
+    int minDepth(TreeNode* root) {
+        if (!root) return 0;
+        int L = minDepth(root->left), R = minDepth(root->right);
+        return 1 + (!L-!R ? max(L, R) : min(L, R));
+    }
+
+    int minDepth(TreeNode* root) {
+        if (!root) return 0;
+        int L = minDepth(root->left), R = minDepth(root->right);
+        return L<R && L || !R ? 1+L : 1+R;
+    }
+
+**Java versions:**
+
+    public int minDepth(TreeNode root) {
+        if (root == null) return 0;
+        int L = minDepth(root.left), R = minDepth(root.right);
+        return 1 + (Math.min(L, R) > 0 ? Math.min(L, R) : Math.max(L, R));
+    }
+
+    public int minDepth(TreeNode root) {
+        if (root == null) return 0;
+        int L = minDepth(root.left), R = minDepth(root.right), m = Math.min(L, R);
+        return 1 + (m > 0 ? m : Math.max(L, R));
+    }
+
+    public int minDepth(TreeNode root) {
+        if (root == null) return 0;
+        int L = minDepth(root.left), R = minDepth(root.right);
+        return L<R && L>0 || R<1 ? 1+L : 1+R;
+    }
+
+**Ruby version:**
+
+    def min_depth(root)
+        return 0 if !root
+        d, e = [min_depth(root.left), min_depth(root.right)].sort
+        1 + (d>0 ? d : e)
+    end
+
+**Javascript version:**
+
+    var minDepth = function(root) {
+        if (!root) return 0
+        var L = minDepth(root.left), R = minDepth(root.right)
+        return 1 + (Math.min(L, R) || Math.max(L, R))
+    };
+
+**C version:**
+
+    int minDepth(struct TreeNode* root) {
+        if (!root) return 0;
+        int L = minDepth(root->left), R = minDepth(root->right);
+        return L<R && L || !R ? 1+L : 1+R;
+    }
+
+**C# version:**
+
+    public int MinDepth(TreeNode root) {
+        if (root == null) return 0;
+        int L = MinDepth(root.left), R = MinDepth(root.right);
+        return L<R && L>0 || R<1 ? 1+L : 1+R;
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution used level-order traversal
+level-order traversal and record current level depth, when meet a node which both child is null then return, no need to go farther
+
+    public class Solution {
+    public int minDepth(TreeNode root) {
+		if (root == null)
+			return 0;
+		int depth = 1;
+		Queue<TreeNode> queue = new LinkedList<TreeNode>();
+		TreeNode temp,magic = new TreeNode(0);
+		queue.add(root);
+		queue.add(magic);
+		while(!queue.isEmpty()){
+			temp = queue.poll();
+			if(temp.equals(magic)){
+			    if(!queue.isEmpty()){
+			        depth++;
+				    queue.add(magic);
+			    }
+			    continue;
+			}
+			if(temp.left == null && temp.right == null)
+				return depth;
+			if(temp.left != null)
+				queue.add(temp.left);
+			if(temp.right != null)
+				queue.add(temp.right);
+		}
+		return depth;
+	}
+    }
+Any better solution?
+
+----------------------------------------------------------------------------------------------------
+BFS, C++, 8ms, Beats 99.94% submissions
+    int minDepth(TreeNode* root) {
+        if (root == NULL) return 0;
+        queue<TreeNode*> Q;
+        Q.push(root);
+        int i = 0;
+        while (!Q.empty()) {
+            i++;
+            int k = Q.size();
+            for (int j=0; j<k; j++) {
+                TreeNode* rt = Q.front();
+                if (rt->left) Q.push(rt->left);
+                if (rt->right) Q.push(rt->right);
+                Q.pop();
+                if (rt->left==NULL && rt->right==NULL) return i;
+            }
+        }
+        return -1; //For the compiler thing. The code never runs here.
+    }
+
+----------------------------------------------------------------------------------------------------
+4 lines Short and Neat Recursive Code. :) &#91;JAVA&#93;
+    public int minDepth(TreeNode root) {
+        if(root == null) return 0;
+        if(root.left == null || root.right == null) 
+        return 1 + Math.max(minDepth(root.left), minDepth(root.right));
+        return 1 + Math.min(minDepth(root.left), minDepth(root.right));
+    }
+
+----------------------------------------------------------------------------------------------------
+Very easy, with recursion, 1ms Java solution
+
+    public int minDepth(TreeNode root) {
+        if (root == null)
+            return 0;
+        if (root.left != null && root.right != null)
+            return Math.min(minDepth(root.left), minDepth(root.right))+1;
+        else
+            return Math.max(minDepth(root.left), minDepth(root.right))+1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My solution in python
+The idea is to use recursion, the accepted short python code looks like follows:
+
+    class Solution:
+        # @param root, a tree node
+        # @return an integer    
+        def minDepth(self, root):
+            if root == None:
+                return 0
+            if root.left==None or root.right==None:
+                return self.minDepth(root.left)+self.minDepth(root.right)+1
+            return min(self.minDepth(root.right),self.minDepth(root.left))+1
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my clean Java code
+
+    public int minDepth(TreeNode root){
+        if(root == null){
+            return 0;
+        }
+        return helper(root);
+    }
+    
+    public int helper(TreeNode root) {
+        if(root == null){
+            return Integer.MAX_VALUE;
+        }
+        if(root.left == null && root.right == null){
+            return 1;
+        }
+        
+        int depthLeft = helper(root.left);
+        int depthRight = helper(root.right);
+        
+        return Math.min(depthLeft, depthRight) + 1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+4 line 13 ms c++ code
+some minor change to the recursive solution of the maximum depth problem
+
+    class Solution {
+    public:
+        int minDepth(TreeNode *root) {
+            if (!root) return 0;
+            if (!root->left) return 1 + minDepth(root->right);
+            else if (!root->right) return 1 + minDepth(root->left);
+            return 1 + min(minDepth(root->left), minDepth(root->right));
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy reading 12ms C++ solution
+    class Solution {
+    public:
+        int minDepth(TreeNode* root) {
+            if (root==nullptr){
+                return 0;
+            }
+            else if (root->right==nullptr||root->left==nullptr){
+                return max(minDepth(root->left),minDepth(root->right))+1;
+            }
+            else{
+                return min(minDepth(root->left),minDepth(root->right))+1;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy Solution Using BFS in JAVA
+    public int minDepth(TreeNode root) {
+        if(root == null) return 0;
+        int depth = 1;
+        Queue<TreeNode> q = new LinkedList<TreeNode>();
+        q.offer(root);
+        while(!q.isEmpty()){
+            int size = q.size();
+            // for each level
+            for(int i=0;i<size;i++){
+                TreeNode node = q.poll();
+                if(node.left == null && node.right == null){
+                    return depth;
+                }
+                if(node.left != null){
+                    q.offer(node.left);
+                }
+                if(node.right != null){
+                    q.offer(node.right);
+                }
+            }
+            depth++;
+        }
+        return depth;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 3 line. Simple and concise
+
+
+class Solution {
+
+
+public:
+       int minDepth(TreeNode *root) {
+
+        if(!root)                       return 0;
+        if(root->left && root->right)   return min(minDepth(root->left),minDepth(root->right))+1;
+        else                            return max(minDepth(root->left),minDepth(root->right))+1;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ BFS solution
+    int minDepth(TreeNode* root) {
+        if (root == NULL) return 0;
+        queue<pair<TreeNode*, int>> q;
+        q.push(pair<TreeNode*, int>(root, 1));
+        while (!q.empty()) {
+            auto temp = q.front();
+            q.pop();
+            TreeNode* cur = temp.first;
+            int depth = temp.second;
+            if (cur->left == NULL && cur->right == NULL) return depth;
+            if (cur->left != NULL) {
+                q.push(pair<TreeNode*, int>(cur->left, depth + 1));
+            }
+            if (cur->right != NULL) {
+                q.push(pair<TreeNode*, int>(cur->right, depth + 1));
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My Accepted 223ms Java Solution
+        public class Solution {
+        public int minDepth(TreeNode root) {
+            if(root == null)    //base case
+                return 0;
+            if(root.left == null || root.right == null)
+                return 1 + (root.left == null ? minDepth(root.right) : minDepth(root.left));
+            return 1 + Math.min(minDepth(root.left), minDepth(root.right));
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java BFS solution
+        if(root == null) return 0;
+        int dep = 1;
+        List<TreeNode> que = new ArrayList<TreeNode>();
+        que.add(root);
+        while(!que.isEmpty()) {
+            int size = que.size();
+            for(int i = 0; i < size; i++) {
+                TreeNode cur = que.remove(0);
+                if(cur.left == null && cur.right == null) return dep;
+                if(cur.left != null) que.add(cur.left);
+                if(cur.right != null) que.add(cur.right);
+            }
+            dep++;
+        }
+        return dep;
+
+----------------------------------------------------------------------------------------------------
+C++ dfs and bfs solutions.
+        
+    // DFS
+    int minDepth(TreeNode* root) {
+        if (!root)  
+            return 0;
+        if (root->left && root->right)  
+            return min(minDepth(root->left), minDepth(root->right))+1;
+        return max(minDepth(root->left), minDepth(root->right))+1;
+    }
+    
+    // BFS
+    int minDepth1(TreeNode *root) {
+        int res = 0;
+        queue<TreeNode *> myQueue;
+        if (root)
+            myQueue.push(root);
+        while (!myQueue.empty()) {
+            int l = myQueue.size();
+            res++;
+            for (int i = 0; i < l; i++) {
+                TreeNode *tmp = myQueue.front();
+                if (!(tmp->left) && !(tmp->right))
+                    return res;
+                if (tmp->left)
+                    myQueue.push(tmp->left);
+                if (tmp->right)
+                    myQueue.push(tmp->right);
+                myQueue.pop();
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+My 4 lines java solution
+    public class Solution {
+        public int minDepth(TreeNode root) {
+            if(root==null) return 0;
+            if(root.left==null) return minDepth(root.right)+1;
+            if(root.right==null) return minDepth(root.left)+1;
+            return Math.min(minDepth(root.left)+1,minDepth(root.right)+1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+An easy and short answer of cpp
+    class Solution {
+        public:
+        int minDepth(TreeNode* root) {
+            if (root ==NULL)
+                return 0;
+            int l = minDepth(root->left) ;
+            int r = minDepth(root->right) ;
+            if (l==0 || r==0)
+                return l+r+1 ;
+            return (l>r?r:l)+1 ;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

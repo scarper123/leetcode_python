@@ -1,0 +1,492 @@
+0&#x2F;1 knapsack detailed explanation
+public boolean canPartition(int[] nums) {
+    int sum = 0;
+    
+    for (int num : nums) {
+        sum += num;
+    }
+    
+    if ((sum & 1) == 1) {
+        return false;
+    }
+    sum /= 2;
+    
+    int n = nums.length;
+    boolean[] dp = new boolean[sum+1];
+    Arrays.fill(dp, false);
+    dp[0] = true;
+    
+    for (int num : nums) {
+        for (int i = sum; i > 0; i--) {
+            if (i >= num) {
+                dp[i] = dp[i] || dp[i-num];
+            }
+        }
+    }
+    
+    return dp[sum];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution similar to backpack problem - Easy to understand
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        // check edge case
+        if (nums == null || nums.length == 0) {
+            return true;
+        }
+        // preprocess
+        int volumn = 0;
+        for (int num : nums) {
+            volumn += num;
+        }
+        if (volumn % 2 != 0) {
+            return false;
+        }
+        volumn /= 2;
+        // dp def
+        boolean[] dp = new boolean[volumn + 1];
+        // dp init
+        dp[0] = true;
+        // dp transition
+        for (int i = 1; i <= nums.length; i++) {
+            for (int j = volumn; j >= nums[i-1]; j--) {
+                dp[j] = dp[j] || dp[j - nums[i-1]];
+            }
+        }
+        return dp[volumn];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ 4-line solution using a bitset
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        bitset<10001> bits(1);
+        int sum = accumulate(nums.begin(), nums.end(), 0);
+        for (auto n : nums) bits |= bits << n;
+        return !(sum & 1) && bits[sum >> 1];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ Solution summary with DFS, DP, BIT
+bool canPartition(vector<int>& nums) {
+    bitset<5001> bits(1);
+    int sum = accumulate(nums.begin(), nums.end(), 0);
+    for (auto n : nums) bits |= bits << n;
+    return !(sum & 1) && bits[sum >> 1];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution similar to &#x27;Subset Sum Problem&#x27;
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        int sum = 0;
+        for(int num: nums) sum += num;
+        if(sum % 2 == 1) return false;
+        
+        int target = sum / 2;
+        boolean[][] dp = new boolean[nums.length][target + 1];
+        // deal with the first row
+        if(nums[0] <= target) dp[0][nums[0]] = true;
+        
+        // deal with the first col
+        for(int i = 0; i < nums.length; i++) dp[i][0] = true;
+        
+        // deal with the rest
+        for(int i = 1; i < dp.length; i++) {
+            for(int j = 1; j < dp[0].length; j++) {
+                if(j < nums[i]) {
+                    dp[i][j] = dp[i - 1][j];
+                } else {
+                    dp[i][j] = dp[i - 1][j] || dp[i - 1][j - nums[i]];
+                }
+            }
+        }
+        return dp[dp.length - 1][dp[0].length - 1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My Simple C++ DP Code with Comments
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum = accumulate(nums.begin(), nums.end(), 0);
+        if (sum & 1) return false;
+        int half = sum >> 1;
+        
+        vector<bool> accessibility(half + 1, false);
+        accessibility[0] = true;    // '0' is always reachable
+        //For all num in nums, check the accessibility from half - num to 0. 
+        //If 'i' is accessible by former numbers, then 'i + num' is also accessible. (DP Algorithm)
+        for(auto num : nums) 
+       //Below here we must start from 'half' downto 'num', otherwise current 'num' might be multiply used. 
+       //e.g.: If num == 2, then we will have 2, 4, 6... will all be accessible and lead to wrong answer. 
+            for(int i = half; i >= num; i--){
+                if (accessibility[i - num] == true){
+                    accessibility[i] = true;
+                }
+            }
+        return accessibility[half];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+7 Lines 59ms Recursive Python Solution
+class Solution(object):
+    def canPartition(self, nums):
+        nums.sort(reverse=True)
+        def helper(start, target):         # Here path is not needed
+            if target < 0: return
+            elif target == 0: return True
+            for i in xrange(start, len(nums)):
+                if helper(i+1, target-nums[i]): return True
+            return False
+
+        return False if sum(nums)%2 else helper(0, sum(nums)/2)
+
+
+----------------------------------------------------------------------------------------------------
+Java Dynamic Programming Solution (21ms, with explanation)
+public boolean canPartition(int[] nums) {
+	int total = 0;
+	for(int i : nums) total+=i; // compute the total sum of the input array
+	if(total%2 != 0) return false; // if the array sum is not even, we cannot partition it into 2 equal subsets 
+	int max = total/2; // the maximum for a subset is total/2
+	int[][] results = new int[nums.length][max]; // integer matrix to store the results, so we don't have to compute it more than one time
+	return isPartitionable(max,0,0,nums,results);
+}
+
+public boolean isPartitionable(int max,int curr, int index, int[] nums, int[][] results) {
+	if(curr>max || index>nums.length-1) return false; // if we passed the max, or we reached the end of the array, return false
+	if(curr==max) return true; // if we reached the goal (total/2) we found a possible partition
+	if(results[index][curr]==1) return true; // if we already computed teh result for the index i with the sum current, we retrieve this result (1 for true)
+	if(results[index][curr]==2) return false; // if we already computed teh result for the index i with the sum current, we retrieve this result (2 for false)
+	boolean res = isPartitionable(max, curr+nums[index], index+1, nums, results) || isPartitionable(max, curr, index+1, nums, results); // else try to find the equal partiion, taking this element, or not taking it
+	results[index][curr] = res ? 1 : 2; // store the result for this index and this current sum, to use it in dynamic programming
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ backtracking solution, 6ms.
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum = 0;
+        for(int i =0;i<nums.size();i++){
+            sum+= nums[i];
+        }
+        if(sum%2) return false;
+        sum /= 2;
+        sort(nums.rbegin(),nums.rend());
+        return helper(nums, sum, 0);
+    }
+    bool helper(vector<int>& nums, int sum, int index){
+        if(sum == nums[index]) return true;
+        if(sum < nums[index]) return false;
+        return helper(nums,sum-nums[index],index+1) || helper(nums,sum,index+1);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java dynamic programming (fastest)
+public class Solution {
+    
+    public boolean canPartition(int[] nums) {
+        int sum = 0;
+        for (int i = 0; i < nums.length; i++) {
+            sum += nums[i];
+        }
+        if (sum %2 != 0) return false;
+        sum /= 2;
+        
+        boolean dp[][] = new boolean[nums.length + 1][sum + 1];
+        
+        for (int i = 0; i < nums.length + 1; i++) {
+            for (int j = 0; j < sum + 1; j ++) {
+                if (i == 0 || j == 0)
+                    dp[i][j] = false;
+            }
+        }
+        
+        dp[0][0] = true;
+        
+        for (int i = 1; i < nums.length + 1; i++) {
+            for (int j = 1; j < sum + 1; j++) {
+                if (j >= nums[i- 1]) 
+                    dp[i][j] = dp[i - 1][j] || dp[i - 1][j - nums[i-1]];
+                else 
+                    dp[i][j] = dp[i - 1][j];
+            }
+        }
+        
+        return dp[nums.length][sum];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+4 line passed python solution
+class Solution(object):
+    def canPartition(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        possible_sums = {0}
+        for n in nums:
+            possible_sums.update({(v + n) for v in possible_sums})
+        return (sum(nums) / 2.)  in possible_sums  
+
+
+----------------------------------------------------------------------------------------------------
+Java short DP solution with explanation
+   public boolean canPartition(int[] a) {
+        int sum = 0;
+        for(int n:a){
+            sum += n;
+        }
+        if(sum%2>0)
+            return false;
+            
+        boolean []dp = new boolean[sum/2+1];
+        dp[0]=true; // empty array
+        int max=0;
+        for(int n: a){
+            if(n>sum/2)
+                return false;  // single number making bigger than sum/2 no way equal partition.
+            for(int j = 0; j<=max; j++){
+                if(dp[j] && ((j+n) <= sum/2) ){
+                    dp[j+n] = true;
+                    max = Math.max(max, j+n);
+                    if(max==sum/2)
+                        return true;
+                }
+            }
+        }
+        return dp[sum/2];        
+    }
+
+----------------------------------------------------------------------------------------------------
+38ms dp JAVA solution
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        int n = nums.length;
+        if (n == 0) 
+            return true;
+        int sum = 0;
+        for (int num: nums) {
+            sum += num;
+        }
+        if (sum % 2 == 1)
+            return false;
+        Arrays.sort(nums);
+        int target = sum / 2;
+        boolean[][] dp = new boolean[n + 1][target + 1];
+        dp[0][0] = true;
+        for (int i = 1; i <= n; i++) {
+            if (nums[i-1] == target)
+                return true;
+            if (nums[i-1] > target)
+                return false;
+            System.arraycopy(dp[i-1], 0, dp[i], 0, Math.min(target + 1, nums[i-1]));
+            for (int j = nums[i-1]; j <= target; j++) {
+                dp[i][j] = dp[i-1][j - nums[i-1]];
+            }
+            if (dp[i][target])
+                return true;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java simple solution using BigInteger
+import java.math.BigInteger;
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        int total = 0;
+        for (int num : nums) {
+            total += num;
+        }
+        if (total % 2 != 0) return false;
+        BigInteger state = new BigInteger("1");
+        for (int num : nums){
+            state = state.or(state.shiftLeft(num));
+        }
+        
+        return state.testBit(total / 2);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with comments using dfs
+/*
+Standard dfs.
+We sum all the numbers in the array, if it's an odd number, retrun false;
+otherwise the question is reduced to 
+    find a subset of numbers, whos sum is total sum / 2.
+We can use standard dfs to find if there is one
+*/
+
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        int sum = 0;
+        for(int i : nums){
+            if(map.containsKey(i)){
+                map.put(i, map.get(i) + 1);
+            }else{
+                map.put(i, 1);
+            }
+            sum += i;
+        }
+        if(sum % 2 == 1) return false;
+        return helper(map, sum / 2);
+    }
+    
+    private boolean helper(Map<Integer, Integer> map, int target){
+        /*target is achieveable*/
+        if(map.containsKey(target) && map.get(target) > 0) return true;
+        /*dfs*/
+        for(int key : map.keySet()){
+            if(key < target && map.get(key) > 0){
+                map.put(key, map.get(key) - 1);
+                if(helper(map, target - key)) return true;
+                map.put(key, map.get(key) + 1);
+            }
+        }
+        return false;
+    }
+}````
+
+----------------------------------------------------------------------------------------------------
+Easy recursive C++ solution
+class Solution {
+public:
+    bool helper(vector<int> & nums, int k, int sum){
+        if (sum==0) return true;
+        if (sum<0) return false;
+        if (k==0) return false;
+        if (helper(nums,k-1,sum-nums[k-1])) return true;
+        else return helper(nums,k-1,sum);
+    }
+    bool canPartition(vector<int>& nums) {
+        int n=nums.size();
+        sort(nums.begin(),nums.end());
+        int sum=0;
+        for (int i=0;i<n;i++){
+            sum+=nums[i];
+        }
+        if (sum%2!=0) return false;
+        return helper(nums,n,sum/2);
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Python Backtracking with Memoization Solution
+class Solution(object):
+    def canFindSum(self, nums, target, ind, n, d):
+        if target in d: return d[target] 
+        if target == 0: d[target] = True
+        else:
+            d[target] = False
+            if target > 0:
+                for i in xrange(ind, n):
+                    if self.canFindSum(nums, target - nums[i], i+1, n, d):
+                        d[target] = True
+                        break
+        return d[target]
+    
+    def canPartition(self, nums):
+        s = sum(nums)
+        if s % 2 != 0: return False
+        return self.canFindSum(nums, s/2, 0, len(nums), {})
+
+
+----------------------------------------------------------------------------------------------------
+Why DP is slower than DFS even with no memoization?
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum = accumulate(nums.begin(), nums.end(), 0);
+        if (sum % 2 != 0)
+            return false;
+        return hasSubsetSum(nums, 0, sum / 2);
+    }
+private:
+    bool hasSubsetSum(const vector<int> &nums, size_t start, int target) {
+        if (target < 0)
+            return false;
+        if (target == 0)
+            return true;
+        for (size_t i = start; i < nums.size(); ++i)
+            if (hasSubsetSum(nums, i + 1, target - nums[i]))
+                return true;
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Confused about the question
+<p>Why the result of the case &#91;1,2,5&#93; is true? I don&#39;t think it can be partitioned into two subset with same sum.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java solution DP(subsum problem) and backtracking(subsets II problem) with explanation
+public class Solution {
+    public boolean canPartition(int[] nums) {
+        if(nums == null || nums.length == 0) return false;
+        int total = 0;
+        for(int num : nums) total += num;
+        if(total % 2 != 0) return false;
+
+        return findSubsetSum(nums, total/2);// this questions --> find if there is a subset that can be added up to total/2.
+    }
+
+    public boolean findSubsetSum(int[] nums, int target)
+    {
+        boolean[] prevRow = new boolean[target + 1];
+        //init
+        prevRow[0] = true;
+        for(int i = 1; i < prevRow.length; i++)
+        {
+            if(nums[0] == i) prevRow[i] = true;
+        }
+
+        for(int i = 1; i < nums.length; i++)
+        {
+            boolean[] cntRow = new boolean[target + 1];
+            cntRow[0] = true;
+            for(int j = 1; j < target + 1; j++)
+            {
+                cntRow[j] = prevRow[j]; //don't include nums[i] into the subset
+                if(!cntRow[j] && j >= nums[i])
+                {
+                    cntRow[j] = prevRow[j - nums[i]]; //include nums[i] into the subset
+                }
+            }
+            prevRow = cntRow;
+        }
+        return prevRow[target];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,423 @@
+Two Solutions, in-order traversal and a more general way using TreeSet
+public class Solution {
+    TreeSet<Integer> set = new TreeSet<>();
+    int min = Integer.MAX_VALUE;
+    
+    public int getMinimumDifference(TreeNode root) {
+        if (root == null) return min;
+        
+        if (!set.isEmpty()) {
+            if (set.floor(root.val) != null) {
+                min = Math.min(min, root.val - set.floor(root.val));
+            }
+            if (set.ceiling(root.val) != null) {
+                min = Math.min(min, set.ceiling(root.val) - root.val);
+            }
+        }
+        
+        set.add(root.val);
+        
+        getMinimumDifference(root.left);
+        getMinimumDifference(root.right);
+        
+        return min;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Time Inorder Traversal Solution
+public class Solution {
+    
+    int minDiff = Integer.MAX_VALUE;
+    TreeNode prev;
+    
+    public int getMinimumDifference(TreeNode root) {
+        inorder(root);
+        return minDiff;
+    }
+    
+    public void inorder(TreeNode root) {
+        if (root == null) return;
+        inorder(root.left);
+        if (prev != null) minDiff = Math.min(minDiff, root.val - prev.val);
+        prev = root;
+        inorder(root.right);
+    }
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 7 lines, O(n) run-time O(h) memory
+class Solution {
+    int min_dif = INT_MAX, val = -1;
+public:
+int getMinimumDifference(TreeNode* root) {
+    if (root->left != NULL) getMinimumDifference(root->left);
+    if (val >= 0) min_dif = min(min_dif, root->val - val);
+    val = root->val;
+    if (root->right != NULL) getMinimumDifference(root->right);
+    return min_dif;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java No In-order Traverse Solution,  just pass upper bound and lower bound
+long minDiff = Long.MAX_VALUE;
+public int getMinimumDifference(TreeNode root) {
+    helper(root,Long.MIN_VALUE,Long.MAX_VALUE);
+    return (int)minDiff;
+}
+private void helper(TreeNode curr, long lb, long rb){
+    if(curr==null) return;
+    if(lb!=Long.MIN_VALUE){
+        minDiff = Math.min(minDiff,curr.val - lb);
+    }
+    if(rb!=Long.MAX_VALUE){
+    minDiff = Math.min(minDiff,rb - curr.val);
+    }
+    helper(curr.left,lb,curr.val);
+    helper(curr.right,curr.val,rb);
+}
+
+----------------------------------------------------------------------------------------------------
+Python easy understand solution
+l = sorted(bfs(root))
+
+----------------------------------------------------------------------------------------------------
+Python Inorder Traversal 3 Line
+class Solution(object):
+    def getMinimumDifference(self, root):
+        nums = self.inorder(root)
+        return min(nums[i+1]-nums[i] for i in range(len(nums)-1))
+        
+    def inorder(self, root):
+        return self.inorder(root.left) + [root.val] + self.inorder(root.right) if root else []
+
+----------------------------------------------------------------------------------------------------
+&#91;Minimum Absolute Difference in BST&#93; &#91;C++&#93; - Short Solution
+class Solution {
+public:
+    int getMinimumDifference(TreeNode* root) {
+        long mindiff = INT_MAX;
+        TreeNode* prev = nullptr;
+        find(root, prev, mindiff);
+        return mindiff;
+    }
+private:
+    void find(TreeNode* node, TreeNode*& prev, long& mindiff) {
+        if (node->left) { 
+            find(node->left, prev, mindiff);
+        }
+
+        if (prev != nullptr) {
+            mindiff = std::min(mindiff, (long)abs(node->val - prev->val));
+        }
+        prev = node;
+
+        if (node->right) {
+            find(node->right, prev, mindiff);
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short Simple Python - O(N) Time - O(1) Space
+def getMinimumDifference(self, root):
+    self.previous = self.minimum = float('inf')
+    
+    def inorder(node):
+        if node:
+            inorder(node.left)
+            self.minimum = min(self.minimum, abs(node.val-self.previous))
+            self.previous = node.val
+            inorder(node.right)
+    
+    inorder(root)
+    return self.minimum
+
+
+
+----------------------------------------------------------------------------------------------------
+JavaScript recursive solution
+var getMinimumDifference = function(root) {
+  let pre = undefined;
+  let diff = Infinity;
+  function inOrder(root) {
+    if (root === null) {
+      return;
+    }
+    inOrder(root.left);
+    if (pre !== undefined && diff > root.val - pre) {
+      diff = root.val - pre;
+    }
+    pre = root.val;
+    inOrder(root.right);
+  }
+  inOrder(root);
+  return diff;
+};
+
+----------------------------------------------------------------------------------------------------
+Java inorder traversal
+public class Solution {
+    TreeNode pre = null;
+    int min = Integer.MAX_VALUE;
+    public int getMinimumDifference(TreeNode root) {
+        inOrder(root);
+        return min;
+    }
+    
+    private void inOrder(TreeNode root) {
+        if (root == null)   return;
+        inOrder(root.left);
+        if (pre != null) {
+            min = Math.min(min, root.val - pre.val);
+        }
+        pre = root;
+        inOrder(root.right);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+my Python solution
+def getMinimumDifference(self, root):
+    """
+    :type root: TreeNode
+    :rtype: int
+    """
+    queue,l=[root],[root.val]
+    while queue:
+        node=queue.pop()
+        if node.left:
+            l.append(node.left.val)
+            queue.append(node.left)
+        if node.right:
+            l.append(node.right.val)
+            queue.append(node.right)
+    ans, l=[],sorted(l)[:]
+    for i in range(1,len(l)):
+        ans.append(l[i]-l[i-1])
+    return min(ans)
+
+----------------------------------------------------------------------------------------------------
+Recursive solution with explanation, O(n) run time and O(1) memory, in C++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+    int prev = -1;
+    int min = INT_MAX;
+    void recGetMinDiff(TreeNode *root){
+        if(!root)
+        return;
+        
+        recGetMinDiff(root->left);
+        
+        int diff;
+        if(prev == -1){
+            prev = root->val;
+        }
+        else{
+            diff = fabs(root->val - prev);
+            if(min > diff)
+            min = diff;
+            prev = root->val;
+        }
+        
+        recGetMinDiff(root->right);
+    }
+    
+public:
+    int getMinimumDifference(TreeNode* root) {
+        recGetMinDiff(root);
+        return min;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution using inorder traversal beats 81% of submissions
+   if root is None:
+        return 
+    
+    temp=[]
+    node = self.inorder(root,temp)
+    temp2 = min([abs(node[i+1] - node[i]) for i in range(len(node)-1)])
+    return temp2
+        
+def inorder(self,root,temp):
+    if root == None:
+        return 
+    self.inorder(root.left,temp)
+    temp.append(root.val)
+    
+    self.inorder(root.right,temp)
+    return temp'''
+
+----------------------------------------------------------------------------------------------------
+6 Lines Python Solution by converting BST to ordered list using recursion
+class Solution(object):
+    def bstToList(self, root):
+        if not root:
+            return []
+        return self.bstToList(root.left) + [root.val] +  self.bstToList(root.right)
+         
+    def getMinimumDifference(self, root):
+        nodes = self.bstToArray(root)
+        return min([abs(a-b) for a,b in zip(nodes, nodes[1:])])
+
+
+----------------------------------------------------------------------------------------------------
+Share my AC solution
+public int getMinimumDifference(TreeNode root) {
+	if (root == null) return 0;
+	Queue<TreeNode> queue = new LinkedList<>();
+	PriorityQueue<Integer> pq = new PriorityQueue<>();
+	queue.add(root);
+	while (!queue.isEmpty()) {
+		TreeNode cur = queue.poll();
+		pq.offer(cur.val);
+		if (cur.left != null) queue.offer(cur.left);
+		if (cur.right != null) queue.offer(cur.right);
+	}
+	int pre = Integer.MAX_VALUE;
+	int min = Integer.MAX_VALUE;
+	while (!pq.isEmpty()) {
+		int cur = pq.poll();
+		min = Math.min(min, (int)Math.abs(cur-pre));
+		pre = cur;
+	}
+	return min;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple (Inorder Traversal)
+def getMinimumDifference(self, root):
+    self.ans = 1e9
+    self.prev = None
+        
+    def search(node):
+        if node.left: search(node.left)
+        if self.prev is not None:
+            self.ans = min(self.ans, node.val - self.prev)
+        self.prev = node.val
+        if node.right: search(node.right)
+    
+    search(root)
+    return self.ans
+
+
+----------------------------------------------------------------------------------------------------
+Constant space by dfs concise solution
+    void dfs(TreeNode* node,TreeNode* minL,TreeNode* maxR,int& res)
+    {
+        if(!node)
+            return;
+        dfs(node->left,minL,node,res);
+        dfs(node->right,node,maxR,res);
+        if(minL)
+            res=min(res,abs(node->val-minL->val));
+        if(maxR)
+            res=min(res,abs(maxR->val-node->val));
+    }
+    
+    int getMinimumDifference(TreeNode* root) 
+    {
+        int res=INT_MAX;
+        dfs(root,NULL,NULL,res);
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+JavaScript O(n) Solution non-recursion
+var getMinimumDifference = function(root) {
+  let pre = undefined;
+  let diff = Infinity;
+  var stack = [];
+  let curNode = root;
+  stack.push(root);
+  while(curNode.left) {
+    curNode = curNode.left;
+    stack.push(curNode);
+  }
+  while(stack.length !== 0) {
+    curNode = stack.pop();
+    if (pre !== undefined && diff > curNode.val - pre) {
+      diff = curNode.val - pre;
+    }
+    pre = curNode.val;
+    if (curNode.right) {
+      curNode = curNode.right;
+      stack.push(curNode);
+      while(curNode.left) {
+        curNode = curNode.left;
+        stack.push(curNode);
+      }
+    }
+  }
+  return diff;
+}
+
+----------------------------------------------------------------------------------------------------
+Easy Java Inorder Solution
+public class Solution {
+    public int getMinimumDifference(TreeNode root) {
+        int[] arr = {-1, Integer.MAX_VALUE};
+        inorder(root, arr);
+        return arr[1];
+    }
+    
+    public void inorder(TreeNode root, int[] arr) {
+        if(root == null) return;
+        inorder(root.left,arr);
+        if(arr[0] != -1) {
+            arr[1] = Math.min(arr[1], Math.abs(arr[0] - root.val));
+        }
+        arr[0] = root.val;
+        inorder(root.right,arr);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Minimum Absolute Difference in BST Java solution
+class Solution {
+public:
+    int getMinimumDifference(TreeNode* root) {
+        if (root == nullptr) {
+            return INT_MAX;
+        }
+        
+        TreeNode* l = root->left;
+        TreeNode* r = root->right;
+        
+        int ld = INT_MAX;
+        while (l != nullptr) {
+            ld = root->val - l->val;
+            l = l->right;
+        }
+        
+        int rd = INT_MAX;
+        while (r != nullptr) {
+            rd = r->val - root->val;
+            r = r->left;
+        }
+  
+        return min(min(ld, rd), min(getMinimumDifference(root->left), getMinimumDifference(root->right)));
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

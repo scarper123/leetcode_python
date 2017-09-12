@@ -1,0 +1,423 @@
+Accepted solution without group by or order by
+    select d.Name Department, e1.Name Employee, e1.Salary
+    from Employee e1 
+    join Department d
+    on e1.DepartmentId = d.Id
+    where 3 > (select count(distinct(e2.Salary)) 
+                      from Employee e2 
+                      where e2.Salary > e1.Salary 
+                      and e1.DepartmentId = e2.DepartmentId
+                      );
+
+----------------------------------------------------------------------------------------------------
+My tidy solution
+    select D.Name as Department, E.Name as Employee, E.Salary as Salary 
+      from Employee E, Department D
+       where (select count(distinct(Salary)) from Employee 
+               where DepartmentId = E.DepartmentId and Salary > E.Salary) in (0, 1, 2)
+             and 
+               E.DepartmentId = D.Id 
+             order by E.DepartmentId, E.Salary DESC;
+
+----------------------------------------------------------------------------------------------------
+Simple solution, easy to understand
+    Select dep.Name as Department, emp.Name as Employee, emp.Salary from Department dep, 
+    Employee emp where emp.DepartmentId=dep.Id and 
+    (Select count(distinct Salary) From Employee where DepartmentId=dep.Id and Salary>emp.Salary)<3
+
+----------------------------------------------------------------------------------------------------
+Simple Solution for 1112 ms
+        
+    SELECT
+        d.Name Department, e.Name Employee, e.Salary Salary
+    FROM
+        (
+            SELECT DepartmentId, Name, Salary 
+            FROM Employee 
+            WHERE 3 > (
+                SELECT COUNT(e1.Salary)
+                FROM (
+                    SELECT DISTINCT Salary, DepartmentId 
+                    FROM Employee 
+                ) e1
+                WHERE
+                    Employee.DepartmentId = e1.DepartmentId 
+                AND
+                    Employee.Salary < e1.Salary
+            )
+            ORDER BY DepartmentId ASC, Salary DESC
+        ) e 
+    LEFT JOIN
+        Department d
+    ON 
+        e.DepartmentId = d.Id
+    WHERE
+        d.Name IS NOT NULL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Solution: Using 3 variables to rank Salaries within each Department
+One variable is to limit the ranking in department, and second to handle salary ties, the third to assign a rank to each row, and we will use this rank to get top n salaries.
+
+The 2nd variable, @PrevSalary, could be avoided by first doing a DISTINCT on Employee table, but then will need to join Employee table back to get the name, which makes the SQL more complex than this approach.
+
+    SELECT d.Name AS Department, se.Name AS Employee, se.Salary 
+    FROM Department d,
+     ( SELECT e.Name, e.DepartmentId, e.Salary,
+              @Rank := (CASE 
+						WHEN @PrevDept != e.DepartmentId THEN 1
+                        WHEN @PrevSalary = e.Salary THEN @Rank
+						ELSE @Rank + 1 END) AS Rank, 
+			  @PrevDept := e.DepartmentId,
+              @PrevSalary := e.Salary
+		FROM Employee e, (SELECT @Rank := 0, @PrevDept := 0, @PrevSalary := 0) r
+ 		ORDER BY DepartmentId ASC, Salary DESC
+	  ) se
+    WHERE d.Id = se.DepartmentId AND se.Rank <= 3
+
+
+Questions, comments are always welcome.
+
+----------------------------------------------------------------------------------------------------
+Query with 2 variables beats 99% of submissions (737 ms)
+ Note: for each department, if there exists duplicate 1st/2nd/3rd highest salaries, all entries should be returned.
+
+       select d.Name as Department, computed.Name as Employee, computed.Salary as Salary
+        from (
+        	select Name, Salary, DepartmentId, @row := IF(DepartmentId=@did, @row + 1,1) as Rank , @did:=DepartmentId
+        	from (
+        		select Name, Salary, DepartmentId
+        		from Employee
+        		order by DepartmentId, Salary desc
+        		) ordered, (select @row:=0, @did:=0) variables
+        	) computed
+        join Department d
+        on computed.DepartmentId=d.Id
+        where computed.Rank<=3
+
+----------------------------------------------------------------------------------------------------
+My solution without fancy syntax
+    select d.Name, r.Name, r.Salary 
+    from (
+      select DepartmentId, Name, Salary,(
+        select count(*)+1 from (
+          select distinct salary, DepartmentId from Employee 
+          ) as uniq
+         where DepartmentId = e.DepartmentId and Salary > e.Salary   
+        ) as rank
+      from Employee e
+      ) as r, Department d
+    where r.DepartmentId = d.Id and r.rank <= 3
+
+
+
+----------------------------------------------------------------------------------------------------
+Another solution
+    SELECT Department ,Employee ,Salary 
+    FROM
+    	(SELECT D.Name AS Department,
+    		A.Name AS Employee,
+    		A.Salary AS Salary,
+    		A.DepartmentId,
+    	    SUM(CASE WHEN A.Salary<T.Salary THEN 1 ELSE 0 END) AS COUNTS 
+    	 FROM 
+    		Employee A,
+    		Department D,
+    		(SELECT Salary AS Salary,DepartmentId from Employee GROUP BY Salary,DepartmentId ) AS T
+    	 WHERE A.DepartmentId = T.DepartmentId 
+    	   AND A.DepartmentId = D.id
+    	 GROUP BY A.Id ORDER BY DepartmentId,Salary desc) R
+    WHERE COUNTS < 3
+
+----------------------------------------------------------------------------------------------------
+Getting runtime error? Works fine on mysql 5.5
+Why am I getting a runtime error?
+
+It works fine on my machine running 5.5
+
+    set @last := '';
+    set @cnter := 1;
+    select 
+        d.Name as Department,
+        j.Employee as Employee,
+        j.Salary as Salary
+    from
+        (select 
+            e.Name as Employee,
+                e.Salary as Salary,
+                e.DepartmentId as DepartmentId,
+                if(@last <> e.DepartmentId, @cnter:=1, @cnter:=@cnter + 1) as rank,
+                @last:=e.DepartmentId
+        from
+            Employee e
+        order by e.DepartmentId , e.Salary desc) j
+            left join
+        Department d ON (j.DepartmentId = d.Id)
+    where
+        rank <= 3;
+
+----------------------------------------------------------------------------------------------------
+DISTINCT WORD SHOULD NOT BE USED!!!
+    select d.Name as Department , e.Name as Employee , e.Salary from Employee e join Department d on e.DepartmentId = d.Id 
+    where 3>(select count(t.Salary) from Employee  t where e.Salary < t.Salary and t.DepartmentId = e.DepartmentId ) order by Department,Salary desc
+
+----------------------------------------------------------------------------------------------------
+Solution without Dummy variables! :)
+    SELECT q0.Department AS Department, q0.Name AS Employee, q0.Salary AS Salary
+      FROM
+      (SELECT t0.Id AS Id, t0.Name AS Name, t0.Salary AS Salary, t0.DepartmentId AS DepartmentId, t1.Name AS Department
+         FROM 
+           Employee AS t0
+         JOIN
+           Department AS t1
+         ON t0.DepartmentId = t1.Id
+      ) AS q0
+      JOIN
+      (SELECT q1.Salary AS Salary, q1.DepartmentId AS DepartmentId
+        FROM
+          (SELECT DISTINCT t2.Salary AS Salary, t2.DepartmentId AS DepartmentId
+            FROM 
+             Employee AS t2) AS q1
+        LEFT JOIN
+          (SELECT DISTINCT t3.Salary AS Salary, t3.DepartmentId AS DepartmentId
+            FROM 
+             Employee AS t3) AS q2
+        ON
+        q1.Salary < q2.Salary AND q1.DepartmentId = q2.DepartmentId
+        GROUP BY Salary, DepartmentId
+        HAVING COUNT(q2.Salary) <= 2) AS q3
+      ON 
+        q0.Salary = q3.Salary AND q0.DepartmentId = q3.DepartmentId
+      ORDER BY Department, Salary DESC
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution with 934 ms using 3 variables
+Explanation :
+
+>  1. Arrange the records according to **department id ascending** and **salary
+>     descending** along with a variable indicating the position of the
+>     salary in the respective department.
+
+
+>  2. Now from the outer select query extract those records whose position is less than or equal to three
+
+   
+
+
+
+    SELECT
+    	Department. NAME AS Department,
+    	t. NAME AS Employee,
+    	t.Salary AS Salary
+    FROM
+    	Department
+    INNER JOIN (
+    	SELECT
+    		Employee. NAME,
+    		Employee.Salary,
+    		Employee.DepartmentId,
+    		CASE
+    	WHEN (@prev <> DepartmentId) THEN
+    		@count := 1
+    	ELSE
+    		(
+    			CASE
+    			WHEN (@prevSalary = Salary) THEN
+    				@count
+    			ELSE
+    				@Count := @count + 1
+    			END
+    		)
+    	END AS counter,
+    	(@prev := DepartmentId) AS dept,
+    	(@prevSalary := Salary) AS sal
+    FROM
+    	(
+    		SELECT
+    			@prev := - 1,
+    			@count := 0 ,@prevSalary := - 1
+    	) c,
+    	Employee
+    ORDER BY
+    	DepartmentId ASC,
+    	Salary DESC
+    ) AS t ON t.DepartmentId = Department.Id
+    WHERE
+    	t.counter <= 3
+
+----------------------------------------------------------------------------------------------------
+Two solutions: 1) count + join;     2) Three variables + join
+1) count + join:
+
+      select d.Name as Department, e.Name as Employee, e.Salary from Employee as e 
+      inner join Department d on e.DepartmentId = d.Id
+      where (select count(distinct e1.Salary) from Employee e1 where e1.Salary > e.Salary 
+            and e1.DepartmentId = e.DepartmentId) < 3
+      order by d.Name, e.Salary DESC;
+
+
+2) Three variables + join :
+
+    select d.Name Department, t.Name Employee, t.Salary
+    from (select Name, Salary, DepartmentId,
+                 @rank := IF(@prev_department = DepartmentId, @rank + (@prev_salary <> Salary), 1) AS rank,
+                 @prev_department := DepartmentId,
+                 @prev_salary := Salary
+                 from Employee, (select @prev_department := -1, @prev_salary := 0.0, @rank := 1) as init 
+                 ORDER BY DepartmentId, Salary DESC) t 
+                 inner join Department d on d.Id = t.DepartmentId
+                 where t.rank <= 3 ORDER BY d.Name, t.Salary DESC;
+                 
+
+----------------------------------------------------------------------------------------------------
+Don&#x27;t take the test too seriously
+select d.Name as Department, e.Name as Employee, e.Salary
+from Employee e, Employee e2, Department d
+where e.DepartmentId = e2.DepartmentId
+and e.Salary <= e2.Salary
+and e.DepartmentId = d.Id
+group by e.Id, e.Name, e.Salary, e.DepartmentId, d.Name
+having count(*) <=3
+order by e.DepartmentId, e.Salary desc;
+
+
+----------
+
+
+The above is definitely a correct answer and works on MySQL. It should also work for Oracle as well. I tried to use standard SQL only.
+
+It works fine in my database. But when I submit, I got 'Wrong Answer'
+I figured out some of tests cases try to test top 4, some tried to test top 3. So it will not satisfy all cases.
+
+----------------------------------------------------------------------------------------------------
+The expectation on test case 18 is wrong
+Input:
+`
+{"headers": {"Employee": ["Id"
+"Name"
+"Salary"
+"DepartmentId"]
+"Department": ["Id"
+"Name"]}
+"rows": {"Employee": [[1
+"Joe"
+60000
+1]
+[2
+"Ralph"
+50000
+1]
+[3
+"Joel"
+60000
+1]
+[4
+"Tracy"
+75000
+1]]
+"Department": [[1
+"IT"]]}}`
+
+Output:
+`
+{"headers": ["Department", "Employee", "Salary"], "values": [["IT", "Tracy", 75000], ["IT", "Joe", 60000], ["IT", "Joel", 60000]]}
+`
+
+Expected:
+`
+{"headers": ["Department", "Employee", "Salary"], "values": [["IT", "Tracy", 75000], ["IT", "Joe", 60000], ["IT", "Joel", 60000], ["IT", "Ralph", 50000]]}
+`
+
+The expectation is 4 rows under 'IT' department, which should be top 3. Isn't it? 
+
+----------------------------------------------------------------------------------------------------
+Why is there a syntax error in my command?
+select D.Name as Department, E.Name as Employee, E.Salary as Salary from Employee E, Department D
+
+    where E.Id in 
+    (
+     select Top 3 Id from Employee where DepartmentId = E.DepartmentId order by E2.Salary DESC
+    ) 
+    and 
+    E.DepartmentId = D.Id order by E.DepartmentId;
+
+----------------------------------------------------------------------------------------------------
+This is my solution
+    # Write your MySQL query statement below
+    select rankT.Department Department, rankT.Employee Employee, rankT.Salary Salary from (select t1.Department Department, t1.Employee Employee, t1.Salary Salary, (
+       case
+            when @preDep = t1.Department and @preSalary = t1.Salary then @rank
+            when @preDep = t1.Department and @preSalary <> t1.Salary then if(@preSalary := t1.Salary, @rank := @rank + 1, @rank := @rank + 1)
+            when (@preDep := t1.Department) is not null and (@preSalary := t1.Salary) then @rank := 1
+            else @rank := 1
+        end 
+    ) Rank from (select @rank := 0, @preDep := null, @preSalary := null) t, (select d.Name Department, e.Name Employee, e.Salary Salary from Employee e join Department d on e.DepartmentId = d.Id order by d.Name, e.Salary desc) t1) rankT where rankT.Rank <= 3;
+
+I think it is easy for you to understand!
+
+----------------------------------------------------------------------------------------------------
+Solution tested in sqlfiddle with correct result but got TLE in leetcode. Please help
+Any suggestion to tune it up?
+
+  
+
+    select d.Name Department, e.Name Employee, e.Salary Salary
+    from Employee e
+    join Department d on e.DepartmentId = d.Id
+    join 
+    (
+    select e1.DepartmentId, e1.Id eId, count(e2.Id) cnt
+    from Employee e1
+    join Employee e2 on  e1.DepartmentId = e2.DepartmentId and e1.Salary <= e2.Salary 
+    group by e1.DepartmentId, e1.Id
+    having count(e2.Id) <= 3
+    ) r on r.eId = e.Id
+    order by d.Name, e.Salary Desc
+
+
+
+Thanks in advance.
+
+
+----------------------------------------------------------------------------------------------------
+Past passed solution now TLE
+This solution has passed on OJ before, but now I get TLE.  Did OJ change the run time requirement?
+
+    # Write your MySQL query statement below
+    select t2.Name as Department, t1.Name as Employee, t1.Salary
+    from
+        (select a.Id, max(a.Name) as Name, max(a.Salary) as Salary, a.DepartmentId 
+        from 
+            Employee a
+        left outer join
+            Employee b
+        on a.DepartmentId = b.DepartmentId and a.Salary<b.Salary
+        group by a.Id, a.DepartmentID
+        having count(distinct b.Salary)<=2
+        )t1
+    join
+        Department t2
+    on t1.DepartmentID=t2.Id
+    order by t2.Name, t1.Salary desc;
+
+----------------------------------------------------------------------------------------------------

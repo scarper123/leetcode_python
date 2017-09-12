@@ -1,0 +1,1108 @@
+A java solution with notes
+  
+
+      /*
+         *  A line is determined by two factors,say y=ax+b
+         *  
+         *  If two points(x1,y1) (x2,y2) are on the same line(Of course). 
+
+         *  Consider the gap between two points.
+
+         *  We have (y2-y1)=a(x2-x1),a=(y2-y1)/(x2-x1) a is a rational, b is canceled since b is a constant
+
+         *  If a third point (x3,y3) are on the same line. So we must have y3=ax3+b
+
+         *  Thus,(y3-y1)/(x3-x1)=(y2-y1)/(x2-x1)=a
+
+         *  Since a is a rational, there exists y0 and x0, y0/x0=(y3-y1)/(x3-x1)=(y2-y1)/(x2-x1)=a
+
+         *  So we can use y0&x0 to track a line;
+         */
+        
+        public class Solution{
+            public int maxPoints(Point[] points) {
+            	if (points==null) return 0;
+            	if (points.length<=2) return points.length;
+            	
+            	Map<Integer,Map<Integer,Integer>> map = new HashMap<Integer,Map<Integer,Integer>>();
+            	int result=0;
+            	for (int i=0;i<points.length;i++){ 
+            		map.clear();
+            		int overlap=0,max=0;
+            		for (int j=i+1;j<points.length;j++){
+            			int x=points[j].x-points[i].x;
+            			int y=points[j].y-points[i].y;
+            			if (x==0&&y==0){
+            				overlap++;
+            				continue;
+            			}
+            			int gcd=generateGCD(x,y);
+            			if (gcd!=0){
+            				x/=gcd;
+            				y/=gcd;
+            			}
+            			
+            			if (map.containsKey(x)){
+            				if (map.get(x).containsKey(y)){
+            					map.get(x).put(y, map.get(x).get(y)+1);
+            				}else{
+            					map.get(x).put(y, 1);
+            				}   					
+            			}else{
+            				Map<Integer,Integer> m = new HashMap<Integer,Integer>();
+            				m.put(y, 1);
+            				map.put(x, m);
+            			}
+            			max=Math.max(max, map.get(x).get(y));
+            		}
+            		result=Math.max(result, max+overlap+1);
+            	}
+            	return result;
+            	
+            	
+            }
+            private int generateGCD(int a,int b){
+        
+            	if (b==0) return a;
+            	else return generateGCD(b,a%b);
+            	
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple solution with explanation
+    int maxPoints(vector<Point> &points) {
+        int result = 0;
+        for(int i = 0; i < points.size(); i++){
+            int samePoint = 1;
+            unordered_map<double, int> map;
+            for(int j = i + 1; j < points.size(); j++){
+                if(points[i].x == points[j].x && points[i].y == points[j].y){
+                    samePoint++;
+                }
+                else if(points[i].x == points[j].x){
+                    map[INT_MAX]++;
+                }
+                else{
+                    double slope = double(points[i].y - points[j].y) / double(points[i].x - points[j].x);
+                    map[slope]++;
+                }
+            }
+            int localMax = 0;
+            for(auto it = map.begin(); it != map.end(); it++){
+                localMax = max(localMax, it->second);
+            }
+            localMax += samePoint;
+            result = max(result, localMax);
+        }
+        return result;
+    }
+
+First, let's talk about mathematics.
+
+How to determine if three points are on the same line?
+
+The answer is to see if slopes of arbitrary two pairs are the same.
+
+Second, let's see what the minimum time complexity can be.
+
+Definitely, O(n^2). It's because you have to calculate all slopes between any two points. 
+
+Then let's go back to the solution of this problem.
+
+In order to make this discussion simpler, let's pick a random point A as an example.
+
+Given point A, we need to calculate all slopes between A and other points. There will be three cases:
+
+1. Some other point is the same as point A.
+
+2. Some other point has the same x coordinate as point A, which will result to a positive infinite slope.
+
+3. General case. We can calculate slope.
+
+We can store all slopes in a hash table. And we find which slope shows up mostly. Then add the number of same points to it. Then we know the maximum number of points on the same line for point A.
+
+We can do the same thing to point B, point C...
+
+Finally, just return the maximum result among point A, point B, point C...
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution, easy to understand.
+        /**
+     * Definition for a point.
+     * class Point {
+     *     int x;
+     *     int y;
+     *     Point() { x = 0; y = 0; }
+     *     Point(int a, int b) { x = a; y = b; }
+     * }
+     */
+    public class Solution {
+        public int maxPoints(Point[] points) {
+            if(points.length <= 0) return 0;
+            if(points.length <= 2) return points.length;
+            int result = 0;
+            for(int i = 0; i < points.length; i++){
+                HashMap<Double, Integer> hm = new HashMap<Double, Integer>();
+                int samex = 1;
+                int samep = 0;
+                for(int j = 0; j < points.length; j++){
+                    if(j != i){
+                        if((points[j].x == points[i].x) && (points[j].y == points[i].y)){
+                            samep++;
+                        }
+                        if(points[j].x == points[i].x){
+                            samex++;
+                            continue;
+                        }
+                        double k = (double)(points[j].y - points[i].y) / (double)(points[j].x - points[i].x);
+                        if(hm.containsKey(k)){
+                            hm.put(k,hm.get(k) + 1);
+                        }else{
+                            hm.put(k, 2);
+                        }
+                        result = Math.max(result, hm.get(k) + samep);
+                    }
+                }
+                result = Math.max(result, samex);
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(n^2) solution for your reference
+Hint by @stellari
+
+"For each point pi, calculate the slope of each line it forms with all other points with greater indices, i.e. pi+1, pi+2, ..., and use a map to record how many lines have the same slope (If two lines have the same slope and share a common point, then the two lines must be the same one). By doing so, you can easily find how many points are on the same line that ends at pi in O(n). Thus the amortized running time of the whole algorithm is O(n^2)."
+
+In order to avoid using double type(the slope k) as map key, I used pair (int a, int b) as the key where a=pj.x-pi.x, b=pj.y-pi.y, and k=b/a. Using greatest common divider of a and b to divide both a, b ensures that lines with same slope have the same key. 
+
+I also handled two special cases: (1) when two points are on a vertical line (2) when two points are the same.
+
+    class Solution {
+    public:
+        int maxPoints(vector<Point> &points) {
+            
+            if(points.size()<2) return points.size();
+            
+            int result=0;
+            
+            for(int i=0; i<points.size(); i++) {
+                
+                map<pair<int, int>, int> lines;
+                int localmax=0, overlap=0, vertical=0;
+                
+                for(int j=i+1; j<points.size(); j++) {
+                    
+                    if(points[j].x==points[i].x && points[j].y==points[i].y) {
+                        
+                        overlap++;
+                        continue;
+                    }
+                    else if(points[j].x==points[i].x) vertical++;
+                    else {
+                        
+                        int a=points[j].x-points[i].x, b=points[j].y-points[i].y;
+                        int gcd=GCD(a, b);
+                        
+                        a/=gcd;
+                        b/=gcd;
+                        
+                        lines[make_pair(a, b)]++;
+                        localmax=max(lines[make_pair(a, b)], localmax);
+                    }
+    
+                    localmax=max(vertical, localmax);
+                }
+                
+                result=max(result, localmax+overlap+1);
+            }
+            
+            return result;
+        }
+    
+    private:
+        int GCD(int a, int b) {
+            
+            if(b==0) return a;
+            else return GCD(b, a%b);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+20-line C++ O(n^2) Hashing Solution
+The idea is straight forward. Calculate each slope between two points and handle two special cases: 1. vertical, 2. duplicate. 
+
+
+    class Solution {
+    public:
+        int maxPoints(vector<Point>& points) 
+        {
+            if(points.size()<=2) return points.size();
+            int res=0;
+            for(int i=0;i<points.size()-1;i++) {
+                int numVertical=1,local=1,duplicate=0;
+                unordered_map<double,int> map;
+                for(int j=i+1;j<points.size();j++) 
+                    if(points[i].x==points[j].x) // special cases
+                        if(points[i].y==points[j].y) // duplicate 
+                            duplicate++;
+                        else // vertical
+                            numVertical++;
+                    else {
+                        double slope=(points[i].y-points[j].y)*1.0/(points[i].x-points[j].x);
+                        map[slope]==0?map[slope]=2:map[slope]++;
+                        local=max(local,map[slope]);
+                    }
+                local=max(local+duplicate,numVertical+duplicate);
+                res=max(res,local);
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+16ms&#x2F;28ms C++ Solutions with Explanations
+This problem has a naive idea, which is to traverse all possible pairs of two points and see how many other points fall in the line determined by them. This idea is of `O(n^3)` time complexity and will meet TLE.
+
+Well, let's focus on lines instead of pairs of points. Could we just find out how many points fall in all possible lines? The answer is yes. Remember that a line is determined by its slope and intercept. In fact, if two lines with the same slope share a common point, then they are just the same line. So to determine a line, we need its slope and a point.
+
+Now comes the idea to solve this problem. We start from a specific point `p`, and compute all the slopes of the lines between `p` and the remaining points. Then those with the same slopes will be the same line. We can find out the maximum number of points fall on a line containing `p`. We exhaust all possible `p`'s and record the largest number we have seen. This number is just answer. 
+
+Well, there are still two special cases to handle:
+
+ 1. Duplicate points: a pair of duplicate points give no determined line, so we just count the number of duplicates and add them to the result.  
+ 2. Vertical lines: the slope of these lines is infinity mathematically. We simply set it to be `INT_MAX` in the following code.
+
+Now we have the following code, using an `unordered_map<float, int> slopes` to record how many points fall in the line of a specific slope and containing `points[i]`. Since all the operations of `unordered_map` is `O(1)`, this code is of `O(n^2)` complexity.
+
+    class Solution {
+    public:
+        int maxPoints(vector<Point>& points) {
+            unordered_map<float, int> slopes;
+            int maxp = 0, n = points.size();
+            for (int i = 0; i < n; i++) {
+                slopes.clear();
+                int duplicate = 1;
+                for (int j = i + 1; j < n; j++) {
+                    if (points[j].x == points[i].x && points[j].y == points[i].y) {
+                        duplicate++;
+                        continue;
+                    }
+                    float slope = (points[j].x == points[i].x) ? INT_MAX : 
+                                  (float)(points[j].y - points[i].y) / (points[j].x - points[i].x);
+                    slopes[slope]++;
+                }
+                maxp = max(maxp, duplicate);
+                for (auto slope : slopes)
+                    if (slope.second + duplicate > maxp) 
+                        maxp = slope.second + duplicate; 
+            }
+            return maxp;
+        }
+    };
+
+Well, since the representation of floating point numbers is sometimes inaccurate, we may use a more safer way to represent the slope (`dy / dx`), which is to record `dx` and `dy` in a `pair<int, int>`. However, once we use `pair<int, int>` for the key of the map, we cannot use an `unordered_map` since `pair<int, int>` is unhashable. We now change to `map` and the time complexity becomes `O(n^2logn)`. Also, since `dy = 4, dx = 2` and `dy = 8, dx = 4` represents the same slope, we need to divide both of them by their gcd first.
+
+The code is as follows. The logic is the same of the one above, just introducing `pair` and `gcd`.
+
+    class Solution { 
+    public: 
+        int maxPoints(vector<Point>& points) {
+            map<pair<int, int>, int> slopes;
+            int maxp = 0, n = points.size();
+            for (int i = 0; i < n; i++) {
+                slopes.clear();
+                int duplicate = 1;
+                for (int j = i + 1; j < n; j++) {
+                    if (points[j].x == points[i].x && points[j].y == points[i].y) {
+                        duplicate++;
+                        continue;
+                    }
+                    int dx = points[j].x - points[i].x;
+                    int dy = points[j].y - points[i].y;
+                    int dvs = gcd(dx, dy);
+                    slopes[make_pair(dx / dvs, dy / dvs)]++;
+                }
+                maxp = max(maxp, duplicate); 
+                for (auto slope : slopes)
+                    if (slope.second + duplicate > maxp)
+                        maxp = slope.second + duplicate;
+            } 
+            return maxp;
+        }
+    private:
+        int gcd(int num1, int num2) {
+            while (num2) {
+                int temp = num2; 
+                num2 = num1 % num2;
+                num1 = temp;
+            }
+            return num1;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python 68 ms code
+        def maxPoints(self, points):
+            l = len(points)
+            m = 0
+            for i in range(l):
+                dic = {'i': 1}
+                same = 0
+                for j in range(i+1, l):
+                    tx, ty = points[j].x, points[j].y
+                    if tx == points[i].x and ty == points[i].y: 
+                        same += 1
+                        continue
+                    if points[i].x == tx: slope = 'i'
+                    else:slope = (points[i].y-ty) * 1.0 /(points[i].x-tx)
+                    if slope not in dic: dic[slope] = 1
+                    dic[slope] += 1
+                m = max(m, max(dic.values()) + same)
+        return m
+
+----------------------------------------------------------------------------------------------------
+My java accepted solution for your reference (only using array).
+        public class Solution 
+        {
+            public int maxPoints(Point[] points) 
+            {
+                int n=points.length;
+                if (n<2) return n;
+                int currentL=0,maxL=2,x=0,y=0,dx=0,dy=0,overlap=0,upperB=n;
+                for(int i=0; i<upperB; i++)
+                {
+                    for(int j=i+1; j<n; j++)
+                    {
+                        currentL=1; 
+    /*
+     * Given two points: (a,b) and (c,d), the corresponding normal vector is (b-d,c-a)
+     * If another point (s,t) is in the same line uniquely defined by (a,b) and (c,d),
+     * then (s-a,t-b) dot (b-d,c-a) = 0
+     */
+                        x=points[i].y-points[j].y;
+                        y=points[j].x-points[i].x;
+    
+    /* If two points are the same, there is no need to check further, 
+     * since a line has to be defined by exactly two distinct points.
+     */
+                        if(x==0 && y==0) 
+                            overlap++;
+    
+    /* Well, it might be the case that duplicates are not consecutive, 
+     * but as long as we can have a non-trivial normal vector, it won't matter.
+     */ 
+                        else 
+                        {
+                            currentL++;
+    
+    /*  Explaining (currentL+n-k>maxL):
+     *  no further checking is necessary when there isn't enough left to make it surpass maxL. 
+     */ 
+                            for(int k=j+1; k<n && currentL+n-k>maxL; k++)
+                            {
+                                dx=points[k].x-points[i].x;
+                                dy=points[k].y-points[i].y;
+                                if(x*dx+y*dy==0)
+                                    currentL++;
+                            }
+                        }
+                        maxL=Math.max(currentL+overlap,maxL);
+                    }
+    
+    /* Explaining (upperB=n-maxL): 
+     * it would be crystal clear as soon as you draw a table for combinations of case n>3.
+     */
+                    upperB=n-maxL;
+                    overlap=0;
+                }
+                return maxL;
+            }
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+Have an O(n^2) accepted solution but feel terrible about it. What do others think?
+My submission:
+
+    import java.util.Map;
+    import java.util.HashMap;
+    
+    /**
+     * Definition for a point.
+     * class Point {
+     *     int x;
+     *     int y;
+     *     Point() { x = 0; y = 0; }
+     *     Point(int a, int b) { x = a; y = b; }
+     * }
+     */
+    public class Solution {
+        public int maxPoints(Point[] points) {
+            int maxLine = 0;
+            
+            for (int i=0; i<(points.length-maxLine); i++) {
+                int coincident = 0;
+                Map<Double, Integer> pointCounts = new HashMap<Double, Integer>();
+                for (int j=i+1; j<points.length; j++) {
+                    Double slope;
+                    if (points[i].x==points[j].x && points[i].y==points[j].y) {
+                        coincident++;
+                        continue;
+                    } else if (points[i].x == points[j].x) {
+                        slope = Math.PI;
+                    } else if (points[i].y == points[j].y) {
+                        slope = 0.0; // logically we don't need this, but in practice i find that we do
+                    } else {
+                        slope = new Double((double)(points[i].y-points[j].y) / (double)(points[i].x-points[j].x));
+                    }
+                    
+                    if (pointCounts.containsKey(slope))
+                        pointCounts.put(slope, pointCounts.get(slope)+1);
+                    else
+                        pointCounts.put(slope, new Integer(1));
+                }
+                maxLine = Math.max(maxLine, 1+coincident+maxValue(pointCounts));
+            }
+            
+            return maxLine;
+        }
+        
+        private int maxValue(Map<Double, Integer> doubleIntMap) {
+            int max = 0;
+            Set<Double> keys = doubleIntMap.keySet();
+            Iterator iter = keys.iterator();
+            while (iter.hasNext())
+                max = Math.max(max, doubleIntMap.get(iter.next()));
+            return max;
+        }
+    }
+My Algorithm was the following:
+
+    for every point i from 0 to points.length - maxColinearPointsFoundSoFar {
+        for every j from i+1 to points.length-1 {
+            ithPointHashTable[slope] += 1;
+        } 
+        find max value in ithPointHashTable and update maxColinearPointsFoundSoFar;
+    }
+
+Here are the reasons that combine to make me feel terrible:
+
+Whenever I use a hash table to achieve O(some runtime) having to assume hash table insertion is O(1), I don't feel great. hash tables also use extra memory which we are also watching our algorithms for.
+
+This might've been the first time ever for me attempting to use a Double as a map key. Through this exercise I've discovered that its not a good idea. For instance (double) (0/1) and (double) (0/-1) evaluates to two different things. That's one thing the test cases uncovered. There might be more cases where mathematically expressions should evaluate to the same thing but in above code they don't.
+
+More along those lines, for two points that have infinite slope, I inesrt them into the hashMap with a key of Math.PI. Mathematically no two points with integer coordinates should have an irrational slope, however in practice because of computer precision. But could there be a case where two points with integer coordinates have a slope between them that creates an equivalent map key as Math.PI? Although its not very likely, the probability might not be 0.
+
+
+----------------------------------------------------------------------------------------------------
+Does anyone use the idea of Hough Transform O(N)?
+When I first read the question, the idea of "hough transform" pops out. I wrote my solution using this idea, but I get a TLE. As you may see, the complexity of Hough transform is only O(180N), which is much lower than those O(N^2) solutions in this discussion board.
+
+I expected to see a "wrong answer" error, because "hough transform" has the parameter theta ( in polar coordinates ): you may have to sample the entire theta space and thus get an approximate result instead of an accurate one. Anyway, I guess some of you might be interested in knowing this classic pattern recognition algorithm. 
+
+
+    #define computeRho( pt, T ) ( ( pt.x * cos( T ) ) + ( pt.y * sin( T ) ) ) 
+
+    class Solution {
+    public:
+        int maxPoints(vector<Point> &points) {
+            if ( points.size() <= 2 ) {
+                return points.size();
+            }
+            int max_points = 0;
+            for ( int i = 0; i < 180; i++ ) {
+                double theta = double( i ) / 180.0 * 3.141592657;
+                map<int,int> accumulator;
+                for ( int j = 0; j < points.size(); j++ ) {
+                    int rho = round( computeRho( points[j], theta ) );
+                    accumulator[ rho ]++;
+                    if ( accumulator[ rho ] > max_points ) {
+                        max_points = accumulator[ rho ];
+                    }
+                }
+            }
+            return max_points;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Two concise python solutions.
+The first solution uses slope directly as the key for the dictionary. Python can handle it. The second solution uses a tuple of integer (dx, dy) as the key.
+
+Solution 1:
+
+    def maxPoints(self, points):
+        if len(points) <= 2: return len(points)
+        d = collections.defaultdict(int) # slope : count
+        result = 0
+        for i in range(len(points)):
+            d.clear()
+            overlap, curmax = 0, 0
+            for j in range(i+1, len(points)):
+                dx, dy = points[j].x - points[i].x, points[j].y - points[i].y
+                if dx == 0 and dy == 0:
+                    overlap += 1
+                    continue
+                slope = dy * 1.0 / dx if dx != 0 else 'infinity'
+                d[slope] += 1
+                curmax = max(curmax, d[slope])
+            result = max(result, curmax+overlap+1)
+        return result
+
+
+Solution 2:
+
+    def maxPoints(self, points):
+        if len(points) <= 2: return len(points)
+        d = collections.defaultdict(int) # (x,y) : count
+        result = 0
+        for i in range(len(points)):
+            d.clear()
+            overlap = 0
+            curmax = 0
+            for j in range(i+1, len(points)):
+                dx = points[j].x - points[i].x
+                dy = points[j].y - points[i].y
+                if dx == 0 and dy == 0:
+                    overlap += 1
+                    continue
+                gcd = self.getGcd(dx, dy)
+                dx //= gcd
+                dy //= gcd
+                d[(dx,dy)] += 1
+                curmax = max(curmax, d[(dx,dy)])
+            result = max(result, curmax+overlap+1)
+        return result
+    
+    def getGcd(self, a, b):
+        if b == 0: return a
+        return self.getGcd(b, a%b)
+
+----------------------------------------------------------------------------------------------------
+16ms c++ easy understanding solution
+    class Solution {
+    public:
+        int maxPoints(vector<Point>& points) {
+            int n = (int)points.size();
+            unordered_map<float, int> map;
+            int res = 0;
+            for(int i = 0; i < n; i++){
+                int same = 1;
+                int vertical = 0;
+                int tmp = 0;
+                map.clear();
+                for(int j = i + 1; j < n; j++){
+                    Point a = points[i];
+                    Point b = points[j];
+                    if(a.x == b.x){
+                        if(a.y != b.y){
+                            vertical++;
+                        }
+                        else{
+                            same++;
+                        }
+                    }
+                    else{
+                         tmp = max(++map[(float)(b.y - a.y) / (b.x - a.x)], tmp);
+                    }
+                }
+                res = max(res, same + max(vertical, tmp));
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my accepted Java code with explanation
+        /**
+     * Definition for a point.
+     * class Point {
+     *     int x;
+     *     int y;
+     *     Point() { x = 0; y = 0; }
+     *     Point(int a, int b) { x = a; y = b; }
+     * }
+     */
+    import java.util.HashMap;
+    public class Solution {
+        public int maxPoints(Point[] points) {
+            if (points.length <= 2){
+                return points.length;
+            }
+            int result=1;
+         
+          //A line is defined y=a/bx+c, so (a, b, c) will represent a unique line
+         // run through each point and calculate (a, b, c) that defines the lines of itself 
+         //with all the the remaining points 
+            for (int i=0; i<points.length; i++){
+                int max=0, countSame=0;
+                HashMap<String, Integer> hm = new HashMap<String, Integer>();
+                for (int j=i+1; j<points.length; j++){
+                    if (points[i].x == points[j].x && points[i].y == points[j].y){
+                        countSame++;       //same points will just add to the result
+                    }
+                    else{
+                        String key = normalize(points[i],points[j]);
+                        if(hm.get(key) == null){
+                            hm.put(key, 1);
+                            if(max ==0){
+                                max++;
+                            }
+                        }
+                        else {
+                           int count = hm.get(key)+1;
+                           hm.put(key, count);
+                         
+                            if (count > max)
+                                max = count;
+                        }
+                    }
+                    
+                }
+                result = Math.max(result, max+countSame+1);
+            }
+    
+            
+            return result;
+        }
+        
+        //ax+by+c=0 or y=a/b x + c
+        private String normalize(Point p1, Point p2){
+            int a, b;
+            float c;
+            
+            if (p1.x == p2.x){  //a line parallel to y axis
+                a = 1;
+                b = 0;
+                c = -1 * p1.x;
+            }
+            else if (p1.y == p2.y){ //a line parallel to x axis
+                a = 0;
+                b = 1;
+                c = p1.y;
+            }
+            else{
+                int gcd = gcd(Math.abs(p1.x-p2.x), Math.abs(p1.y-p2.y));
+                b = (p2.x-p1.x)/gcd;
+                a = (p2.y-p1.y)/gcd;
+                if (a*b<0){                   //if the slope<0, always put (-) in front of a 
+                    a = -1 * Math.abs(a);
+                    b = Math.abs(b); 
+                }
+                else {
+                    a = Math.abs(a);
+                    b = Math.abs(b); 
+                }
+                c = (float)(b*p1.y - a*p1.x)/(float)b;
+            }
+            return ""+a+"||"+b+"||"+c;     //use this presentation as a key
+            
+        }
+        
+        private int gcd(int x, int y) {
+            if (y == 0) {
+              return x;
+            }
+            return gcd(y, x % y);
+      }
+    }
+
+----------------------------------------------------------------------------------------------------
+A neat solution in C++ for ur information
+use slope and translation for each line as the key in map;
+
+overload < and == for map. set for counting.
+
+map and set may be little bit slower but the code is clear
+
+    #include <map>
+    #include <set>
+    #include <algorithm>
+    using namespace std;
+    
+    struct Line {
+        double r;  // ratio ; slope
+        double t;  // translation
+        
+        Line(Point p, Point q) { // math
+            if (q.x == p.x) r = 1e20, t = p.x;
+            else 
+            {
+                r = (double) (q.y-p.y) / (double) (q.x-p.x);
+                t = p.y - p.x * r;
+            }
+        }
+    };
+    
+    bool operator < (const Line& a, const Line& b) {
+        return a.r == b.r ? a.t < b.t : a.r < b.r;
+    }
+    
+    bool operator == (const Line& a, const Line& b) {
+        return a.r == b.r && a.t == b.t;
+    }
+    
+    class Solution {
+    public:
+        int maxPoints(vector<Point> &points) {
+            if (points.empty()) return 0;
+            
+            map<Line, set<Point*> > line_map;
+            for (auto & a : points)
+            for (auto & b : points)
+            {
+                Line line(a,b);
+                line_map[line].insert(&a);
+                line_map[line].insert(&b);
+            }
+            
+            int ret = 1;
+            for (auto & pr : line_map) ret = max(ret,(int)pr.second.size());
+            
+            return ret;
+        }
+    };
+
+
+----------
+
+Nov. 20
+
+Well, actually shiyan2 raised a very interesting question. I tried to make it faster by add
+
+     for (auto & a : points)
+           for (auto & b : points)
+           {
+               if ( (&a) >= (&b) ) continue;
+               Line line(a,b);
+               line_map[line].insert(&a);
+               line_map[line].insert(&b);
+           }
+
+suppose it will be two times faster than the prev 1.  but it failed on case 
+ 
+
+     [(3,10),(0,2),(0,2),(3,10)]
+
+it said the output it 3 rather than 4. And I test on my machine it's 4.
+
+Anyone have any clue about this ?
+
+
+----------
+
+Nov. 25
+
+Finally I got answer for the problems on Nov 20. It is due to the type "double" accuracy.
+
+now I changed the == and <  to 
+
+    inline bool double_equal(double a, double b) { return abs(a-b) < 1e-10; }
+    inline bool double_less (double a, double b) { return a-b < -1e-10; }
+
+and it just works well.
+
+but the time is still high, due to the func calling.
+
+----------------------------------------------------------------------------------------------------
+Solution in Java without hashing and floats.
+The idea is to get two points and than find other points on the line. See comments.
+
+    public int maxPoints(Point[] points) {
+		if (points.length < 3) {
+			return points.length;
+		}
+		int max = 0;
+		for (int a = 0; a<points.length-2; a++) {
+			boolean[] checked = new boolean[points.length];
+			for (int b = a+1; b<points.length; b++) {
+				
+				// Do not check the same line
+				if (checked[b]) continue;
+				
+				// The point-b should differ from point-a
+				while (b < points.length && points[b].x == points[a].x && points[b].y == points[a].y) {
+					b++;
+				}
+				
+				// Count all point between point-a and point-b 
+				// witch have the same coordinates as point-a
+				int count = b == points.length ? 1 : 2;
+				for (int i=a+1; i<b; i++) {
+					if (points[i].x == points[a].x && points[i].y == points[a].y) {
+						count++ ;
+					}
+				}
+				
+				// Count point-c if it lies on the point-a-point-b-line.
+				for (int c = b+1; c<points.length; c++) {
+					if (isOnLine(points[a], points[b], points[c])) {
+						count++ ;
+						checked[c] = true;
+					}
+				}
+				
+				if (count > max) {
+					max = count;
+				}
+			}
+		}
+        return max;
+    }
+	
+	private boolean isOnLine(Point a, Point b, Point c) {
+		return (b.y - a.y)*(c.x - a.x) == (c.y - a.y)*(b.x - a.x);
+	}
+
+----------------------------------------------------------------------------------------------------
+11ms java solution without any map structure
+         public int maxPoints(Point[] points){
+      if(points == null || points.length == 0){
+          return 0;
+      }
+      
+      if(points.length <= 2){
+          return points.length;
+      }
+      
+      int ret = 0;
+      
+      int n = points.length;
+      int count = 0; 
+      int duplicates = 0;
+      
+      for(int i = 0; i < n; i++){
+          Point p = points[i];
+          count = 0;
+          duplicates = 0;
+          
+          for(int j = i + 1; j < n; j++){
+              Point q = points[j];
+              if(q.x == p.x && q.y == p.y){
+                  duplicates++;
+                  ret = Math.max(ret, duplicates + 1);
+                  continue;
+              }
+              
+              //count point q
+              count = 1;
+              
+              for(int k = j + 1; k < n; k++){
+                  Point r = points[k];
+                  count += isCoLinear(p, q, r)? 1: 0;
+              }
+              
+              //count point p
+              ret = Math.max(ret, count + duplicates + 1);
+          }
+          
+      }
+      
+      return ret;
+  }
+
+     private boolean isCoLinear(Point p, Point q, Point r){
+      int val = (q.y - p.y) *(r.x - q.x) - (r.y - q.y)*(q.x - p.x);
+	  return val == 0;
+  }
+
+	
+ 
+
+----------------------------------------------------------------------------------------------------
+Java solution with no double. If you are concerned with using doubles&#x2F;floats, fear not - there is a way around.
+This solution is somewhat slower than the standard solution which uses doubles to store slopes. It, however, guarantees that there will not be any precision error, as long as we are dealing with integers as point coordinates.
+
+You can read here about the pairing functions that uniquely represent any pair of integers. [https://en.wikipedia.org/wiki/Pairing_function#Cantor_pairing_function][1]
+
+    /**
+     * We can use a pairing function to represent two integers uniquely.
+     * In our case we use a pairing function to represent a fraction, 
+     * with first integer being the numerator and second integer being the denominator.
+     * Hence, we avoid precision concerns that may come up if we use floats / doubles.
+     */
+    public int maxPoints(Point[] points) {
+        if (points.length < 2) return points.length;
+        int max = 2;
+        for (Point p1 : points) {
+            Map<Integer, Integer> slopes = new HashMap<>(points.length);
+            int localMax = 0;
+            for (Point p2 : points) {
+                int num = p2.y - p1.y;
+                int den = p2.x - p1.x;
+                
+                // pairing functions only work with non-negative integers
+                // we store the sign in a separate variable
+                int sign = 1;
+                if ((num > 0 && den < 0) || (num < 0 && den > 0)) sign = -1;
+                num = Math.abs(num);
+                den = Math.abs(den);
+                
+                // pairing functions represent a pair of any two integers uniquely;
+                // they can be used as hash functions for any sequence of integers;
+                // therefore, a pairing function from 1/2 doesn't equal to that from 3/6
+                // even though the slope 1/2 and 3/6 is the same.
+                // => we need to convert each fraction to its simplest form, i.e. 3/6 => 1/2
+                int gcd = GCD(num, den);
+                num = gcd == 0 ? num : num / gcd;
+                den = gcd == 0 ? den : den / gcd;
+                
+                // We can use Cantor pairing function pi(k1, k2) = 1/2(k1 + k2)(k1 + k2 + 1) + k2
+                // and include the sign
+                int m = sign * (num + den) * (num + den + 1) / 2 + den;
+                if (slopes.containsKey(m)) slopes.put(m, slopes.get(m)+1);
+                else slopes.put(m, 1);
+                if (m == 0) continue;
+                
+                localMax = Math.max(slopes.get(m),localMax);
+            }
+            max = Math.max(max, localMax + slopes.get(0));
+        }
+        return max;
+    }
+    
+    public int GCD(int a, int b) {
+       if (b == 0) return a;
+       return GCD(b,a % b);
+    }
+
+
+  [1]: https://en.wikipedia.org/wiki/Pairing_function#Cantor_pairing_function
+
+----------------------------------------------------------------------------------------------------
+Clean python code
+This problem has two points to note:
+
+ - point in `points` may be duplicate.
+ - use `a*y + b*x + c = 0` to represent a line, not `y = k*x + b`, because `k` and `b` may be float number, and float numbers can't be compared with `=`.  Two equal `key` in hash table representing `line` may differ.
+
+.
+
+    class Solution(object):
+        def gcd(self, a, b):
+            while b:
+                a, b = b, a % b
+            return a
+    
+        def maxPoints(self, points):
+            if not points:
+                return 0
+    
+            points = map(lambda p: (p.x, p.y), points)
+    
+            counter, points, lines = (
+                collections.Counter(points), list(set(points)),
+                collections.defaultdict(set))
+    
+            for i in xrange(len(points)):
+                for j in xrange(i + 1, len(points)):
+                    (x1, y1), (x2, y2) = points[i], points[j]
+    
+                    a, b, c = x1 - x2, y2 - y1, x2 * y1 - x1 * y2
+                    if a < 0 or a == 0 and b < 0:
+                        a, b, c = -a, -b, -c
+    
+                    gcd = self.gcd(self.gcd(abs(a), abs(b)), abs(c))
+                    lines[(a / gcd, b / gcd, c / gcd)] |= {points[i], points[j]}
+    
+            return max([
+                sum([counter[p] for p in ps])
+                for ps in lines.values()
+            ] + counter.values())
+
+
+
+----------------------------------------------------------------------------------------------------
+30 ms c++ solution with explaination
+    // LOGIC : sort the points based on x value. Now, calculate the slopes with points after the current 
+    // point. Keep on adding to points with same slope. Once done with current points, we ll have a set of slopes m
+    // with the number of points with those slopes. Any possible slope having current point is already in the set of slopes.
+    // If we take another point say j after i, then we have already calculated points with slope that is between j and i. thus we just need
+    // to look after i. 
+    class Solution {
+    public:
+        int maxPoints(vector<Point> &points) {
+            auto comp = [] (Point& a, Point& b) { return a.x < b.x; };
+            int n = points.size();
+            int max_count = 0;
+            std::sort(points.begin(), points.end(), comp);
+            for (int i = 0; i < n; ++i) {
+                unordered_map<double, int> slope_map;
+                Point& p1 = points[i];
+                int same_point = 1;
+                int local_max = 1; // local max to get the number of points passing through max slope line starting at i
+                
+                // only look for points after the current one since ,
+                // we have taken care of line segments before i with j when
+                // running iteration for previous values of i
+                for (int j = i+1; j < n; ++j) {
+                    double m = 0.0;
+                    Point& p2 = points[j];
+                    if (p1.x == p2.x && p1.y == p2.y) {
+                        same_point++;
+                        local_max = max(local_max, same_point);
+                        continue;
+                    } else if (p1.x == p2.x) {
+                        m = INT_MAX;
+                    } else {
+                        m = ((double)(p2.y-p1.y))/(p2.x-p1.x);
+                    }
+                    if (slope_map.find(m) == slope_map.end()) {
+                        slope_map[m] = same_point;
+                    }
+                    slope_map[m]++;
+                    local_max = max(local_max, slope_map[m]);
+                }
+                max_count = max(local_max, max_count);
+            }
+            return max_count;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+52ms Python solution O(N^2) with point dedup
+Basically the same N square solution. Used a map to merge identical points to speed up the double loop.
+
+Running time 52 ms above 100% rest submissions in Python category (I know the float key in hash sucks :-)).
+
+    # Definition for a point.
+    # class Point(object):
+    #     def __init__(self, a=0, b=0):
+    #         self.x = a
+    #         self.y = b
+    
+    class Solution(object):
+        def maxPoints(self, points):
+            """
+            :type points: List[Point]
+            :rtype: int
+            """
+            if len(points) == 0:
+                return 0
+            mm = {}
+            for p in points:
+                mm[(p.x,p.y)] = mm.get((p.x,p.y), 0) + 1
+            P = mm.keys()    
+            if len(P) == 1:
+                return mm[P[0]]
+            maxP = 0
+            for i in xrange(len(P)-1):
+                slopes,repCnt = {},1
+                for j in xrange(i+1,len(P)):
+                    dx,dy = P[i][0]-P[j][0],P[i][1]-P[j][1]
+                    if dx == 0:
+                        slope = "#"
+                    elif dy == 0:
+                        slope = 0
+                    else:
+                        slope = float(dy) / dx
+                    slopes[slope] = slopes.get(slope,0) + mm[P[j]]
+                maxP = max(maxP, mm[P[i]] + max(slopes.values()))
+            return maxP        
+            
+
+----------------------------------------------------------------------------------------------------

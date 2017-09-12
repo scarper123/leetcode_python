@@ -1,0 +1,179 @@
+My concise JAVA solution based on memorized DFS
+**Explanation**
+
+Using DFS directly will lead to TLE, so I just used HashMap to save the previous results to prune duplicated branches, as the following:
+ 
+
+    public List<String> wordBreak(String s, Set<String> wordDict) {
+        return DFS(s, wordDict, new HashMap<String, LinkedList<String>>());
+    }       
+    
+    // DFS function returns an array including all substrings derived from s.
+    List<String> DFS(String s, Set<String> wordDict, HashMap<String, LinkedList<String>>map) {
+        if (map.containsKey(s)) 
+            return map.get(s);
+            
+        LinkedList<String>res = new LinkedList<String>();     
+        if (s.length() == 0) {
+            res.add("");
+            return res;
+        }               
+        for (String word : wordDict) {
+            if (s.startsWith(word)) {
+                List<String>sublist = DFS(s.substring(word.length()), wordDict, map);
+                for (String sub : sublist) 
+                    res.add(word + (sub.isEmpty() ? "" : " ") + sub);               
+            }
+        }       
+        map.put(s, res);
+        return res;
+    }  
+
+----------------------------------------------------------------------------------------------------
+11ms C++ solution (concise)
+    class Solution {
+        unordered_map<string, vector<string>> m;
+    
+        vector<string> combine(string word, vector<string> prev){
+            for(int i=0;i<prev.size();++i){
+                prev[i]+=" "+word;
+            }
+            return prev;
+        }
+    
+    public:
+        vector<string> wordBreak(string s, unordered_set<string>& dict) {
+            if(m.count(s)) return m[s]; //take from memory
+            vector<string> result;
+            if(dict.count(s)){ //a whole string is a word
+                result.push_back(s);
+            }
+            for(int i=1;i<s.size();++i){
+                string word=s.substr(i);
+                if(dict.count(word)){
+                    string rem=s.substr(0,i);
+                    vector<string> prev=combine(word,wordBreak(rem,dict));
+                    result.insert(result.end(),prev.begin(), prev.end());
+                }
+            }
+            m[s]=result; //memorize
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Getting rid of TLE
+if you are getting TLE despite the correct DP or DFS solution, it might be because the largest test input is like this
+
+    
+
+> ["aa..(lots of 'a').b", "a","aaaaa"...so on]
+
+As you can see this test case should return empty  as last character in input string is **b**, which is not in the dictionary. So all the work in DP/DFS is a waste
+
+To escape from TLE, just put a check first whether the input string **s** is breakable or not..if breakable then try to break it using your algo
+
+
+----------------------------------------------------------------------------------------------------
+9 lines Python, 10 lines C++
+**Python:**
+
+    def wordBreak(self, s, wordDict):
+        memo = {len(s): ['']}
+        def sentences(i):
+            if i not in memo:
+                memo[i] = [s[i:j] + (tail and ' ' + tail)
+                           for j in range(i+1, len(s)+1)
+                           if s[i:j] in wordDict
+                           for tail in sentences(j)]
+            return memo[i]
+        return sentences(0)
+
+**C++:**
+
+    vector<string> wordBreak(string s, unordered_set<string>& wordDict) {
+        unordered_map<int, vector<string>> memo {{s.size(), {""}}};
+        function<vector<string>(int)> sentences = [&](int i) {
+            if (!memo.count(i))
+                for (int j=i+1; j<=s.size(); j++)
+                    if (wordDict.count(s.substr(i, j-i)))
+                        for (string tail : sentences(j))
+                            memo[i].push_back(s.substr(i, j-i) + (tail=="" ? "" : ' ' + tail));
+            return memo[i];
+        };
+        return sentences(0);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My concise answer.
+    public class Solution {
+    public List<String> wordBreak(String s, Set<String> dict) {
+        List<String> result = new ArrayList<String>();
+        for(int j = s.length() - 1; j >= 0; j--){
+            if(dict.contains(s.substring(j)))
+                break;
+            else{
+                if(j == 0)
+                    return result;
+            }
+        }
+        for(int i = 0; i < s.length()-1; i++)
+        {
+            if(dict.contains(s.substring(0,i+1)))
+            {
+                List<String> strs = wordBreak(s.substring(i+1,s.length()),dict);
+                if(strs.size() != 0)
+                    for(Iterator<String> it = strs.iterator();it.hasNext();)
+                    {
+                        result.add(s.substring(0,i+1)+" "+it.next());
+                    }
+            }
+        }
+        if(dict.contains(s)) result.add(s);
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Slightly modified DP Java solution
+Hi guys!
+
+There's a lot of concern in other posts about "aaaa...aab" test case that causes TLE when we run through our string not in reverse but from start to end. I've thought a bit on how to add a tiny modification and make just the whole thing more effective, not only pass the TLE case. 
+
+The approach is the same as before: we loop through all possible prefixes checking if it in the dictionary and caching the results. 
+
+But just before jumping into recursion we could also check that the right reminder has a prefix from the dictionary, because if it hasn't then there's no sense in splitting the reminder into sub-strings. It's just a linear check, which I think also could be optimized with some caching but even without optimization the solution is accepted. And also the code looks quite understandable.
+
+    public class Solution {
+
+        private final Map<String, List<String>> cache = new HashMap<>();
+    
+        private boolean containsSuffix(Set<String> dict, String str) {
+            for (int i = 0; i < str.length(); i++) {
+                if (dict.contains(str.substring(i))) return true;
+            }
+            return false;
+        }
+    
+        public List<String> wordBreak(String s, Set<String> dict) {
+            if (cache.containsKey(s)) return cache.get(s);
+            List<String> result = new LinkedList<>();
+            if (dict.contains(s)) result.add(s);
+            for (int i = 1; i < s.length(); i++) {
+                String left = s.substring(0,i), right = s.substring(i);
+                if (dict.contains(left) && containsSuffix(dict, right)) {
+                    for (String ss : wordBreak(right, dict)) {
+                        result.add(left + " " + ss);
+                    }
+                }
+            }
+            cache.put(s, result);
+            return result;
+        }
+    }
+
+Hope it helps!
+
+----------------------------------------------------------------------------------------------------
+Two different strategies about DP get different results

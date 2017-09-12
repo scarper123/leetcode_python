@@ -1,0 +1,515 @@
+&#91;Java&#x2F;C++&#93; Very simple greedy solution with explanation
+string predictPartyVictory(string senate) {
+        queue<int> q1, q2;
+        int n = senate.length();
+        for(int i = 0; i<n; i++)
+            (senate[i] == 'R')?q1.push(i):q2.push(i);
+        while(!q1.empty() && !q2.empty()){
+            int r_index = q1.front(), d_index = q2.front();
+            q1.pop(), q2.pop();
+            (r_index < d_index)?q1.push(r_index + n):q2.push(d_index + n);
+        }
+        return (q1.size() > q2.size())? "Radiant" : "Dire";
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def predictPartyVictory(self, senate):
+    A = collections.deque()
+    people = [0, 0]
+    bans = [0, 0]
+
+    for person in senate:
+        x = person == 'R'
+        people[x] += 1
+        A.append(x)
+
+    while all(people):
+        x = A.popleft()
+        people[x] -= 1
+        if bans[x]:
+            bans[x] -= 1
+        else:
+            bans[x^1] += 1
+            A.append(x)
+            people[x] += 1
+
+    return "Radiant" if people[1] else "Dire"
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, Greedy
+public class Solution {
+    public String predictPartyVictory(String senate) {
+        int r = 0, d = 0, start = 0;
+        char[] arr = senate.toCharArray();
+        for (char c : arr) {
+            if (c == 'R') r++;
+            else d++;
+        }
+        
+        while (r > 0 && d > 0) {
+            while (arr[start] != 'R' && arr[start] != 'D') {
+                start = (start + 1) % arr.length;
+            }
+            
+            char ban = 'R';
+            if (arr[start] == 'R') {
+                ban = 'D';
+                d--;
+            }
+            else {
+                r--;
+            }
+            int idx = (start + 1) % arr.length;
+            while (arr[idx] != ban) {
+                idx = (idx + 1) % arr.length;
+            }
+            
+            arr[idx] = ' ';
+            start = (start + 1) % arr.length;
+        }
+        
+        return d == 0 ? "Radiant" : "Dire";
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution w&#x2F; Explanation
+public static String predictPartyVictory(String senate) {
+        HashMap<Character, Integer> map = new HashMap<>();
+        map.put('D', 0);
+        map.put('R', 1);
+        int[] nextRound = new int[2], eliminate = new int[2];
+        while(true) {
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < senate.length(); i++) {
+                if (eliminate[map.get(senate.charAt(i))] > 0) {
+                    eliminate[map.get(senate.charAt(i))]--;
+                } else {
+                    nextRound[map.get(senate.charAt(i))]++;
+                    eliminate[map.get(senate.charAt(i)) ^ 1]++;
+                    sb.append(senate.charAt(i));
+                }
+            }
+
+            if (nextRound[0] - eliminate[0] > 0 && nextRound[1] - eliminate[1] > 0) {
+                nextRound = new int[2];
+                senate = sb.toString();
+            } else {
+                return nextRound[0] - eliminate[0] > 0 ? "Dire" : "Radiant";
+            }
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Confusion about the logic
+<p>I just wonder why the output of &#34;DRRDRDRDRDDRDRDR&#34; is R?<br/>
+As my understanding, the sequence processing (each senator comes in) as:<br/>
+D, D, R, D, R, D, R, D, R, D, DD, DD, DDD, DDD, DDDD, DDDD? where am i wrong. Thanks.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Very easy to understand. Different than other solutions.
+   public string PredictPartyVictory(string senate)
+    {
+        List<char> list = senate.ToList<char>();
+        int index = 0;
+        while(true)
+        {
+            if (list[index] == 'R')
+            {
+                int nextD = FindNext('D', index, list);
+                if (nextD == -1) return "Radiant";
+                list.RemoveAt(nextD);
+            }
+            else //found D
+            {
+                int NextR = FindNext('R', index, list);
+                if (NextR == -1) return "Dire";
+                list.RemoveAt(NextR);
+            }
+            index = (index >= list.Count - 1) ? 0 : index + 1;
+        }
+    }
+
+    private static int FindNext(char c, int index, List<char> list)
+    {
+        int count = list.Count;
+        while(count>0)
+        {
+            if (list[index] == c)
+                return index;
+            else
+            {
+                index = (index >= list.Count - 1) ? 0 : index+1;
+            }
+            count--;
+        }
+        return -1; //not found;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++, O(n) solution
+class Solution {
+public:
+    string predictPartyVictory(string senate) {
+        int count = 0, len = 0;
+        // When the length of senate doesn't decrease, the game is over.
+        while (senate.size() != len) {
+            string s;
+            len = senate.size();
+            for (int i = 0; i < len; i++) {
+                if (senate[i] == 'R') {
+                    if (count++ >= 0) s += 'R';
+                }
+                else if (senate[i] == 'D') {
+                    if (count-- <= 0) s += 'D';
+                }
+            }  
+            swap(s, senate);
+        }
+        if (senate[0] == 'R') 
+            return "Radiant";
+        else 
+            return "Dire";
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java, easy to understand with explanation, 18ms.
+    public String predictPartyVictory(String senate) {
+        if (senate == null || senate.length() == 0) return null;
+        int[] nLeft = new int[2]; // number of R, D groups still have right to vote 
+        int[] nToDelete = new int[2]; // number of R, D groups have been banned but not yet removed
+        Character res = null;
+        for(int i =0 ; i < senate.length(); i++){
+            if(senate.charAt(i) == 'R') nLeft[0]++;
+            else nLeft[1]++;
+        }        
+        while (res == null) {
+            StringBuilder sb = new StringBuilder();
+            for (int i =0; i<senate.length(); i++){
+                char ch = senate.charAt(i);
+                int idx = ch == 'R' ? 0 : 1;
+                if ( (nLeft[0] == 0 || nLeft[1] ==0) && nToDelete[idx] ==0) { //Have winner, make sure current senator is not banned, so he can announce
+                    res = ch;
+                    break;
+                }
+                if (nToDelete[idx] != 0) nToDelete[idx]--; //Current senator need to be banned, Do not add to sb for next round
+                else {
+                    nLeft[1-idx]--; //ban one senator in another group
+                    nToDelete[1-idx]++;
+                    sb.append(ch); 
+                }
+            }
+            senate = sb.toString(); // Senators left to process in the next round
+        }
+        return res == 'R' ? "Radiant" : "Dire";
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python
+class Solution(object):
+    def predictPartyVictory(self, senate):
+        """
+        :type senate: str
+        :rtype: str
+        """
+        n = len(senate)
+        r, d = senate.count('R'), senate.count('D')
+        alive = [1] * n
+        i = kill_d = kill_r = 0
+        while r and d:
+            if alive[i]:
+                if senate[i] == "R":
+                    if kill_r:
+                        r -= 1
+                        kill_r -= 1
+                        alive[i] = 0
+                    else:
+                        kill_d += 1
+                else:
+                    if kill_d:
+                        d -= 1
+                        kill_d -= 1
+                        alive[i] = 0
+                    else:
+                        kill_r += 1
+            i = (i+1) % n
+        return ("Radiant", "Dire")[not r]
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Rotating Vote Queue
+class Solution {
+public:
+    string predictPartyVictory(string s) {
+        queue<char> q;
+        int r = 0, d = 0, br = 0, bd = 0;
+        for (char ch : s) {
+            ch == 'R' ? r++ : d++;
+            q.push(ch);
+        }
+        while (!q.empty() && r && d) {
+            char ch = q.front();
+            q.pop();
+            if (ch == 'R') {
+                if (br == 0) {
+                    bd++;
+                    q.push(ch);
+                }
+                else {
+                    br--;
+                    r--;    // quit the queue
+                }
+            }
+            else {
+                if (bd == 0) {
+                    br++;
+                    q.push(ch);
+                }
+                else {
+                    bd--;
+                    d--;    // quit the queue
+                }
+            }
+        }
+        return r ? "Radiant" : "Dire";
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ greedy solution using queue
+class Solution {
+public:
+    string predictPartyVictory(string senate) {
+        int n = senate.size();
+        queue<int> qr, qd;
+        for (int i = 0; i < n; ++i)
+            senate[i] == 'R' ? qr.push(i) : qd.push(i);
+        
+        while (!qr.empty() && !qd.empty()) {
+            if (qr.front() < qd.front()) {
+                qr.push(qr.front() + n);
+                qr.pop();
+                qd.pop();
+            }
+            else {
+                qd.push(qd.front() + n);
+                qd.pop();
+                qr.pop();
+            }
+        }
+        
+        return qr.empty() ? "Dire" : "Radiant";
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward and Simple Python
+from collections import deque
+class Solution(object):
+    def predictPartyVictory(self, senate):
+        """
+        :type senate: str
+        :rtype: str
+        """
+        n = len(senate)
+        pos = collections.defaultdict(deque)
+        for i in range(n):
+        	pos[senate[i]].append(i)
+
+        while pos['R'] and pos['D']:
+        	if pos['R'][0] < pos['D'][0]:
+        		pos['R'].append(pos['R'].popleft() + n)
+        		pos['D'].popleft()
+        	else:
+        		pos['D'].append(pos['D'].popleft() + n)
+        		pos['R'].popleft()
+
+        return 'Radiant' if pos['R'] else 'Dire'
+
+
+----------------------------------------------------------------------------------------------------
+68ms Python Solution
+  def predictPartyVictory(self, s):
+        banned_d = banned_r = 0
+        while True:
+            s2 = []
+            has_d = has_r = False
+            for c in s:
+                if c == 'R':
+                    if banned_r == 0:
+                        s2.append('R')
+                        has_r = True
+                        banned_d += 1
+                    else:
+                        banned_r -= 1
+                else:
+                    if banned_d == 0:
+                        s2.append('D')
+                        has_d = True
+                        banned_r += 1
+                    else:
+                        banned_d -= 1
+            if not has_d: return 'Radiant'
+            if not has_r: return 'Dire'
+            s = s2
+
+
+----------------------------------------------------------------------------------------------------
+C: Simple solution
+int nullifyNext(char *senate, int len, int cur, char type) {
+    int i;
+    for (i = cur + 1; i < len + cur; i ++) {
+        if (senate[i % len] == type) {
+            senate[i % len] = 'n';
+            return 0;
+        }
+    }
+    return 1;
+    
+}
+char* predictPartyVictory(char* senate) {
+    int i, n;
+    char *r = "Radiant";
+    char *d = "Dire";
+    
+    n = strlen(senate);
+    
+    while (1) {
+        for (i = 0; i < n; i++) {
+            switch (senate[i]) {
+                case 'n':
+                    break;
+                case 'R':
+                    if (nullifyNext(senate, n, i, 'D') == 1) {
+                        return r;
+                    }
+                    break;
+                case 'D':
+                    if (nullifyNext(senate, n, i, 'R') == 1) {
+                        return d;
+                    }
+                    break;
+            }
+        }
+    }
+    return NULL;
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+public class Solution {
+	public String predictPartyVictory(String senate) {
+		int radiant = (int) senate.chars().filter(c -> c == 'R').count(), dire = senate.length() - radiant;
+
+		boolean[] banned = new boolean[senate.length()];
+
+		while (radiant != 0 && dire != 0) {
+			for (int i = 0; i < senate.length(); i++) {
+				if (banned[i]) {
+					continue;
+				}
+				char current = senate.charAt(i);
+				banned[getNextIdx(senate, i, banned)] = false;
+				if (current == 'R')
+					dire--;
+				else
+					radiant--;
+			}
+		}
+
+		return radiant == 0 ? "Dire" : "Radiant";
+	}
+
+	private int getNextIdx(String senate, int currentIdx, boolean[] banned) {
+		char current = senate.charAt(currentIdx);
+		int nextId = currentIdx;
+		while (nextId < senate.length() && (senate.charAt(nextId) == current || banned[nextId])) {
+			nextId++;
+		}
+		if (nextId == senate.length()) {
+			nextId = currentIdx;
+			while (senate.charAt(nextId) == current || banned[nextId]) {
+				nextId--;
+			}
+		}
+		return nextId;
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+General solution explanation and two solutions
+string predictPartyVictory(string senate) {
+        queue<int> q1;
+        queue<int> q2;
+        int n = senate.size()-1;
+        for(int i=0; i<=n; ++i){
+            if(senate[i]=='R') q1.push(i);
+            else q2.push(i);
+        }
+        
+        while(!q1.empty() && !q2.empty()){
+            ++n;
+            if(q1.front()<q2.front()){
+                q1.pop();
+                q2.pop(); // next nearest opponent for R
+                q1.push(n);// put me to the end
+            }
+            else{
+                q1.pop();// next nearest neighbor for D
+                q2.pop();
+                q2.push(n); // put me to the end
+            }
+        }
+        
+        return (q1.size()>q2.size())? "Radiant" : "Dire";
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand Java Solution
+public String predictPartyVictory(String senate) {
+        StringBuilder str = new StringBuilder(senate);
+        while(true){
+            for(int i = 0; i < str.length(); i++){
+                str.append(str.charAt(i));
+                if(str.charAt(i) == 'R'){
+                    // Always check next senate
+                    int m = i;
+                    while(m < str.length() && str.charAt(m) != 'D'){
+                        m++;
+                    }
+                    if(m == str.length())
+                        return "Radiant";
+                    str.deleteCharAt(m);
+                }
+                else if(str.charAt(i) == 'D'){
+                    int n = i;
+                    while(n < str.length() && str.charAt(n) != 'R'){
+                        n++;
+                    }
+                    if(n  == str.length())
+                        return "Dire";
+                    str.deleteCharAt(n);
+                }
+            }
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------

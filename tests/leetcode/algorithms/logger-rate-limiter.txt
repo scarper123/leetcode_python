@@ -1,0 +1,755 @@
+Summary of 4 different solutions (BFS, DP, static DP and mathematics)
+Came up with the 2 solutions of breadth-first search and dynamic programming. Also "copied" StefanPochmann's static dynamic programming solution (https://leetcode.com/discuss/56993/static-dp-c-12-ms-python-172-ms-ruby-384-ms) and davidtan1890's mathematical solution (https://leetcode.com/discuss/57066/4ms-c-code-solve-it-mathematically) here with minor style changes and some comments. Thank Stefan and David for posting their nice solutions!
+
+**1.Dynamic Programming:** 440ms
+
+    class Solution 
+    {
+    public:
+        int numSquares(int n) 
+        {
+            if (n <= 0)
+            {
+                return 0;
+            }
+            
+            // cntPerfectSquares[i] = the least number of perfect square numbers 
+            // which sum to i. Note that cntPerfectSquares[0] is 0.
+            vector<int> cntPerfectSquares(n + 1, INT_MAX);
+            cntPerfectSquares[0] = 0;
+            for (int i = 1; i <= n; i++)
+            {
+                // For each i, it must be the sum of some number (i - j*j) and 
+                // a perfect square number (j*j).
+                for (int j = 1; j*j <= i; j++)
+                {
+                    cntPerfectSquares[i] = 
+                        min(cntPerfectSquares[i], cntPerfectSquares[i - j*j] + 1);
+                }
+            }
+            
+            return cntPerfectSquares.back();
+        }
+    };
+
+**2.Static Dynamic Programming:** 12ms
+
+    class Solution 
+    {
+    public:
+        int numSquares(int n) 
+        {
+            if (n <= 0)
+            {
+                return 0;
+            }
+            
+            // cntPerfectSquares[i] = the least number of perfect square numbers 
+            // which sum to i. Since cntPerfectSquares is a static vector, if 
+            // cntPerfectSquares.size() > n, we have already calculated the result 
+            // during previous function calls and we can just return the result now.
+            static vector<int> cntPerfectSquares({0});
+            
+            // While cntPerfectSquares.size() <= n, we need to incrementally 
+            // calculate the next result until we get the result for n.
+            while (cntPerfectSquares.size() <= n)
+            {
+                int m = cntPerfectSquares.size();
+                int cntSquares = INT_MAX;
+                for (int i = 1; i*i <= m; i++)
+                {
+                    cntSquares = min(cntSquares, cntPerfectSquares[m - i*i] + 1);
+                }
+                
+                cntPerfectSquares.push_back(cntSquares);
+            }
+            
+            return cntPerfectSquares[n];
+        }
+    };
+
+**3.Mathematical Solution:** 4ms
+
+    class Solution 
+    {  
+    private:  
+        int is_square(int n)
+        {  
+            int sqrt_n = (int)(sqrt(n));  
+            return (sqrt_n*sqrt_n == n);  
+        }
+        
+    public:
+        // Based on Lagrange's Four Square theorem, there 
+        // are only 4 possible results: 1, 2, 3, 4.
+        int numSquares(int n) 
+        {  
+            // If n is a perfect square, return 1.
+            if(is_square(n)) 
+            {
+                return 1;  
+            }
+            
+            // The result is 4 if and only if n can be written in the 
+            // form of 4^k*(8*m + 7). Please refer to 
+            // Legendre's three-square theorem.
+            while ((n & 3) == 0) // n%4 == 0  
+            {
+                n >>= 2;  
+            }
+            if ((n & 7) == 7) // n%8 == 7
+            {
+                return 4;
+            }
+            
+            // Check whether 2 is the result.
+            int sqrt_n = (int)(sqrt(n)); 
+            for(int i = 1; i <= sqrt_n; i++)
+            {  
+                if (is_square(n - i*i)) 
+                {
+                    return 2;  
+                }
+            }  
+            
+            return 3;  
+        }  
+    }; 
+
+**4.Breadth-First Search:** 80ms
+
+    class Solution 
+    {
+    public:
+        int numSquares(int n) 
+        {
+            if (n <= 0)
+            {
+                return 0;
+            }
+            
+            // perfectSquares contain all perfect square numbers which 
+            // are smaller than or equal to n.
+            vector<int> perfectSquares;
+            // cntPerfectSquares[i - 1] = the least number of perfect 
+            // square numbers which sum to i.
+            vector<int> cntPerfectSquares(n);
+            
+            // Get all the perfect square numbers which are smaller than 
+            // or equal to n.
+            for (int i = 1; i*i <= n; i++)
+            {
+                perfectSquares.push_back(i*i);
+                cntPerfectSquares[i*i - 1] = 1;
+            }
+            
+            // If n is a perfect square number, return 1 immediately.
+            if (perfectSquares.back() == n)
+            {
+                return 1;
+            }
+            
+            // Consider a graph which consists of number 0, 1,...,n as
+            // its nodes. Node j is connected to node i via an edge if  
+            // and only if either j = i + (a perfect square number) or 
+            // i = j + (a perfect square number). Starting from node 0, 
+            // do the breadth-first search. If we reach node n at step 
+            // m, then the least number of perfect square numbers which 
+            // sum to n is m. Here since we have already obtained the 
+            // perfect square numbers, we have actually finished the 
+            // search at step 1.
+            queue<int> searchQ;
+            for (auto& i : perfectSquares)
+            {
+                searchQ.push(i);
+            }
+            
+            int currCntPerfectSquares = 1;
+            while (!searchQ.empty())
+            {
+                currCntPerfectSquares++;
+                
+                int searchQSize = searchQ.size();
+                for (int i = 0; i < searchQSize; i++)
+                {
+                    int tmp = searchQ.front();
+                    // Check the neighbors of node tmp which are the sum 
+                    // of tmp and a perfect square number.
+                    for (auto& j : perfectSquares)
+                    {
+                        if (tmp + j == n)
+                        {
+                            // We have reached node n.
+                            return currCntPerfectSquares;
+                        }
+                        else if ((tmp + j < n) && (cntPerfectSquares[tmp + j - 1] == 0))
+                        {
+                            // If cntPerfectSquares[tmp + j - 1] > 0, this is not 
+                            // the first time that we visit this node and we should 
+                            // skip the node (tmp + j).
+                            cntPerfectSquares[tmp + j - 1] = currCntPerfectSquares;
+                            searchQ.push(tmp + j);
+                        }
+                        else if (tmp + j > n)
+                        {
+                            // We don't need to consider the nodes which are greater ]
+                            // than n.
+                            break;
+                        }
+                    }
+                    
+                    searchQ.pop();
+                }
+            }
+            
+            return 0;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+An easy understanding DP solution in Java
+dp[n] indicates that the perfect squares count of the given n, and we have:
+
+    dp[0] = 0 
+    dp[1] = dp[0]+1 = 1
+    dp[2] = dp[1]+1 = 2
+    dp[3] = dp[2]+1 = 3
+    dp[4] = Min{ dp[4-1*1]+1, dp[4-2*2]+1 } 
+          = Min{ dp[3]+1, dp[0]+1 } 
+          = 1				
+    dp[5] = Min{ dp[5-1*1]+1, dp[5-2*2]+1 } 
+          = Min{ dp[4]+1, dp[1]+1 } 
+          = 2
+							.
+							.
+							.
+    dp[13] = Min{ dp[13-1*1]+1, dp[13-2*2]+1, dp[13-3*3]+1 } 
+           = Min{ dp[12]+1, dp[9]+1, dp[4]+1 } 
+           = 2
+							.
+							.
+							.
+    dp[n] = Min{ dp[n - i*i] + 1 },  n - i*i >=0 && i >= 1
+
+
+
+and the sample code is like below:
+
+    public int numSquares(int n) {
+		int[] dp = new int[n + 1];
+		Arrays.fill(dp, Integer.MAX_VALUE);
+		dp[0] = 0;
+		for(int i = 1; i <= n; ++i) {
+			int min = Integer.MAX_VALUE;
+			int j = 1;
+			while(i - j*j >= 0) {
+				min = Math.min(min, dp[i - j*j] + 1);
+				++j;
+			}
+			dp[i] = min;
+		}		
+		return dp[n];
+	}
+
+Hope it can help to understand the DP solution.
+
+----------------------------------------------------------------------------------------------------
+O(sqrt(n)) in Ruby, C++, C
+These solutions use some number theory (see explanation further down).
+
+---
+
+**Ruby solution**
+
+    require 'prime'
+    
+    def num_squares(n)
+      n /= 4 while n % 4 == 0
+      return 4 if n % 8 == 7
+      return 3 if n.prime_division.any? { |p, e| p % 4 == 3 && e.odd? }
+      (n**0.5).to_i**2 == n ? 1 : 2
+    end
+
+Or:
+
+    require 'prime'
+    
+    def num_squares(n)
+      n /= 4 while n % 4 == 0
+      return 4 if n % 8 == 7
+      pd = n.prime_division
+      return 3 if pd.any? { |p, e| p % 4 == 3 && e.odd? }
+      pd.any? { |_, e| e.odd? } ? 2 : 1
+    end
+
+---
+
+**C++ solution**
+
+    int numSquares(int n) {
+        while (n % 4 == 0)
+            n /= 4;
+        if (n % 8 == 7)
+            return 4;
+        bool min2 = false;
+        for (int i=2; i<=n; ++i) {
+            if (i > n/i)
+                i = n;
+            int e = 0;
+            while (n % i == 0)
+                n /= i, ++e;
+            if (e % 2 && i % 4 == 3)
+                return 3;
+            min2 |= e % 2;
+        }
+        return 1 + min2;
+    }
+
+---
+
+**C solution**
+
+Inspired by [kevin36's solution](https://leetcode.com/discuss/57020/java-solution-o-n-1-2-time-and-o-1-space). We don't really need to compute the prime factorization. Knowing that four squares always suffice and using the three-squares test is enough. Single-square and sum-of-two-squares cases can be done simpler.
+
+    int numSquares(int n) {
+        while (n % 4 == 0)
+            n /= 4;
+        if (n % 8 == 7)
+            return 4;
+        for (int a=0; a*a<=n; ++a) {
+            int b = sqrt(n - a*a);
+            if (a*a + b*b == n)
+                return 1 + !!a;
+        }
+        return 3;
+    }
+
+---
+
+**Explanation**
+
+I happen to have given a little talk about just this topic a while back in a number theory seminar. This problem is completely solved, in the sense of being reduced to simple checks of a number's prime factorization. A natural number is...
+
+- ... a **square** if and only if each prime factor occurs to an even power in the number's prime factorization.
+- ... a [**sum of two squares**](https://en.wikipedia.org/wiki/Fermat%27s_theorem_on_sums_of_two_squares) if and only if each prime factor that's 3 modulo 4 occurs to an even power in the number's prime factorization.
+- ... a [**sum of three squares**](https://en.wikipedia.org/wiki/Legendre%27s_three-square_theorem) if and only if it's not of the form 4<sup>a</sup>(8b+7) with integers a and b.
+- ... a [**sum of four squares**](https://en.wikipedia.org/wiki/Lagrange%27s_four-square_theorem). Period. No condition. You never need more than four.
+
+Of course single squares can also be identified by comparing a given number with the square of the rounded root of the number.
+
+The problem statement says *"1, 4, 9, 16, ..."*, for some reason apparently excluding 0, but it really is a perfect square and the above theorems do consider it one. With that, you can for example always extend a sum of two squares a<sup>2</sup>+b<sup>2</sup> to the sum of three squares a<sup>2</sup>+b<sup>2</sup>+0<sup>2</sup>. Put differently, if n isn't a sum of three squares, then it also isn't a sum of two squares. So you can read the above statements as *"... a sum of m **(or fewer)** squares"*. Thanks to ruben3 for asking about this in the comments.
+
+In my above solutions, I first divide the given number by 4 as often as possible and then do the three-squares check. Dividing by 4 doesn't affect the other checks, and the n % 8 == 7 is cheaper than the prime factorization, so this saves time in cases where we do need four squares.
+
+Armed with just the knowledge that you never need more than four squares, it's also easy to write O(n) solutions, e.g.:
+
+    int numSquares(int n) {
+        int ub = sqrt(n);
+        for (int a=0; a<=ub; ++a) {
+            for (int b=a; b<=ub; ++b) {
+                int c = sqrt(n - a*a - b*b);
+                if (a*a + b*b + c*c == n)
+                    return !!a + !!b + !!c;
+            }
+        }
+        return 4;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short Python solution using BFS
+    def numSquares(self, n):
+        if n < 2:
+            return n
+        lst = []
+        i = 1
+        while i * i <= n:
+            lst.append( i * i )
+            i += 1
+        cnt = 0
+        toCheck = {n}
+        while toCheck:
+            cnt += 1
+            temp = set()
+            for x in toCheck:
+                for y in lst:
+                    if x == y:
+                        return cnt
+                    if x < y:
+                        break
+                    temp.add(x-y)
+            toCheck = temp
+    
+        return cnt
+
+The basic idea of this solution is a BSF search for shortest path, take 12 as an example, as shown below, the shortest path is 12-8-4-0:
+
+![exapmle][1]
+ 
+
+
+  [1]:http://i.imgur.com/XCoQwiN.png
+
+----------------------------------------------------------------------------------------------------
+Static DP, C++ 12 ms, Python 172 ms, Ruby 384 ms
+There are so **many** "large" test cases that it's worthwhile to keep data between test cases rather than recomputing from scratch all the time. At least in the slower languages. My `dp` tells the numbers of squares needed for the first integers, and when asked about a new `n`, I extend `dp` just as much as necessary.
+
+---
+
+**C++** ... 28 ms
+
+    int numSquares(int n) {
+        static vector<int> dp {0};
+        while (dp.size() <= n) {
+            int m = dp.size(), squares = INT_MAX;
+            for (int i=1; i*i<=m; ++i)
+                squares = min(squares, dp[m-i*i] + 1);
+            dp.push_back(squares);
+        }
+        return dp[n];
+    }
+
+**C++** ... 12 ms
+
+Switching the loops makes it less nice but faster:
+
+    int numSquares(int n) {
+        static vector<int> dp {0};
+        int m = dp.size();
+        dp.resize(max(m, n+1), INT_MAX);
+        for (int i=1, i2; (i2 = i*i)<=n; ++i)
+            for (int j=max(m, i2); j<=n; ++j)
+                if (dp[j] > dp[j-i2] + 1)
+                    dp[j] = dp[j-i2] + 1;
+        return dp[n];
+    }
+
+---
+
+**Python** ... 172 ms
+
+    class Solution(object):
+        _dp = [0]
+        def numSquares(self, n):
+            dp = self._dp
+            while len(dp) <= n:
+                dp += min(dp[-i*i] for i in range(1, int(len(dp)**0.5+1))) + 1,
+            return dp[n]
+
+---
+
+**Ruby** ... 384 ms
+
+    $dp = [0]
+    def num_squares(n)
+      $dp << (1..$dp.size**0.5).map { |i| $dp[-i*i] }.min + 1 until $dp[n]
+      $dp[n]
+    end
+
+There's probably a cleaner way than using a global variable, but I'm new to Ruby and don't know one.
+
+----------------------------------------------------------------------------------------------------
+Simple Java DP Solution
+Just regular DP. Time Complexity: n * sqrt(n)   Space: O(n)
+
+    public class Solution {
+        public int numSquares(int n) {
+           int[] dp = new int[n + 1];
+           Arrays.fill(dp, Integer.MAX_VALUE);
+           dp[0] = 0;
+           for(int i = 0; i <= n; i++){
+               for(int j = 1; i + j * j <= n; j++){
+                   dp[i  + j * j] = Math.min(dp[i + j * j], dp[i] + 1);
+                }
+           }
+           return dp[n];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms C++ code - Solve it mathematically
+    class Solution {  
+    public:  
+        int is_square(int n){  
+            int temp = (int) sqrt(n);  
+            return temp * temp == n;  
+        }  
+        int numSquares(int n) {  
+            while ((n & 3) == 0) //n%4 == 0  
+                n >>= 2;  
+            if ((n & 7) == 7) return 4; //n % 8 == 7  
+            if(is_square(n)) return 1;  
+            int sqrt_n = (int) sqrt(n);  
+            for(int i = 1; i<= sqrt_n; i++){  
+                if (is_square(n-i*i)) return 2;  
+            }  
+            return 3;  
+        }  
+    };  
+
+UPDATE: in order to understand, I suggest u read:
+
+here is the Lagrange's Four Square theorem - Limit the result to <= 4:
+[https://en.wikipedia.org/wiki/Lagrange%27s_four-square_theorem](https://en.wikipedia.org/wiki/Lagrange%27s_four-square_theorem)
+
+And this article, in which you can also find the way to present a number as a sum of four squares:
+[http://www.alpertron.com.ar/4SQUARES.HTM](http://www.alpertron.com.ar/4SQUARES.HTM)
+
+----------------------------------------------------------------------------------------------------
+Java DP Solution with explanation
+    public class Solution {
+    public int numSquares(int n) {
+        int[] dp = new int[n + 1];
+        for (int i = 1; i <= n; i++) {
+            dp[i] = Integer.MAX_VALUE;
+        }
+        
+        for (int i = 1; i <= n; i++) {
+            int sqrt = (int)Math.sqrt(i);
+            
+            // If the number is already a perfect square,
+            // then dp[number] can be 1 directly. This is
+            // just a optimization for this DP solution.
+            if (sqrt * sqrt == i) {
+                dp[i] = 1;
+                continue;                
+            }
+            
+            // To get the value of dp[n], we should choose the min
+            // value from:
+            //     dp[n - 1] + 1,
+            //     dp[n - 4] + 1,
+            //     dp[n - 9] + 1,
+            //     dp[n - 16] + 1
+            //     and so on...
+            for (int j = 1; j <= sqrt; j++) {
+                int dif = i - j * j;
+                dp[i] = Math.min(dp[i], (dp[dif] + 1));
+            }
+        }
+        
+        return dp[n];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Beautiful 8 Lines Java Solution
+    public class Solution {
+        public int numSquares(int n) {
+            int[] record = new int[n+1];
+            for(int i=0;i<=n;i++){
+                record[i] = i;
+                for(int j=1;j*j<=i;j++){
+                    record[i] = Math.min(record[i-j*j]+1,record[i]);
+                }
+            }
+            return record[n];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(sqrt(n)), about 0.034 ms (and 0.018 ms)
+For better measurement, I wrapped the actual solution in a 10000-loop. This got accepted in 344 ms (every time in three submits), so without the wrapper it should take about 0.0344 ms. I tried a few variations and this is the fastest I managed to do.
+
+(**Update:** After qgambit2's challenge, I [optimized my my original approach](https://leetcode.com/discuss/57185/o-sqrt-n-about-0-03-ms?show=57682#c57682) and now that's my fastest, with about 180 ms.)
+
+First I use the fact that [four squares always suffice](https://en.wikipedia.org/wiki/Lagrange%27s_four-square_theorem) and the fact that [four squares are only needed for numbers of the form 4<sup>a</sup>(8b+7)](https://en.wikipedia.org/wiki/Legendre%27s_three-square_theorem). After that part, I know that the answer is 1, 2 or 3, and I try to build n as sum of one or two squares.
+
+For that, I use a kind of two-pointers-approach. Instead of going through squares a<sup>2</sup> and checking whether n-a<sup>2</sup> is a square (which would involve computing lots of square roots), imagine you start with a=0<sup>2</sup> and b=floor(sqrt(n))<sup>2</sup> and as long as a<=b, either make `a` the next larger square or make `b` the next smaller square, depending on whether the sum of the two squares is too small or too large (or return 2, if it's exactly right).
+
+But in order to improve speed further, I use that squares are sums of consecutive odd numbers starting at 1 (for example, 25=1+3+5+7+9), and my `a` and `b` aren't squares but the corresponding odd numbers. And instead of computing the sum of the two squares, I just add to or subtract from n, trying to reach zero. This way, my main part doesn't even have multiplications. Just simple addition/subtraction and comparisons.
+
+The solution:
+
+    int numSquaresReal(int n) {
+        while (n % 4 == 0)
+            n /= 4;
+        if (n % 8 == 7)
+            return 4;
+        int a = -1, b = sqrt(n);
+        n -= b * b;
+        b += b + 1;
+        while (a <= b) {
+            if (n < 0)
+                n += b -= 2;
+            else if (n > 0)
+                n -= a += 2;
+            else
+                return a < 0 ? 1 : 2;
+        }
+        return 3;
+    }
+
+    
+The wrapper for better time measurement:
+
+    int numSquares(int n) {
+        int sum = 0;
+        for (int i=0; i<10000; i++)
+            sum += numSquaresReal(n);
+        return sum / 10000;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Explanation of the DP solution
+The most common solution for this problem is using DP, BFS or Number theory. Here I will give a brief explanation of the DP solution. The solution is as following:
+
+    public int NumSquares(int n) {
+           int[] DP = new int[n + 1];
+            for (int i = 1; i <= n; i++)
+            {
+                int min= int.MaxValue;
+                for (int j = 1; j * j <= i; j++)
+                {
+                    min= Math.Min(min, DP[i - j * j] + 1);
+                }
+                DP[i] = min;
+            }
+            return DP[n];
+    }
+
+First of all, we created the DP array as usual. This DP array stands for the least number of perfect square numbers for its index. For example DP[13]=2 stands for if you want to decompose 13 into some perfect square numbers, it will contains at least two terms which are 3*3 and 2*2. 
+
+After the initialization of the DP array. We want to iterate through the array to fill all indices. During each iteration we're actually doing this: `dp[i] = 1 + min (dp[i-j*j] for j*j<=i)`. The formula itself is a little bit hard to understand. Here's an example of how it works: (C#)
+
+Suppose we want to get DP[13] and we already have the previous indices filled. 
+
+DP[13] = DP[13-1x1]+DP[1] = DP[12]+1 = 3;
+
+
+DP[13] = DP[13-2x2]+DP[2x2] = DP[9]+1 = 2;
+
+
+DP[13] = DP[13-3x3] + DP[3x3] = DP[4] + 1 = 2;
+
+We pick the smallest one which is 2 so DP[13] = 2. Hope it helps.
+
+
+----------------------------------------------------------------------------------------------------
+Very straightforward C++ DP solution
+For each i , the max # of perfect square is always i (when square = 1*1). So the boundary of each dp[i] = i.
+
+    class Solution {
+    public:
+        int numSquares(int n) {
+            if (n == 0) return 0;
+            
+            vector<int> dp(n+1, 0);
+            
+            for (int i=0; i<=n; ++i) {
+                dp[i] = i;
+                for (int j = 2; j<=sqrt(i); ++j) {
+                    dp[i] = min(dp[i], 1 + dp[i - j*j]);
+                }
+            }
+            
+            return dp[n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+58ms Java DP solution beating over 90%
+    public class Solution {
+    /**
+     * s[i] denotes the least number of square numbers that add up to n
+     * initial s[i] as maximum integer
+     * for i from 1 to n, 
+     *      if i is perfect square, s[i]=1, 
+     *      otherwise get the square root of the maximum perfect square smaller than i
+     * for j from 1 to square root, 
+     *      if(s[i-j*j]+1<s[i]) update s[i] as s[i-j*j]+1
+     * 
+     * */
+    public int numSquares(int n) {
+        int[] s = new int[n+1];
+        for(int i=0;i<n+1;i++) s[i] = Integer.MAX_VALUE;
+        //note to me: no need to store a list of perfect squares, knowing the square root of the largest perfect square is sufficient
+        //List<Integer> squares = new ArrayList<Integer>();
+        for(int i = 1;i<n+1;i++){
+            int sqrt = (int) Math.sqrt(i);
+            if(i == sqrt*sqrt){s[i] = 1;continue;}
+            for(int j = 1;j<=sqrt;j++){
+                if(s[i-j*j]+1<s[i]) s[i] = s[i-j*j]+1;
+            }
+        }
+        return s[n];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+    public int numSquares(int n) {
+        int[] min = new int[n+1];
+        min[1] = 1;
+        for(int i=2;i<=n;i++){
+            int tmp = Integer.MAX_VALUE;
+            for(int j=1;j*j<=i;j++){
+                tmp = Math.min(tmp,min[i-j*j]+1);
+            }
+            min[i] = tmp;
+        }
+        return min[n];
+    }
+
+----------------------------------------------------------------------------------------------------
+Python Accepted Solution
+I've seen that the dp solution is not accepted in Python. Some use static *dp* in order to use it. And we can also solve it using number theory knowledge. But **what if in a competition we don't know that theory? What if we are not allowed to use static dp?** Here is an accepted solution using BFS:
+
+    class Solution(object):
+        def numSquares(self, n):
+            """
+            :type n: int
+            :rtype: int
+            """
+           
+            q1 = [0]
+            q2 = []
+            level = 0
+            visited = [False] * (n+1)
+            while True:
+                level += 1
+                for v in q1:
+                    i = 0
+                    while True:
+                        i += 1
+                        t = v + i * i
+                        if t == n: return level
+                        if t > n: break
+                        if visited[t]: continue
+                        q2.append(t)
+                        visited[t] = True
+                q1 = q2
+                q2 = []
+                    
+            return 0
+
+----------------------------------------------------------------------------------------------------
+Java solution O(n^1&#x2F;2) time and O(1) space
+public class Solution {
+
+        public int numSquares(int n) {
+            int m = n;
+            while( m % 4 == 0 )
+                m = m>>2;
+            if(m % 8 == 7)
+                return 4;
+            
+            int sqrtOfn = (int) Math.sqrt(n);
+            if(sqrtOfn * sqrtOfn == n)//Is it a Perfect square?
+                return 1;
+            else{
+                    for(int i = 1; i <= sqrtOfn; ++i){
+                        int remainder = n - i*i;
+                        int sqrtOfNum = (int) Math.sqrt(remainder);
+                        if(sqrtOfNum * sqrtOfNum == remainder)
+                            return 2;
+                    }
+                }
+             return 3;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

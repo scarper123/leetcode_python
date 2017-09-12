@@ -1,0 +1,185 @@
+Share four different solutions
+
+    # Solution 1
+    cnt=0
+    while read line && [ $cnt -le 10 ]; do
+      let 'cnt = cnt + 1'
+      if [ $cnt -eq 10 ]; then
+        echo $line
+        exit 0
+      fi
+    done < file.txt
+
+    # Solution 2
+    awk 'FNR == 10 {print }'  file.txt
+    # OR
+    awk 'NR == 10' file.txt
+
+    # Solution 3
+    sed -n 10p file.txt
+
+    # Solution 4
+    tail -n+10 file.txt|head -1
+
+
+----------------------------------------------------------------------------------------------------
+Super simple solution
+    awk 'NR == 10' file.txt
+
+NR: the current row number (start from 1).
+Because the default action of awk is {print $0}, we can ignore the action.
+
+----------------------------------------------------------------------------------------------------
+My three simple solutions
+    # Read from the file file.txt and output the tenth line to stdout.
+    
+    #Solution One:
+    #head -n 10 file.txt | tail -n +10
+    
+    #Solution Two:
+    #awk 'NR==10' file.txt
+    
+    #Solution Three:
+    sed -n 10p file.txt
+
+
+
+----------------------------------------------------------------------------------------------------
+A generalized approach with head&#x2F;tail
+Extract NLINES lines from STARTING line
+
+    STARTING=10; NLINES=1; cat file.txt | tail -n+${STARTING} | head -n${NLINES}
+
+----------------------------------------------------------------------------------------------------
+Simple Solution using AWK
+    awk '{if(NR==10) print $0}' file.txt
+
+If the record number (NR) is 10, print the entire record $0.
+NR in AWK by default is any single line (en of record delimiter is \n).
+Records start numbering from 1.
+
+----------------------------------------------------------------------------------------------------
+My solution by using head and tail
+    tail -n +10 file.txt | head -n 1
+
+----------------------------------------------------------------------------------------------------
+Share a solution based on array
+Since there already have solutions based on `awk` or `sed` or `head | tail`, here is a unique soluton.
+
+    IFS=$'\n' ;arr=($(<file.txt)); echo ${arr[9]}
+
+----------------------------------------------------------------------------------------------------
+Very neat solution using Awk!
+Only one line in awk
+    
+    awk 'NR == 10' file.txt
+
+----------------------------------------------------------------------------------------------------
+12 ms awk based solution
+This is all it takes. I tried to do the same thing with sed, but I couldn't remember how to do it with sed.
+
+    awk 'NR == 10' < file.txt
+
+Given that the awk binary is slightly larger than the sed binary on my box I wonder if I'll get better runtime using sed, since some of the runtime will be affected by loading that binary before executing it. But given that those binaries are so small (on my OS X box), I wonder if it will make a difference.
+
+    panzani leetcode$ which sed
+    /usr/bin/sed
+    panzani leetcode$ du -h /usr/bin/sed
+     20K	/usr/bin/sed
+    panzani leetcode$ which awk 
+    /usr/bin/awk
+    panzani leetcode$ du -h /usr/bin/awk 
+     52K	/usr/bin/awk
+
+
+
+----------------------------------------------------------------------------------------------------
+Checkout my solution here
+    #if file.txt does not contain enough lines, we just pad it with 10 empty lines.
+    echo "
+    
+    
+    
+    
+    
+    
+    
+    
+    " | cat file.txt - | head | tail -n 1
+
+I thought it simple enough for this question.
+
+----------------------------------------------------------------------------------------------------
+A &quot;pure bash&quot; solution
+    #!/bin/env bash
+    # Read from the file file.txt and output the tenth line to stdout.
+    
+    filename=${1:-file.txt}
+    lineth=${2:-10}
+    
+    i=$lineth
+    while read line && ((--i))
+    do
+        :
+    done <$filename
+    
+    if [[ $i -gt 0 ]]
+    then
+        #echo "This file has not enough lines"
+        exit 1
+    fi
+    
+    echo $line
+
+I had thought that this solution may has an better efficiency than such as `tail -n+10 file.txt|head -1` which forks other processes, but I am wrong.
+
+The above solution only beats 3% submissions while `tail&&head` combination beats 17% submissions, I don't know why....
+
+----------------------------------------------------------------------------------------------------
+2&gt;&#x2F;dev&#x2F;null not allowed??
+i treid
+
+    while read .... done 2>/dev/null <file.txt
+
+ 
+
+
+----------------------------------------------------------------------------------------------------
+Short and sweet awk solution
+#In awk, the predefined variable NR stores the current line number.
+#This allows for an easy throwaway 1 liner solution.
+cat file.txt | awk '{if (NR==10) print $0}'
+
+----------------------------------------------------------------------------------------------------
+Puzzeled with the output
+
+num=0
+for str in `head -10  file.txt`
+do
+    num=$[num+1]
+    if [ $num -eq 10 ]
+    then 
+          echo $str
+    fi
+done
+
+
+----------
+
+
+result:
+\ntenthline , why my output starts with a '\n'? Anyone can help me ? 
+
+
+
+----------------------------------------------------------------------------------------------------
+Can you explain why use: | tail -n +10
+Can you explain | tail -n +10, what does it do?
+
+----------------------------------------------------------------------------------------------------
+one liner with sed
+<p>cat file.txt | sed -n &#39;10 p&#39;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Using grep only solution. Accepted.

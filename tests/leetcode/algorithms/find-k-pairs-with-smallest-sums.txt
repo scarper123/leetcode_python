@@ -1,0 +1,767 @@
+Clean C++ Solution and Explaination - O(mn) space with O(1) time
+Construct a 2D array `sums[row+1][col+1]`
+
+(**notice**: we add additional blank row `sums[0][col+1]={0}` and blank column `sums[row+1][0]={0}` to remove the edge case checking), so, we can have the following definition 
+
+`sums[i+1][j+1]` represents the sum of area from `matrix[0][0]` to `matrix[i][j]`
+
+To calculate sums, the ideas as below
+
+    +-----+-+-------+     +--------+-----+     +-----+---------+     +-----+--------+
+    |     | |       |     |        |     |     |     |         |     |     |        |
+    |     | |       |     |        |     |     |     |         |     |     |        |
+    +-----+-+       |     +--------+     |     |     |         |     +-----+        |
+    |     | |       |  =  |              |  +  |     |         |  -  |              |
+    +-----+-+       |     |              |     +-----+         |     |              |
+    |               |     |              |     |               |     |              |
+    |               |     |              |     |               |     |              |
+    +---------------+     +--------------+     +---------------+     +--------------+
+    
+       sums[i][j]      =    sums[i-1][j]    +     sums[i][j-1]    -   sums[i-1][j-1]   +  
+
+                            matrix[i-1][j-1]
+
+So, we use the same idea to find the specific area's sum.
+
+
+
+    +---------------+   +--------------+   +---------------+   +--------------+   +--------------+
+    |               |   |         |    |   |   |           |   |         |    |   |   |          |
+    |   (r1,c1)     |   |         |    |   |   |           |   |         |    |   |   |          |
+    |   +------+    |   |         |    |   |   |           |   +---------+    |   +---+          |
+    |   |      |    | = |         |    | - |   |           | - |      (r1,c2) | + |   (r1,c1)    |
+    |   |      |    |   |         |    |   |   |           |   |              |   |              |
+    |   +------+    |   +---------+    |   +---+           |   |              |   |              |
+    |        (r2,c2)|   |       (r2,c2)|   |   (r2,c1)     |   |              |   |              |
+    +---------------+   +--------------+   +---------------+   +--------------+   +--------------+
+
+And we can have the following code
+
+   
+    class NumMatrix {
+    private:
+        int row, col;
+        vector<vector<int>> sums;
+    public:
+        NumMatrix(vector<vector<int>> &matrix) {
+            row = matrix.size();
+            col = row>0 ? matrix[0].size() : 0;
+            sums = vector<vector<int>>(row+1, vector<int>(col+1, 0));
+            for(int i=1; i<=row; i++) {
+                for(int j=1; j<=col; j++) {
+                    sums[i][j] = matrix[i-1][j-1] + 
+                                 sums[i-1][j] + sums[i][j-1] - sums[i-1][j-1] ;
+                }
+            }
+        }
+    
+        int sumRegion(int row1, int col1, int row2, int col2) {
+            return sums[row2+1][col2+1] - sums[row2+1][col1] - sums[row1][col2+1] + sums[row1][col1];
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Clean and easy to understand java solution
+    private int[][] dp;
+
+    public NumMatrix(int[][] matrix) {
+        if(   matrix           == null
+           || matrix.length    == 0
+           || matrix[0].length == 0   ){
+            return;   
+        }
+        
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        dp = new int[m + 1][n + 1];
+        for(int i = 1; i <= m; i++){
+            for(int j = 1; j <= n; j++){
+                dp[i][j] = dp[i - 1][j] + dp[i][j - 1] -dp[i - 1][j - 1] + matrix[i - 1][j - 1] ;
+            }
+        }
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        int iMin = Math.min(row1, row2);
+        int iMax = Math.max(row1, row2);
+        
+        int jMin = Math.min(col1, col2);
+        int jMax = Math.max(col1, col2);
+        
+        return dp[iMax + 1][jMax + 1] - dp[iMax + 1][jMin] - dp[iMin][jMax + 1] + dp[iMin][jMin];    
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ with helper
+My `accu[i][j]` is the sum of `matrix[0..i][0..j]`, and `a(i, j)` helps with edge cases.
+
+    class NumMatrix {
+    public:
+        NumMatrix(vector<vector<int>> &matrix) {
+            accu = matrix;
+            for (int i=0; i<matrix.size(); ++i)
+                for (int j=0; j<matrix[0].size(); ++j)
+                    accu[i][j] += a(i-1, j) + a(i, j-1) - a(i-1, j-1);
+        }
+    
+        int sumRegion(int row1, int col1, int row2, int col2) {
+            return a(row2, col2) - a(row1-1, col2) - a(row2, col1-1) + a(row1-1, col1-1);
+        }
+    
+    private:
+        vector<vector<int>> accu;
+        int a(int i, int j) {
+            return i >= 0 && j >= 0 ? accu[i][j] : 0;
+        }
+    };
+
+---
+
+**Afterthought**
+
+Instead of
+
+                    accu[i][j] += a(i-1, j) + a(i, j-1) - a(i-1, j-1);
+
+I could use
+
+                    accu[i][j] += a(i, j) - sumRegion(i, j, i, j);
+
+which is shorter but I think less clear. I do like already using `sumRegion` in the precomputation, though.
+
+----------------------------------------------------------------------------------------------------
+Very clean and fast java solution
+    private int[][] sumRegion;
+
+    public NumMatrix(int[][] matrix) {
+        if (matrix.length != 0)  sumRegion = new int[matrix.length + 1][matrix[0].length + 1];
+        
+        for (int i = 0; i < matrix.length; i++) {
+            int sum = 0;
+            for (int j = 0; j < matrix[0].length; j++) {
+                sum += matrix[i][j];
+                sumRegion[i + 1][j + 1] = sum + sumRegion[i][j + 1]; 
+            }
+        }
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        return sumRegion[row2 + 1][col2 + 1] - sumRegion[row1][col2 + 1] - sumRegion[row2 + 1][col1] + sumRegion[row1][col1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Sharing My Python solution
+The idea is simple, just precompute sums for all matrices with (0, 0) as top left corner and (i, j) as bottom right corner. There are O(n^2) of these matrices, so we store them in a 2D table. In order to make code simpler, I add an extra column and row, filled with 0. 
+
+    class NumMatrix(object):
+          def __init__(self, matrix):
+              if matrix is None or not matrix:
+                  return
+              n, m = len(matrix), len(matrix[0])
+              self.sums = [ [0 for j in xrange(m+1)] for i in xrange(n+1) ]
+              for i in xrange(1, n+1):
+                  for j in xrange(1, m+1):
+                      self.sums[i][j] = matrix[i-1][j-1] + self.sums[i][j-1] + self.sums[i-1][j] - self.sums[i-1][j-1]
+        
+
+          def sumRegion(self, row1, col1, row2, col2):
+              row1, col1, row2, col2 = row1+1, col1+1, row2+1, col2+1
+              return self.sums[row2][col2] - self.sums[row2][col1-1] - self.sums[row1-1][col2] + self.sums[row1-1][col1-1]
+
+----------------------------------------------------------------------------------------------------
+Clean C++ 15 lines solution.
+    class NumMatrix {
+    public:
+        NumMatrix(vector<vector<int>> &matrix) {
+            if (matrix.size() == 0) return;
+            sum = vector<vector<int>>(matrix.size()+1, vector<int>(matrix[0].size()+1, 0));
+            for (int i = 0; i < matrix.size(); ++i) {
+                for (int j = 0; j < matrix[0].size(); ++j) {
+                    sum[i+1][j+1] = matrix[i][j] + sum[i][j+1] + sum[i+1][j] -sum[i][j];
+                }
+            }
+        }
+        int sumRegion(int row1, int col1, int row2, int col2) {
+            return sum[row2+1][col2+1] - sum[row2+1][col1] -sum[row1][col2+1] +sum[row1][col1];
+        }
+    private:
+        vector<vector<int>> sum;
+    };
+
+----------------------------------------------------------------------------------------------------
+DP Java solution
+The ideal is to store the sum in the rectangle of (0, 0) to (i, j).
+
+public class NumMatrix {
+
+    private int[][] sum2Origin = null;
+    public NumMatrix(int[][] matrix) {
+        if (matrix == null || matrix.length <= 0)
+			return;
+		sum2Origin = new int[matrix.length + 1][matrix[0].length + 1];
+		for (int i = 1; i <= matrix.length; i ++)
+			for (int j = 1; j <= matrix[0].length; j ++)
+				sum2Origin[i][j] = sum2Origin[i][j - 1] + sum2Origin[i - 1][j] - sum2Origin[i - 1][j - 1] + matrix[i - 1][j - 1];
+		return;
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        if (sum2Origin == null)
+            return 0;
+        return sum2Origin[row2 + 1][col2 + 1] - sum2Origin[row2 + 1][col1] - sum2Origin[row1][col2 + 1] + sum2Origin[row1][col1];
+
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+3 ms Java Solution
+public class NumMatrix {
+    int [][] sum;
+    public NumMatrix(int[][] matrix) {
+        if (matrix.length == 0 || matrix[0].length == 0)
+            return;
+        sum = new int[matrix.length+1][matrix[0].length+1];
+        for (int i=0; i<matrix.length; i++) {
+            int tmp = 0;
+            for (int j=0; j<matrix[0].length; j++) {
+                tmp += matrix[i][j];
+                sum[i+1][j+1] = sum[i][j+1] + tmp;
+            }
+        }
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        if (sum.length == 0)
+            return 0;
+        return sum[row2+1][col2+1] - sum[row2+1][col1] - sum[row1][col2+1] + sum[row1][col1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My C++ solution, O(n^2) setup, O(1) sumRegion.
+/*
+Conceptually, this code works like this:  If we have an initial 'matrix' like the one below
+
+1 2 1 1 
+
+2 0 1 2 
+
+1 2 1 1 
+
+we calculate the 'presum' matrix below, in which every entry presum(i+1, j+1) is the sum all values in the submatrix matrix(0:i, 0:j)
+
+0    0    0    0    0 
+
+0    1    3    4    5 
+
+0    3    5    7    10 
+
+0    4    8    11  15 
+
+Then we use sumRegion to add and subtract off blocks until we have the submatrix that we want.
+*/
+
+
+    class NumMatrix {
+    private:
+       /*************************************************************/
+        vector<vector<int> > presum;
+    
+    public:
+        /*************************************************************/
+        NumMatrix(vector<vector<int> > &matrix) {
+            if (matrix.size() == 0) return;
+            
+            presum = vector<vector<int> > (matrix.size()+1, vector<int>(matrix[0].size()+1,0));  //initialize as all zeros
+            
+            //build presum matrix
+            for (int i = 1; i < matrix.size()+1; i++){
+                for (int j =1; j < matrix[0].size()+1; j++){
+                    presum[i][j]=presum[i-1][j]+presum[i][j-1]-presum[i-1][j-1]+matrix[i-1][j-1];
+                }
+            }
+        }
+    
+        /*************************************************************/
+        int sumRegion(int row1, int col1, int row2, int col2) {
+           if (presum.size() == 0) return 0;
+           int sum=0;
+           sum=presum[row2+1][col2+1]-presum[row1][col2+1]-presum[row2+1][col1]+presum[row1][col1];
+           return sum;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Summed Area Table, a.k.a. Integral Image
+This is a well-studied problem and can be solved using a structure called Summed  Area Table. This method is also known as Integral Image in Computer Vision. It has
+
+ - Space Complexity: O(M*N)
+ - Time Complexity for Range Sum Query: O(1)
+ - Time Complexity to Update a Value in Matrix: O(M*N)
+
+For comparison, complexity of a naive approach which directly compute range sum from matrix is listed below.
+
+ - Space Complexity: O(1)
+ - Time Complexity for Range Sum Query: O(M*N)
+ - Time Complexity to Update a Value in Matrix: O(1)
+
+An algorithm comes between them is called 2D Fenwick Tree (a.k.a. Binary Indexed Tree), which achieves log complexity for both range sum query and value update.
+
+[https://en.wikipedia.org/wiki/Summed_area_table][1]
+
+[https://www.topcoder.com/community/data-science/data-science-tutorials/binary-indexed-trees/#2d][2]
+
+#
+
+    class NumMatrix {
+    public:
+        vector<vector<int>> sat;
+        bool empty=true;
+        
+        NumMatrix(vector<vector<int>> &matrix) {
+            int row = matrix.size();
+            if(row == 0) return;
+            int col = matrix[0].size();
+            if(col == 0) return;
+            empty = false;
+            
+            sat = vector<vector<int>>(row + 1, vector<int>(col + 1));
+            
+            for(int i = 1; i <= row; i++)
+                for(int j = 1; j <= col; j++)
+                    sat[i][j] = sat[i-1][j] + sat[i][j-1] - sat[i-1][j-1] + matrix[i-1][j-1];
+        }
+        
+        int sumRegion(int row1, int col1, int row2, int col2) {
+            return empty? 0 : sat[row2+1][col2+1] - (sat[row2+1][col1] + sat[row1][col2+1] - sat[row1][col1]);
+        }
+    };
+
+
+  [1]: https://en.wikipedia.org/wiki/Summed_area_table
+
+  [2]: https://www.topcoder.com/community/data-science/data-science-tutorials/binary-indexed-trees/#2d
+
+----------------------------------------------------------------------------------------------------
+My simple Java solution
+public class NumMatrix {
+
+// I define a matrix called sum that each element sum[i][j] is the sum of all the element in the rectangle from matrix[0][0] to matrix[i-1][j-1]. We keep an extra row and col of 0s in sum matrix so that we do not need to check whether the input col1 or row1 is 0. 
+
+// if matrix = {
+
+{1, 2, 3},
+
+{4, 5, 6},
+
+{7, 8, 9}}
+
+then the sum matrix would be:{
+
+{0,   0,   0,   0},
+
+{0,   1,   3,    6},
+
+{0,   5,   12,   21},
+
+{0,  12,  27,  45}}
+
+    private int[][] sum = null;
+
+    public NumMatrix(int[][] matrix) {
+        if(matrix == null || matrix.length == 0){return;}
+        sum = new int[matrix.length + 1][matrix[0].length + 1];
+        sum[1][1] = matrix[0][0];
+        for(int i = 1; i < sum.length; i++){
+            sum[i][1] = sum[i-1][1] + matrix[i-1][0];
+        }
+
+        for(int j = 1; j < sum[0].length; j++){
+            sum[1][j] = sum[1][j-1] + matrix[0][j-1];
+        }
+        
+        for(int i = 2; i < sum.length; i++){
+            for(int j = 2; j < sum[0].length; j++){
+                sum[i][j] = sum[i][j-1] + sum[i-1][j] - sum[i-1][j-1] + matrix[i-1][j-1];
+            }
+        }
+        
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        return sum[row2+1][col2+1] - sum[row1][col2+1] - sum[row2+1][col1] + sum[row1][col1];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+public class NumMatrix {
+
+    public int[][] matrix;
+    public NumMatrix(int[][] matrix) {
+        for(int i=0;i<matrix.length;i++)
+            for(int j=1;j<matrix[0].length;j++)
+                matrix[i][j]+=matrix[i][j-1];
+        this.matrix=matrix;
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        int n=0;
+        if(col1==0) for(int i=row1;i<=row2;i++) n+=matrix[i][col2];
+        else for(int i=row1;i<=row2;i++) n+=matrix[i][col2]-matrix[i][col1-1];
+        return n;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python solution
+Calculate a 2D sum matrix, so that the matrix can be divided into 
+
+A B
+
+C D
+
+The return value is D-B-C+A
+
+    def __init__(self, matrix):
+        if not matrix:
+            self.sum2D = []
+        else:
+            m,n = len(matrix), len(matrix[0])
+            self.sum2D = matrix[:]
+            for i in range(m):
+                for j in range(1,n):
+                    self.sum2D[i][j] = self.sum2D[i][j-1] + matrix[i][j]
+    
+            for j in range(n):
+                for i in range(1,m):
+                    self.sum2D[i][j] = self.sum2D[i-1][j] + self.sum2D[i][j]
+
+    def sumRegion(self, row1, col1, row2, col2):
+        if not self.sum2D:
+            return 0
+        res = self.sum2D[row2][col2]
+        if row1 > 0: res -= self.sum2D[row1-1][col2]
+        if col1 > 0: res -= self.sum2D[row2][col1-1]
+        if row1 > 0 and col1 > 0: res += self.sum2D[row1-1][col1-1]
+        return res
+
+----------------------------------------------------------------------------------------------------
+C++ solution: O(1) for sumRegion function
+My idea is in constructor we build a `sum_matrix` in which element `(i, j)` is the sum of sub-matrix `(0, 0)-->(i, j)`. Then for `sumRegion` we could directly calculate the sum of sub-matrix `(row1, col1)-->(row2, col2)`. Not sure this is the fastest solution, just for your reference:
+
+    class NumMatrix {
+    public:
+    NumMatrix(vector<vector<int>> &matrix) {
+        sum_matrix = matrix;
+        if(matrix.empty()) return;
+        for(int i = 0; i < matrix.size() - 1; ++i)
+            sum_matrix[i + 1][0] += sum_matrix[i][0];
+        for(int j = 0; j < matrix[0].size() - 1; ++j)
+            sum_matrix[0][j + 1] += sum_matrix[0][j];
+        for(int i = 1; i < matrix.size(); ++i)
+        {
+            for(int j = 1; j < matrix[0].size(); ++j)
+            {
+                sum_matrix[i][j] += sum_matrix[i - 1][j] + sum_matrix[i][j - 1] - sum_matrix[i - 1][j - 1];
+            }
+        }
+    }
+
+    int sumRegion(int row1, int col1, int row2, int col2) {
+        if(sum_matrix.empty()) return 0;
+        int all = sum_matrix[row2][col2];
+        int left = (col1 == 0) ? 0 : sum_matrix[row2][col1 - 1];
+        int top = (row1 == 0) ? 0 : sum_matrix[row1 - 1][col2];
+        int mid = (row1 == 0 || col1 == 0) ? 0 : sum_matrix[row1 - 1][col1 - 1];
+        return all - left - top + mid;
+        
+    }
+    private:
+    vector<vector<int>> sum_matrix;//(i, j): (0,0)(i,j) sum
+    };
+
+ 
+
+----------------------------------------------------------------------------------------------------
+Range Sum Query- 2D -- mutable, c++, tree array
+The problem assert that the array will not change.
+Using the 2D tree array, we can get the solution with mutable array. log(n)*log(m) to modify, and log(n)*log(m) to query.
+
+    class NumMatrix {
+    public:
+        NumMatrix(vector<vector<int>> &matrix) {
+            row = matrix.size();
+            if(row != 0) col = matrix[0].size();
+            else col = 0;
+            arr = vector<vector<int>>(row+1, vector<int>(col+1, 0));
+            sum = vector<vector<int>>(row+1, vector<int>(col+1, 0));
+            
+            for(int i=0; i<row; i++) {
+                for(int j=0; j<col; j++) {
+                    modify(i+1, j+1, matrix[i][j]);
+                }
+            }
+        }
+    
+        int sumRegion(int row1, int col1, int row2, int col2) {
+            return getSum(row2+1,col2+1) + getSum(row1, col1) - getSum(row1, col2+1) - getSum(row2+1, col1);
+        }
+        
+        int getSum(int x, int y) {
+            int ret = 0;
+            for(int i=x; i>0; i-=lowbit(i)) {
+                for(int j=y; j>0; j-=lowbit(j)) {
+                    ret += sum[i][j];
+                }
+            }
+            return ret;
+        }
+        
+        void modify(int x, int y, int v) {
+            int oldv = arr[x][y];
+            for(int i=x; i<=row; i+=lowbit(i)) {
+                for(int j=y; j<=col; j+=lowbit(j)) {
+                    sum[i][j] = sum[i][j] - oldv + v;
+                }
+            }
+            arr[x][y] = v;
+        }
+        
+        int lowbit(int x) {
+            return x&-x;
+        }
+    private:
+        int col;
+        int row;
+        vector<vector<int>> arr;
+        vector<vector<int>> sum;
+    };
+
+For the Range Sum Query-- mutable
+
+    class NumArray {
+    public:
+        NumArray(vector<int> &nums) {
+            sz = nums.size();
+            num = vector<int>(sz+1, 0);
+            sum = vector<int>(sz+1, 0);
+            for(int i=0; i<sz; i++) {
+                update(i, nums[i]);
+            }
+            
+        }
+    
+        void update(int idx, int val) {
+            int oldv = num[idx+1];
+            for(int i = idx+1; i<=sz; i+= (i&-i)) {
+                sum[i] = sum[i] - oldv + val;
+            }
+            num[idx+1] = val;
+        }
+    
+        int sumRange(int i, int j) {
+            return getSum(j+1) - getSum(i);
+        }
+        
+        int getSum(int idx) {
+            int ret = 0;
+            for(int i=idx; i>0; i-=(i&-i)) {
+                ret += sum[i];
+            }
+            return ret;
+        }
+    private :
+        int sz;
+        vector<int> num;
+        vector<int> sum;
+    };
+
+Th  function lowbit(n) is get the lowest 1 in the binary number n. 
+
+You can first try to understand the 1D Range Sum Query, the 2D is just an easy extension. 
+
+But it is difficult to explain. 0o0!
+
+----------------------------------------------------------------------------------------------------
+Java with little trick
+Using `sumRegion` in the precomputation already.
+
+    public class NumMatrix {
+    
+        public NumMatrix(int[][] matrix) {
+            int m = matrix.length, n = m > 0 ? matrix[0].length : 0;
+            sum = new int[m+1][n+1];
+            for (int i=0; i<m; ++i)
+                for (int j=0; j<n; ++j)
+                    sum[i+1][j+1] = matrix[i][j] - sumRegion(i, j, i, j);
+        }
+    
+        public int sumRegion(int row1, int col1, int row2, int col2) {
+            return sum[row2+1][col2+1] - sum[row2+1][col1] - sum[row1][col2+1] + sum[row1][col1];
+        }
+        
+        private int[][] sum;
+    }
+
+Though admittedly I find this much clearer:
+
+                    sum[i+1][j+1] = matrix[i][j] + sum[i+1][j] + sum[i][j+1] - sum[i][j];
+
+
+----------------------------------------------------------------------------------------------------
+Share my short Java solution
+    public class NumMatrix {
+        int [][] tot;
+        public NumMatrix(int[][] matrix) {
+            if (matrix == null || matrix.length == 0 || matrix[0].length == 0) return;
+
+            tot = new int [matrix.length + 1][matrix[0].length + 1];
+            for(int i = 0; i < matrix.length; i++){
+                for(int j = 0; j<matrix[0].length; j++){
+                    tot[i+1][j+1] = matrix[i][j] + tot[i+1][j] + tot[i][j+1] - tot[i][j];
+                }
+            }
+        }
+    
+        public int sumRegion(int row1, int col1, int row2, int col2) {
+            return tot[row2 + 1][col2 + 1] - tot[row2 + 1][col1] - tot[row1][col2 + 1] + tot[row1][col1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My java solution, only used 6 ms.
+    public class NumMatrix {
+
+    int[][] sums;
+
+    public NumMatrix(int[][] matrix) {
+        if (matrix==null || matrix.length == 0 || matrix[0].length == 0)
+            return;
+        sums = new int[matrix.length + 1][matrix[0].length + 1];
+        for (int i=0; i<matrix.length; i++){
+            for (int j=0; j<matrix[0].length; j++){
+                sums[i+1][j+1] = matrix[i][j] + sums[i+1][j] + sums[i][j+1] - sums[i][j];
+            }
+        }
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        if (sums == null)
+            return 0;
+        if (++row2 > sums.length)
+            row2 = sums.length;
+        if (++col2 > sums[0].length)
+            col2 = sums[0].length;
+        return sums[row2][col2] - sums[row2][col1] - sums[row1][col2] + sums[row1][col1];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My concise Java solutions: 5 ms and 7 ms. Interesting - two loops over initial matrix run faster than one loop.
+First solutions computes the values for the sums matrix in one loop. The code is shorter but runs in 7 ms.
+   
+    int[][] sums;
+    
+    public NumMatrix(int[][] matrix) {
+        if (matrix == null || matrix.length < 1 || matrix[0].length < 1) return;
+        sums = new int[matrix.length+1][matrix[0].length+1];
+        for (int i = 1; i < sums.length; i++)
+            for (int j = 1; j < sums[0].length; j++)
+                sums[i][j] = sums[i-1][j] + sums[i][j-1] - sums[i-1][j-1] + matrix[i-1][j-1];
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        return sums[row2+1][col2+1] + sums[row1][col1] - sums[row1][col2+1] - sums[row2+1][col1];
+    }
+
+Second solution uses two loops over the matrix, first loop calculates partial sums for every column, second loop adds columns' partial sums to rows' partial sums. The code is a bit longer but runs in 5 ms. 
+
+    int[][] sums;
+    
+    public NumMatrix(int[][] matrix) {
+        if (matrix == null || matrix.length < 1 || matrix[0].length < 1) return;
+        sums = new int[matrix.length+1][matrix[0].length+1];
+        for (int i = 1; i < sums.length; i++) 
+            for (int j = 1; j < sums[0].length; j++) 
+                sums[i][j] = sums[i][j-1] + matrix[i-1][j-1];
+        for (int i = 1; i < sums.length; i++)
+            for (int j = 1; j < sums[0].length; j++)
+                sums[i][j] += sums[i-1][j];
+    }
+
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        return sums[row2+1][col2+1] + sums[row1][col1] - sums[row1][col2+1] - sums[row2+1][col1];
+    }
+
+Just from observation, the second version uses 2 math operations to set the final value for sums[i][j], while the first version uses 3 operations. I guess this is the sign that simple pointer increment is faster than simple binary arithmetic operations. I'll take it as a lesson that fewer loops doesn't always mean faster code.
+
+----------------------------------------------------------------------------------------------------
+O(1) C solution within 256 ms
+    We maitain sum array for given 2D array where sum[i][j] is sum of all the elements upto ith row and jth column.
+        if(r1==0 && c1==0)
+            simply return sum of all the elements upto [r2][c2]
+        if(c1)
+           delete elements which are before column c1
+        if(r1)
+           delete elements which are above row r1
+        if(r1 && c1)
+           add elements which are before [r1][c1] because they may be deleted twice if r1 & c1 both are non zero 
+    
+    
+    struct NumMatrix {
+    	int **s;
+    	int r;
+    	int c;
+    };
+    #define Mat struct NumMatrix
+    struct NumMatrix* NumMatrixCreate(int** m, int r, int c) {
+    	Mat *p;
+    	int i, j, t, *x;
+    	p = malloc(sizeof(Mat));
+    	p->s = malloc(sizeof(int *)*r);
+    	p->r = r;
+    	p->c = c;
+    	for(i=0; i<r; i++)
+    		p->s[i] = malloc(sizeof(int)*c);
+    	for(i=0; i<r; i++)
+    	{
+    		t = 0;
+    		for(j=0; j<c; t=p->s[i][j++])
+    			p->s[i][j] = t + m[i][j];         // Summing all the row elements, s[i][j] means sum of ith row elements from m[i][0] to m[0][j]
+    	}
+    	for(j=0; j<c; j++)
+    	{
+    		t = 0;
+    		for(i=0; i<r; t=p->s[i++][j])
+    			p->s[i][j] += t;         // Summing the column values which means s[i][j] represent sum of all elements upto row i and column j
+    	}
+    	return p;
+    }
+    int sumRegion(struct NumMatrix* m, int r1, int c1, int r2, int c2) {
+    	int sum, i;
+    	sum = m->s[r2][c2];
+    	if(r1==0 && c1==0)
+    		return sum;         // if r1 & c1 are 0 then simply return sum of all the elements upto [r2][c2]
+    	if(c1)
+    		sum -= m->s[r2][c1-1];  // deleting elements which are before column c1
+    	if(r1)
+    		sum -= m->s[r1-1][c2];  // deleting elements which are above row r1
+    	if(r1 && c1)
+    		sum += m->s[r1-1][c1-1];   // add elements which are before [r1][c1] because they might be deleted twice if r1 & c1 both are non zero
+    	return sum;
+    }
+    void NumMatrixFree(struct NumMatrix* p) {
+    	int i;
+    	for(i=0; i<p->r; i++)
+    		free(p->s[i]);
+    	free(p->s);
+    	free(p);
+    }
+
+----------------------------------------------------------------------------------------------------

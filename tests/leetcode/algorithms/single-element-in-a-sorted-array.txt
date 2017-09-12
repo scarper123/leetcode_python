@@ -1,0 +1,493 @@
+Java 10 lines and C++ 12 lines linear time complexity O(n) with explanation
+    vector<int> nextGreaterElements(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> next(n, -1);
+        stack<int> s; // index stack
+        for (int i = 0; i < n * 2; i++) {
+            int num = nums[i % n]; 
+            while (!s.empty() && nums[s.top()] < num) {
+                next[s.top()] = num;
+                s.pop();
+            }
+            if (i < n) s.push(i);
+        }   
+        return next;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Typical ways to solve circular array problems. Java solution.
+public class Solution {
+    public int[] nextGreaterElements(int[] nums) {
+        int n = nums.length;
+        int[] result = new int[n];
+        
+        Stack<Integer> stack = new Stack<>();
+        for (int i = n - 1; i >= 0; i--) {
+            stack.push(i);
+        }
+        
+        for (int i = n - 1; i >= 0; i--) {
+            result[i] = -1;
+            while (!stack.isEmpty() && nums[stack.peek()] <= nums[i]) {
+                stack.pop();
+            }
+            if (!stack.isEmpty()){
+                result[i] = nums[stack.peek()];
+            }
+            stack.add(i);
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python 6 lines solution using stack
+def nextGreaterElements(self, nums):
+        stack, res = [], [-1] * len(nums)
+        for i in range(len(nums)) * 2:
+            while stack and (nums[stack[-1]] < nums[i]):
+                res[stack.pop()] = nums[i]
+            stack.append(i)
+        return res
+
+----------------------------------------------------------------------------------------------------
+NO STACK: O(n) time complexity and O(1) space complexity using DP
+public class Solution {
+    public int[] nextGreaterElements(int[] nums) {
+
+        //Case when array is empty
+        if(nums.length == 0) return nums;
+      
+        int[] result = new int[nums.length];
+
+        //Assuming array to be non-cyclical, last element does not have next larger element
+        result[nums.length - 1] = -1;
+
+        //Case when only one element is there in array     
+        if(result.length == 1) return result;
+
+        for (int i = nums.length - 2; i >= 0; i--){   
+            //Starting from next element
+            int k = i + 1;
+
+            //Keep tracking next larger element until you find it or you find element with no next larger element
+            while(nums[i] >= nums[k] && result[k] != -1){
+                k = result[k];
+            }
+            
+            //If next larger element is found, store index      
+            if(nums[k] > nums[i]) result[i] = k;
+            //If not found, it doesn't have next larger element
+            else result[i] = -1;
+        }
+        
+        //Second iteration assuming cyclical array, last element can also have next larger element
+        for (int i = nums.length - 1; i >= 0; i--){   
+
+            //If next larger element assuming non-cyclical array already exists, continue
+            if(result[i] != -1) continue;
+      
+            //Case when i + 1 is greater than length of array: when on last element
+            int k = (i + 1) % nums.length;
+
+            //Keep tracking next larger element until you find it or you find element with no next larger element
+            while(nums[i] >= nums[k] && result[k] != -1){
+                k = result[k];
+            }
+
+            //If next larger element is found, store it's index
+            if(nums[k] > nums[i]) result[i] = k;
+            //If not found, it doesn't have next larger element
+            else result[i] = -1;
+        }
+
+        //Replace indices with actual values
+        for(int i = 0; i < nums.length; i++){
+            if(result[i] != -1) result[i] = nums[result[i]];
+        }
+
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n*n) time limit exceeded ?
+class Solution(object):
+    def nextGreaterElements(self, nums):
+
+        if not nums:
+            return []
+            
+        n = len(nums)
+        result = [-1 for _ in range(len(nums))]
+        max_num = max(nums)
+        
+        for i, num in enumerate(nums):
+
+            if num == max_num:
+                continue
+
+            j = i
+            while nums[j] <= num:
+                j += 1
+                j %= n
+            result[i] = nums[j]
+
+        return result
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+class Solution(object):
+    def nextGreaterElements(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        cache, st = {}, []
+        for idx,x in enumerate(nums):
+            while st and st[-1][1] < x:
+                a,b = st.pop()
+                cache[a] = x
+            st.append((idx,x))
+        for idx,x in enumerate(nums):
+            while st and st[-1][1] < x:
+                a,b = st.pop()
+                cache[a] = x
+            st.append((idx,x))
+        result = [-1]*len(nums)
+        for idx,x in enumerate(nums):
+            if idx in cache:
+                result[idx] = cache[idx]
+        return result        
+
+
+----------------------------------------------------------------------------------------------------
+Java 1pass O(n)time &amp; O(n)space solution beats 99%
+public class Solution {
+    public int[] nextGreaterElements(int[] nums) {
+        int[] r = new int[nums.length];
+        if(nums.length == 0) return r;
+        Arrays.fill(r, -1);
+        int[] N = new int[nums.length];
+        int[] P = new int[nums.length]; 
+        N[0] = nums[0];
+        P[0] = 0;
+        int p = 0, l = 2 * r.length;
+        for(int i = 1; i < l - 1; ++i){
+            int ri = i % r.length;
+            if(nums[ri] <= N[p]){
+                if(++p >= r.length) break;
+                N[p] = nums[ri];
+                P[p] = ri;
+            } else {
+                while(p >= 0 && N[p] < nums[ri]){
+                    r[P[p]] = nums[ri];
+                    --p;
+                }
+                N[++p] = nums[ri];
+                P[p] = ri;
+            }
+        }
+        return r;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short O(n*n) solution
+class Solution {
+public:
+    vector<int> nextGreaterElements(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> gtr;
+        for(int i=0; i<nums.size(); ++i){
+            int j = (i + 1) % n;
+            
+            while(j != i && nums[i] >= nums[j]) {
+                j = (j + 1) % n;
+            }
+            if(j != i) gtr.push_back(nums[j]);
+            else gtr.push_back(-1);
+        }
+        
+        return gtr;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Short AC solution and Fast DP solution 45ms
+public int[] nextGreaterElements(int[] nums) {
+	int  n = nums.length;
+	int[] res = new int[n];
+	int[] dp = new int[n];
+	for (int i = 0; i < n; i++) {
+		int cur = nums[i];
+		res[i] = -1;
+		dp[i] = -1;
+		for (int j = i+1; j <n; j++) {
+			if (nums[j] > cur){
+				res[i] = nums[j];
+				dp[i] = j;
+				break;
+			}
+		}
+		if (dp[i] == -1){
+			if (cur < nums[0]) res[i] = nums[0];
+			else{
+				int k = 0;
+				while (cur >= res[k] && k < i) {
+					if (dp[k] == -1) break;
+					k = dp[k];
+				}
+				if (k<i && cur < res[k])
+					res[i] = res[k];
+			}
+		}
+	}
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+My O(n) solution using deque
+vector<int> nextGreaterElements(vector<int>& nums) {
+	unordered_map<int, int> mark;
+	deque<int> next;
+	deque<int> index;
+	for (int i = 0; i < nums.size(); i++){
+		while (!next.empty() && nums[i] > next.back()){
+			mark[index.back()] = nums[i];
+			next.pop_back();
+			index.pop_back();
+		}
+		next.push_back(nums[i]);
+		index.push_back(i);
+	}
+	for (int i = 0; i < nums.size(); i++){
+		while (!next.empty() && nums[i] > next.back()){
+			mark[index.back()] = nums[i];
+			next.pop_back();
+			index.pop_back();
+		}
+
+	}
+	vector<int >res(nums.size(), -1);
+	for (int i = 0; i<nums.size(); i++){
+		if (mark.find(i) != mark.end()){
+			res[i] = mark[i];
+		}
+
+	}
+	return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) java solution using stack
+public class Solution {
+    public int[] nextGreaterElements(int[] nums) {
+        if(nums == null || nums.length == 0) return new int[0];
+        int[] ret = new int[nums.length];
+        ArrayDeque<Integer> stack = new ArrayDeque<>();
+        for(int i = nums.length - 2; i >= 0; i--) {
+            while(!stack.isEmpty() && nums[i] >= stack.peek()) stack.pop();
+            stack.push(nums[i]);
+        }
+        for(int i = nums.length - 1; i>= 0; i--) {
+            while(!stack.isEmpty() && nums[i] >= stack.peek()) stack.pop();
+            if(stack.isEmpty()) ret[i] = -1;
+            else ret[i] = stack.peek();
+            stack.push(nums[i]);
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Easy to Understand
+/* We can extend the logic of Next Greater Element I to solve this. Here, I create another vector findNums for the same. This isn't necessary but makes the extension easier to understand.*/
+
+class Solution {
+    public:
+    vector<int> findDiagonalOrder(vector<vector<int>>& matrix) {
+        vector<int> res;
+        int backward = 0;         // move up
+        int n = matrix.size();    // number of rows
+        if(n == 0) return res;
+        int m = matrix[0].size(); // number of columns
+        int count = 0;
+        int i=0, j=0;
+        while(count<m*n)
+        {
+            if(backward==0)
+            {
+                res.push_back(matrix[i][j]);
+                j++;
+                i--;
+                if(i < 0 && j <= m-1) {i++; backward = 1;}
+                else if(j > m-1) {i = i+2; j = m-1; backward = 1;}
+            }
+            else
+            {
+                res.push_back(matrix[i][j]);
+                j--;
+                i++;
+                if(j < 0 && i <= n-1) {j++; backward = 0;}
+                else if(i > n-1) {j = j+2; i = n-1; backward = 0;}
+            }
+            count++;
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java: Easy to understand &amp; concise solution
+public class Solution {
+public int[] nextGreaterElements(int[] nums) {    
+    if(nums == null || nums.length == 0) return new int[0];
+    int n = nums.length;
+    int[] result = new int[n];
+    for(int i = 0; i < n; ++i){
+        int j = (i + 1) % n;
+        for(; j != n && j != i; ){
+            if(nums[j] > nums[i]) break;
+            j = (j + 1) % n;
+        }
+        if(j == i) result[i] = -1;
+        else result[i] = nums[j];
+    }
+    return result;
+}
+}
+
+----------------------------------------------------------------------------------------------------
+Concise Java Solution
+public class Solution {
+    public int[] nextGreaterElements(int[] nums) {
+        if (nums == null || nums.length == 0) return new int[0];
+        Stack<Integer> stack = new Stack<>(); // store the index
+        int n = nums.length;
+        int[] res = new int[n];
+        Arrays.fill(res, -1);
+        for (int i = 0; i < 2 * n; i++) {
+            while (!stack.isEmpty() && nums[i % n] > nums[stack.peek()]) {
+                int index = stack.pop();
+                if (res[index] != -1) continue;
+                res[index] = nums[i % n];
+            }
+            stack.push(i % n);
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution
+class Solution(object):
+    def nextGreaterElements(self, nums):
+        st, res = [], [-1]*len(nums)
+        for idx, i in enumerate(nums*2):
+            while st and (nums[st[-1]] < i):
+                res[st.pop()] = i
+            if idx < len(nums):
+                st.append(idx)
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+concise c++ solution using stack that beats 98%
+ vector<int> nextGreaterElements(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> vec(n, -1);
+        stack<int> stack;
+        for(int i=0, j=0; i<2*n-1; i++){
+            j = (i<n)?i:i-n;
+            while(!stack.empty() && nums[stack.top()]<nums[j]){
+                vec[stack.top()] = nums[j];
+                stack.pop();
+            }
+            if(i<n)stack.push(i);
+        }
+        return vec;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Swift Solution Easy to Understand
+func nextGreaterElements(_ nums: [Int]) -> [Int] {
+        var ans:[Int] = []
+        var i = 0
+        while i < nums.count{
+            var j = (i+1 == nums.count) ? 0 : i+1
+            while j != i{
+                if nums[j] > nums[i]{
+                    ans.append(nums[j])
+                    break
+                }
+                j = (j == nums.count-1) ? 0 : j+1
+            }
+            
+            if j == i { ans.append(-1) }
+            i += 1
+        }
+        return ans
+}
+
+----------------------------------------------------------------------------------------------------
+Simple C++ Solution O(n) Time O(1) Extra Space (No Stack, using output array only)
+class Solution {
+public:
+    vector<int> nextGreaterElements(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> result(n);
+        if (n <= 0) return result;
+        result.back() = -1;
+        if (n <= 1) return result;
+        for (int i = 2*n - 2; i >= 0; --i)
+        {
+            int j = i + 1;
+            while (j != -1 && nums[i % n] >= nums[j % n])
+                j = result[j % n];
+            result[i % n] = j % n;
+        }
+        for (auto & i : result)
+            i = i == -1 ? -1 : nums[i];
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+short python o(n) stack
+def nextGreaterElements(self, nums):
+	nums += nums
+	res = [-1] * len(nums)
+	stackk = []
+	for i, num in enumerate(nums):
+		while stackk and stackk[-1][1] < num:
+			index = stackk.pop()[0]
+			res[index] = num
+		stackk.append((i,num))
+	return res[:len(nums)/2]
+
+
+----------------------------------------------------------------------------------------------------
+Python 7 lines easy to understand solution with Stack
+def nextGreaterElements(self, nums):
+    res = [-1] * len(nums)
+    stack = []
+        for i in range(len(nums)) * 2:
+            while stack and (stack[-1][1] < nums[i]):
+                res[stack.pop()[0]] = nums[i]
+            stack.append((i, nums[i]))
+    return res
+
+
+----------------------------------------------------------------------------------------------------

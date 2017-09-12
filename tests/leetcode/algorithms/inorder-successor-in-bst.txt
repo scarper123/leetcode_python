@@ -1,0 +1,719 @@
+Share my Java solution with ONLY ONE stack
+The question is ask to construct One stack. So I am using one stack.
+
+The idea is to store the gap between the min value and the current value; 
+
+The problem for my solution is the cast. I have no idea to avoid the cast. Since the possible gap between the current value and the min value could be Integer.MAX_VALUE-Integer.MIN_VALUE;
+
+
+
+
+
+    public class MinStack {
+        long min;
+        Stack<Long> stack;
+    
+        public MinStack(){
+            stack=new Stack<>();
+        }
+        
+        public void push(int x) {
+            if (stack.isEmpty()){
+                stack.push(0L);
+                min=x;
+            }else{
+                stack.push(x-min);//Could be negative if min value needs to change
+                if (x<min) min=x;
+            }
+        }
+    
+        public void pop() {
+            if (stack.isEmpty()) return;
+            
+            long pop=stack.pop();
+            
+            if (pop<0)  min=min-pop;//If negative, increase the min value
+            
+        }
+    
+        public int top() {
+            long top=stack.peek();
+            if (top>0){
+                return (int)(top+min);
+            }else{
+               return (int)(min);
+            }
+        }
+    
+        public int getMin() {
+            return (int)min;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java accepted solution using one stack
+    class MinStack {
+        int min=Integer.MAX_VALUE;
+        Stack<Integer> stack = new Stack<Integer>();
+        public void push(int x) {
+           // only push the old minimum value when the current 
+           // minimum value changes after pushing the new value x
+            if(x <= min){          
+                stack.push(min);
+                min=x;
+            }
+            stack.push(x);
+        }
+    
+        public void pop() {
+           // if pop operation could result in the changing of the current minimum value, 
+           // pop twice and change the current minimum value to the last minimum value.
+            if(stack.peek()==min) {
+                stack.pop();
+                min=stack.peek();
+                stack.pop();
+            }else{
+                stack.pop();
+            }
+            if(stack.empty()){
+                min=Integer.MAX_VALUE;
+            }
+        }
+    
+        public int top() {
+            return stack.peek();
+        }
+    
+        public int getMin() {
+            return min;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ using two stacks, quite short and easy to understand
+    class MinStack {
+    private:
+	    stack<int> s1;
+	    stack<int> s2;
+    public:
+	    void push(int x) {
+		    s1.push(x);
+		    if (s2.empty() || x <= getMin())  s2.push(x);	    
+        }
+        void pop() {
+		    if (s1.top() == getMin())  s2.pop();
+		    s1.pop();
+	    }
+        int top() {
+		    return s1.top();
+	    }
+        int getMin() {
+		    return s2.top();
+	    }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Clean 6ms Java solution
+    class MinStack {
+        private Node head;
+        
+        public void push(int x) {
+            if(head == null) 
+                head = new Node(x, x);
+            else 
+                head = new Node(x, Math.min(x, head.min), head);
+        }
+    
+        public void pop() {
+            head = head.next;
+        }
+    
+        public int top() {
+            return head.val;
+        }
+    
+        public int getMin() {
+            return head.min;
+        }
+        
+        private class Node {
+            int val;
+            int min;
+            Node next;
+            
+            private Node(int val, int min) {
+                this(val, min, null);
+            }
+            
+            private Node(int val, int min, Node next) {
+                this.val = val;
+                this.min = min;
+                this.next = next;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My Python solution
+    class MinStack:
+    
+    def __init__(self):
+        self.q = []
+
+    # @param x, an integer
+    # @return an integer
+    def push(self, x):
+        curMin = self.getMin()
+        if curMin == None or x < curMin:
+            curMin = x
+        self.q.append((x, curMin));
+
+    # @return nothing
+    def pop(self):
+        self.q.pop()
+
+
+    # @return an integer
+    def top(self):
+        if len(self.q) == 0:
+            return None
+        else:
+            return self.q[len(self.q) - 1][0]
+
+
+    # @return an integer
+    def getMin(self):
+        if len(self.q) == 0:
+            return None
+        else:
+            return self.q[len(self.q) - 1][1]
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution 12 line
+class MinStack {
+
+    Stack<Integer> stack=new Stack<>();
+    int min=Integer.MAX_VALUE;
+    public void push(int x) {
+        if(x<=min) {stack.push(min); min=x;}
+        stack.push(x);
+    }
+    public void pop() {
+        if(stack.peek()==min){ stack.pop(); min=stack.pop(); }
+        else stack.pop();
+    }
+    public int top() {
+        return stack.peek();
+    }
+    public int getMin() {
+        return min;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Please make the question more concrete.
+For example,
+
+getMin(), top(),  pop() when the stack is empty, what shall we do? return -1? return INT_MIN?
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution (accepted)
+    private Stack<Integer> mStack = new Stack<Integer>();
+	private Stack<Integer> mMinStack = new Stack<Integer>();
+	
+	public void push(int x) {
+		mStack.push(x);
+		if (mMinStack.size() != 0) {
+			int min = mMinStack.peek();
+			if (x <= min) {
+				mMinStack.push(x);
+			}
+		} else {
+			mMinStack.push(x);
+		}
+    }
+
+    public void pop() {
+    	int x = mStack.pop();
+		if (mMinStack.size() != 0) {
+			if (x == mMinStack.peek()) {
+				mMinStack.pop();
+			}
+		}
+    }
+
+    public int top() {
+    	return mStack.peek();
+    }
+
+    public int getMin() {
+        return mMinStack.peek();
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(1) solution
+    class MinStack {
+    public:
+        vector<int> a;
+        vector<int> min;
+        MinStack() {
+            min.push_back(2147483647);
+        }
+        void push(int x) {
+            a.push_back(x);
+            if (x < min.back()) {
+                min.push_back(x);
+            } else {
+                min.push_back(min.back());
+            }
+        }
+    
+        void pop() {
+            a.pop_back();
+            min.pop_back();
+        }
+    
+        int top() {
+            return a.back();
+        }
+    
+        int getMin() {
+            return min.back();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+6ms Java Solution using Linked List. Clean, self-explanatory and efficient.
+    class MinStack {
+        class Node{
+            int value;
+            int min;
+            Node next;
+            
+            Node(int x, int min){
+                this.value=x;
+                this.min=min;
+                next = null;
+            }
+        }
+        Node head;
+        public void push(int x) {
+            if(null==head){
+                head = new Node(x,x);
+            }else{
+                Node n = new Node(x, Math.min(x,head.min));
+                n.next=head;
+                head=n;
+            }
+        }
+    
+        public void pop() {
+            if(head!=null)
+                head =head.next;
+        }
+    
+        public int top() {
+            if(head!=null)
+                return head.value;
+            return -1;
+        }
+    
+        public int getMin() {
+            if(null!=head)
+                return head.min;
+            return -1;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution using pair and one stack
+    class MinStack {
+         stack<pair<int, int>> st;
+    
+    public:
+        void push(int x) {
+            int min;
+            if (st.empty()) {
+                min = x;
+            }
+            else {
+                min = std::min(st.top().second,x);
+            }
+            st.push({x, min});
+        }
+    
+        void pop() {
+            st.pop();
+        }
+    
+        int top() {
+            return st.top().first;
+        }
+    
+        int getMin() {
+            return st.top().second;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+MLE and accept after change all the vector to stack
+Below is my accepted code. If you change all the stack to vector, as well as all the top to back and push to push_back, pop to pop_back, then you'll get a MLE.
+
+WHY?
+**Is there a tricky implement of stack in STL or does the vector brings me the fuss?**
+thanks for your attention and answer!
+
+    class MinStack {
+    private:
+        stack<int> sta;
+        stack<int> minSta;
+    public:
+        void push(int x) {
+            sta.push(x);
+            if(!minSta.size() || minSta.top() >= x)
+                minSta.push(x);
+        }
+    
+        void pop() {
+            if(!sta.empty()) {
+                if(!minSta.empty() && sta.top() == minSta.top())
+                    minSta.pop();
+                sta.pop();
+            }
+        }
+    
+        int top() {
+            if(!sta.empty()) return sta.top();
+        }
+    
+        int getMin() {
+            if(!minSta.empty()) return minSta.top();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution using two build-in stacks
+Here is my simple code for minStack, using two build in Java stack to store the stack and min values separately.
+
+    class MinStack {
+        // stack: store the stack numbers
+        private Stack<Integer> stack = new Stack<Integer>();
+        // minStack: store the current min values
+        private Stack<Integer> minStack = new Stack<Integer>();
+        
+        public void push(int x) {
+            // store current min value into minStack
+            if (minStack.isEmpty() || x <= minStack.peek())
+                minStack.push(x);
+            stack.push(x);
+        }
+    
+        public void pop() {
+            // use equals to compare the value of two object, if equal, pop both of them
+            if (stack.peek().equals(minStack.peek()))
+                minStack.pop();
+            stack.pop();
+        }
+    
+        public int top() {
+            return stack.peek();
+        }
+    
+        public int getMin() {
+            return minStack.peek();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my clean AC C++ solution, with explanation.
+The key idea is use a another stack to store the `minimum value` of the corresponding stack. Put differently, `min[i]` equals the minimum element where `data[i]` is the top of this sub-stack.
+
+We can use a full size of `min` where its size equals the data's, but it's not necessary.
+
+**Idea**
+
+*  We should `pop` the element in `min` IFF there's match of `data.top()`.
+
+* If we have multiple same minima, for example `[0, 1, 0]` in `data`, then the `min` should be `[0, 0]`.
+Otherwise, the the `pop` operation wouldn't work properly, since that you need 2 `0`s.
+As a result, we should push the element if `x <= min.top()`.
+
+
+**Code**
+
+    class MinStack {
+        
+        stack<int> data;
+        stack<int> min;
+
+    public:
+
+        void push(int x) {
+            
+            // If empty
+            if (min.empty()) {
+                data.push(x);
+                min.push(x);
+            }
+            
+            // Not empty
+            else {
+                data.push(x);
+                if (x <= min.top())
+                    min.push(x);
+            }
+
+        }
+
+        void pop() {
+            
+            if (!min.empty()) {
+                if (data.top() == min.top())
+                    min.pop();
+                data.pop();
+            }
+        }
+
+        int top() {
+            return data.top();
+        }
+
+        int getMin() {
+            return min.top();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Very concise Java solution with Deque interface
+The solution is pretty straightforward, keep a minStack besides the underlying stack. During push: push a new item if it's smaller or equals than the current minimum. During pop: if the current item to be popped equals to the top of minStack then pop that one aswell.
+
+    Deque<Integer> stack = new LinkedList<>();
+    Deque<Integer> minStack = new LinkedList<>();
+    
+    public void push(int x) {
+        stack.push(x);
+        if(minStack.isEmpty() || minStack.peek() >= x) {
+            minStack.push(x);
+        }
+    }
+
+    public void pop() {
+        int x = stack.pop();
+        if(x == minStack.peek()) {
+            minStack.pop();
+        }
+    }
+
+    public int top() {
+        return stack.peek();
+    }
+
+    public int getMin() {
+        return minStack.peek();
+    }
+
+----------------------------------------------------------------------------------------------------
+Python one stack solution, without linklist
+
+class MinStack(object):
+    
+    def __init__(self):
+        """
+        initialize your data structure here.
+        """
+        self.stack= []
+
+    def push(self, x):
+        """
+        :type x: int
+        :rtype: nothing
+        """
+        if not self.stack:self.stack.append((x,x)) 
+        else:
+           self.stack.append((x,min(x,self.stack[-1][1])))
+
+    def pop(self):
+        """
+        :rtype: nothing
+        """
+        if self.stack: self.stack.pop()
+
+    def top(self):
+        """
+        :rtype: int
+        """
+        if self.stack: return self.stack[-1][0]
+        else: return None
+
+    def getMin(self):
+        """
+        :rtype: int
+        """
+        if self.stack: return self.stack[-1][1]
+        else: return None
+
+----------------------------------------------------------------------------------------------------
+6 lines concise and easy understand c++ solution
+    class MinStack {
+    public:
+        void push(int x) {
+            int minnum = st.empty() ? x : min(st.top().second, x);
+            st.push(make_pair(x, minnum));
+        }
+    
+        void pop() {
+            st.pop();
+        }
+    
+        int top() {
+            return st.top().first;
+        }
+    
+        int getMin() {
+            return st.top().second;
+        }
+    private:
+        stack<pair<int, int>> st;
+    };
+
+----------------------------------------------------------------------------------------------------
+Shortest and fastest 1-stack and 2-stack solutions
+2-stack solution may use less memory (ironically) since we don't save the 'min' for every pushed element. 
+If there are a lot of repeated elements, we may save even more memory by  introducing a 'count' for each 'min'.
+
+Cannot use vector (will get memory limit error), as vector doubles its capacity when full, whereas deque has a better capacity management strategy.
+
+2 deque:
+
+        deque<int> stack;
+        deque<int> mins;
+        
+        void push(int x) {
+            int themin = mins.size() ? mins.back() : x;
+            stack.push_back(x);
+            if (x<=themin)
+                mins.push_back(x);
+        }
+    
+        void pop() {
+            if (stack.back()==mins.back())
+                mins.pop_back();
+            stack.pop_back();
+        }
+    
+        int top() {
+            return stack.back();
+        }
+    
+        int getMin() {
+            return mins.back();
+        }
+   
+1 deque (save current min for every pushed elem):
+
+
+    typedef pair<int,int> pairt;
+
+        deque<pairt> stack;
+
+        void push(int x) {
+            if (stack.size())
+                stack.push_back(make_pair(x, min(x,getMin()) ));
+            else 
+                stack.push_back(make_pair(x, x));
+        }
+    
+        void pop() {
+            stack.pop_back();
+        }
+    
+        int top() {
+            return stack.back().first;
+        }
+    
+        int getMin() {
+            return stack.back().second;
+        }
+    
+
+----------------------------------------------------------------------------------------------------
+My java solution without build-in stack
+Do not use the java stack.
+
+       class MinStack {
+            
+            Node top = null;
+            
+            public void push(int x) {
+                if (top == null) {
+                    top = new Node(x);
+                    top.min = x;
+                }
+                else {
+                    Node temp = new Node(x);
+                    temp.next = top;
+                    top = temp;
+                    top.min = Math.min(top.next.min, x);
+                }
+                
+                return;
+            }
+        
+            public void pop() {
+                top = top.next;
+                return;
+            }
+        
+            public int top() {
+                return top == null ? 0 : top.val;
+            }
+        
+            public int getMin() {
+                return top == null ? 0 : top.min;
+            }
+        }
+        
+        class Node {
+            int val;
+            int min;
+            Node next;
+            
+            public Node(int val) {
+                this.val = val;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+19 Lines Simple Answer, 31ms
+class MinStack {
+public:
+
+    stack<int> Data, Min;
+
+    void push(int x) {
+        Data.push(x);
+        if(Min.empty()||x<Min.top()) Min.push(x);
+        else Min.push(Min.top());
+    }
+
+    void pop() {
+        if(Data.empty()) return;
+        Data.pop();
+        Min.pop();
+    }
+
+    int top() {
+        if(!Data.empty())
+            return Data.top();
+    }
+
+    int getMin() {
+        if(!Min.empty());
+            return Min.top();
+    }
+};
+
+----------------------------------------------------------------------------------------------------

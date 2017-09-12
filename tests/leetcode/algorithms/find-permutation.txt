@@ -1,0 +1,397 @@
+Java Simple Solution
+public class Solution {
+    // when find a number i, flip the number at position i-1 to negative. 
+    // if the number at position i-1 is already negative, i is the number that occurs twice.
+    
+    public List<Integer> findDuplicates(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        for (int i = 0; i < nums.length; ++i) {
+            int index = Math.abs(nums[i])-1;
+            if (nums[index] < 0)
+                res.add(Math.abs(index+1));
+            nums[index] = -nums[index];
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very simple C++ solution
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        vector<int> res;
+        int i = 0;
+        while (i < nums.size()) {
+            if (nums[i] != nums[nums[i]-1]) swap(nums[i], nums[nums[i]-1]);
+            else i++;
+        }
+        for (i = 0; i < nums.size(); i++) {
+            if (nums[i] != i + 1) res.push_back(nums[i]);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) time O(1) space
+class Solution(object):
+    def findDuplicates(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        res = []
+        for x in nums:
+            if nums[abs(x)-1] < 0:
+                res.append(abs(x))
+            else:
+                nums[abs(x)-1] *= -1
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Java solution without destroying the input array. O(n) time. O(1) space.
+public List<Integer> findDuplicates(int[] nums) {
+     List<Integer> result = new ArrayList<Integer>();
+    if(nums == null)
+        return result;
+    for(int i=0; i<nums.length; i++){
+        int location = Math.abs(nums[i])-1;
+        if(nums[location] < 0){
+            result.add(Math.abs(nums[i]));
+        }else{
+            nums[location] = -nums[location];
+        }
+    }
+    for(int i=0; i<nums.length; i++)
+        nums[i] = Math.abs(nums[i]);
+   
+    return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ beats 98%
+vector<int> findDuplicates(vector<int>& nums) {
+        vector<int> res;
+        for(int i = 0; i < nums.size(); i ++){
+            nums[abs(nums[i])-1] = -nums[abs(nums[i])-1];
+            if(nums[abs(nums[i])-1] > 0) res.push_back(abs(nums [i]));
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy to understand solution without extra space and in O(n) time
+    List<Integer> newList = new ArrayList<Integer>();     // creating a new List
+    for(int i=0;i<nums.length;i++){  
+       int index =Math.abs(nums[i]);             // Taking the absolute value to find index
+       if(nums[index-1] >0){ 
+                nums[index-1] = - nums[index-1];
+        }else{
+               // If it is not greater than 0 (i.e) negative then the number is a duplicate
+                newList.add(Math.abs(nums[i])); 
+        }
+    }
+    return newList;
+}
+
+----------------------------------------------------------------------------------------------------
+Java O(1) space O(n) time solution with swapping
+public class Solution {
+    public List<Integer> findDuplicates(int[] nums) {
+        List<Integer> res=  new ArrayList<>();
+        if(nums == null || nums.length == 0) return res;
+        int i = 0;
+        int n = nums.length;
+        while(i<n){ //traverse the array  till the end
+            if(nums[i] == i+1){  // if number stays at it's supposed position, just continue
+                i++;
+                continue;
+            }
+            int num = nums[i];
+            if(num == -1){ // if the duplicate number in that position is already found continue
+                i++;
+                continue;
+            }
+            if(nums[num-1] == num){ // if current  num is equals to the number at supposed position,
+                res.add(num);       // then it is duplicate.
+                nums[i] = -1;       // mark this position, in order to denote that duplicate has found
+                i++;
+                continue;
+            }
+            swap(nums, i, num-1);  // if current numbers supposed position is occupied by another number swap and consider that number
+        }
+        return res;
+    }
+    
+    public void swap(int nums[], int i ,int j){
+        int tmp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = tmp;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution leveraging the highest bit
+/*
+  The solution is based on the fact that all the input number are signed int, and
+  given the condition that each number is larger than 0, we can leverage the highest
+  bit in each number to store the information whether the number has been found already.
+  If yes, just add the number in the vector to return, if not, we set the number's highest bit.
+*/
+vector<int> findDuplicates(vector<int>& nums) {
+	vector<int> r;
+	for (int i = 0; i < nums.size(); ++i) {
+		int index = nums[i] & 0x7fffffff;
+		if (nums[index - 1] < 0) {
+			r.push_back(index);
+		}
+		else {
+			nums[index - 1] |= 0x80000000;
+		}
+	}
+	return r;
+}
+
+
+----------------------------------------------------------------------------------------------------
+2 pass O(1) space solution
+1 <= a[i] <= n; n = a.size()
+
+----------------------------------------------------------------------------------------------------
+Python solution with explanation. O(N)&#x2F;O(1).
+class Solution(object):
+    def findDuplicates(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        result = []
+        for x in nums:
+            if nums[abs(x)-1] < 0:
+                result.append(abs(x))
+            else:
+                nums[abs(x)-1] = -1*nums[abs(x)-1]
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+C++_O(n), in-place swap
+ class Solution {
+public:
+vector<int> findDuplicates(vector<int>& nums) {
+    vector<int> res;
+    if(nums.empty()) return res;
+    
+    for(int i = 0; i < nums.size(); ++i){
+        while(nums[nums[i] - 1] != nums[i]){
+            swap(nums[nums[i] - 1], nums[i]);
+        }
+    }
+    
+    for(int i = 0; i < nums.size(); ++i){
+        if(nums[i] != i + 1){
+            res.push_back(nums[i]);
+        }
+    }
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+C++ Easy O(n) time and O(1) extra space solution through swapping.
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        if(nums.empty()) return {};
+        vector<int> res;
+        int n = nums.size();
+        for(int i = 0; i < n; i++)
+            nums[i]-=1;       //for indexing flexibility
+        
+        int i = 0;
+        while(i < n) {
+            if(nums[i] != nums[nums[i]]) 
+                    swap(nums[i], nums[nums[i]]);   //swap elements to their respective indexes.
+            else 
+                     i++;
+        }
+        for(int i = 0; i < n; i++) {
+            if(nums[i] != i) 
+                     res.push_back(nums[i]+1);     //get the elements which are at some other indexes (as they are occuring twice)
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ using another idea instead of swapping
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        vector<int> ret;
+        int mark = 0x80000000;  
+        int mask = 0x7fffffff; 
+        for (int i = 0; i < nums.size(); ++i){
+            int num = nums[i] & mask;
+            if (nums[num - 1] & mark)
+                ret.push_back(num);
+            nums[num - 1] |= mark;
+        }
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+3 Accepted Solutions: bit-wise inverse, swap, and cheat(using O(n) space)
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+
+        int sz = nums.size()+1;
+        vector<int> ret;
+#define CHEAT // on space
+#ifdef CHEAT
+        bool presented[sz] = {};
+        /* using either of the following 2 array forms is still accepted 
+        char presented[sz] = {};
+        vector<int> presented(sz);
+        */
+        for(int x : nums) {
+            if(presented[x]) ret.push_back(x);
+            else presented[x] = true;
+        }
+#elif 0 //using bitwise inverse
+        for(int i=1;i<sz;++i) {
+            int n = max(arr[i],~arr[i]);
+            if(arr[n] < 0) ret.push_back(n);
+            else arr[n] = ~arr[n];
+        }
+#else //swap based
+        int* arr = nums.data()-1;
+        for(int i=1;i<sz;) {
+            if(!arr[i] || arr[i] == i) {
+                ++i;
+            } else if(arr[i] == arr[arr[i]]) {
+                ret.push_back(arr[i]);
+                arr[i] = arr[arr[i]] = 0; // remove the number by setting zero
+                ++i;
+            } else {
+                swap(arr[i],arr[arr[i]]);
+            }
+        }
+#endif
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+public class Solution {
+    public List<Integer> findDuplicates(int[] nums) {
+        List<Integer> res = new ArrayList<>();;
+        Arrays.sort(nums);
+    
+        for(int i=1;i<nums.length;i++){
+            if(nums[i]==nums[i-1]) res.add(nums[i]);
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# - mark array using negative (same solution as others)
+public IList<int> FindDuplicates(int[] nums)
+{
+    IList<int> doubles = new List<int>();
+    for (int i = 0; i < nums.Length; i++)
+    {
+        int index = Math.Abs(nums[i]) - 1;
+        nums[index] = -1 * nums[index];
+        if (nums[index] > 0)
+        {
+            doubles.Add(Math.Abs(nums[i]));
+        }
+    }
+    return doubles;
+}
+
+----------------------------------------------------------------------------------------------------
+Java Solution using HashMap
+        List<Integer> result = new ArrayList<>();
+        Map<Integer,Integer> map = new HashMap<>();
+        for(int i =0; i < nums.length; i++ )
+        {
+            if(map.containsKey(nums[i])){
+                result.add(nums[i]);
+            }
+            map.put(nums[i],i);
+        }
+
+        return result;
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution
+class Solution(object):
+    def findDuplicates(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+        res = list()
+        for i in range(0, len(nums)):
+            nums[abs(nums[i])-1] *= -1
+            if nums[abs(nums[i])-1] > 0:
+                res.append(abs(nums[i]))
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, beats 94%, easy to understand than abs()
+    public List<Integer> findDuplicates(int[] nums) {
+        int len = nums.length;
+        for(int i = 0 ; i < len ; i++){
+            nums[(nums[i]-1)%len] +=len;
+        }
+        List<Integer> res = new ArrayList<>();
+        for(int i = 0 ; i < nums.length ; i++){
+            if(nums[i]>2*len){
+                res.add(i+1);
+            }
+        }
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Solution without swap, my accept solution
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        int iLen = nums.size();
+        vector<int> viRet;
+        for (int i=0; i<iLen; i++)
+        {
+            int iDx = abs(nums[i]) - 1;
+            if (nums[iDx] > 0)
+                nums[iDx] = -abs(nums[iDx]);
+            else
+                viRet.push_back(iDx+1);
+        }
+        
+        return viRet;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

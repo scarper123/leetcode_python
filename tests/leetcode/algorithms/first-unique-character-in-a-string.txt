@@ -1,0 +1,342 @@
+1 line java solution without loop &#x2F; recursion
+    public class Solution {
+    public boolean isPowerOfThree(int n) {
+        // 1162261467 is 3^19,  3^20 is bigger than int  
+        return ( n>0 &&  1162261467%n==0);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+** A summary of &#96;all&#96; solutions (new method included at 15:30pm Jan-8th)
+Well, this problem doesn't seem to be quite interesting or worthwhile to think about at a first glance. I had the same feeling at the beginning. However, after seeing a couple of posts, I saw a couple of interesting ways. So here is a summary post and hope you learn something from others' solutions.
+
+Two trivial solutions first: 
+#Recursive Solution#
+
+    public boolean isPowerOfThree(int n) {
+        return n>0 && (n==1 || (n%3==0 && isPowerOfThree(n/3)));
+    }
+
+#Iterative Solution#
+
+**update following Stefan's answer below:**
+
+    public boolean isPowerOfThree(int n) {
+        if(n>1)
+            while(n%3==0) n /= 3;
+        return n==1;
+    }
+
+**my original code:**
+    public boolean isPowerOfThree(int n) {
+        while(n>1) {
+            if(n%3!=0) return false;
+            n /= 3;
+        }
+        return n<=0 ? false : true;
+    }
+
+#It's all about MATH...#
+
+**Method 1**
+
+Find the maximum integer that is a power of 3 and check if it is a multiple of the given input. ([related post][1])
+
+    public boolean isPowerOfThree(int n) {
+        int maxPowerOfThree = (int)Math.pow(3, (int)(Math.log(0x7fffffff) / Math.log(3)));
+        return n>0 && maxPowerOfThree%n==0;
+    }
+
+Or simply hard code it since we know `maxPowerOfThree = 1162261467`:
+
+    public boolean isPowerOfThree(int n) {
+        return n > 0 && (1162261467 % n == 0);
+    }
+
+It is worthwhile to mention that Method 1 works only when the base is prime. For example, we cannot use this algorithm to check if a number is a power of 4 or 6 or any other composite number.
+
+**Method 2**
+
+ If `log10(n) / log10(3)` returns an int (more precisely, a double but has 0 after decimal point), then n is a power of 3. ([original post][2]). But **be careful here**, you cannot use `log` (natural log) here, because it will generate round off error for `n=243`. This is more like a coincidence. I mean when `n=243`, we have the following results:
+
+    log(243) = 5.493061443340548    log(3) = 1.0986122886681098
+       ==> log(243)/log(3) = 4.999999999999999
+   
+    log10(243) = 2.385606273598312    log10(3) = 0.47712125471966244
+       ==> log10(243)/log10(3) = 5.0
+
+This happens because `log(3)` is actually slightly larger than its true value due to round off, which makes the ratio smaller. 
+
+    public boolean isPowerOfThree(int n) {
+        return (Math.log10(n) / Math.log10(3)) % 1 == 0;
+    }
+
+**Method 3** [related post][3]
+
+    public boolean isPowerOfThree(int n) {
+        return n==0 ? false : n==Math.pow(3, Math.round(Math.log(n) / Math.log(3)));
+    }
+
+**Method 4** [related post][4]
+
+    public boolean isPowerOfThree(int n) {
+        return n>0 && Math.abs(Math.log10(n)/Math.log10(3)-Math.ceil(Math.log10(n)/Math.log10(3))) < Double.MIN_VALUE;
+    }
+
+**`Cheating` Method**
+
+This is not really a good idea in general. But for such kind of `power` questions, if we need to check many times, it might be a good idea to store the desired powers into an array first. ([related post][5])
+
+    public boolean isPowerOfThree(int n) {
+        int[] allPowerOfThree = new int[]{1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721, 129140163, 387420489, 1162261467};
+        return Arrays.binarySearch(allPowerOfThree, n) >= 0;
+    }
+
+or even better with HashSet:
+
+    public boolean isPowerOfThree(int n) {
+        HashSet<Integer> set = new HashSet<>(Arrays.asList(1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721, 129140163, 387420489, 1162261467));
+        return set.contains(n);
+    }
+
+#New Method Included at 15:30pm Jan-8th#
+
+**Radix-3** [original post][6]
+
+The idea is to convert the original number into radix-3 format and check if it is of format `10*` where `0*` means `k` zeros with `k>=0`.
+
+    public boolean isPowerOfThree(int n) {
+        return Integer.toString(n, 3).matches("10*");
+    }
+
+
+----------
+
+
+Any other interesting solutions?
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][7]
+
+
+  [1]: https://leetcode.com/discuss/78500/math-solution
+  [2]: https://leetcode.com/discuss/78495/my-one-line-java-solution
+  [3]: https://leetcode.com/discuss/78481/java-one-line-solution-using-math-knowledge
+  [4]: https://leetcode.com/discuss/78531/one-line-math-solution-python-code
+  [5]: https://leetcode.com/discuss/78492/one-lined-python-solution-without-using-any-loop-recursion
+  [6]: https://leetcode.com/discuss/78708/ternary-number-solution
+  [7]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+Without log and O(1).
+    class Solution {
+    public:
+        int const Max3PowerInt = 1162261467; // 3^19, 3^20 = 3486784401 > MaxInt32
+        int const MaxInt32 = 2147483647; // 2^31 - 1
+        bool isPowerOfThree(int n) {
+            if (n <= 0 || n > Max3PowerInt) return false;
+            return Max3PowerInt % n == 0;
+        }
+    };
+ 
+Typically, Log(x, y) is not O(1), it should be O(ln(N)), which just hides the loop/recursion .
+
+----------------------------------------------------------------------------------------------------
+1 line C++ no recursion&#x2F;loop
+    class Solution {
+    public:
+        bool isPowerOfThree(int n) {
+            return fmod(log10(n)/log10(3), 1)==0;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+One line (cheating)
+    public class Solution {
+    public bool IsPowerOfThree(int n) {
+         return n > 0 && (1162261467 % n == 0);
+      }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution Without Recursion&#x2F;Iteration
+If `N` is a power of `3`:
+
+ - It follows that `3^X == N`
+ - It follows that `log (3^X) == log N`
+ - It follows that `X log 3 == log N`
+ - It follows that `X == (log N) / (log 3)`
+ - For the basis to hold, `X` must be an integer.
+
+However, due to precision issues that arise from the fact that log 3 cannot be precisely represented on a binary computer; X is considered to be an integer if it's decimal component falls within a guard range of `+/-0.00000000000001`.
+
+    public boolean isPowerOfThree(int n) {
+      double a = Math.log(n) / Math.log(3);
+      return Math.abs(a - Math.rint(a)) <= 0.00000000000001;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution no loop &#x2F; recursion
+    bool isPowerOfThree(int n) {
+            if (n<=0) return false;
+            int t = pow(3,(int)(log(INT_MAX)/log(3)));
+            return (t%n == 0);
+        }
+t is maximum power of three
+
+----------------------------------------------------------------------------------------------------
+Two ways and O(1)
+solution 1:
+
+    return (n == 1 || n == 3 || n == 9 || n == 27 || n == 81 || n == 243 || n == 729 || n == 2187 || n == 6561 || n == 19683 || n == 59049 || n == 177147 || n == 531441 || n == 1594323 || n == 4782969 || n == 14348907 || n == 43046721 || n == 129140163 || n == 387420489 || n == 1162261467);
+
+I like this solution! very easy to understand!
+
+solution 2:
+
+    return n>0?!(1162261467 % n):0;
+
+or:
+
+    return n>0?(1162261467 / n == 1162261467 / (double)n):0; //this is a little bit faster
+
+if a number is the power of 3, it must can be divided by 1162261467, which is the largest number who is the power of 3. 
+
+----------------------------------------------------------------------------------------------------
+Python O(1) Solution 96.6%
+    class Solution(object):
+        def isPowerOfThree(self, n):
+            return n > 0 and 1162261467 % n == 0
+
+----------------------------------------------------------------------------------------------------
+JAVA----------------Easy Version To Understand!!!!!!!!!!!
+    	public static boolean isPowerOfThree(int n) {
+		if (n <= 0)
+			return false;
+		double r = Math.log10(n) / Math.log10(3);
+		if (r % 1 == 0)
+			return true;
+		else
+			return false;
+	}
+
+----------------------------------------------------------------------------------------------------
+Ternary number solution
+  The idea is that the ternary number that is power of 3 will be something like 10,100,1000, etc, analogous to binary numbers that are powers of 2.
+
+    public boolean isPowerOfThree(int n) {
+                String s = Integer.toString(n, 3);
+                if (s.contains("2")) return false;
+        		int result = Integer.valueOf(s, 2)&(Integer.valueOf(s, 2)-1);
+        		return result==0&n>0?true:false;
+            }
+
+----------------------------------------------------------------------------------------------------
+One line c solution
+This idea does not come from me, I just want to explain it in deail about why it can work.
+
+    bool isPowerOfThree(int n) {
+        /*
+        pow(3,19) is the max int which is less than INT_MAX.
+        3^m % n == 0 which can be described by 3^m == n * k (exists such a number of k)
+        
+        3 is a prime, which means that 3^m can be factored 3 * 3 * 3 *... * 3 (count of m), so n should be and can only be 3 * 3 * 3*...*3, which means that n is a pow of 3.
+        
+        if we want to find a pow of 4, we can not use this method because 4 is not a prime.
+        4^m can be factored 2* 2 * 2 * ... * 2 (count of 2m), so n can be any one of 2*2*2*..*2(any count is ok).
+        */
+        return (n > 0) && ((int)(pow(3, 19)) % n == 0);
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Math 1-liner, no log, with explanation
+    def isPowerOfThree(self, n):
+        return n > 0 == 3**19 % n
+
+The positive divisors of 3<sup>19</sup> are exactly the powers of 3 from 3<sup>0</sup> to  3<sup>19</sup>. That's all powers of 3 in the possible range here (signed 32-bit integer). So just check whether the number is positive and whether it divides 3<sup>19</sup>.
+
+Got that a while back from [this Stack Overflow answer](http://stackoverflow.com/a/24274850/1672429) (go upvote it :-).
+
+Edit: Kudos to [andrei3](https://leetcode.com/discuss/78499/one-line-cheating) for posting another version here first.
+
+----------------------------------------------------------------------------------------------------
+Two simple solutions without recursion or iteration: O(1) time and O(1) space
+Solution 1:
+
+    class Solution(object):
+        def isPowerOfThree(self, n):
+            # 1162261467=3^19. 3^20 is bigger than int.
+            return n > 0 and 1162261467 % n == 0
+
+
+Solution 2:
+
+
+    class Solution(object):
+        def isPowerOfThree(self, n):
+            # power_list: 3^0, 3^1, ..., 3^19
+            power_list = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721, 129140163, 387420489, 1162261467]
+            return n in power_list
+
+----------------------------------------------------------------------------------------------------
+An one liner solution without loop or recurssion
+Found this solution in a discussion here:
+http://stackoverflow.com/questions/1804311/how-to-check-if-an-integer-is-power-of-3
+
+Python one liner:
+    
+    return n > 0 and 3486784401 % n == 0
+
+3486784401 is the largest power of 3 for 32 bit. I thought it's quite neat.
+
+Update: as taxetbhs pointed out, the largest power of 3 for 32 bit is actually 1162261467... so 1162261467 is sufficient.
+
+----------------------------------------------------------------------------------------------------
+2 lines of c++ code
+
+
+
+    
+    bool isPowerOfThree(int n) 
+    {
+      double logRes = log10(n)/log10(3);
+      return (logRes - int(logRes) == 0) ? true : false; 
+    }
+
+
+The code implements the base change rule of the logarithm. it basically looks at if base3 logarithm of the number is an integer or not. 
+
+----------------------------------------------------------------------------------------------------
+O(1) C Solution
+    This can be generalized for any prime number n.
+    Lets say we have 2 number m & n.
+    If m is a power of n then for any number p,
+        1.  For all p<=m
+        2.  m%p = 0 if and only if p is also a power of n
+    We can use this concept here also. In this case n=3 and m is largest 32bit signed integer which is power of 3 i.e. 1162261467.
+    
+    bool isPowerOfThree(int p) {
+            return  p>0 && 1162261467%p == 0 ;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java one line solution
+    public boolean isPowerOfThree(int n) {
+       // The expression "(int) Math.pow(3, (int) (Math.log(Integer.MAX_VALUE) / Math.log(3.0))" returns max integer that is "power of 3"
+        return n > 0 && (int) Math.pow(3, (int) (Math.log(Integer.MAX_VALUE) / Math.log(3.0))) % n == 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+One lined Python Solution without using any loop &#x2F; recursion
+I simply collected all the integers that are power of 3 within 32bit, as you can see, not too many of them, and see if the number in question in the list.
+
+Don't down vote me, the question asked me to do it without loop / recursion, and I did it, and it doesn't look very bad ^_^
+
+
+    def isPowerOfThree(n):
+        return n in [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721, 129140163, 387420489, 1162261467, 3486784401]
+
+----------------------------------------------------------------------------------------------------
+O(1) python solution with explanation

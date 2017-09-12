@@ -1,0 +1,696 @@
+Java O(n) Solution - Bucket Sort
+Idea is simple. Build a array of list to be buckets with length 1 to sort.
+
+    public List<Integer> topKFrequent(int[] nums, int k) {
+
+		List<Integer>[] bucket = new List[nums.length + 1];
+		Map<Integer, Integer> frequencyMap = new HashMap<Integer, Integer>();
+
+		for (int n : nums) {
+			frequencyMap.put(n, frequencyMap.getOrDefault(n, 0) + 1);
+		}
+
+		for (int key : frequencyMap.keySet()) {
+			int frequency = frequencyMap.get(key);
+			if (bucket[frequency] == null) {
+				bucket[frequency] = new ArrayList<>();
+			}
+			bucket[frequency].add(key);
+		}
+
+		List<Integer> res = new ArrayList<>();
+
+		for (int pos = bucket.length - 1; pos >= 0 && res.size() < k; pos--) {
+			if (bucket[pos] != null) {
+				res.addAll(bucket[pos]);
+			}
+		}
+		return res;
+	}
+
+----------------------------------------------------------------------------------------------------
+3 Java Solution using Array, MaxHeap, TreeMap
+    // use an array to save numbers into different bucket whose index is the frequency
+    public class Solution {
+        public List<Integer> topKFrequent(int[] nums, int k) {
+            Map<Integer, Integer> map = new HashMap<>();
+            for(int n: nums){
+                map.put(n, map.getOrDefault(n,0)+1);
+            }
+            
+            // corner case: if there is only one number in nums, we need the bucket has index 1.
+            List<Integer>[] bucket = new List[nums.length+1];
+            for(int n:map.keySet()){
+                int freq = map.get(n);
+                if(bucket[freq]==null)
+                    bucket[freq] = new LinkedList<>();
+                bucket[freq].add(n);
+            }
+            
+            List<Integer> res = new LinkedList<>();
+            for(int i=bucket.length-1; i>0 && k>0; --i){
+                if(bucket[i]!=null){
+                    List<Integer> list = bucket[i]; 
+                    res.addAll(list);
+                    k-= list.size();
+                }
+            }
+            
+            return res;
+        }
+    }
+    
+    
+    
+    // use maxHeap. Put entry into maxHeap so we can always poll a number with largest frequency
+    public class Solution {
+        public List<Integer> topKFrequent(int[] nums, int k) {
+            Map<Integer, Integer> map = new HashMap<>();
+            for(int n: nums){
+                map.put(n, map.getOrDefault(n,0)+1);
+            }
+               
+            PriorityQueue<Map.Entry<Integer, Integer>> maxHeap = 
+                             new PriorityQueue<>((a,b)->(b.getValue()-a.getValue()));
+            for(Map.Entry<Integer,Integer> entry: map.entrySet()){
+                maxHeap.add(entry);
+            }
+            
+            List<Integer> res = new ArrayList<>();
+            while(res.size()<k){
+                Map.Entry<Integer, Integer> entry = maxHeap.poll();
+                res.add(entry.getKey());
+            }
+            return res;
+        }
+    }
+    
+    
+    
+    // use treeMap. Use freqncy as the key so we can get all freqencies in order
+    public class Solution {
+        public List<Integer> topKFrequent(int[] nums, int k) {
+            Map<Integer, Integer> map = new HashMap<>();
+            for(int n: nums){
+                map.put(n, map.getOrDefault(n,0)+1);
+            }
+            
+            TreeMap<Integer, List<Integer>> freqMap = new TreeMap<>();
+            for(int num : map.keySet()){
+               int freq = map.get(num);
+               if(!freqMap.containsKey(freq)){
+                   freqMap.put(freq, new LinkedList<>());
+               }
+               freqMap.get(freq).add(num);
+            }
+            
+            List<Integer> res = new ArrayList<>();
+            while(res.size()<k){
+                Map.Entry<Integer, List<Integer>> entry = freqMap.pollLastEntry();
+                res.addAll(entry.getValue());
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(n log(n-k)) unordered_map and priority_queue(maxheap) solution
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int,int> map;
+            for(int num : nums){
+                map[num]++;
+            }
+            
+            vector<int> res;
+            // pair<first, second>: first is frequency,  second is number
+            priority_queue<pair<int,int>> pq; 
+            for(auto it = map.begin(); it != map.end(); it++){
+                pq.push(make_pair(it->second, it->first));
+                if(pq.size() > (int)map.size() - k){
+                    res.push_back(pq.top().second);
+                    pq.pop();
+                }
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+3 ways to solve this problem
+ using heap
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+            unordered_map<int, int> cnt;
+            for (auto num : nums) cnt[num]++;
+            for (auto kv : cnt) {
+                pq.push({kv.second, kv.first});
+                while (pq.size() > k) pq.pop();
+            }
+            vector<int> res;
+            while (!pq.empty()) {
+                res.push_back(pq.top().second);
+                pq.pop();
+            }
+            return res;
+        }
+    };
+
+
+using selection algorithm
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            vector<int> res;
+            if (!nums.size()) return res;
+            unordered_map<int, int> cnt;
+            for (auto num : nums) cnt[num]++;
+            vector<pair<int, int>> num_with_cnt;
+            for (auto kv : cnt) {
+                num_with_cnt.push_back({kv.first, kv.second});
+            }
+            kselection(num_with_cnt, 0, num_with_cnt.size()-1, k);
+            for (int i = 0; i < k && i < num_with_cnt.size(); ++i) {
+                res.push_back(num_with_cnt[i].first);
+            }
+            return res;
+        }
+    
+        void kselection(vector<pair<int, int>>& data, int start, int end, int k) {
+    
+            if (start >= end) return;
+            auto pv = data[end];
+            int i = start;
+            int j = start;
+            while (i < end) {
+                if (data[i].second > pv.second) {
+                    swap(data[i++], data[j++]);
+                } else {
+                    ++i;
+                }
+            }
+            swap(data[j], data[end]);
+            int num = j - start + 1;
+            if (num == k) return;
+            else if (num < k) {
+                kselection(data, j + 1, end, k - num);
+            } else {
+                kselection(data, start, j - 1, k);
+            }
+        }
+    };
+
+
+using bucket sort
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            vector<int> res;
+            if (!nums.size()) return res;
+            unordered_map<int, int> cnt;
+            for (auto num : nums) cnt[num]++;
+            vector<vector<int>> bucket(nums.size() + 1);
+            for (auto kv : cnt) {
+                bucket[kv.second].push_back(kv.first);
+            }
+    
+            for (int i = bucket.size() - 1; i >= 0; --i) {
+                for (int j = 0; j < bucket[i].size(); ++j){
+                    res.push_back(bucket[i][j]);
+                    if (res.size() == k) return res;
+                }
+            }
+    
+            return res;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+*Java* straightforward O(N + (N-k)lg k) solution
+Idea is very straightforward:
+
+ - build a counter map that maps a num to its frequency
+ - build a heap/priority queue that keeps track of `k` most significant entries
+ - iterate through the final heap and get the keys
+
+Code in Java:
+
+    public List<Integer> topKFrequent(int[] nums, int k) {
+        Map<Integer, Integer> counterMap = new HashMap<>();
+        for(int num : nums) {
+            int count = counterMap.getOrDefault(num, 0);
+            counterMap.put(num, count+1);
+        }
+        
+        PriorityQueue<Map.Entry<Integer, Integer>> pq = new PriorityQueue<>((a, b) -> a.getValue()-b.getValue());
+        for(Map.Entry<Integer, Integer> entry : counterMap.entrySet()) {
+            pq.offer(entry);
+            if(pq.size() > k) pq.poll();
+        }
+        
+        List<Integer> res = new LinkedList<>();
+        while(!pq.isEmpty()) {
+            res.add(0, pq.poll().getKey());
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution using hash table and bucket sort
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int, int> m;
+            for (int num : nums)
+                ++m[num];
+            
+            vector<vector<int>> buckets(nums.size() + 1); 
+            for (auto p : m)
+                buckets[p.second].push_back(p.first);
+            
+            vector<int> ans;
+            for (int i = buckets.size() - 1; i >= 0 && ans.size() < k; --i) {
+                for (int num : buckets[i]) {
+                    ans.push_back(num);
+                    if (ans.size() == k)
+                        break;
+                }
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1-line Python Solution using Counter with explanation
+    import collections
+    
+    class Solution(object):
+        def topKFrequent(self, nums, k):
+            """
+            :type nums: List[int]
+            :type k: int
+            :rtype: List[int]
+            """
+            # Use Counter to extract the top k frequent elements
+            # most_common(k) return a list of tuples, where the first item of the tuple is the element,
+            # and the second item of the tuple is the count
+            # Thus, the built-in zip function could be used to extract the first item from the tuples
+            return zip(*collections.Counter(nums).most_common(k))[0]
+
+----------------------------------------------------------------------------------------------------
+O(n) 32ms Java Solution - Bucket Sort
+    public class Solution {
+        public List<Integer> topKFrequent(int[] nums, int k) {
+            int n = nums.length;
+            HashMap<Integer, Integer> h = new HashMap();
+            for (int i : nums)
+                if (h.containsKey(i))
+                    h.put(i, h.get(i) + 1);
+                else
+                    h.put(i, 1);
+            
+            List<Integer>[] fc = new ArrayList[n + 1];
+            for (int i : h.keySet()) {
+                int f = h.get(i);       //System.out.println(f + " times of " + i);
+                if (fc[f] == null) fc[f] = new ArrayList();
+                fc[f].add(i);
+            }
+            
+            List<Integer> ans = new ArrayList();
+            for (int i = n, j = 0; k > 0; k--) {
+                for (; fc[i] == null || j == fc[i].size(); j = 0, i--);
+                ans.add(fc[i].get(j++));
+            }
+            
+            return ans;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogk) and O(n) solutions
+Solution 1: Using a min heap. O(nlogk)
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int, int> counts;
+            priority_queue<int, vector<int>, greater<int>> max_k;
+            for(auto i : nums) ++counts[i];
+            for(auto & i : counts) {
+                max_k.push(i.second);
+                // Size of the min heap is maintained at equal to or below k
+                while(max_k.size() > k) max_k.pop();
+            }
+            vector<int> res;
+            for(auto & i : counts) {
+                if(i.second >= max_k.top()) res.push_back(i.first);
+            }
+            return res;
+        }
+    };
+
+Soution 2: Bucket sort. O(n)
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int, int> counts;
+            for(auto i : nums) ++counts[i];
+            
+            vector<vector<int>> buckets(nums.size() + 1);
+            for(auto & k : counts) 
+                buckets[k.second].push_back(k.first);
+            reverse(begin(buckets), end(buckets));
+            
+            vector<int> res;
+            for(auto & bucket: buckets) 
+                for(auto i : bucket) {
+                    res.push_back(i);
+                    if(res.size() == k) return res;
+                }
+            
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java.   A simple accepted solution.
+Use hashmap to store the count. 
+
+    Map<Integer, Integer> countMap = new HashMap<>();
+        List<Integer> ret = new ArrayList<>();
+        for (int n : nums) {
+            if (countMap.containsKey(n)) {
+                countMap.put(n ,countMap.get(n)+1);
+            } else {
+                countMap.put(n ,1);
+            }
+        }
+       PriorityQueue<Map.Entry<Integer, Integer>> pq =
+                new PriorityQueue<Map.Entry<Integer, Integer>>((o1, o2) -> o2.getValue() - o1.getValue());
+        pq.addAll(countMap.entrySet());
+        
+        List<Integer> ret = new ArrayList<>();
+        for(int i = 0; i < k; i++){
+            ret.add(pq.poll().getKey());
+        }
+        return ret;
+
+----------------------------------------------------------------------------------------------------
+&#91;Regards&#93;  Summary Of 3 Concise C++ Implementations
+This problem's C++ solutions rely heavily on different data structure design.
+
+ First let us check the max-heap (priority_queue) based solutions
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int,int> map;
+            for(int num : nums){
+                map[num]++;
+            }
+    
+            vector<int> res;
+            /** use the priority queue, like the max-heap , we will keep (size-k) smallest elements in the queue**/
+            /** pair<first, second>: first is frequency,  second is number **/
+            priority_queue<pair<int,int>> pq; 
+            for(auto it = map.begin(); it != map.end(); it++){
+                pq.push(make_pair(it->second, it->first));
+                /** onece the size bigger than size-k, we will pop the value, which is the top k frequent element value **/
+                if(pq.size() > (int)map.size() - k){
+                    res.push_back(pq.top().second);
+                    pq.pop();
+                }
+            }
+            return res;
+        }
+    };
+
+ Now let us check the frequency-based array method solutions
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int, int> m;
+            for (int  num : nums)
+                ++m[num];
+            /** as the word frequencies is at most nums.size() **/
+            vector<vector<int>> buckets(nums.size() + 1);
+            for (auto p : m) 
+                buckets[p.second].push_back(p.first);
+            /** we can fetch the top k largest element value from the array **/    
+            vector<int> ans;
+            for (int i = buckets.size() - 1; i >= 0 && ans.size() < k; --i)
+            {
+                for (int num : buckets[i])
+                {
+                    ans.push_back(num);
+                    if (ans.size() == k)
+                        break;
+                }
+            }
+            return ans;
+        }
+    };
+
+The third solution is based on the C++ API : nth_element() to resort the array to left half and right half.
+
+
+
+    class Solution {
+    public:
+        vector<int> topKFrequent(vector<int>& nums, int k) {
+            unordered_map<int, int> counts;
+            for (const auto& i : nums) 
+            {
+                ++ counts[i];
+            }
+            /** pair : (-frequency, key) **/
+            vector<pair<int, int>> p;
+            for (auto it = counts.begin(); it != counts.end(); ++ it) 
+            {
+                p.emplace_back(-(it->second), it->first);
+            }
+            /** nth_element() call will put the  (k-1)-th element on its position,
+             * the left (k-1) element is smaller than the key, the right bigger **/
+            nth_element(p.begin(), p.begin() + k - 1, p.end());
+            vector<int> result;
+            for (int i = 0; i < k; i++) 
+            {
+                result.emplace_back(p[i].second);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java8 functional solution
+    public static List<Integer> topKFrequent(int[] nums, int k) {
+        Map<Integer, Integer> counter = new HashMap<>();
+        for (int num : nums) {
+            counter.putIfAbsent(num, 0);
+            counter.computeIfPresent(num, (key, oldVal) -> oldVal + 1);
+        }
+        return counter.entrySet()
+                .stream()
+                .sorted(Comparator.comparing(Map.Entry<Integer, Integer>::getValue).reversed())
+                .limit(k)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+----------------------------------------------------------------------------------------------------
+36ms neat c++ solution using stl heap tool
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+            if (nums.empty()) return {};
+            unordered_map<int, int> m;
+            for (auto &n : nums) m[n]++;
+        
+            vector<pair<int, int>> heap;
+            for (auto &i : m) heap.push_back({i.second, i.first});
+        
+            vector<int> result; 
+            make_heap(heap.begin(), heap.end());
+            while (k--) {
+                result.push_back(heap.front().second);
+                pop_heap(heap.begin(), heap.end());
+                heap.pop_back();
+            }
+            return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise solution O(n + klogn) python using minheap and dict
+Uses a dict to maintain counts, heapifys the list of counts, then selects K elements out of the max heap. 
+
+    import heapq
+    
+    class Solution(object):
+        def topKFrequent(self, nums, k):
+            """
+            :type nums: List[int]
+            :type k: int
+            :rtype: List[int]
+            """
+            freq = {}
+            freq_list=[]  
+            for num in nums:
+                if num in freq:
+                    freq[num] = freq[num] + 1
+                else:
+                    freq[num] = 1
+                    
+            for key in freq.keys():
+               
+                freq_list.append((-freq[key], key))
+            heapq.heapify(freq_list)
+            topk = []
+            for i in range(0,k):
+                topk.append(heapq.heappop(freq_list)[1])
+            return topk
+
+----------------------------------------------------------------------------------------------------
+O(n) Solution works for stream dynamic Top K query as well
+The idea is to maintain a sorted array (sort by count value) while keep adding new nums. As there will be duplicate counts, same count should have same rank. Example:
+
+Index - num - count -  rank
+
+0 ---- 21------ 10 -----0
+
+1 ---- 121----- 8-------1
+
+2 ---- 7 ------- 8 -------1
+
+3 ---- 9 --------8 -------1
+
+4 ---- 15-------5--------4
+
+if a new num comes, let us say 9, we increase count 8 to 9 and swap row 1 and row 3. For top K query, just need take first K elements from sorted array.
+
+
+    public class Solution {
+        public List<Integer> topKFrequent(int[] nums, int k) {
+            Map<Integer, Integer> numToCount = new HashMap<>();
+            Map<Integer, Integer> numToIndex = new HashMap<>();
+            Map<Integer, Integer> countToRank = new HashMap<>();
+            List<Integer> arr = new ArrayList<>(); //sorted
+            for (int num : nums) {
+                if (numToCount.containsKey(num)) {
+                    int count = numToCount.get(num);
+                    numToCount.put(num, count + 1);
+                    int j = numToIndex.get(num);
+                    int i = countToRank.get(count);
+                    swap(arr, i, j);
+                    numToIndex.put(arr.get(i), i);
+                    numToIndex.put(arr.get(j), j);
+                    if (i + 1 < arr.size() && numToCount.get(arr.get(i + 1)) == count) countToRank.put(count, i + 1);
+                    else countToRank.remove(count);
+                    if (!countToRank.containsKey(count + 1)) countToRank.put(count + 1, i);
+                }
+                else {
+                    numToCount.put(num, 1);
+                    arr.add(num);
+                    numToIndex.put(num, arr.size() - 1);
+                    if (!countToRank.containsKey(1)) countToRank.put(1, arr.size() - 1);
+                }
+            }
+            List<Integer> res = new ArrayList<>();
+            for (int i = 0; i < k; i++) res.add(arr.get(i));
+            return res;
+        }
+        
+        private void swap(List<Integer> arr, int i, int j) {
+            int temp = arr.get(i);
+            arr.set(i, arr.get(j));
+            arr.set(j, temp);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+6 Lines concise C++ (STL functional programming style)
+I personally like to heavily use STL and C++ functional programming. Not saying this is the coding style good for all people, just want to show another C++ programming style. It's easy to write concise code with this style, but sometimes it may look awkward to people unfamiliar with it.
+    
+    class Solution {
+        public:
+            vector<int> topKFrequent(vector<int>& nums, int k) {
+                unordered_map<int, int> my_map;
+                for_each (begin(nums), end(nums), [&my_map](int i){ my_map[i]++;});
+                vector<pair<int, int>> pv(begin(my_map), end(my_map));
+                nth_element(begin(pv), begin(pv)+k, end(pv), [](pair<int, int> a, pair<int, int> b){return a.second > b.second;});
+                vector<int> result;
+                transform(begin(pv), begin(pv)+k, back_inserter(result), [](pair<int, int> a){return a.first;});
+                return result;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Five efficient solutions in C++, well-explained
+practical
+
+----------------------------------------------------------------------------------------------------
+1 line python solution (Using Counter.most_common method)
+ref: [https://docs.python.org/2/library/collections.html#collections.Counter][1]
+
+    class Solution(object):
+        def topKFrequent(self, nums, k):
+            return [item[0] for item in collections.Counter(nums).most_common(k)]
+
+
+  [1]: https://docs.python.org/2/library/collections.html#collections.Counter
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution: dictionary + quick select
+I used a dictionary to get the frequencies, and then used quick select to get the top k frequenct elements.
+
+    def topKFrequent(nums, k):
+        
+        def quick_select(left, right):
+            pivot = left
+            l, r = left, right
+            while l < r:
+                while l < r and counts[r][1] <= counts[pivot][1]:
+                    r -= 1
+                while l < r and counts[l][1] >= counts[pivot][1]:
+                    l += 1
+                counts[l], counts[r] = counts[r], counts[l]
+            counts[left], counts[l] = counts[l], counts[left]
+            
+            if l + 1 == k:
+                return counts[:l+1]
+            elif l + 1 < k:
+                return quick_select(l + 1, right)
+            else:
+                return quick_select(left, l - 1)
+        
+        if not nums:
+            return []
+            
+        # Get the counts.
+        counts = {}
+        for x in nums:
+            counts[x] = counts.setdefault(x, 0) + 1
+            
+        counts = counts.items()
+        # Use quick select to get the top k counts.
+        return [c[0] for c in quick_select(0, len(counts) - 1)]
+        
+
+----------------------------------------------------------------------------------------------------
+Two line Python solution in 72ms(heapq and Counter)
+    from collections import Counter
+    import heapq
+
+    class Solution(object):
+        def topKFrequent(self, nums, k):
+            c = Counter(nums)
+            return heapq.nlargest(k, c, key=lambda x:c[x])
+
+----------------------------------------------------------------------------------------------------

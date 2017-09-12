@@ -1,0 +1,955 @@
+Very concise Java AC solution
+    public class Solution {
+    
+    private int n;
+    private int m;
+    
+    public int numIslands(char[][] grid) {
+        int count = 0;
+        n = grid.length;
+        if (n == 0) return 0;
+        m = grid[0].length;
+        for (int i = 0; i < n; i++){
+            for (int j = 0; j < m; j++)
+                if (grid[i][j] == '1') {
+                    DFSMarking(grid, i, j);
+                    ++count;
+                }
+        }    
+        return count;
+    }
+    
+    private void DFSMarking(char[][] grid, int i, int j) {
+        if (i < 0 || j < 0 || i >= n || j >= m || grid[i][j] != '1') return;
+        grid[i][j] = '0';
+        DFSMarking(grid, i + 1, j);
+        DFSMarking(grid, i - 1, j);
+        DFSMarking(grid, i, j + 1);
+        DFSMarking(grid, i, j - 1);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+7 lines Python, ~14 lines Java
+Sink and count the islands.
+
+---
+
+**Python Solution**
+
+    def numIslands(self, grid):
+        def sink(i, j):
+            if 0 <= i < len(grid) and 0 <= j < len(grid[i]) and grid[i][j] == '1':
+                grid[i][j] = '0'
+                map(sink, (i+1, i-1, i, i), (j, j, j+1, j-1))
+                return 1
+            return 0
+        return sum(sink(i, j) for i in range(len(grid)) for j in range(len(grid[i])))
+
+---
+
+**Java Solution 1**
+
+    public class Solution {
+        char[][] g;
+        public int numIslands(char[][] grid) {
+            int islands = 0;
+            g = grid;
+            for (int i=0; i<g.length; i++)
+                for (int j=0; j<g[i].length; j++)
+                    islands += sink(i, j);
+            return islands;
+        }
+        int sink(int i, int j) {
+            if (i < 0 || i == g.length || j < 0 || j == g[i].length || g[i][j] == '0')
+                return 0;
+            g[i][j] = '0';
+            sink(i+1, j); sink(i-1, j); sink(i, j+1); sink(i, j-1);
+            return 1;
+        }
+    }
+
+---
+
+**Java Solution 2**
+
+    public class Solution {
+        public int numIslands(char[][] grid) {
+            int islands = 0;
+            for (int i=0; i<grid.length; i++)
+                for (int j=0; j<grid[i].length; j++)
+                    islands += sink(grid, i, j);
+            return islands;
+        }
+        int sink(char[][] grid, int i, int j) {
+            if (i < 0 || i == grid.length || j < 0 || j == grid[i].length || grid[i][j] == '0')
+                return 0;
+            grid[i][j] = '0';
+            for (int k=0; k<4; k++)
+                sink(grid, i+d[k], j+d[k+1]);
+            return 1;
+        }
+        int[] d = {0, 1, 0, -1, 0};
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+    public class NumberofIslands {
+    	static int[] dx = {-1,0,0,1};
+    	static int[] dy = {0,1,-1,0};
+    	public static int numIslands(char[][] grid) {
+    		if(grid==null || grid.length==0) return 0;
+    		int islands = 0;
+    		for(int i=0;i<grid.length;i++) {
+    			for(int j=0;j<grid[i].length;j++) {
+    				if(grid[i][j]=='1') {
+    					explore(grid,i,j);
+    					islands++;
+    				}
+    			}
+    		}
+    		return islands;
+    	}
+    	public static void explore(char[][] grid, int i, int j) {
+    		grid[i][j]='x';
+    		for(int d=0;d<dx.length;d++) {
+    			if(i+dy[d]<grid.length && i+dy[d]>=0 && j+dx[d]<grid[0].length && j+dx[d]>=0 && grid[i+dy[d]][j+dx[d]]=='1') {
+    				explore(grid,i+dy[d],j+dx[d]);
+    			}
+    		}
+    	}
+    }
+
+The algorithm works as follow:
+
+ 1. Scan each cell in the grid.
+ 2. If the cell value is '1' explore that island.
+ 3. Mark the explored island cells with 'x'.
+ 4. Once finished exploring that island, increment islands counter.
+
+The arrays dx[], dy[] store the possible moves from the current cell. Two land cells ['1'] are considered from the same island if they are horizontally or vertically adjacent (possible moves (-1,0),(0,1),(0,-1),(1,0)). Two '1' diagonally adjacent are not considered from the same island.
+
+
+----------------------------------------------------------------------------------------------------
+Java Union Find Solution
+class UF {
+
+    public int count = 0;
+    public int[] id = null;
+    
+    public UF(int m, int n, char[][] grid) {
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                if(grid[i][j] == '1') count++;
+            }
+        }
+        id = new int[m * n];
+        for(int i = 0; i < m * n; i++) {
+            id[i] = i;
+        }
+    }
+    
+    public int find(int p) {
+        while(p != id[p]) {
+            id[p] = id[id[p]];
+            p = id[p];
+        }
+        return p;
+    }
+    
+    public boolean isConnected(int p, int q) {
+        int pRoot = find(p);
+        int qRoot = find(q);
+        if(pRoot != qRoot) return false;
+        else return true;
+    }
+    
+    public void union(int p, int q) {
+        int pRoot = find(p);
+        int qRoot = find(q);
+        if(pRoot == qRoot) return;
+        id[pRoot] = qRoot;
+        count--;
+    }
+}
+
+    public int numIslands(char[][] grid) {
+        if(grid.length == 0 || grid[0].length == 0) return 0;
+        int m = grid.length, n = grid[0].length;
+        UF uf = new UF(m , n, grid);
+        
+        for(int i = 0; i < m; i++) {
+            for(int j = 0; j < n; j++) {
+                if(grid[i][j] == '0') continue;
+                int p = i * n + j;
+                int q;
+                if(i > 0 && grid[i - 1][j] == '1') {
+                    q = p - n;
+                    uf.union(p, q);
+                }
+                if(i < m - 1 && grid[i + 1][j] == '1') {
+                    q = p + n;
+                    uf.union(p, q);
+                }
+                if(j > 0 && grid[i][j - 1] == '1') {
+                    q = p - 1;
+                    uf.union(p, q);
+                }
+                if(j < n - 1 && grid[i][j + 1] == '1') {
+                    q = p + 1;
+                    uf.union(p, q);
+                }
+            }
+        }
+        return uf.count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Clear &amp; Easy Java Solution
+    public class Solution {
+        public int numIslands(char[][] grid) {
+            int count = 0;
+            
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[i].length; j++) {
+                    if (grid[i][j] == '1') {
+                        count++;
+                        clearRestOfLand(grid, i, j);
+                    }
+                }
+            }
+            return count;
+        }
+        
+        private void clearRestOfLand(char[][] grid, int i, int j) {
+            if (i < 0 || j < 0 || i >= grid.length || j >= grid[i].length || grid[i][j] == '0') return;
+            
+            grid[i][j] = '0';
+            clearRestOfLand(grid, i+1, j);
+            clearRestOfLand(grid, i-1, j);
+            clearRestOfLand(grid, i, j+1);
+            clearRestOfLand(grid, i, j-1);
+            return;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+1D Union Find Java solution, easily generalized to other problems
+For any problem I work on, I will try to generalize some reusable template out for future use.  We have limited time during interview and too much to worry about, so having some code template to use is very handy.  For this problem, although it is easier  and probably suggested to use BFS, but Union find also comes handy and can be easily extended to solve Island 2 and Surrounded regions.  
+
+I separate all the union find logic in a separate class and use 1d version to make the code clear.  I also use a 2d array for the 4 direction visit.  `int[][] distance = {{1,0},{-1,0},{0,1},{0,-1}};`
+
+
+        int[][] distance = {{1,0},{-1,0},{0,1},{0,-1}};
+        public int numIslands(char[][] grid) {  
+            if (grid == null || grid.length == 0 || grid[0].length == 0)  {
+                return 0;  
+            }
+            UnionFind uf = new UnionFind(grid);  
+            int rows = grid.length;  
+            int cols = grid[0].length;  
+            for (int i = 0; i < rows; i++) {  
+                for (int j = 0; j < cols; j++) {  
+                    if (grid[i][j] == '1') {  
+                        for (int[] d : distance) {
+                            int x = i + d[0];
+                            int y = j + d[1];
+                            if (x >= 0 && x < rows && y >= 0 && y < cols && grid[x][y] == '1') {  
+                                int id1 = i*cols+j;
+                                int id2 = x*cols+y;
+                                uf.union(id1, id2);  
+                            }  
+                        }  
+                    }  
+                }  
+            }  
+            return uf.count;  
+        }
+        
+Union Find:
+
+        class UnionFind {
+            int[] father;  
+            int m, n;
+            int count = 0;
+            UnionFind(char[][] grid) {  
+                m = grid.length;  
+                n = grid[0].length;  
+                father = new int[m*n];  
+                for (int i = 0; i < m; i++) {  
+                    for (int j = 0; j < n; j++) {  
+                        if (grid[i][j] == '1') {
+                            int id = i * n + j;
+                            father[id] = id;
+                            count++;
+                        }
+                    }  
+                }  
+            }
+            public void union(int node1, int node2) {  
+                int find1 = find(node1);
+                int find2 = find(node2);
+                if(find1 != find2) {
+                    father[find1] = find2;
+                    count--;
+                }
+            }
+            public int find (int node) {  
+                if (father[node] == node) {  
+                    return node;
+                }
+                father[node] = find(father[node]);  
+                return father[node];
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+DFS and BFS in C++
+When we met a '1', the answer add 1, we also need to search all '1' which connected to it directly or indirectly, and change it to '0'. And we can use DFS or BFS to search.
+
+1. DFS
+======
+    class Solution
+    {
+    public:
+        int numIslands(vector<vector<char>> &grid)
+        {
+            if(grid.size() == 0 || grid[0].size() == 0)
+                return 0;
+            
+            int res = 0;
+            for(int i = 0; i < grid.size(); ++ i)
+                for(int j = 0; j < grid[0].size(); ++ j)
+                    if(grid[i][j] == '1')
+                    {
+                        ++ res;
+                        DFS(grid, i, j);
+                    }
+            return res;
+        }
+    private:
+        void DFS(vector<vector<char>> &grid, int x, int y)
+        {
+            grid[x][y] = '0';
+            if(x > 0 && grid[x - 1][y] == '1')
+                DFS(grid, x - 1, y);
+            if(x < grid.size() - 1 && grid[x + 1][y] == '1')
+                DFS(grid, x + 1, y);
+            if(y > 0 && grid[x][y - 1] == '1')
+                DFS(grid, x, y - 1);
+            if(y < grid[0].size() - 1 && grid[x][y + 1] == '1')
+                DFS(grid, x, y + 1);
+        }
+    };
+
+2. BFS
+======
+
+    class Solution
+    {
+    public:
+        int numIslands(vector<vector<char>> &grid)
+        {
+            if(grid.size() == 0 || grid[0].size() == 0)
+                return 0;
+            
+            int res = 0;
+            for(int i = 0; i < grid.size(); ++ i)
+                for(int j = 0; j < grid[0].size(); ++ j)
+                    if(grid[i][j] == '1')
+                    {
+                        ++ res;
+                        BFS(grid, i, j);
+                    }
+            return res;
+        }
+    private:
+        void BFS(vector<vector<char>> &grid, int x, int y)
+        {
+            queue<vector<int>> q;
+            q.push({x, y});
+            grid[x][y] = '0';
+            
+            while(!q.empty())
+            {
+                x = q.front()[0], y = q.front()[1];
+                q.pop();
+                
+                if(x > 0 && grid[x - 1][y] == '1')
+                {
+                    q.push({x - 1, y});
+                    grid[x - 1][y] = '0';
+                }
+                if(x < grid.size() - 1 && grid[x + 1][y] == '1')
+                {
+                    q.push({x + 1, y});
+                    grid[x + 1][y] = '0';
+                }
+                if(y > 0 && grid[x][y - 1] == '1')
+                {
+                    q.push({x, y - 1});
+                    grid[x][y - 1] = '0';
+                }
+                if(y < grid[0].size() - 1 && grid[x][y + 1] == '1')
+                {
+                    q.push({x, y + 1});
+                    grid[x][y + 1] = '0';
+                }
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java DFS and BFS solution
+Using Flood Fill algorithm:
+
+DFS:
+
+    public int numIslands(char[][] grid) {
+        int count=0;
+        for(int i=0;i<grid.length;i++)
+            for(int j=0;j<grid[0].length;j++){
+                if(grid[i][j]=='1'){
+                    dfsFill(grid,i,j);
+                    count++;
+                }
+            }
+        return count;
+    }
+    private void dfsFill(char[][] grid,int i, int j){
+        if(i>=0 && j>=0 && i<grid.length && j<grid[0].length&&grid[i][j]=='1'){
+            grid[i][j]='0';
+            dfsFill(grid, i + 1, j);
+            dfsFill(grid, i - 1, j);
+            dfsFill(grid, i, j + 1);
+            dfsFill(grid, i, j - 1);
+        }
+    }
+
+BFS:
+
+    public int numIslands(char[][] grid) {
+        int count=0;
+        for(int i=0;i<grid.length;i++)
+            for(int j=0;j<grid[0].length;j++){
+                if(grid[i][j]=='1'){
+                    bfsFill(grid,i,j);
+                    count++;
+                }
+            }
+        return count;
+    }
+    private void bfsFill(char[][] grid,int x, int y){
+        grid[x][y]='0';
+        int n = grid.length;
+        int m = grid[0].length;
+        LinkedList<Integer> queue = new LinkedList<Integer>();  
+        int code = x*m+y;  
+        queue.offer(code);  
+        while(!queue.isEmpty())  
+        {  
+            code = queue.poll();  
+            int i = code/m;  
+            int j = code%m;  
+            if(i>0 && grid[i-1][j]=='1')    //search upward and mark adjacent '1's as '0'.
+            {  
+                queue.offer((i-1)*m+j);  
+                grid[i-1][j]='0';  
+            }  
+            if(i<n-1 && grid[i+1][j]=='1')  //down
+            {  
+                queue.offer((i+1)*m+j);  
+                grid[i+1][j]='0';  
+            }  
+            if(j>0 && grid[i][j-1]=='1')  //left
+            {  
+                queue.offer(i*m+j-1);  
+                grid[i][j-1]='0';  
+            }  
+            if(j<m-1 && grid[i][j+1]=='1')  //right
+            {  
+                queue.offer(i*m+j+1);  
+                grid[i][j+1]='0';  
+            }
+        } 
+    } 
+
+----------------------------------------------------------------------------------------------------
+My accepted c++ solution (may be trivial)
+    class Solution {
+    public:
+        void contaminate(vector<vector<char> > &grid, int i, int j){
+            if(i>0&&grid[i-1][j]=='1'){
+                grid[i-1][j]='0';
+                contaminate(grid, i-1, j);
+            }
+            if(j>0&&grid[i][j-1]=='1'){
+                grid[i][j-1]='0';
+                contaminate(grid, i, j-1);
+            }
+            if(i<grid.size()-1&&grid[i+1][j]=='1'){
+                grid[i+1][j]='0';
+                contaminate(grid, i+1, j);
+            }
+            if(j<grid[0].size()-1&&grid[i][j+1]=='1'){
+                grid[i][j+1]='0';
+                contaminate(grid, i, j+1);
+            }
+        }
+        int numIslands(vector<vector<char>> &grid) {
+            int n=grid.size();
+            if(n==0) return 0;
+            int m=grid[0].size();
+            
+            int cnt=0;
+            for(int i=0; i<n; i++){
+                for(int j=0; j<m; j++){
+                    if(grid[i][j]=='1'){
+                        cnt++;
+                        contaminate(grid, i, j);
+                    }
+                }
+            }
+            return cnt;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Simple DFS Solution
+Iterate through each of the cell and if it is an island, do dfs to mark all adjacent islands, then increase the counter by 1.
+
+    def numIslands(self, grid):
+        if not grid:
+            return 0
+            
+        count = 0
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] == '1':
+                    self.dfs(grid, i, j)
+                    count += 1
+        return count
+    
+    def dfs(self, grid, i, j):
+        if i<0 or j<0 or i>=len(grid) or j>=len(grid[0]) or grid[i][j] != '1':
+            return
+        grid[i][j] = '#'
+        self.dfs(grid, i+1, j)
+        self.dfs(grid, i-1, j)
+        self.dfs(grid, i, j+1)
+        self.dfs(grid, i, j-1)
+            
+
+----------------------------------------------------------------------------------------------------
+Simple DFS sulotion
+Dont need the extra space, and O(mn)
+
+    public int numIslands(char[][] grid) {
+        int islands = 0;
+        if (grid != null && grid.length != 0 && grid[0].length != 0) {
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[0].length; j++) {
+                    if (grid[i][j] == '1') {
+                        dfs(grid, i, j);
+                        islands++;
+                    }
+                }
+            }
+        }
+        return islands;
+    }
+    
+    private void dfs(char[][] grid, int x, int y) {
+        if (x < 0 || grid.length <= x || y < 0 || grid[0].length <= y || grid[x][y] != '1') {
+            return;
+        }
+        grid[x][y] = 'x';
+        dfs(grid, x + 1, y);
+        dfs(grid, x - 1, y);
+        dfs(grid, x, y + 1);
+        dfs(grid, x, y - 1);
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Java concise dfs solution.
+        
+    public int numIslands(char[][] grid) {
+        int ret = 0;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                if (grid[i][j] == '1') {
+                    ret++;
+                    dfs(grid, i, j);
+                }
+            }
+        }
+        return ret;
+    }
+    
+    private void dfs(char[][] grid, int m, int n) {
+        if (m < 0 || m >= grid.length || n < 0 || n >= grid[0].length || grid[m][n] != '1') {
+            return;
+        }
+        grid[m][n] = '#';
+        dfs(grid, m+1, n);
+        dfs(grid, m-1, n);
+        dfs(grid, m, n+1);
+        dfs(grid, m, n-1);
+    }
+
+----------------------------------------------------------------------------------------------------
+12 ms Easy C++ Solution with Detailed Explanations
+This is a typical problem about **searching**. In fact, you can use either BFS or DFS for it. Personally, I use DFS in the following code.
+
+The idea is fairly simple. We maintain another 2-dimensional vector `visited` to mark whether the corresponding position in `grid` has been visited and a variable `count` for the number of islands (initialized to be `0`). Then we visit `grid` from left to right and top to bottom. Each time when we see a non-visited `1` in `grid`, we add the number of islands by `1` and mark all the connected 4-neighbors (DFS is applied here to get all the connected neighbors) of the non-visited `1` (including itself) as visited.
+
+Note that a lot of the solutions in the discussion forum directly changes `1` in `grid` to `0` instead of using another 2-dimensional vector `visited`. However, I personally prefer to keep the input unchanged in a function with a return value.
+
+The code is as follows.
+
+    class Solution {
+    public:
+        int numIslands(vector<vector<char>>& grid) {
+            if (grid.empty()) return 0;
+            int m = grid.size(), n = grid[0].size(), num = 0;
+            vector<vector<bool>> visited(m, vector<bool> (n, false));
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (grid[i][j] == '1' && !visited[i][j]) {
+                        num++;
+                        markIslands(grid, visited, i, j);
+                    }
+                }
+            }
+            return num;
+        }
+    private: 
+        void markIslands(vector<vector<char>>& grid, vector<vector<bool>>& visited, int r, int c) {
+            visited[r][c] = true;
+            int m = grid.size(), n = grid[0].size();
+            if (r - 1 >= 0 && grid[r - 1][c] == '1' && !visited[r - 1][c])
+                markIslands(grid, visited, r - 1, c);
+            if (r + 1 < m && grid[r + 1][c] == '1' && !visited[r + 1][c])
+                markIslands(grid, visited, r + 1, c);
+            if (c - 1 >= 0 && grid[r][c - 1] == '1' && !visited[r][c - 1])
+                markIslands(grid, visited, r, c - 1);
+            if (c + 1 < n && grid[r][c + 1] == '1' && !visited[r][c + 1])
+                markIslands(grid, visited, r, c + 1);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short accepted cpp code
+   
+
+     void DFS(vector<vector<char>>& grid, int i, int j){
+    	    if(i < 0 || j < 0 || i >= grid.size() || j >= grid[0].size()) return;
+    	    if('0' == grid[i][j]) return;
+    	    grid[i][j] = '0';
+    	    DFS(grid, i-1, j);
+    	    DFS(grid, i+1, j);
+    	    DFS(grid, i, j - 1);
+    	    DFS(grid, i, j + 1);
+    	}
+    	int numIslands(vector<vector<char>>& grid) {
+    		int counter = 0;
+    		for (int i = 0; i < grid.size(); ++i)
+    			for (int j = 0; j < grid[i].size(); ++j)
+    				if ('1' == grid[i][j])
+    				{
+    					++counter;
+    					DFS(grid, i, j);
+    				}
+    		return counter;
+    	}
+
+----------------------------------------------------------------------------------------------------
+AC Java Solution using Union-Find with explanations
+It is a classical DFS problem, and my solution applied union-find algorithm that passed all the test cases.
+Basic idea is to iterate through every node's neighbours and marked them if they aren't connected.
+Finally, if it was the root node then increase the total number of islands.
+
+
+public class Solution {
+	
+	private int[] sz;
+	private int[] id;
+	private int N, M;
+	
+	public int find(int p) {
+		while (id[p] != p) 
+			p = id[p];
+		return p;
+	}
+	
+	public void union(int p, int q) {
+		int rootP = find(p);
+		int rootQ = find(q);
+		if (rootP == rootQ) return;
+		
+		if (sz[rootP] < sz[rootQ])	{sz[rootQ] += sz[rootP]; id[rootP] = id[rootQ];}
+		else 						{sz[rootP] += sz[rootQ]; id[rootQ] = id[rootP];}
+	}
+	
+	private boolean inside(int x, int y) {
+		return (x >= 0 && y >= 0 && x < N && y < M);
+	}
+	
+	public int numIslands(char[][] grid) {
+		if (grid == null || grid.length ==0) return 0;
+		N = grid.length;
+		M = grid[0].length;
+		sz = new int[N*M];
+		id = new int[N*M];
+		for (int i = 0; i < N*M; i++) {
+			id[i] = i;
+			sz[i] = 1;
+		}
+        for (int i = 0; i < N; i++) {
+        	for (int j = 0; j < M; j++) 
+        		if (grid[i][j] != '0') {
+	        		int tmp = i*M + j;
+	        		if (inside(i-1, j) && grid[i-1][j] != '0') union(tmp, tmp - M);
+	        		if (inside(i, j-1) && grid[i][j-1] != '0') union(tmp, tmp - 1);
+	        		if (inside(i+1, j) && grid[i+1][j] != '0') union(tmp, tmp + M);
+	        		if (inside(i, j+1) && grid[i][j+1] != '0') union(tmp, tmp + 1);
+	        	}
+        }
+        int islands = 0, i = 0;
+        while (i < N*M) {
+        	if (i == id[i] && grid[i/M][i%M] != '0') islands++;
+        	i++;
+        }
+        return islands;
+	}
+}
+
+----------------------------------------------------------------------------------------------------
+JAVA-------------Easy Version To Understand!!!!!!!!!!
+    	public static void DFS(char[][] grid, int i, int j) {
+		if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length)
+			return;
+		if (grid[i][j] == '1') {
+			grid[i][j] = '2';
+			DFS(grid, i + 1, j);
+			DFS(grid, i - 1, j);
+			DFS(grid, i, j + 1);
+			DFS(grid, i, j - 1);
+		}
+	}
+
+	public static int numIslands(char[][] grid) {
+		if (grid == null || grid.length == 0)
+			return 0;
+		int row = grid.length, column = grid[0].length, count = 0;
+		for (int i = 0; i < row; i++)
+			for (int j = 0; j < column; j++) {
+				if (grid[i][j] == '1') {
+					count++;
+					DFS(grid, i, j);
+				}
+			}
+		return count;
+	}
+
+----------------------------------------------------------------------------------------------------
+Short DFS Java solution
+Hi guys!
+
+The approach is same as in other posts, I just tried to make the code compact and clean.
+
+Have a nice coding!
+
+----------
+
+    public class Solution {
+        private static final int[][] DIRS = new int[][]{{1,0},{-1,0},{0,1},{0,-1}};
+        private static final char L = '1', W = '0';
+        
+        public void dfsFill(char[][] g, int x, int y) {
+            if (x >= 0 && x < g.length && y >= 0 && y < g[0].length && g[x][y] == L) {
+                g[x][y] = W;
+                for (int[] d : DIRS) dfsFill(g, x + d[0], y + d[1]);
+            }
+        }
+        
+        public int numIslands(char[][] grid) {
+            int num = 0;
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[0].length; j++) {
+                    if (grid[i][j] == L) {
+                        num++;
+                        dfsFill(grid, i, j);
+                    }
+                }
+            }
+            return num;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Sink the island! JAVA solution
+Since it does not like other DFS or BFS question, after we sink the '1' to '0', it would not do same recursion because 1 already turn into 0. Only thing repeatedly being done is check this position whether it's 1, which takes O1.
+
+    public class Solution {
+        public int numIslands(char[][] grid) {
+            int count = 0;
+            for(int i=0;i<grid.length;i++){
+                for(int j=0; j<grid[i].length;j++){
+                    if(grid[i][j] == '1'){
+                        count++;
+                        sink(grid,i,j);
+                    }
+                }
+            }
+            return count;
+        }
+        
+        private void sink(char[][] grid, int a, int b){
+            grid[a][b] = 0;
+            if(a!= grid.length-1 && grid[a+1][b] == '1')
+                sink(grid,a+1,b);
+            if(b!= grid[a].length-1 && grid[a][b+1] == '1')
+                sink(grid,a,b+1);
+            if(a!= 0 && grid[a-1][b] == '1')
+                sink(grid,a-1,b);
+            if(b!= 0 && grid[a][b-1] == '1')
+                sink(grid,a,b-1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms C++ solution using Union Find with a dummy point
+My idea comes from the solution of [Surrounded Regions](https://leetcode.com/discuss/6285/solve-it-using-union-find).
+
+It's obvious to connect adjacent 1s. Then how to handle 0s?
+
+An interesting finding is that if we connect all 0s, then the count of UF is equal to the number of islands plus 1.
+
+
+    class UF {
+    public:
+    	UF(int N) {
+    		count = N;
+    		id = new int[N];
+    		weight = new int[N];
+    		for (int i = 0; i < N; i++) {
+    			id[i] = i;
+    			weight[i] = 0;
+    		}
+    	}
+    	~UF() {
+    		delete[]id;
+    		delete[]weight;
+    	}
+    	void unionP(int p, int q) {
+    		int i = root(p);
+    		int j = root(q);
+    		if (i == j) {
+    			return;
+    		}
+    		if (weight[i] < weight[j]) {
+    			id[i] = j;
+    		}
+    		else if (weight[i] > weight[j]) {
+    			id[j] = i;
+    		}
+    		else {
+    			id[i] = j;
+    			weight[j]++;
+    		}
+    		count--;
+    	}
+    	bool connected(int p, int q) {
+    		return root(p) == root(q);
+    	}
+    	int getCount() {
+    		return count;
+    	}
+    private:
+    	int *id;
+    	int *weight;
+    	int count;
+    	int root(int i) {
+    		while (i != id[i]) {
+    			id[i] = id[id[i]];
+    			i = id[i];
+    		}
+    		return i;
+    	}
+    };
+    
+    class Solution {
+    public:
+    	// Runtime: 8 ms
+    	int numIslands(vector<vector<char>>& grid) {
+    		if (grid.empty() || grid[0].empty()) {
+    			return 0;
+    		}
+    		int ROW = grid.size(), COL = grid[0].size();
+    		UF uf(ROW * COL + 1);
+    		int dummyPoint = ROW * COL; // We assume it as 0 and it connects all 0s.
+    		for (int i = 0; i < ROW; i++) {
+    			for (int j = 0; j < COL; j++) {
+    				if (grid[i][j] == '1') {
+    					if (j != COL - 1 && grid[i][j + 1] == '1') {
+    						uf.unionP(i * COL + j, i * COL + j + 1);
+    					}
+    					if (i != ROW - 1 && grid[i + 1][j] == '1') {
+    						uf.unionP(i * COL + j, (i + 1) * COL + j);
+    					}
+    				}
+    				else {
+    					uf.unionP(i * COL + j, dummyPoint);
+    				}
+    			}
+    		}
+    		return uf.getCount() - 1;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Undirected Graph Connected Components
+My solution is based on the concept of the connected components in graph, but basically it is a DFS variant.
+
+It uses O(M N) extra space and has O(M N) time complexity.
+
+     public int numIslands(char[][] grid) {
+        if(grid == null || grid.length == 0) {
+            return 0;
+        }
+
+        final int N = grid.length;
+        final int M = grid[0].length;
+        final boolean visited[][] = new boolean[N][M];
+        int count = 0;
+
+        for(int i = 0; i < N; i++) {
+            for(int j = 0; j < M; j++) {
+
+                if(grid[i][j] == '1' && !visited[i][j]) {
+                    dfs(grid, i, j, visited);
+                    count++;
+                }
+            }
+        }
+        return count;
+    } 
+    private void dfs(char[][] grid, int i, int j, boolean[][] visited) {
+        if(i < 0 || i >= grid.length || j < 0 || j >= grid[0].length) {
+            return;
+        } else if(visited[i][j] || grid[i][j] != '1') {
+            return;
+        }
+
+        visited[i][j] = true;
+        dfs(grid, i - 1, j, visited);
+        dfs(grid, i + 1, j, visited);
+        dfs(grid, i, j - 1, visited);
+        dfs(grid, i, j + 1, visited);
+    }
+
+----------------------------------------------------------------------------------------------------

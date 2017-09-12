@@ -1,0 +1,555 @@
+C++ O(n) solution without sort()
+class Solution {
+public:
+    string frequencySort(string s) {
+        unordered_map<char,int> freq;
+        vector<string> bucket(s.size()+1, "");
+        string res;
+        
+        //count frequency of each character
+        for(char c:s) freq[c]++;
+        //put character into frequency bucket
+        for(auto& it:freq) {
+            int n = it.second;
+            char c = it.first;
+            bucket[n].append(n, c);
+        }
+        //form descending sorted string
+        for(int i=s.size(); i>0; i--) {
+            if(!bucket[i].empty())
+                res.append(bucket[i]);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Bucket Sort Solution &#x2F; O(nlogn) PriorityQueue Solution, easy to understand
+public class Solution {
+    public String frequencySort(String s) {
+        Map<Character, Integer> map = new HashMap<>();
+        for (char c : s.toCharArray()) {
+            if (map.containsKey(c)) {
+                map.put(c, map.get(c) + 1);
+            } else {
+                map.put(c, 1);
+            }
+        }
+        PriorityQueue<Map.Entry<Character, Integer>> pq = new PriorityQueue<>(
+            new Comparator<Map.Entry<Character, Integer>>() {
+                @Override
+                public int compare(Map.Entry<Character, Integer> a, Map.Entry<Character, Integer> b) {
+                    return b.getValue() - a.getValue();
+                }
+            }
+        );
+        pq.addAll(map.entrySet());
+        StringBuilder sb = new StringBuilder();
+        while (!pq.isEmpty()) {
+            Map.Entry e = pq.poll();
+            for (int i = 0; i < (int)e.getValue(); i++) {
+                sb.append(e.getKey());
+            }
+        }
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) Easy to understand Java Solution
+public String frequencySort(String s) {
+    if (s == null) {
+        return null;
+    }
+    Map<Character, Integer> map = new HashMap();
+    char[] charArray = s.toCharArray();
+    int max = 0;
+    for (Character c : charArray) {
+        if (!map.containsKey(c)) {
+            map.put(c, 0);
+        }
+        map.put(c, map.get(c) + 1);
+        max = Math.max(max, map.get(c));
+    }
+
+    List<Character>[] array = buildArray(map, max);
+
+    return buildString(array);
+}
+
+private List<Character>[] buildArray(Map<Character, Integer> map, int maxCount) {
+    List<Character>[] array = new List[maxCount + 1];
+    for (Character c : map.keySet()) {
+        int count = map.get(c);
+        if (array[count] == null) {
+            array[count] = new ArrayList();
+        }
+        array[count].add(c);
+    }
+    return array;
+}
+
+private String buildString(List<Character>[] array) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = array.length - 1; i > 0; i--) {
+        List<Character> list = array[i];
+        if (list != null) {
+            for (Character c : list) {
+                for (int j = 0; j < i; j++) {
+                    sb.append(c);
+                }
+            }
+        }
+    }
+    return sb.toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ solution using STL sort
+class Solution {
+public:
+    string frequencySort(string s) {
+        int counts[256] = {0};
+        for (char ch : s)
+            ++counts[ch];
+        sort(s.begin(), s.end(), [&](char a, char b) { 
+            return counts[a] > counts[b] || (counts[a] == counts[b] && a < b); 
+        });
+        return s;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Super simple O(n) Bucket Sort based Java solution (11 ms). No fancy Data structure needed. Beats 96%.
+public String frequencySort(String s) {
+        if(s.length() < 3)
+            return s;
+        int max = 0;
+        int[] map = new int[256];
+        for(char ch : s.toCharArray()) {
+            map[ch]++;
+            max = Math.max(max,map[ch]);
+        }
+        String[] buckets = new String[max + 1]; // create max buckets
+        for(int i = 0 ; i < 256; i++) { // join chars in the same bucket
+            String str = buckets[map[i]];
+            if(map[i] > 0)
+                buckets[map[i]] = (str == null) ? "" + (char)i : (str + (char) i);
+        }
+        StringBuilder strb = new StringBuilder();
+        for(int i = max; i >= 0; i--) { // create string for each bucket.
+            if(buckets[i] != null)
+                for(char ch : buckets[i].toCharArray())
+                    for(int j = 0; j < i; j++)
+                        strb.append(ch);
+        }
+        return strb.toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+1 line Python code.
+class Solution(object):
+    def frequencySort(self, str):
+        """
+        :type str: str
+        :rtype: str
+        """
+        return "".join([char * times for char, times in collections.Counter(str).most_common()])
+
+
+----------------------------------------------------------------------------------------------------
+Python O(N) solution using Hash-Map.
+from collections import Counter
+class Solution(object):
+    def frequencySort(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        c1, c2 = Counter(s), {}
+        for k,v in c1.items():
+            c2.setdefault(v, []).append(k*v)
+        return "".join(["".join(c2[i]) for i in range(len(s), -1, -1) if i in c2])
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) bucket sort + HashMap
+public String frequencySort(String s) {
+    char[] arr = s.toCharArray();
+    
+    // bucket sort
+    int[] count = new int[256];
+    for(char c : arr) count[c]++;
+    
+    // count values and their corresponding letters
+    Map<Integer, List<Character>> map = new HashMap<>();
+    for(int i = 0; i < 256; i++){
+        if(count[i] == 0) continue;
+        int cnt = count[i];
+        if(!map.containsKey(cnt)){
+            map.put(cnt, new ArrayList<Character>());
+        }
+        map.get(cnt).add((char)i);
+    }
+
+    // loop throught possible count values
+    StringBuilder sb = new StringBuilder();
+    for(int cnt = arr.length; cnt > 0; cnt--){ 
+        if(!map.containsKey(cnt)) continue;
+        List<Character> list = map.get(cnt);
+        for(Character c: list){
+            for(int i = 0; i < cnt; i++){
+                sb.append(c);
+            }
+        }
+    }
+    return sb.toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ with std::unordered_map and std::sort
+class Solution {
+public:
+    string frequencySort(string s) {
+        unordered_map<char, int> hist;
+        for (auto c : s) {
+            ++hist[c];
+        }
+        
+        auto pred = [&hist] (char a, char b) {
+            return hist[a] > hist[b] || (hist[a] == hist[b] && a > b);
+        };
+        
+        sort(s.begin(), s.end(), pred);
+        
+        return s;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution With Heap - O(NlgN)
+public String frequencySort(String str) {
+        if (str == null || str.length() <= 2) return str;
+        Map<Character, Integer> map = new HashMap<>();
+        char[] list = str.toCharArray();
+        for (char c : list) {
+            map.putIfAbsent(c, 0);
+            map.put(c, map.get(c) + 1);
+        }
+        
+        PriorityQueue<Character> heap = new PriorityQueue<>(str.length(), new Comparator<Character>() {
+            public int compare(Character c1, Character c2) {
+                return map.get(c2) - map.get(c1);
+            }
+        });
+        
+        for (char c : map.keySet()) {
+            heap.offer(c);
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        while (!heap.isEmpty()) {
+            char c = heap.poll();
+            int count = map.get(c);
+            for (int i = 0; i < count; ++i) sb.append(c);
+        }
+        return sb.toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy to understand O(n logn), beats 90%
+public class Solution {
+    
+    class Entry{
+        char c;
+        int count;
+        
+        public Entry(){
+            this.count = 0;
+        }
+    }
+    
+    public String frequencySort(String s) {
+        
+        Entry[] elems = new Entry[256];
+        for(int i=0; i<256; i++){
+            elems[i] = new Entry();
+        }
+        
+        for(int i=0; i<s.length(); i++){
+            char c = s.charAt(i);
+            elems[c].c = c;
+            elems[c].count++;
+        }
+
+        Arrays.sort(elems, new Comparator<Entry>(){
+           @Override
+           public int compare(Entry e1, Entry e2){
+               return e2.count - e1.count; // descending order
+           }
+        });
+        
+        StringBuilder result = new StringBuilder();
+        for(Entry e: elems){
+            while(e.count-- > 0)
+                result.append(e.c);
+        }
+        
+        return result.toString();
+        
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ using unordered_map and priority queue very easy for beginners 46ms
+  string frequencySort(string s) {
+    unordered_map<char, int> m1;
+priority_queue<pair<int, char>> q1;
+ for (int i = 0;i<s.length();i++) {
+	m1[s[i]]++;
+  }
+
+for (auto it = m1.begin();it != m1.end();it++) {
+	q1.push(make_pair(it->second, it->first));
+}
+string res = "";
+while (q1.size()) {
+	pair<int , char> y1 = q1.top();
+	for(int i=0;i<q1.top().first;i++)
+	    res += q1.top().second;
+	q1.pop();
+}
+return res;
+} 
+
+
+----------------------------------------------------------------------------------------------------
+How to handle characters with same count ?
+<p>How to handle characters with same count ?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ average O(n) bucket Sort Solution
+string frequencySort(string s) {
+    unordered_map<char, int> dict;
+    vector<vector<char>> buckets(s.size() + 1);
+    for(char c : s) 
+        ++dict[c];
+    for(auto p : dict) {
+        buckets[p.second].push_back(p.first);
+    }
+    string res;
+    for(int i = s.size(); i > 0; i--) {
+        for(int j = 0; j < buckets[i].size(); j++) {
+            int num = i;
+            while(num--) {
+                res += buckets[i][j];
+            }
+        }
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;C#, O(n), simple and easy to understand
+    public String frequencySort(String s) 
+    {
+        if(s == null || s.length() <= 1) return s;
+        
+        //each element stores the ASCCI and Frequency
+        int[][] freq = new int[128][]; 
+        for(int i = 0; i < 128; i++)
+        {
+            freq[i] = new int[2];
+            freq[i][0] = i;
+        }
+        
+        for(Character c: s.toCharArray()) freq[c][1]++;
+        
+        //Sort char by its frequency
+        Arrays.sort(freq, Comparator.comparing((int[] A) -> A[1]).reversed());
+        
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < 128; i++)
+            for(int j = 0; j < freq[i][1]; j++)
+                sb.append((char)(freq[i][0]));
+
+        return sb.toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two ways of Python Solution, easy to understand.
+class Solution(object):
+    def frequencySort(self, s):
+        import operator
+        if not s:
+            return ""
+        counter = {}; rs = ''
+        for i in s:
+            counter[i] = 1 if i not in counter else counter[i]+1
+        sorted_counter = sorted(counter.items(), key=operator.itemgetter(1))
+        sorted_counter.reverse()
+        for i in sorted_counter:
+            rs += i[0] * i[1]
+        return rs
+
+
+----------------------------------------------------------------------------------------------------
+11 lines Straightforward Java solution
+public String frequencySort(String s) {
+        Map<Character, Integer> map = new HashMap();
+        for (char c : s.toCharArray()) map.put(c, map.getOrDefault(c, 0) + 1);
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(map.entrySet());
+        Collections.sort(list, (o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (Map.Entry<Character, Integer> entry : list) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                stringBuilder.append(entry.getKey());
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Bucket Sort, O(n)
+public String frequencySort(String str) {
+    Map<Character, Integer> map = new HashMap<>();
+    char[] charStr = str.toCharArray();
+    for(int i = 0; i < charStr.length; i++)
+    {
+        if(map.containsKey(charStr[i]))
+        {
+            int frequency = map.get(charStr[i]);
+            map.put(charStr[i], frequency + 1);
+        }
+        else
+        {
+            map.put(charStr[i], 1);
+        }
+    }
+
+    List<Map.Entry<Character, Integer>>[] bucket = new List[charStr.length + 1];
+    for(Map.Entry<Character, Integer> entry : map.entrySet())
+    {
+        int frequency = entry.getValue();
+        if(bucket[frequency] != null)
+        {
+            bucket[frequency].add(entry);
+        }
+        else
+        {
+            bucket[frequency] = new LinkedList<>();
+            bucket[frequency].add(entry);
+        }
+    }
+    
+    StringBuilder res = new StringBuilder();
+    for(int i = charStr.length; i >= 0; i--)
+    {
+        if(bucket[i] != null)
+        {
+            for(int j = 0; j < bucket[i].size(); j++)
+            {
+                char c = bucket[i].get(j).getKey();
+                for(int k = 0; k < i; k++)
+                {
+                    res.append(c);
+                }
+            }
+        }
+    }
+    return res.toString();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Shared 3 C++ solutions: 2 by std::sorts, 1 by priority queue(12~93ms)
+    string frequencySort(string s) {
+        int buf[256] = {};
+        int* cnts = buf+128;
+        string presence;
+        for(char ch : s) if(++cnts[ch] == 1) presence += ch;
+
+        auto pred = 
+            [cnts] (char c1, char c2) -> bool {
+                return cnts[c1] < cnts[c2];
+            };
+        s.clear();
+        make_heap(presence.begin(),presence.end(), pred);
+        while(presence.empty() == false) {
+            char ch = presence[0];
+            s.append(cnts[ch],ch);
+            pop_heap(presence.begin(), presence.end(), pred);
+            presence.pop_back();
+        }
+        return s;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+JAVA O(N * log(N)) solution using HashMap and PriorityQueue, with customized class, easy to understand
+public class Solution {
+    // customized class Char to store some useful info
+    private class Char {
+        public char ch;
+        public int freq;
+        public PriorityQueue<Char> pq;
+        public Char(char ch, PriorityQueue<Char> pq) {
+            this.ch = ch;
+            freq = 1;
+            this.pq = pq;
+            pq.offer(this);
+        }
+        // method to advance one freq on this char
+        public void addOneFreq() {
+            pq.remove(this);
+            freq += 1;
+            pq.offer(this);
+        }
+        // to string
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < freq; i++) {
+                sb.append(ch);
+            }
+            return sb.toString();
+        }
+    }
+    public String frequencySort(String s) {
+        if(s == null || s.length() == 0) return "";
+        Map<Character, Char> map = new HashMap<>();
+        // max heap
+        PriorityQueue<Char> pq = new PriorityQueue<>(1, (x1, x2) -> x2.freq - x1.freq);
+        // O(nlog(n)) -> n chars in s, pq.offer in "new Char()" cost log(n) and addOneFreq() cost log(n)
+        for(char ch : s.toCharArray()) {
+            if(map.containsKey(ch)) {
+                map.get(ch).addOneFreq();
+            }
+            else {
+                map.put(ch, new Char(ch, pq));
+            }
+        }
+        StringBuilder res = new StringBuilder();
+        // O(nlog(n)) -> n nodes in pq, poll() cost log(n)
+        while(!pq.isEmpty()) {
+            res.append(pq.poll().toString());
+        }
+        return res.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

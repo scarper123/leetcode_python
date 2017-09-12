@@ -1,0 +1,528 @@
+Java Solution, Sliding Window
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        int len1 = s1.length(), len2 = s2.length();
+        if (len1 > len2) return false;
+        
+        int[] count = new int[26];
+        for (int i = 0; i < len1; i++) {
+            count[s1.charAt(i) - 'a']++;
+            count[s2.charAt(i) - 'a']--;
+        }
+        if (allZero(count)) return true;
+        
+        for (int i = len1; i < len2; i++) {
+            count[s2.charAt(i) - 'a']--;
+            count[s2.charAt(i - len1) - 'a']++;
+            if (allZero(count)) return true;
+        }
+        
+        return false;
+    }
+    
+    private boolean allZero(int[] count) {
+        for (int i = 0; i < 26; i++) {
+            if (count[i] != 0) return false;
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+8 lines slide window solution in Java
+    public boolean checkInclusion(String s1, String s2) {
+        int[] count = new int[128];
+        for(int i = 0; i < s1.length(); i++) count[s1.charAt(i)]--;
+        for(int l = 0, r = 0; r < s2.length(); r++) {
+            if (++count[s2.charAt(r)] > 0)
+                while(--count[s2.charAt(l++)] != 0) { /* do nothing */}
+            else if ((r - l + 1) == s1.length()) return true;
+        }
+        return s1.length() == 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Simple with Explanation
+def checkInclusion(self, s1, s2):
+    A = [ord(x) - ord('a') for x in s1]
+    B = [ord(x) - ord('a') for x in s2]
+    
+    target = [0] * 26
+    for x in A:
+        target[x] += 1
+    
+    window = [0] * 26
+    for i, x in enumerate(B):
+        window[x] += 1
+        if i >= len(A):
+            window[B[i - len(A)]] -= 1
+        if window == target:
+            return True
+    return False
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution Two pointers
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        if(s1.length()>s2.length()) return false;
+        int[] alphabets = new int[26];
+        int len =s1.length();
+        for(char ch : s1.toCharArray()){
+            alphabets[ch-'a']++;
+        }
+        int cnt =len;
+        char[] sArr = s2.toCharArray();
+        
+        int start =0;
+        int end =0;
+        while(end<sArr.length){
+            if(alphabets[sArr[end++]-'a']-->0) cnt--;
+            while(cnt==0){
+               // System.out.println(end+","+start);
+                if(end-start == len) return true;
+                if(alphabets[sArr[start++]-'a']++==0) cnt++;
+            }
+            
+        }
+        
+        return false;
+        
+    }
+    
+}
+
+
+----------------------------------------------------------------------------------------------------
+&quot;Oneliners&quot; in Python and C++
+class Solution {
+public:
+    bool checkInclusion(string s1, string s2) {
+        return findAnagrams(s2, s1).size();
+    }
+    
+    // Copied&pasted old problem's solution
+    vector<int> findAnagrams(string s, string p) {
+        int miss[256] = {}, missSum = p.size();
+        for (char c : p)
+            miss[c]++;
+        vector<int> result;
+        for (int i=0; i<s.size(); i++) {
+            missSum -= miss[s[i]]-- > 0;
+            int start = i+1 - p.size();
+            if (!missSum)
+                result.push_back(start);
+            missSum += start >= 0 && ++miss[s[start]] > 0;
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code with Explanation
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        char[] ca1 = s1.toCharArray(), ca2 = s2.toCharArray();
+        int[] cnts = new int[256];
+        for (char ch : ca1) cnts[ch]++;
+
+        int left = ca1.length;
+        for (int i = 0, j = 0; j < ca2.length; j++) {
+            if (cnts[ca2[j]]-- > 0) left--;
+
+            while (left == 0) {
+                if (j + 1 - i == ca1.length) return true;
+                if (++cnts[ca2[i++]] > 0) left++;
+            }
+        }
+
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple &amp; clear Java solution
+// The idea is to create one base array, another moving array
+// tell the arrays are equal or not during each iteration
+
+public boolean checkInclusion(String s1, String s2) {
+        int n1=s1.length(),n2=s2.length();
+        int[] f1=new int[26];
+        for(int i=0;i<n1;i++) f1[s1.charAt(i)-'a']++;
+        
+        int[] f2=new int[26];
+        for(int j=0;j<n2;j++){
+            f2[s2.charAt(j)-'a']++;
+            if(j>=n1) f2[s2.charAt(j-n1)-'a']--;
+            if(Arrays.equals(f2,f1)) return true;
+        }
+        return false;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Sliding Window in Java, very similar to Find All Anagrams in a String
+    public boolean checkInclusion(String s1, String s2) {
+        if(s1 == null || s2 == null) {
+            return false;
+        }
+        int len = s1.length();
+        Map<Character, Integer> map = new HashMap<>();
+        for(char c : s1.toCharArray()) {
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        int count = map.size();
+        int begin = 0;
+        int end = 0;
+        while(end < s2.length()) {
+            char ch = s2.charAt(end);
+            if(map.containsKey(ch)) {
+                map.put(ch, map.get(ch) - 1);
+                if(map.get(ch) == 0) {
+                    count--;
+                }
+            }
+            while(count == 0) {
+                if(end - begin + 1 == len) {
+                    return true;
+                }
+                char temp = s2.charAt(begin);
+                if(map.containsKey(temp)) {
+                    map.put(temp, map.get(temp) + 1);
+                    if(map.get(temp) > 0) {
+                        count++;
+                    }
+                }
+                begin++;
+            }
+            end++;
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Time O(1) Space Sliding Window
+public boolean checkInclusion(String s1, String s2) {
+    int[] s1CharCount = new int[26], curCharCount = new int[26];
+    for (char c : s1.toCharArray()) s1CharCount[c - 'a']++;
+    int l = 0, r = 0;
+    while (r < s2.length()) {
+        curCharCount[s2.charAt(r++) - 'a']++;
+        while (isMatch(s1CharCount, curCharCount) == -1) curCharCount[s2.charAt(l++) - 'a']--;
+        if (isMatch(s1CharCount, curCharCount) == 1) return true;
+    }
+    return false;
+}
+
+public int isMatch(int[] s1CharCount, int[] curCharCount) {
+    int res = 1;
+    for (int i=0;i<26;i++) {
+        if (curCharCount[i] > s1CharCount[i]) return -1;
+        else if (curCharCount[i] < s1CharCount[i]) res = 0;
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple Sliding Window (single hashmap)
+    def checkInclusion(self, s1, s2):
+        if not s1: return True
+        letters = collections.Counter(s1)
+        lCnt, j = len(s1), 0
+        for i in range(len(s2)):
+            if s2[i] not in letters or letters[s2[i]] == 0 : # DNE or depleted
+                while j < i and s2[j] != s2[i]: 
+                    letters[s2[j]] += 1; j += 1
+                if s2[j] in letters: letters[s2[j]] += 1 # if in char map
+                j += 1 
+            elif i-j+1 == lCnt: return True
+            if s2[i] in letters: letters[s2[i]] -= 1
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+C++ 6 lines O(n)
+bool checkInclusion(string s1, string s2) {
+    int s1s = s1.size(), s2s = s2.size(), start = 0, cnt = 0, arr[26] = {};
+    for (auto l : s1) ++arr[l - 'a'];
+    for (auto i = 0; i < s2s && cnt < s1s; ++i) {
+        if (arr[s2[i] - 'a'] > 0) --arr[s2[i] - 'a'], ++cnt;
+        else while (s2[start++] != s2[i]) ++arr[s2[start - 1] - 'a'], --cnt;
+    }
+    return cnt == s1s;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Smart C++ Solution with hash
+class Solution {
+public:
+    bool checkInclusion(string s1, string s2) {
+        int hash1 = hash(s1);
+        int len1 = s1.size(), len2 = s2.size();
+        if(len1>len2) return false;
+        for(int i=0;i<=len2-len1;i++){
+            int hash2 = hash(s2.substr(i,len1));
+            if(hash1==hash2) return true;
+        }
+        return false;
+    }
+    inline int hash(string s){
+        int ret = 1;
+        for(char i:s)
+            ret *= ((i-'a')*(i-'a') + (i-'a')+41) % INT_MAX;
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+7 lines slide window solution in Python
+class Solution(object):
+    def checkInclusion(self, s1, s2):
+        c1, c2 = collections.Counter(s1), collections.Counter(s2[0:(len(s1)-1)])
+        for i in range(len(s2) - len(s1) + 1):
+            c2[s2[i+len(s1) - 1]] += 1
+            if len(c1 - c2) == 0:
+                return True
+            c2[s2[i]] -= 1
+        return False
+
+
+
+----------------------------------------------------------------------------------------------------
+Java sliding window solution
+    public boolean checkInclusion(String s1, String s2) {
+        int i, len1 = s1.length(), len2 = s2.length();
+        if (len1 > len2)
+            return false;
+        
+        int[] charCount = new int[26];
+        int diffN = len1, diffP = 0, index, index2;
+        for (i=0;i<len1;i++) {
+            index = s1.charAt(i) - 'a';
+            charCount[index]--;
+        }
+        for (i=0;i<len1;i++) {
+            index = s2.charAt(i) - 'a';
+            charCount[index]++;
+            if (charCount[index] <= 0) {
+                diffN--;
+            } else {
+                diffP++;
+            }
+        }
+        if (diffN == 0 && diffP == 0)
+            return true;
+
+        for (i=len1;i<len2;i++) {
+            index = s2.charAt(i) - 'a';
+            index2 = s2.charAt(i-len1) - 'a';
+            if (index == index2)
+                continue;
+            charCount[index]++;
+            charCount[index2]--;
+
+            if (charCount[index] <= 0)
+                diffN--;
+            else
+                diffP++;
+            
+            if (charCount[index2] >= 0)
+                diffP--;
+            else
+                diffN++;
+            if (diffN == 0 && diffP == 0)
+                return true;
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+share my Java solution, beating 98%!
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+          char[] array1=s1.toCharArray();
+          int[] hash=new int[26];
+          for(int i=0;i<array1.length;i++){
+              hash[array1[i]-'a']++;
+          }
+          
+          char[] array2=s2.toCharArray();
+          int start=0;
+          
+          for(int i=0;i<array2.length;i++){
+              hash[array2[i]-'a']--;
+              
+              while(hash[array2[i]-'a']<0){
+                  hash[array2[start]-'a']++;
+                  start++;
+              }
+              
+              if(i-start+1==array1.length){
+                  return true;
+              }
+              
+          }
+          
+          return false;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Ruby sliding window solution
+def check_inclusion(s1, s2)
+    map1 = Hash.new{|h,k| h[k] = 0 }
+    map2 = Hash.new{|h,k| h[k] = 0 }
+    k = s1.size
+    s1.chars.each do |ch|
+        map1[ch] += 1
+    end
+    #make sliding window
+    (0...k).each do |i|
+        map2[s2[i]] += 1
+    end
+    return true if map1 == map2
+    #update window
+    (k...s2.size).each do |i|
+        map2[s2[i]] += 1
+        map2[s2[i-k]] -= 1
+        map2.delete(s2[i-k]) if map2[s2[i-k]] == 0
+        return true if map1 == map2
+    end
+    return false
+end
+
+
+----------------------------------------------------------------------------------------------------
+C#, O(n^2) solution
+public class Solution {
+    public bool CheckInclusion(string s1, string s2) {
+        HashSet<char> hashSet = new HashSet<char>();
+        int[] hash = new int[128];
+        int length = s1.Length;
+        int count = length;
+        
+        for(int i = 0; i < s1.Length; i++) {
+            hashSet.Add(s1[i]);
+        }
+        
+        //Iterate through second string
+        for(int i = 0; i <= s2.Length - length; i++) {
+            //Reset values in are count hash
+            hash = new int[128];
+            
+            for(int k = 0; k < s1.Length; k++) {
+                hash[s1[k]]++;
+            }
+            
+            string s = s2.Substring(i, length); // Create substring from i to length
+            count = length;
+            
+            //Iterate through substring
+            for(int j = 0; j < s.Length; j++) {
+                
+                //Check if character is in map and the count is > 0
+                if(hashSet.Contains(s[j]) && hash[s[j]] > 0) {
+                    count--;
+                    hash[s[j]]--;
+                }
+                
+                //If we've found all the characters we're looking for, aka count == 0
+                if(count == 0) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+java solution using array
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        int[] a1 = new int[26];
+        for (int i = 0; i < s1.length(); i++) {
+            a1[s1.charAt(i) - 'a']++;
+        }
+        int[] a2 = new int[26];
+        for (int i = 0; i < s2.length(); i++) {
+            if (i >= s1.length()) {
+                a2[s2.charAt(i - s1.length()) - 'a']--;
+            }
+            a2[s2.charAt(i) - 'a']++;
+            if (i >= s1.length() - 1 && Arrays.equals(a1, a2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Failed on test &quot;ab&quot;&amp;&amp;&quot;ab&quot; is true
+    bool checkInclusion(string s1, string s2) {
+        short int s_length = s1.length();
+        if(s_length > s2.length()) return false;
+        s1 = s1 + "A" + s2;
+        short int values[s1.length()];
+        for(short int i=0; i<s1.length(); i++) values[i] = s_length;
+        for(short int i = s_length+1; i < s1.length(); i++) {
+            short int idx = values[i-1];
+            while(idx<s_length && s1[i] != s1[idx-1])
+                idx = values[idx+1];
+            if(s1[i] == s1[idx-1]) --idx;
+            if(!idx) return true;
+            values[i] = idx;
+        }
+        return false;    
+    }
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution, beating  95%!
+public class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+          char[] array1=s1.toCharArray();
+          int[] hash=new int[26];
+          for(int i=0;i<array1.length;i++){
+              hash[array1[i]-'a']++;
+          }
+          
+          char[] array2=s2.toCharArray();
+          int start=0;
+          
+          for(int i=0;i<array2.length;i++){
+              hash[array2[i]-'a']--;
+              
+              while(hash[array2[i]-'a']<0){
+                  hash[array2[start]-'a']++;
+                  start++;
+              }
+              
+              if(i-start+1==array1.length){
+                  return true;
+              }
+              
+          }
+          
+          return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

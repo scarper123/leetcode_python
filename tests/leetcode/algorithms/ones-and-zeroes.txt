@@ -1,0 +1,465 @@
+Java 12 lines O(n) sliding window solution with explanation
+    public int characterReplacement(String s, int k) {
+        int len = s.length();
+        int[] count = new int[26];
+        int start = 0, maxCount = 0, maxLength = 0;
+        for (int end = 0; end < len; end++) {
+            maxCount = Math.max(maxCount, ++count[s.charAt(end) - 'A']);
+            while (end - start + 1 - maxCount > k) {
+                count[s.charAt(start) - 'A']--;
+                start++;
+            }
+            maxLength = Math.max(maxLength, end - start + 1);
+        }
+        return maxLength;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Sliding window, similar to finding longest substring with k distinct characters
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        vector<int> counts(26, 0);
+        int start = 0;
+        int maxCharCount = 0;
+        int n = s.length();
+        int result = 0;
+        for(int end = 0; end < n; end++){
+            counts[s[end]-'A']++;
+            if(maxCharCount < counts[s[end]-'A']){
+                maxCharCount = counts[s[end]-'A'];
+            }
+            while(end-start-maxCharCount+1 > k){
+                counts[s[start]-'A']--;
+                start++;
+                for(int i = 0; i < 26; i++){
+                    if(maxCharCount < counts[i]){
+                        maxCharCount = counts[i];
+                    }
+                }
+            }
+            result = max(result, end-start+1);
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+7 lines C++
+int characterReplacement(string s, int k) {
+    int i = 0, j = 0, ctr[91] = {};
+    while (j < s.size()) {
+        ctr[s[j++]]++;
+        if (j-i - *max_element(ctr+65, ctr+91) > k)
+            ctr[s[i++]]--;
+    }
+    return j - i;
+}
+
+----------------------------------------------------------------------------------------------------
+Consise Python sliding window
+def characterReplacement(self, s, k):
+    res = lo = 0
+    counts = collections.Counter()
+    for hi in range(len(s)):
+        counts[s[hi]] += 1
+        max_char_n = counts.most_common(1)[0][1]
+        while (hi - lo - max_char_n + 1 > k):
+            counts[s[lo]] -= 1
+            lo += 1
+        res = max(res, hi - lo + 1)
+    return res
+
+
+----------------------------------------------------------------------------------------------------
+Java Sliding Window Easy to Understand
+public class Solution {
+    public int characterReplacement(String s, int k) {
+        if(s == null || s.length() == 0){
+            return 0;
+        }
+        int max = 0;
+        int[] ch = new int[26];
+        char[] str = s.toCharArray();
+        for(int i=0, j=0; i<s.length(); i++){
+            while(j < s.length()){
+                ch[str[j] - 'A']++;
+                if(count(ch) > k){  //If exceed k, break
+                    ch[str[j] - 'A']--;
+                    break;
+                }
+                j++;
+            }
+            max = Math.max(max, j-i);
+            ch[str[i] - 'A']--;
+        }
+        return max;
+    }
+    //Count the number of character that is different to the longest character
+    public int count(int[] ch){
+        int max = 0;
+        int sum = 0;
+        for(int val:ch){
+            sum += val;
+            max = Math.max(max, val);
+        }
+        return sum - max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution using sliding window
+public class Solution {
+    public int characterReplacement(String s, int k) {
+        int maxLen = 0;
+        for(int l = 0 ; l<26;l++){
+            char c = (char)('A' + l); //repeated char we are looking for
+            int i = 0, j = 0, count = 0;
+            while(j<s.length()){
+                char cur = s.charAt(j);
+                if(cur != c) count++;
+                
+                //make the substring valid again
+                while(count > k){
+                    if(s.charAt(i) != c) count--;
+                    i++;
+                }
+                
+                //update maximun len
+                maxLen = Math.max(maxLen,j-i+1);
+                j++;
+            }
+        }
+        return maxLen;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Sliding Window - Java - Easy Explanation - 15 lines
+/*
+    The whole idea is that if we have a string of length N out of which M characters are same,
+    we can replace (N - M) characters to get a continueous string of N characters. 
+    If M <= K. N is the local maximum for this window.
+    If this length is greater than K. Slide the window.
+    */
+    public int characterReplacement(String s, int k) {
+        int[] charCount = new int[26];
+        
+        int left, right, maxCount, maxLen;
+        left = right = maxCount = maxLen = 0;
+    
+        while(right < s.length()){
+            charCount[s.charAt(right) - 'A']++;
+            maxCount = Math.max(maxCount, charCount[s.charAt(right) - 'A']);
+            if(right - left + 1 - maxCount > k) charCount[s.charAt(left++) - 'A']--;
+            maxLen = Math.max(right++ - left + 1, maxLen);
+        }
+        return maxLen;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Binary search. Slower but still interesting.
+private boolean ok(char[] ch, int k, int len) {
+	int[] cnt = new int[26];
+	for (int i = 0; i < ch.length; i++) {
+		if (i >= len) cnt[ch[i - len] - 'A']--;
+		cnt[ch[i] - 'A']++;
+		if (i >= len - 1) {
+			int max = 0;
+			for (int j : cnt) max = Math.max(max, j);
+			if (len - max <= k) return true;
+		}
+	}
+	return false;
+}
+
+public int characterReplacement(String s, int k) {
+	if (s.length() == 0 || k >= s.length() - 1) return s.length();
+	int left = 1, right = s.length() + 1;
+	char[] ch = s.toCharArray();
+	while (left + 1 < right) {
+		int mid = (left + right) / 2;
+		if (ok(ch, k, mid)) left = mid;
+		else right = mid;
+	}
+	return left;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n), sliding window approach
+var characterReplacementLetter = function(s, k, l) {
+    let res = 0, from = 0, to = -1, notEqual = 0;
+    while (to < s.length - 1) {
+        if (s[to + 1] === l || notEqual < k) {
+            if (s[to + 1] !== l)
+                notEqual++;
+            to++;
+            res = Math.max(res, to - from + 1);
+        } else {
+            if (s[from] !== l)
+                notEqual--;
+            from++;
+        }
+    }
+    return res;
+};
+
+var characterReplacement = function(s, k) {
+    let res = 0;
+    for (let i = 0; i < 26; i++) {
+        const l = String.fromCharCode('A'.charCodeAt(0) + i);
+        res = Math.max(res, characterReplacementLetter(s, k, l));
+    }
+    return res;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Two Concise C++ Solution: 9ms 11 lines and 20ms 7 lines
+int characterReplacement(string s, int k) {
+    int i = 0, j = 0, maxCount = 0, cache[26] = {};
+    while (j < s.size()) {
+        maxCount = max(maxCount, ++cache[s[j++] - 'A']);
+        if (j - i - maxCount > k && cache[s[i++] - 'A']-- == maxCount) 
+            maxCount = *max_element(cache, cache + 26);
+    }
+    return j - i;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 7 lines O(n) solution
+public class Solution {
+    public int characterReplacement(String s, int k) {
+        int result = 0, counts[] = new int[256];
+        for (int start = 0, end = 0, max = 0; end < s.length(); ++end) {
+            max = Math.max(max, ++counts[s.charAt(end)]);
+            if (end - start + 1 - max > k) --counts[s.charAt(start++)];
+            result = end - start + 1;
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(N*alphabetSize) two pointers
+public class Solution {
+    public int characterReplacement(String s, int k) {
+        int max = 0;
+        for (char i='A'; i<='Z'; i++) {
+            int L = 0;
+            int R = 0;
+            int cnt = 0;
+            while (R<s.length()) {
+                if (s.charAt(R)==i) {
+                    R++;
+                } else {
+                    if (cnt<k) {
+                        R++;
+                        cnt++;
+                    } else {
+                        if (s.charAt(L)!=i) {
+                            cnt--;
+                        } 
+                        L++;
+                    }
+                }
+                max = Math.max(max, R-L);
+            }
+        }
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Awesome python solution
+    def characterReplacement(self, s, k):
+        count = collections.Counter()
+        start = result = 0
+        for end in range(len(s)):
+            count[s[end]] += 1
+            max_count = count.most_common(1)[0][1]
+            if end - start + 1 - max_count > k:
+                count[s[start]] -= 1
+                start += 1
+            result = max(result, end - start + 1)
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+The description of this question is confusing...
+<p>Given a string that consists of only uppercase English letters, <strong>you can replace any letter in the string with another letter at most k times.</strong> Find the length of a longest substring containing all repeating letters you can get after performing the above operations.</p>
+<p>The bold line above is confusing.<br/>
+Interpretation 1: Does it means to allow us replace every single letter for at most K times?<br/>
+Humm well no if it is then I think just mentioned 1 times is enough and there&#39;s no need to emphasis K times.<br/>
+interpretation 2: Does it means to allow us replace every unique letter for at most K times?<br/>
+This interpretation works for both example 1 and 2.<br/>
+Input:<br/>
+s = &#34;ABAB&#34;, k = 2<br/>
+Output:<br/>
+4<br/>
+We change letter A in this string for 2 times/We can change letter B in this string for 2 times</p>
+<p>But when I was thinking how about the input is:<br/>
+s = &#34;ACBABBE&#34;, k = 1<br/>
+Then I was thinking we can change letter C to B for once and change A to B for once and finally E to B for once to get &#34;ABBBBBB&#34;, the output is 6.</p>
+<p>However I was wrong again...</p>
+<p>And after seeing other posts here, I finally realized that this question actually allows you <strong>to replace at most k letters in this string</strong> , that&#39;s it:)</p>
+<p>I strongly advice to avoid ambiguous definition/interpretation using broken english in question description.</p>
+
+
+----------------------------------------------------------------------------------------------------
+readable sliding window python solution with dictionary O(n) according to Joshua924
+        dic = {}
+        p0,maxs,maxcount = 0,0,0
+        for p1 in xrange (len(s)):
+            dic[s[p1]] = dic.get(s[p1],0) + 1
+            if maxcount < dic[s[p1]]:
+                maxcount = dic[s[p1]]
+            while p1 - p0 - maxcount + 1 > k:
+                dic[s[p0]] -= 1
+                p0 += 1
+            maxs = max(maxs,p1-p0+1)
+        return maxs
+
+
+----------------------------------------------------------------------------------------------------
+6 line C++ O(n) (NOT O(26n)) Time O(26) Space Solution
+struct Solution {
+    int characterReplacement(string s, int k) {
+        int counts[26] = {0}, i = 0, j = 0, maxval = 0;
+        for (;j < s.size(); ++ j)
+            if ((maxval = max(maxval, ++ counts[s[j] - 'A'])) < j - i + 1 - k)
+                counts[s[i ++] - 'A'] --;
+        return j - i;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+another way to solve .diffierent from sliding window
+const int maxn = 1e4 + 5;
+int m[maxn];
+
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        int ans = -1, N = s.size();
+        for(char c = 'A'; c <= 'Z'; c++){
+            int cnt = 0;
+            for(int i = 0; i < N; i++){
+                if(s[i] != c) cnt ++;
+            }
+            if(cnt <= k) return N;
+            ans = max(ans, longest(s, c, k));
+        }
+        return ans;
+    }
+
+    int longest(string& s, char c, int k){
+        int N = s.size(), ans = -1;
+        memset(m, -1, sizeof(m));
+        m[0] = 0;
+        int cnt = 0;
+        for(int i = 1; i <= N; i++){
+            if(s[i - 1] != c) cnt ++;
+            if(m[cnt - k] != -1) ans = max(ans, i - m[cnt - k]);
+            if(m[cnt] == -1) m[cnt] = i;
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution, with some explanation
+class Solution1 {
+public:
+    int characterReplacement(string s, int k) {
+        int freq[126] = {0}, max_freq = 0, rst = 0;
+        for (int i = 0, l = 0; i < s.size(); ++i) {
+            max_freq = max(max_freq, ++freq[s[i]]);
+            if (i-l+1 - max_freq > k) {
+                --freq[s[l++]];
+            }
+            rst = max(rst, i-l+1);
+        }
+        return rst;
+    }
+};
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        int freq[126] = {0}, max_freq = 0, l = 0;
+        for (int i = 0; i < s.size(); ++i) {
+            max_freq = max(max_freq, ++freq[s[i]]);
+            if (i-l+1 - max_freq > k) {
+                --freq[s[l++]];
+            }
+        }
+        return s.size() - l;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+sliding window, the easiest way to understand
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+C# version
+private int CharacterReplacement(string s, int k)
+{
+	var result = 0;
+	var cache = new Dictionary<char, int>();
+	var left = 0;
+
+	for (int i = 0; i < s.Length; i++)
+	{
+		if (cache.ContainsKey(s[i]))
+		{
+			cache[s[i]]++;
+		}
+		else
+		{
+			cache[s[i]] = 1;
+		}
+		while (DistinctChars(cache) > k)
+		{
+			if (cache[s[left]] == 0)
+			{
+				cache.Remove(s[left]);
+			}
+			else
+			{
+				cache[s[left]]--;
+			}
+			left++;
+		}
+		result = Math.Max(result, i - left + 1);
+	}
+	return result;
+}
+
+private int DistinctChars(Dictionary<char, int> cache)
+{
+	var sum = 0;
+	var max = 0;
+	
+	foreach (var item in cache.Values)
+	{
+		max = Math.Max(max, item);
+		sum += item;
+	}
+	return sum - max;
+}
+
+
+----------------------------------------------------------------------------------------------------

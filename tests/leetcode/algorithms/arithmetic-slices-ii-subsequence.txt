@@ -1,0 +1,520 @@
+4 lines Python
+def longestSubstring(self, s, k):
+    if len(s) < k:
+        return 0
+    c = min(set(s), key=s.count)
+    if s.count(c) >= k:
+        return len(s)
+    return max(self.longestSubstring(t, k) for t in s.split(c))
+
+
+----------------------------------------------------------------------------------------------------
+Java divide and conquer(recursion) solution
+public int longestSubstring(String s, int k) {
+    char[] str = s.toCharArray();
+    return helper(str,0,s.length(),k);
+}
+private int helper(char[] str, int start, int end,  int k){
+    if(end-start<k) return 0;//substring length shorter than k.
+    int[] count = new int[26];
+    for(int i = start;i<end;i++){
+        int idx = str[i]-'a';
+        count[idx]++;
+    }
+    for(int i = 0;i<26;i++){
+        if(count[i]<k&&count[i]>0){ //count[i]=0 => i+'a' does not exist in the string, skip it.
+            for(int j = start;j<end;j++){
+                if(str[j]==i+'a'){
+                    int left = helper(str,start,j,k);
+                    int right = helper(str,j+1,end,k);
+                    return Math.max(left,right);
+                }
+            }
+        }
+    }
+    return end-start;
+}
+
+----------------------------------------------------------------------------------------------------
+Java Strict O(N) Two-Pointer Solution
+public class Solution {
+    public int longestSubstring(String s, int k) {
+        char[] str = s.toCharArray();
+        int[] counts = new int[26];
+        int h, i, j, idx, max = 0, unique, noLessThanK;
+        
+        for (h = 1; h <= 26; h++) {
+            Arrays.fill(counts, 0);
+            i = 0; 
+            j = 0;
+            unique = 0;
+            noLessThanK = 0;
+            while (j < str.length) {
+                if (unique <= h) {
+                    idx = str[j] - 'a';
+                    if (counts[idx] == 0)
+                        unique++;
+                    counts[idx]++;
+                    if (counts[idx] == k)
+                        noLessThanK++;
+                    j++;
+                }
+                else {
+                    idx = str[i] - 'a';
+                    if (counts[idx] == k)
+                        noLessThanK--;
+                    counts[idx]--;
+                    if (counts[idx] == 0)
+                        unique--;
+                    i++;
+                }
+                if (unique == h && unique == noLessThanK)
+                    max = Math.max(j - i, max);
+            }
+        }
+        
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ recursive solution
+    int longestSubstring(string s, int k) {
+        if(s.size() == 0 || k > s.size())   return 0;
+        if(k == 0)  return s.size();
+        
+        unordered_map<char,int> Map;
+        for(int i = 0; i < s.size(); i++){
+            Map[s[i]]++;
+        }
+        
+        int idx =0;
+        while(idx <s.size() && Map[s[idx]] >= k)    idx++;
+        if(idx == s.size()) return s.size();
+        
+        int left = longestSubstring(s.substr(0 , idx) , k);
+        int right = longestSubstring(s.substr(idx+1) , k);
+        
+        return max(left, right);
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two short C++ solutions (3ms and 6ms)
+int longestSubstring(string s, int k) {
+    return longestSubstring_recur(s, k, 0, s.size());
+}
+
+int longestSubstring_recur(const string& s, int k, int first, int last) {
+    int count[26] = {0};
+    for (int j = first; j < last; ++j) ++count[s[j] - 'a'];
+    
+    int max_len = 0;
+    for (int j = first; j < last;) {
+        while (j < last && count[s[j]-'a']<k) ++j;
+        if (j == last) break;
+        int l = j;
+        while (l < last && count[s[l]-'a']>=k) ++l;
+        //all chars appear more than k times
+        if (j == first && l == last) return last-first; 
+        max_len = max(max_len, longestSubstring_recur(s, k, j, l));
+        j = l;
+    }
+    return max_len;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java D &amp; C Solution
+public int longestSubstring(String s, int k) {
+       if (s == null || s.length() == 0 || k == 0) return 0;
+       int max = 0;
+       int[] count = new int[26];
+       int res = 0;
+       for (int i = 0; i < s.length(); i++) {
+           count[s.charAt(i) - 'a']++;
+       }
+       List<Integer> pos = new ArrayList<Integer>();
+       for (int i = 0; i < s.length(); i++) {
+           if (count[s.charAt(i) - 'a'] < k) pos.add(i);
+       }
+       if (pos.size() == 0) return s.length();
+       pos.add(0, -1);
+       pos.add(s.length());
+       for (int i = 1; i < pos.size(); i++) {
+           int start = pos.get(i-1) + 1;
+           int end = pos.get(i);
+           int next = longestSubstring(s.substring(start, end), k);
+           res = Math.max(res, next);
+       }
+       return res;
+   }
+
+
+----------------------------------------------------------------------------------------------------
+Java HashMap Solution, worst case O((n^2)*26)
+public class Solution {
+    public int longestSubstring(String s, int k) {
+        HashMap<Integer,int[]> map=new HashMap<>();
+        int maxLen=0;
+        map.put(-1,new int[26]);
+        for(int i=0;i<s.length();i++){
+            int[] curr=Arrays.copyOf(map.get(i-1),26);
+            curr[s.charAt(i)-'a']++;
+            // if(i+1<k){
+            //     map.put(i,curr);
+            //     continue;
+            // }
+            for(int j=-1;j<i;j++){
+                // if(i-j<k){
+                //     continue;
+                // }
+                int[] tmp=map.get(j);
+                boolean flag=true;
+                for(int m=0;m<26;m++){
+                    if(curr[m]!=tmp[m]&&curr[m]-tmp[m]<k){
+                        flag=false;
+                        break;
+                    }
+                }
+                
+                if(flag){
+		    maxLen=Math.max(maxLen,i-j);
+                    break;
+                }
+            }
+            map.put(i,curr);
+       }
+       return maxLen;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) iterator and backtracking solution.
+<p>The first one is a simple solution of O(n^2), we find the max length starting at each character in s.  The three if statement in for loop is to check if the string is satisfied, I use math methods instead of iterator the map each time to save time.</p>
+<p><img src="/uploads/files/1473033447854-screen-shot-2016-09-04-at-4.21.35-pm.png" alt="0_1473033447412_Screen Shot 2016-09-04 at 4.21.35 PM.png" class="img-responsive img-markdown"/></p>
+<p>This is a backtracking solution with O(nlogn), worst case O(n ^2), from my schoolmate.<br/>
+split the string by the minimal apperence character  temp in string, if count(temp) &gt;= k, we just return s, else, we split the string by temp since temp can&#39;t be included.<br/>
+<img src="/uploads/files/1473033614684-screen-shot-2016-09-04-at-4.59.40-pm.png" alt="0_1473033614238_Screen Shot 2016-09-04 at 4.59.40 PM.png" class="img-responsive img-markdown"/></p>
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution using 2D array to store letter occurrences (17ms)
+public class Solution {
+    public int longestSubstring(String s, int k) {
+        if (s == null || s.length() < 1) return 0;
+
+        int[][] letters = new int[26][s.length() + 1];
+        for (int i = 0; i < s.length(); i++) {
+            for (int c = 0; c < 26; c++) {
+                letters[c][i+1] = letters[c][i];
+            }
+            letters[s.charAt(i) - 'a'][i+1] += 1;
+        }
+        // May also optimize by deleting letters entries with 0 at end
+        
+        int longest = 0;
+        for (int start = 0; start < s.length(); start++) {
+            if (longest >= s.length() - start) return longest;
+            for (int end = s.length(); end > start; end--) {
+                boolean works = true;
+                for (int c = 0; c < 26; c++) {
+                    int num = letters[c][end] - letters[c][start];
+                    if (num < k && num > 0) {
+                        works = false;
+                        end = s.indexOf('a' + c, start) + 1;
+                        break;
+                    }
+                }
+                if (works) {
+                    if (end - start > longest) longest = end - start;
+                    break;
+                }
+            }
+        }
+
+        return longest;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java (nlogn) recursive solution by dividing the string into substrings(15ms)
+public int longestSubstring(String s, int k) {
+    char[] schar=s.toCharArray();
+    return longest(schar,0,schar.length-1,k);
+}
+public int longest(char[] schar,int start,int end,int k){
+    if(end-start+1<k){
+        return 0;
+    }
+    Map<Character,List<Integer>> map=new HashMap<Character,List<Integer>>();
+    for(int i=start;i<=end;i++){   //count hwo many times each characters appears
+        if(!map.containsKey(schar[i])){
+            List<Integer> newlist=new ArrayList<Integer>();
+            map.put(schar[i],newlist);
+        }
+        map.get(schar[i]).add(i);
+    }
+    List<Integer> less=new ArrayList<Integer>();
+    for(char c:map.keySet()){
+        if(map.get(c).size()<k){
+            less.addAll(map.get(c));
+        }
+    }
+    if(less.size()==0){
+        return end-start+1;
+    }
+    int max=0;
+    Collections.sort(less);
+    less.add(end+1);
+    int last=start-1;
+    for(int i=0;i<less.size();i++){               //divide the string into substrirng
+        int cur=less.get(i);
+        max=Math.max(max,longest(schar,last+1,cur-1,k));
+        last=cur;
+    }
+    return max;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 20 lines very easy solution 7ms with explanation
+public class Solution {
+    public int longestSubstring(String s, int k) {
+        if (s == null || s.length() == 0) return 0;
+        char[] chars = new char[26];
+        // record the frequency of each character
+        for (int i = 0; i < s.length(); i += 1) chars[s.charAt(i) - 'a'] += 1;
+        boolean flag = true;
+        for (int i = 0; i < chars.length; i += 1) {
+            if (chars[i] < k && chars[i] > 0) flag = false;
+        }
+        // return the length of string if this string is a valid string
+        if (flag == true) return s.length();
+        int result = 0;
+        int start = 0, cur = 0;
+        // otherwise we use all the infrequent elements as splits
+        while (cur < s.length()) {
+            if (chars[s.charAt(cur) - 'a'] < k) {
+                result = Math.max(result, longestSubstring(s.substring(start, cur), k));
+                start = cur + 1;
+            }
+            cur++;
+        }
+        result = Math.max(result, longestSubstring(s.substring(start), k));
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++, O(n), Divide and Conquer
+class Solution {
+public:
+    int longestSubstring(string s, int k) {
+        int n = s.size();
+        return helper(s, 0, n-1, k);
+    }
+private:
+    // looking for longest string within index range [l, r]
+    int helper(string& s, int l, int r, int k) {
+        vector<int> mp(26, 0);
+        for (int i = l; i <= r; i++) mp[s[i]-'a']++;
+       // check whether the whole string meets requirement
+        bool pass = true;
+        for (int i = 0; i < 26 && pass; i++) {
+            if (mp[i] && mp[i] < k)
+                pass = false;
+        }
+        if (pass) return r-l+1;
+        // using all characters with occurrence > 0 && < k to divide the string
+        int i = l, ans = 0;
+        for (int j = l; j <= r; j++) {
+            if (mp[s[j]-'a'] && mp[s[j]-'a'] < k) {
+                ans = max(ans, helper(s, i, j-1, k));
+                i = j+1;
+            }
+        }
+        return max(ans, helper(s, i, r, k));
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python 56ms solution
+class Solution(object):
+    def longestSubstring(self, s, k):
+        """
+        :type s: str
+        :type k: int
+        :rtype: int
+        """
+        if len(s) < k:
+            return 0
+        mydict, myset = {}, set()
+        for c in s:
+            if c in mydict.keys():
+                mydict[c] += 1
+            else:
+                mydict[c] = 1
+            if mydict[c] >= k:
+                myset.discard(c)
+            else:
+                myset.add(c)
+        if len(myset) == 0:
+            return len(s)
+        intervals, start = [], 0
+        while start < len(s):
+            if s[start] not in myset:
+                i = start
+                while start < len(s):
+                    if s[start] not in myset:
+                        start += 1
+                    else:
+                        break 
+                intervals.append((i, start))
+            else:
+                start += 1
+        gMax = 0
+        for interval in intervals:
+            gMax = max(gMax, self.longestSubstring(s[interval[0]:interval[1]], k))
+        return gMax
+
+
+----------------------------------------------------------------------------------------------------
+Share My 12ms C++ Solution with explanation
+class Solution {
+    public:
+        int longestSubstring(string s, int k) {
+            int N = s.size();
+            /* If k > N, it's impossible to find a substring with k duplicates. */
+            if(k > N) return 0;
+            
+            /* Count the number of characters in s. */
+            map<char, int> counts;
+            for(int i = 0; i < N; i++)
+                counts[s[i]]++;
+            
+            int begin = 0, end = N - 1;
+            /* Remove the character whose times is less than k from begin. */
+            while(begin < N && counts[s[begin]] < k) begin++;
+            /* Remove the character whose times is less than k from end. */
+            while(end >= 0 && counts[s[end]] < k) end--;
+            
+            /* If s[begin : end + 1] contain character whose times is less than k,
+               it must not be the answer. So we divide from the character we just find.
+             */ 
+            int i;
+            for(i = begin; i <= end; i++) 
+                if(counts[s[i]] < k)
+                    return max(longestSubstring(s.substr(begin, i - begin + 1), k), \
+                               longestSubstring(s.substr(i + 1, end - (i + 1) + 1), k));
+            
+            /* If the above for loop complete (i == (end + 1)), all characters' times are larger than k.
+               So, return (end - begin + 1) else return 0
+            */
+            return (i == (end + 1))? (end - begin + 1) : 0;
+        }
+};
+
+
+----------------------------------------------------------------------------------------------------
+There Is Not Enough Test Cases in Longest Substring with At Least K Repeating Characters
+<p><img src="/uploads/files/1473124148103-upload-ba512e46-9536-4bb8-8186-cdb4e79ce6fc.png" alt="0_1473124143956_upload-ba512e46-9536-4bb8-8186-cdb4e79ce6fc" class="img-responsive img-markdown"/><br/>
+In this case, the result is wrong. But the code can be accepted.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Simple JAVA O(n) Solution
+public int longestSubstring(String s, int k) {
+        int[] map = new int[26];
+        for(int i=0;i<s.length();i++) {
+            map[s.charAt(i)-'a']++;
+        }
+        char noChar = 'a';
+        boolean containsNoChar = false;
+        for(int i=0;i<26;i++) {
+            noChar = (char)('a'+i);
+            if(map[i]<k&&map[i]!=0) {
+                containsNoChar = true;
+                break;
+            }
+        }
+        if(containsNoChar==false) return s.length();
+        int ans = 0;
+        int start = 0;
+        while(s.indexOf(noChar, start)!=-1) {
+            int end = s.indexOf(noChar, start);
+            ans = Math.max(ans, longestSubstring(s.substring(start,end), k));
+            start = end + 1;
+        }
+        ans = Math.max(ans, longestSubstring(s.substring(start,s.length()), k));
+        return ans;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ 15lines divide and conquer beats 48.2%, clean code
+    int longestSubstring(string s, int k) {
+        vector<int> char2count(128, 0);
+        for(char c : s) char2count[c]++;
+        for(int i = 0; i < s.length(); i++) {
+            if(char2count[s[i]] > 0 && char2count[s[i]] < k) {
+                int start = 0, end;
+                stringstream ss(s);
+                string token = "";
+                int ans = 0;
+                while(getline(ss, token, s[i])) {
+                    ans = max(ans, longestSubstring(token, k));
+                }
+                return ans;
+            }
+        }
+        return s.length();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution 14 ms Recursive based on splitting string by least frequent character
+public class Solution {
+    public int longestSubstring(String s, int k) {
+        if(s==null || s.length()==0 || k==0 || (s.length()<k)) return 0;
+        if(s.length()==1 && k==1) return 1;
+       HashMap<Character,Integer> map=new HashMap<Character,Integer>();
+        for(char c:s.toCharArray()){
+            if(!map.containsKey(c)){
+                map.put(c,1);
+            }else{
+                map.put(c,map.get(c)+1);
+            }
+        }
+        int min=Integer.MAX_VALUE;
+        char c='a';
+        for(char m:map.keySet()){
+            if(min> map.get(m)){
+                min=map.get(m);
+                c=m;
+            }
+        }
+        
+        if(min>=k) return s.length();
+        else{
+            String parts[]=s.split(""+c);
+            int len=0;
+            for(int i=0;i<parts.length;i++){
+                len=Math.max(len,longestSubstring(parts[i],k));
+            }
+            return len;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java O(n) with O(n) space fixed Solution passed all cases for now, 7ms
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------

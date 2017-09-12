@@ -1,0 +1,464 @@
+Java(just like meeting point problem)
+public class Solution {
+    public int minMoves2(int[] nums) {
+        Arrays.sort(nums);
+        int i = 0, j = nums.length-1;
+        int count = 0;
+        while(i < j){
+            count += nums[j]-nums[i];
+            i++;
+            j--;
+        }
+        return count;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+2 lines Python, 2 ways
+def minMoves2(self, nums):
+    median = sorted(nums)[len(nums) / 2]
+    return sum(abs(num - median) for num in nums)
+
+def minMoves2(self, nums):
+    nums.sort()
+    return sum(nums[~i] - nums[i] for i in range(len(nums) / 2))
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Time using QuickSelect
+public int minMoves2(int[] A) {
+    int sum = 0, median = quickselect(A, A.length/2+1, 0, A.length-1);
+    for (int i=0;i<A.length;i++) sum += Math.abs(A[i] - median);
+    return sum;
+}
+
+public int quickselect(int[] A, int k, int start, int end) {
+    int l = start, r = end, pivot = A[(l+r)/2];
+    while (l<=r) {
+        while (A[l] < pivot) l++;
+        while (A[r] > pivot) r--;
+        if (l>=r) break;
+        swap(A, l++, r--);
+    }
+    if (l-start+1 > k) return quickselect(A, k, start, l-1);
+    if (l-start+1 == k && l==r) return A[l];
+    return quickselect(A, k-r+start-1, r+1, end);
+}
+
+public void swap(int[] A, int i, int j) {
+    int temp = A[i];
+    A[i] = A[j];
+    A[j] = temp;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution with detailed explanation.
+// O(n).
+// Imagine the nums are sorted, and the final value is k, we start find k from the first element.
+// If we increase k, the elements <= k will need move one step more, and the elements > k will need to move one step less.
+// If there are more elements > k than elements <= k, we should increase k to minimize the moves.
+// So we just increase k, until k reach the median of of the nums array. By then, the number of elements <= k equals to that of elements > k.
+// (There is a slight different when the number of array is odd, but it's similar).
+// If we keep increasing k after k reach the median of the array, more numbers >k than <= k, and more moves needed, so we should stop.
+//
+// The sort is not needed since we find the k is the median of the array, there is an average O(n) algorithm to find such k.
+class Solution {
+public:
+    int minMoves2(vector<int>& nums) {
+        int n = nums.size();
+        auto it = nums.begin() + n/2;
+        nth_element(nums.begin(), it, nums.end());
+        int median = *it;
+        int total = 0;
+        for (auto &i : nums)
+            total += abs(i-median);
+        return total;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with thinking process
+public class Solution {
+    public int minMoves2(int[] nums) {
+        if(nums==null||  nums.length==0) return 0;
+        long moves = Integer.MAX_VALUE;
+        Arrays.sort(nums);
+        long totalSum = 0L;
+        long sum = 0L;
+        for(int i =0;i<nums.length;i++){
+            totalSum += (long)nums[i];
+           if(i<nums.length/2) sum+=(long)nums[i];
+        }
+       
+        int k = nums.length/2;
+        moves = (long)(k-(nums.length-k-1)-1)*(long)nums[k]-sum+(totalSum-sum);
+           
+        return (int)moves;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+3-line C++ solution with rigorous math proof (same as problem &quot;Best Meeting Point&quot;)
+    int minMoves2(vector<int>& nums) {
+      sort(nums.begin(), nums.end()); int n = nums.size(), res = 0;
+      for (int i = 0; i < n/2; ++i) res += (nums[n-1-i]-nums[i]);
+      return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Why median is better than average?
+<p>I&#39;m confused for this problem that we choose median to be the number everyone tries to move to, but not the average. Some post gives the reason that if we choose a number in the array, we save operations to change itself. But I&#39;m thinking this reason doesn&#39;t stand because if we choose the average, other numbers may take less moves than choosing median.</p>
+<p>Can anyone help me understand the thinking process of choosing median instead of average?</p>
+<p>Thanks!</p>
+
+
+----------------------------------------------------------------------------------------------------
+5 line solution with comment
+/*
+Intuitive solution might be making all the numbers the same as average.
+However that does not always work 
+[1,0,0,8,6]. average is 3, the total cost of making every number 3 is 16
+However if we were to make every number 1, cost is 14.
+
+Make every number the medium, instead of average would generate the smallest cost
+*/
+
+public class Solution {
+    public int minMoves2(int[] nums) {
+        int sum = 0;
+        Arrays.sort(nums);
+        int medium = nums[nums.length / 2];
+        for(int n : nums) sum += Math.abs(n - medium);
+        return sum;
+    }
+}````
+
+----------------------------------------------------------------------------------------------------
+C++ quickselect O(n)
+class Solution {
+public:
+    
+    int partition(vector<int> &nums, int l, int r) {
+        int len = r - l + 1;
+        int index = (rand() % len) + l;
+        swap(nums[index], nums[r]);
+        int pivot = nums[r];
+        
+        int less = l;
+        for (int i = l; i < r; i++) {
+            if (nums[i] <= pivot) {
+                swap(nums[i], nums[less++]);
+            }
+        }
+        
+        swap(nums[less], nums[r]);
+        
+        return less;
+    }
+    
+    int selectK(vector<int> &nums, int k, int l , int r) {
+        if (l >= r) return l;
+        
+        int pivot_index = partition(nums, l, r);
+        
+        if (pivot_index - l + 1 == k) {
+            return pivot_index;
+        } else if (pivot_index - l + 1 < k) {
+            return selectK(nums, k - (pivot_index - l + 1), pivot_index + 1, r);
+        } else {
+            return selectK(nums, k, l, pivot_index - 1);
+        }
+    }
+    
+    int minMoves2(vector<int>& nums) {
+        if (nums.empty()) return 0;
+        
+        int median = nums.size() / 2;
+        
+        int middle = nums[selectK(nums, median + 1, 0, nums.size() - 1)];
+        
+        int count = 0;
+        for (int n : nums) {
+            if (n > middle) {
+                count += n - middle;
+            } else {
+                count += middle - n;
+            }
+        }
+        
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+4 lines Java Solution
+Arrays.sort(nums);
+int i=0, j=nums.length-1, moves = 0;
+while(i<j) moves+=nums[j--]-nums[i++];
+return moves;
+
+
+----------------------------------------------------------------------------------------------------
+*Simple* C++ sort and find solution with *Detailed* Explanation
+/**
+ * First sort the array in ascending order.
+ * Let `sum` equal to nums[0] + nums[1] + nums[2] + .. + nums[n-1].
+ * Let `curSum(i)` equal to nums[0] + nums[1] + nums[2] + .. + nums[i-1].
+ * Let the final number be `k`, `k` must be in range (nums[0], nums[n-1]), inclusive.
+ * The target is minimize { abs(k-nums[0]) + abs(k-nums[1]) + abs(k-nums[2]) + .. + abs(k-nums[n-1]) },
+ * and define the equation as F, let `i` be the first array index so that `k` <= nums[i], then:
+ * 
+ * F = k-nums[0] + k-nums[1] + .. + k-nums[i-1] + nums[i]-k + nums[i+1]-k + .. + nums[n-1]-k
+ *   = i*k - (nums[0]+nums[1]+..+nums[i-1]) + (nums[i]+nums[i+1]+..+nums[n-1]) - (n-i)*k
+ *   = 2*i*k - n*k + sum - 2*curSum(i)
+ * 
+ * Now, we need iterate all `i` to obtain the result.
+ * 
+ * The time complexity is O(n*log(n)) since we need sort the array first, the space complexity is O(1).
+ */
+class Solution {
+    typedef long long ll;
+public:
+    int minMoves2(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        ll sum = accumulate(nums.begin(), nums.end(), 0LL);
+        ll curSum = 0;
+        ll res = LLONG_MAX;
+        int n = nums.size();
+        ll k;
+        for (int i=0; i<n; ++i) {
+            k = nums[i];
+            curSum += k;
+            res = min(res, 2*(i+1)*k - n*k  + sum - 2*curSum);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution - Easy to Understand
+class Solution {
+public:
+int minMoves2(vector<int>& nums) {
+  sort(nums.begin(),nums.end()); 
+  
+  /* Sort the vector to find the median. Note that though this takes O(nlogn) time, it can be done in O(n) using Quick Select Algorithm.*/
+    
+  int median = nums[nums.size()/2]; // Works for both odd and even number of elements
+  int res = 0;
+  for(int i=0;i<nums.size();i++)
+  {
+      res += abs(nums[i]-median); // How far is each element from median
+  }
+  return res;
+}};
+
+----------------------------------------------------------------------------------------------------
+5-Line C++ O(n) Solution using Quick-select (beat 82%)
+int minMoves2(vector<int>& nums) {
+        auto mid = nums.begin() + nums.size()/2;
+        nth_element(nums.begin(), mid, nums.end());
+        int median = *mid, count = 0;
+        for(int e: nums) count += abs(e-median);
+        return count;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Sort and DP
+    int minMoves2(vector<int>& nums) {
+        int n = nums.size();
+        if(n < 2) return 0;
+        int64_t minMoves = UINT_MAX;
+        sort(nums.begin(), nums.end());
+        vector<int64_t> leftMoves(n, 0);
+        for(int i = 1; i < n; ++i) {
+            leftMoves[i] = i * (nums[i] - nums[i-1]) + leftMoves[i-1];
+        }
+        int64_t rightMoves = 0;
+        for(int i = n-2; i >= 0; --i) {
+            rightMoves = (n-1-i) * (nums[i+1] - nums[i]) + rightMoves;
+            minMoves = min(rightMoves + leftMoves[i], minMoves);
+        }
+        return minMoves;
+    }
+
+----------------------------------------------------------------------------------------------------
+very short java solution with O(nlogn)
+public class Solution {
+    public int minMoves2(int[] nums) {
+        if (nums == null) return 0;
+        
+        Arrays.sort(nums);
+        int k = (nums.length + 1) >> 1;
+        int sum = 0;
+        
+        for (int i = 0; i< (nums.length >> 1); i++) {
+            sum += nums[k+i] - nums[i];
+        }
+        return sum;      
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n logn) Java Simple Solution with Median
+public class Solution {
+    public int minMoves2(int[] nums) {
+        if (nums == null || nums.length <= 1) return 0;
+        Arrays.sort(nums);
+        int median = nums[nums.length/2], moves = 0;
+        for (int num : nums)
+            moves += Math.abs(num - median);
+        return moves;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+CPP solution using Binary Search
+class Solution {
+public:
+    int diffSum(vector<int>& nums,int avg)
+    {
+        int sum = 0;
+        for(int i=0;i<nums.size();i++)
+            sum+= abs(nums[i]-avg);
+        return sum;
+    }
+    
+    int minMoves2(vector<int>& nums) {
+        int low = INT_MAX,high = INT_MIN;
+        
+        for(int i=0;i<nums.size();i++)
+        {
+            low = min(nums[i],low);
+            high = max(nums[i],high);
+        }
+        
+        int left,right,l = low,h = high,centre,ans;
+        while(l<=h)
+        {
+            int mid = l+(h-l)/2;
+            left = right = INT_MAX;
+            
+            if(mid!=low)
+                left = diffSum(nums,mid-1);
+            if(mid!=high)
+                right = diffSum(nums,mid+1);
+            centre = diffSum(nums,mid);
+            
+            if(centre<=left && centre<=right)
+            {
+                ans = centre;
+                break;
+            }
+            else if(centre<=left)
+            {
+                l = mid+1;
+            }
+            else h = mid-1;
+        }
+        
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+My Simple and Fast Swift Solution
+func minMoves2(_ nums: [Int]) -> Int {
+    let sorted = nums.sorted(by: <)
+    let middle = nums.count/2
+    var ans = 0
+    for i in sorted{
+        ans += abs(sorted[middle] - i)
+    }
+    return ans
+}
+
+----------------------------------------------------------------------------------------------------
+Java using Randomized Quick Selection
+public class Solution {
+    public int minMoves2(int[] nums) {
+        int mid = quickSelect(nums, nums.length / 2);
+        return Arrays.stream(nums).map(i -> Math.abs(i - mid)).sum();
+    }
+    private static int quickSelect(int[] arr, int target) {
+        int start = 0, end = arr.length - 1;
+        while (start < end) {
+            int q = randPartition(arr, start, end);
+            if (q == target) return arr[q];
+            if (target < q) end = q - 1;
+            else start = q + 1;
+        }
+        return arr[start];
+    }
+    private static int randPartition(int[] arr, int p, int r) {
+        if (p >= r) return p;
+        int index = (int)(Math.random() * (r - p + 1) + p);
+        swap(arr, index, r);
+        int pivot = arr[r];
+        int i = p - 1, j = p;
+        while (j < r) {
+            if (arr[j] <= pivot) swap(arr, ++i, j++);
+            else j++;
+        }
+        swap(arr, ++i, r);     
+        return i;
+    }
+    private static void swap(int[] arr, int p, int r) {
+        int t = arr[p];
+        arr[p] = arr[r];
+        arr[r] = t;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Why my solution is much more slower than others?
+class Solution {
+public:
+    int minMoves2(vector<int>& nums) {
+        int len = nums.size(), f = 0, r = len - 1, mid = len >> 1, res = 0;
+        for(;;) {
+            int val = nums[f], front = f, rear = r;
+            while(front < rear) {
+                while(nums[rear] >= val && front < rear) {
+                    --rear;
+                }
+                nums[front] = nums[rear];
+                while(nums[front] <= val && front < rear) {
+                    ++front;
+                }
+                nums[rear] = nums[front];
+            }
+            nums[front] = val;
+            if(front > mid) {
+                r = front - 1;
+            } 
+            else if(front < mid){
+                f = front + 1;
+            } 
+            else {
+                for(int i = 0; i < mid; ++i) {
+                    res += val - nums[i];
+                } 
+                for(int i = mid + 1; i < len; ++i) {
+                    res += nums[i] - val;
+                }
+                return res;
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

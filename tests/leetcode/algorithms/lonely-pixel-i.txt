@@ -1,0 +1,841 @@
+General principles behind problems similar to &quot;Reverse Pairs&quot;
+C
+
+----------------------------------------------------------------------------------------------------
+Very Short and Clear MergeSort &amp; BST Java Solutions
+public class Solution {
+    public int reversePairs(int[] nums) {
+        Node root = null;
+        int[] cnt = new int[1];
+        for(int i = nums.length-1; i>=0; i--){
+            search(cnt, root, nums[i]/2.0);//search and count the partially built tree
+            root = build(nums[i], root);//add nums[i] to BST
+        }
+        return cnt[0];
+    }
+    
+    private void search(int[] cnt, Node node, double target){
+        if(node==null) return; 
+        else if(target == node.val) cnt[0] += node.less;
+        else if(target < node.val) search(cnt, node.left, target);
+        else{
+            cnt[0]+=node.less + node.same; 
+            search(cnt, node.right, target);
+        }
+    }
+    
+    private Node build(int val, Node n){
+        if(n==null) return new Node(val);
+        else if(val == n.val) n.same+=1;
+        else if(val > n.val) n.right = build(val, n.right);
+        else{
+            n.less += 1;
+            n.left = build(val, n.left);
+        }
+        return n;
+    }
+    
+    class Node{
+        int val, less = 0, same = 1;//less: number of nodes that less than this node.val
+        Node left, right;
+        public Node(int v){
+            this.val = v;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ with iterators
+class Solution {
+public:
+    int sort_and_count(vector<int>::iterator begin, vector<int>::iterator end) {
+        if (end - begin <= 1)
+            return 0;
+        auto mid = begin + (end - begin) / 2;
+        int count = sort_and_count(begin, mid) + sort_and_count(mid, end);
+        for (auto i = begin, j = mid; i != mid; ++i) {
+            while (j != end and *i > 2L * *j)
+                ++j;
+            count += j - mid;
+        }
+        inplace_merge(begin, mid, end);
+        return count;
+    }
+
+    int reversePairs(vector<int>& nums) {
+        return sort_and_count(nums.begin(), nums.end());
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Clean Java Solution using Enhanced Binary Search Tree
+public class Solution {
+    class Node {
+	int value, count;
+	Node left, right;
+	Node (int v) {
+	    value = v; count = 1;
+	}
+    }
+	
+    public int reversePairs(int[] nums) {
+        int result = 0;
+        if (nums == null || nums.length <= 1) return result;
+        
+        int len = nums.length;
+	Node root = new Node(nums[len - 1]);
+	    
+	for(int i = len - 2; i >= 0; i--) {
+	    result += query(root, nums[i] / 2.0);
+	    insert(root, nums[i]);
+	}
+
+	return result;
+    }
+    
+    private Node insert(Node root, int value) {
+	if (root == null) return new Node(value);
+		
+	if (root.value == value) {
+	    root.count++;
+	}
+	else if (root.value > value) {
+	    root.count++;
+	    root.left = insert(root.left, value);
+	}
+	else {
+	    root.right = insert(root.right, value);
+	}
+		
+	return root;
+    }
+	
+    private int query(Node root, double value) {
+	if (root == null) return 0;
+		
+	if (value > root.value) {
+	    return root.count + query(root.right, value);
+	}
+	else {
+	    return query(root.left, value);
+	}
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java merge sort solution, O(nlog(n))
+public class Solution {
+        
+    public int ret;
+    public int reversePairs(int[] nums) {
+        ret = 0;
+        mergeSort(nums, 0, nums.length-1);
+        return ret;
+    }
+
+    public void mergeSort(int[] nums, int left, int right) {
+        if (right <= left) {
+            return;
+        }
+        int middle = left + (right - left)/2;
+        mergeSort(nums, left, middle);
+        mergeSort(nums,middle+1, right);
+
+        //count elements
+        int count = 0;
+        for (int l = left, r = middle+1; l <= middle;) {
+            if (r > right || (long)nums[l] <= 2*(long)nums[r]) {
+                l++;
+                ret += count;
+            } else {
+                r++;
+                count++;
+            }
+        }
+        
+        //sort
+        Arrays.sort(nums, left, right + 1);   
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Well explained O(nlogn) Python Solution based on mergesort
+class Solution(object):
+    def __init__(self):
+        self.cnt = 0
+    def reversePairs(self, nums):
+        def msort(lst):
+            # merge sort body
+            L = len(lst)
+            if L <= 1:                          # base case
+                return lst
+            else:                               # recursive case
+                return merger(msort(lst[:int(L/2)]), msort(lst[int(L/2):]))
+        def merger(left, right):
+            # merger
+            l, r = 0, 0                         # increase l and r iteratively
+            while l < len(left) and r < len(right):
+                if left[l] <= 2*right[r]:
+                    l += 1
+                else:
+                    self.cnt += len(left)-l     # add here
+                    r += 1
+            return sorted(left+right)           # I can't avoid TLE without timsort...
+
+        msort(nums)
+        return self.cnt
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution using merge sort
+class Solution {
+private:
+    int count;
+   
+    void checkCount(vector<int>& nums, int start, int mid, int end){
+
+        // two pointers;
+        int l = start, r = mid + 1;
+        while(l <= mid && r <= end){
+            if((long)nums[l] > (long) 2 * nums[r]){
+                count += (mid - l + 1);
+                r++;
+            }else{
+                l++;
+            }
+        }
+       // worst case might be nlog(n) 
+        sort(nums.begin() + start, nums.begin() + end + 1);
+        return;
+        
+        
+        
+        //every step sort
+    }
+    void mergeSort(vector<int>& nums, int start, int end){
+        if(start == end) return;
+        
+        int mid = (start + end)/2;
+        mergeSort(nums,start, mid);
+        mergeSort(nums,mid+1,end);
+        
+        checkCount(nums,start,mid,end);
+        return;
+        
+    }
+public:
+    int reversePairs(vector<int>& nums) {
+        if(!nums.size())return 0;
+        count = 0;
+        mergeSort(nums,0,nums.size()-1);
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+&lt;= 20 lines Java code. Beats 100%!!
+public class Solution {
+    public int reversePairs(int[] nums) {
+        if (nums == null || nums.length == 0) return 0;
+        return mergeSort(nums, 0, nums.length - 1);
+    }
+    private int mergeSort(int[] nums, int l, int r) {
+        if (l >= r) return 0;
+        int mid = l + (r - l)/2;
+        int count = mergeSort(nums, l, mid) + mergeSort(nums, mid + 1, r);
+        int[] cache = new int[r - l + 1];
+        int i = l, t = l, c = 0;
+        for (int j = mid + 1; j <= r; j++, c++) {
+            while (i <= mid && nums[i] <= 2 * (long)nums[j]) i++;
+            while (t <= mid && nums[t] < nums[j]) cache[c++] = nums[t++];
+            cache[c] = nums[j];
+            count += mid - i + 1;
+        }
+        while (t <= mid) cache[c++] = nums[t++];
+        System.arraycopy(cache, 0, nums, l, r - l + 1);
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using balanced binary search tree O(nlgn)
+class Solution {
+public:
+    struct node{
+        //count:number of nodes from root itself;  
+        //self:number of nodes sharing the same val;
+        //height: tree height
+        int val,count,height,self;
+        node* left;
+        node* right;
+        node(int k):val(k),count(1),self(1),height(1),left(0),right(0){};
+        void fix_count_height() { //update count and height
+            count = self + (left?left->count:0) + (right?right->count:0);
+            height = 1 + max((left?left->height:0),(right?right->height:0));
+        }
+    };
+    
+    /*           p                              q            node: p,q
+               /   \     right rotation       /   \          Tree: A,B,C
+              q     C    -------------->     A     p
+            /   \        <--------------         /   \
+           A     B       left rotation          B     C
+    */
+    node* right_rotation(node* p){ // O(1) time complexity
+        node* q = p->left;       
+        p->left = q->right;    
+        q->right = p;          
+        p->fix_count_height();
+        q->fix_count_height();
+        return q; //return new root q after rotation
+    }
+    node* left_rotation(node* q){ // O(1) time complexity
+        node* p = q->right;
+        q->right = p->left;
+        p->left = q;
+        q->fix_count_height();
+        p->fix_count_height(); 
+        return p; //return new root p after rotation
+    }
+    
+    int bfactor(node* p){ //balance factor = 1,0,-1 are considered balanced from root p 
+        int hr = (p->right) ? p->right->height : 0;
+        int hl = (p->left) ? p->left->height : 0;
+        return hr-hl;
+    }
+    
+    //insert k key in a tree from root r, return the new root after insertion
+    node* insert(node* r, int k){ // O(log(n)) time complexity
+        if(!r) return new node(k);
+        if(k < r->val)
+            r->left = insert(r->left,k);
+        else if(k > r->val)
+            r->right = insert(r->right,k);
+        else{
+            r->self++;
+            r->count++;
+            return r;
+        }
+        
+        //balance the tree if one child's height is greater by 2 than the other child
+        if(bfactor(r) >= 2){
+            if(bfactor(r->right) < 0)
+                r->right = right_rotation(r->right);
+            return left_rotation(r);
+        }
+        else if(bfactor(r) <= -2){
+            if(bfactor(r->left) > 0)
+                r->left = left_rotation(r->left);
+            return right_rotation(r);
+        }
+        else{ //no need to rotate the tree, just update the node's count and height 
+            r->fix_count_height();
+            return r;
+        }
+    }
+    
+    //search the tree from root, count the nodes n where n->val > key .
+    int search(const long long key, node* root){ // O(lg(n)) time complexity
+        if(!root) return 0;
+        if(root->val < key)
+            return search(key,root->right);
+        else if(root->val > key)
+            return ( root->self + (root->right ? root->right->count : 0) ) + search(key,root->left);
+        else //root->val == key
+            return (root->right) ? root->right->count : 0;
+    }
+    
+    int reversePairs(vector<int>& nums) {
+        int size = nums.size();
+        if(size<2)  return 0;
+        
+        //Given an array nums, we call (i, j) an important reverse pair if i < j and nums[i] > 2*nums[j].
+        node* root = 0;
+        root = insert(root,nums[0]);
+        int count = 0;
+        for(int j=1; j<size; j++){
+            int numsj = nums[j];
+            count += search(2*(long long)numsj,root);
+            root = insert(root, numsj);
+        }
+        return count;
+    }
+}; 
+
+
+----------------------------------------------------------------------------------------------------
+Python divide &amp; conquer and DP
+class Solution(object):
+    def reversePairs(self, nums):
+        return self.helper(nums, 0, len(nums))
+        
+    def helper(self, nums, l, r):
+        mid = l + r >> 1
+        if mid == l: return 0
+        total = self.helper(nums, l, mid) + self.helper(nums, mid, r)
+        prev_total = 0
+        for i in range(l, mid):
+            target = nums[i] - 1 >> 1
+            idx = bisect.bisect_right(nums, target, mid, r)
+            prev_total += idx - mid
+            mid = idx
+            total += prev_total
+        nums[l: r] = sorted(nums[l: r])
+        return total
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using binary search + Fenwick tree
+  class Fenwick {
+  private:
+  	// tree is one unit shiftd from a virtual vector arr[]
+  	vector<long> tree;
+  	long lsb(long i) { return i & (-i); }
+  public:
+  	Fenwick(long size) {
+  		tree = vector<long>(size + 1, 0);
+  	}
+  
+  	// the following function sums up arr[0..id]
+  	long sum(long id) {
+  		id++;
+  		long ret = 0;
+  		while(id > 0) {
+  			ret += tree[id];
+  			id -= lsb(id);
+  		}
+  		return ret;
+  	}
+  
+  	// the following function increases arr[id]
+  	void add(long id, long val) {
+  		long n = tree.size();
+  		id++;
+  		while(id < n) {
+  			tree[id] += val;
+  			id += lsb(id);
+  		}
+  	}
+  
+  };
+  
+  
+  
+  class Solution {
+  public:
+  	long reversePairs(vector<int>& nums) {
+  		vector<long> nums2;
+  		for(long i : nums) {
+  			nums2.push_back(2*i);
+  		}
+  
+  		sort(nums2.begin(), nums2.end());
+  		// order maps the original order to sorted order, it doesn't matter if duplicated is present
+  		unordered_map<long, long> order;
+  		
+  		// binary search result, notice that this is index<->index map 
+  		unordered_map<long, long> biorder;
+  		long ret = 0;
+  		long n = nums.size();
+  		for(long i = 0; i < n; ++i) {
+  			biorder[i] = lower_bound(nums2.begin(), nums2.end(), nums[i]) - nums2.begin();
+  			order[nums2[i]/2] = i;
+  		}
+  
+  		Fenwick fw(n);
+  		for(long i = n-1; i>=0; --i) {
+  			ret += fw.sum(biorder[i]-1);
+  			fw.add(order[nums[i]], 1);
+  		}
+  		return ret;
+  	}
+  };
+
+----------------------------------------------------------------------------------------------------
+slow, but pass, but short and self explaination, D &amp; C
+class Solution {
+public:
+    int reversePairs(vector<int>& nums) {
+        vector<long long> m(nums.begin(), nums.end());
+        return helper(m.begin(), m.end());
+    }
+
+    int helper(vector<long long>::iterator b, vector<long long>::iterator e) {
+        if (e - b < 2) return 0;
+        auto m = b + distance(b, e) / 2;
+        int res = helper(b, m) + helper(m, e);
+        sort(b, m);
+        for (auto s = m; s != e; ++s) {
+            res += m - upper_bound(b, m, 2 * *s);
+        }
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+I couldn&#x27;t get why the champion&#x27;s algorithm works, can someone help? Thanks
+class Solution {
+public:
+    map<long long, int> bit;
+    long long lowbit(long long x)
+    {
+        return x & (-x);
+    }
+    void add(long long x)
+    {
+        for(x += (1ll << 34); x <= (1ll << 36); x += lowbit(x))
+            ++bit[x];
+    }
+    int que(long long x)
+    {
+        int ans = 0;
+        for(x += (1ll << 34); x; x -= lowbit(x))
+            ans += bit[x];
+        return ans;
+    }
+    int reversePairs(vector<int>& nums) {
+        bit.clear();
+        int n = nums.size();
+        int ans = 0;
+        for(int i = n - 1; i >= 0; --i)
+        {
+            ans += que((long long) nums[i] - 1ll);
+            add((long long) nums[i] * 2ll);
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Very Concise Binary Search Solution 9line
+public int reversePairs(int[] nums) {
+	int n = nums.length, res = 0;
+	if (n <2) return res;
+	List<Long> list = new ArrayList<>();
+	list.add(2*(long)nums[n-1]);
+	for (int j = n-2; j >= 0; j--) {
+		res += bs((long)nums[j], list);
+		list.add(bs(2*(long)nums[j], list), 2*(long)nums[j]);
+	}
+	return res;
+}
+	
+// binary search
+private int bs (long val, List<Long> list) {
+	int l = 0, r = list.size()-1;
+	while (l<=r) {
+		int m = (l+r)/2;
+		if (list.get(m) < val) l = m+1;
+		else r = m-1;
+	}
+	return l;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ Self-ballancing BST with counters
+template<class T> class TreeNodeWithCounter {
+    T val;
+    TreeNodeWithCounter *left = nullptr, *right = nullptr;
+    int cnt_left = 0, cnt_right = 0, cnt_val = 1;
+public:
+    TreeNodeWithCounter(T v) : val(v) {};
+    void insert(T v, TreeNodeWithCounter **thisNode) {
+        if (v == val) ++cnt_val;
+        else if (v < val) {
+            ++cnt_left;
+            if (left == nullptr) left = new TreeNodeWithCounter(v);
+            else left->insert(v, &left);
+        }
+        else {
+            ++cnt_right;
+            if (right == nullptr) right = new TreeNodeWithCounter(v);
+            else right->insert(v, &right);
+        }
+
+        if (cnt_left > cnt_right + 2) { // right rotation
+            *thisNode = left;
+            left = left->right;
+            (*thisNode)->right = this;
+            this->cnt_left = (*thisNode)->cnt_right;
+            (*thisNode)->cnt_right += this->cnt_val + this->cnt_right;
+        }
+        else if (cnt_left + 2 < cnt_right) { // left rotation
+            *thisNode = right;
+            right = right->left;
+            (*thisNode)->left = this;
+            this->cnt_right = (*thisNode)->cnt_left;
+            (*thisNode)->cnt_left += this->cnt_val + this->cnt_left;
+        }
+    }
+    int lower_count(T v) {
+        if (v == val) return cnt_left;
+        if (v < val) return (left == NULL ? 0 : left->lower_count(v));
+        else return cnt_left + cnt_val + (right == NULL ? 0 : right->lower_count(v));
+    }    
+};
+
+int reversePairs(vector<int>& nums) {
+    int res = 0, size = nums.size();
+    if (size > 0) {
+        auto *root = new TreeNodeWithCounter<long long>((long long)nums[size - 1] * 2);
+        for (int i = size - 2; i >= 0; --i) {
+            res += root->lower_count(nums[i]);
+            root->insert((long long)nums[i] * 2, &root); }
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+short but slow Python with bisect
+def reversePairs(self, nums):
+    count = 0
+    done = []
+    for num in nums:
+        count += len(done) - bisect.bisect(done, num * 2)
+        bisect.insort(done, num)
+    return count
+
+----------------------------------------------------------------------------------------------------
+Embed counting in mergesort O(nlognlogn)
+class Solution {
+public:
+int reversePairs(vector<int>& nums) {
+    int count = 0;
+    mergeSort(nums, 0, nums.size(), count);
+    return count;
+}
+
+void mergeSort(vector<int>& nums, int p, int q, int& count) {
+    if (1 < q - p) {
+        int mid = (p + q) / 2, i = p, j = mid, k = p;
+        mergeSort(nums, p, mid, count);
+        mergeSort(nums, mid, q, count);
+        vector<long> L, R;
+        L.assign(nums.begin() + p, nums.begin() + mid);
+        R.assign(nums.begin() + mid, nums.begin() + q);
+        while (i < mid || j < q) {
+            if (i == mid || (j < q && L[i - p] > R[j - mid])) {
+                // find upper bound
+                auto it = upper_bound(L.begin(), L.end(), 2 * long(R[j-mid]));
+                nums[k] = R[j - mid];
+                j++;
+                count += (L.end() - it);
+            } else {
+                nums[k] = L[i - p];
+                i++;
+            }
+            k++;
+        }
+    }
+}
+};
+
+----------------------------------------------------------------------------------------------------
+7-liner C++ Merge Sort (detailed explanation)
+    int reversePairs(vector<int>& nums) {
+        return sortCount(nums.begin(), nums.end());
+    }    
+    // count reverse pairs in range [b,e) and then sort
+    int sortCount(vector<int>::iterator b, vector<int>::iterator e) {
+        if (e - b <= 1) return 0;
+        auto m = b+(e-b)/2;
+        int count = sortCount(b, m) + sortCount(m, e);
+        for (auto i = b, j = m; i<m && j<=e; *i/2.>*j? ++j : (count+=j-m, ++i))
+          if (j==e) { count += (m-i)*(e-m); break; }
+
+        return inplace_merge(b, m, e), count; // inplace_merge: merge two sorted segments
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to optimal, a review of all solutions
+    int reversePairs(vector<int>& nums) {
+        return mergeSort(0,nums.size()-1,nums);
+    }
+   int mergeSort(int l, int r, vector<int>& nums) {
+        if(l>=r) return 0;
+        int mid=(r-l)/2+l, count = mergeSort(l,mid,nums) + mergeSort(mid+1,r,nums);
+        for(int i=l,j=mid+1;i<=mid;i++) {
+            while(j<=r && nums[i]/2.0>nums[j]) j++;
+            count+=j-mid-1;
+        }
+        int i=l,j=mid+1,k=0;
+        vector<int> merge(r-l+1);
+        while(i<=mid || j<=r)
+            if(j>r || (i<=mid && nums[i]<=nums[j])) merge[k++]=nums[i++];
+            else merge[k++]=nums[j++];
+        copy(merge.begin(),merge.end(),nums.begin()+l);
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share My AVL Tree Solution, O(NlgN) time.
+public int reversePairs(int[] nums) {
+    
+    // Algo thinking: building a BST, go left when node.val <= 2 * root.val, right otherwise
+    // But need to keep it balanced -> AVL Tree or Red-Black Tree
+    // time = O(NlgN), space = O(N)
+    
+    if (nums == null || nums.length == 0) return 0;
+    
+    int n = nums.length;
+    
+    TreeNode root = new TreeNode(nums[0]);
+    int ans = 0;
+    for (int i = 1; i < nums.length; i++) {
+        ans += search(root, (long) nums[i] * 2);
+        root = insert(root, (long) nums[i]);
+
+        // preOrder(root);
+        // System.out.println();
+    }
+    
+    return ans;
+        
+}
+
+private int search(TreeNode root, long key) {
+    
+    if (root == null) return 0;
+    
+    if (key < root.val) {       // key < root.val:  go left
+        return root.rightCount + search(root.left, key);
+    } else {                    // key >= root.val: go right
+        return search(root.right, key);
+    }
+}
+
+private TreeNode insert(TreeNode root, long key) {
+    
+    if (root == null) return new TreeNode(key);
+    
+    if (key < root.val) {   // key < root.val:  go left
+        root.left = insert(root.left, key);
+    } else if (key == root.val){
+        root.rightCount++;
+        return root;
+    } else {
+        root.rightCount++;
+        root.right = insert(root.right, key);
+    }
+    
+    root.height = Math.max(getHeight(root.left), getHeight(root.right)) + 1;
+    
+    int balance = getBalance(root);
+    
+    // System.out.println(root.val + " balance " + balance);
+    
+    // case 1 left left 
+    if (balance > 1 && getHeight(root.left.left) > getHeight(root.left.right)) {
+        return rightRotate(root);
+    }
+    
+    // case 2 left right 
+    if (balance > 1 && getHeight(root.left.left) < getHeight(root.left.right)) {
+        root.left = leftRotate(root.left);
+        return  rightRotate(root);
+    }
+    
+    // case 3 right right
+    if (balance < -1 && getHeight(root.right.left) < getHeight(root.right.right)) {
+        return leftRotate(root);
+    }
+    
+    // case 4 right left 
+    if (balance < -1 && getHeight(root.right.left) > getHeight(root.right.right)) {
+        root.right = rightRotate(root.right);
+        return leftRotate(root);
+    }
+    
+    return root;
+}
+
+private TreeNode leftRotate(TreeNode root) {
+    
+    // setp 1: take care of nodes
+    TreeNode newRoot = root.right;
+    TreeNode b = newRoot.left;
+    
+    newRoot.left = root;
+    root.right = b;
+    
+    // step 2: take care of height
+    root.height = Math.max(getHeight(root.left), getHeight(root.right)) + 1;
+    newRoot.height = Math.max(getHeight(newRoot.left), getHeight(newRoot.right)) + 1;
+    
+    // step 3: take care of rightCount
+    root.rightCount -= getRightCount(newRoot);
+
+    return newRoot;
+}
+
+private TreeNode rightRotate(TreeNode root) {
+    
+    // setp 1: take care of nodes
+    TreeNode newRoot = root.left;
+    TreeNode b = newRoot.right;
+    
+    newRoot.right = root;
+    root.left = b;
+    
+    // step 2: take care of height
+    root.height = Math.max(getHeight(root.left), getHeight(root.right)) + 1;
+    newRoot.height = Math.max(getHeight(newRoot.left), getHeight(newRoot.right)) + 1;
+    
+    // step 3: take care of rightCount
+    newRoot.rightCount += getRightCount(root);
+    
+    return newRoot;
+}
+
+
+private int getHeight(TreeNode node) {
+    return node == null ? 0 : node.height;
+}
+
+private int getBalance(TreeNode node) {
+    return node == null ? 0 : getHeight(node.left) - getHeight(node.right);
+}
+
+private int getRightCount(TreeNode node) {
+    return node == null ? 0 : node.rightCount;
+}
+
+private void preOrder(TreeNode root) {
+    
+    if (root == null) {
+        System.out.print("NIL ");
+        return;
+    }
+    
+    System.out.print(root.val + " ");
+    preOrder(root.left);
+    preOrder(root.right);
+}
+
+class TreeNode {
+    
+    long val;
+    int rightCount;
+    int height;
+    TreeNode left;
+    TreeNode right;
+    public TreeNode(long val) {
+        this.val = val;
+        height = 1;
+        rightCount = 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

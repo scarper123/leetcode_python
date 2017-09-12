@@ -1,0 +1,758 @@
+Python, without *26 factor in complexity
+class MagicDictionary(object):
+    def _candidates(self, word):
+        for i in xrange(len(word)):
+            yield word[:i] + '*' + word[i+1:]
+            
+    def buildDict(self, words):
+        self.words = set(words)
+        self.near = collections.Counter(cand for word in words
+                                        for cand in self._candidates(word))
+
+    def search(self, word):
+        return any(self.near[cand] > 1 or 
+                   self.near[cand] == 1 and word not in self.words
+                   for cand in self._candidates(word))
+
+
+----------------------------------------------------------------------------------------------------
+Easy 14 lines Java solution, HashMap
+class MagicDictionary {
+
+    Map<String, List<int[]>> map = new HashMap<>();
+    /** Initialize your data structure here. */
+    public MagicDictionary() {
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        for (String s : dict) {
+            for (int i = 0; i < s.length(); i++) {
+                String key = s.substring(0, i) + s.substring(i + 1);
+                int[] pair = new int[] {i, s.charAt(i)};
+                
+                List<int[]> val = map.getOrDefault(key, new ArrayList<int[]>());
+                val.add(pair);
+                
+                map.put(key, val);
+            }
+        }
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        for (int i = 0; i < word.length(); i++) {
+            String key = word.substring(0, i) + word.substring(i + 1);
+            if (map.containsKey(key)) {
+                for (int[] pair : map.get(key)) {
+                    if (pair[0] == i && pair[1] != word.charAt(i)) return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple O(k) Solution
+class MagicDictionary(object):
+
+    def __init__(self):
+        self.words = None
+
+    def buildDict(self, dict):
+        self.words = set(dict)
+
+    def search(self, word):
+        chars = set(word)
+        for index, char in enumerate(word):
+            for i in range(26):
+                sub = chr(ord('a') + i)
+                if sub == char:
+                    continue
+                new_word = word[:index] + sub + word[index + 1:]
+                if new_word in self.words:
+                    return True
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java Solution
+class MagicDictionary {
+
+    HashSet<String> dictSet;
+    
+    /** Initialize your data structure here. */
+    public MagicDictionary() {
+        dictSet = new HashSet<>();
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        dictSet = new HashSet<String>();
+        for(String word : dict)
+            dictSet.add(word);
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        char[] chars = word.toCharArray();
+        for(int i = 0; i < chars.length; i++){
+            char ch = chars[i];
+            for (char c = 'a'; c <= 'z'; c++){
+                if (c != ch){
+                    chars[i] = c;
+                    if (dictSet.contains(new String(chars)))
+                        return true;
+                }
+            }
+            chars[i] = ch;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Efficient Trie and Java 8 w&#x2F; Explanation
+class MagicDictionary {
+
+        Trie trie;
+        public MagicDictionary() {
+            trie = new Trie(256);
+        }
+
+        public void buildDict(String[] dict) {
+            Arrays.stream(dict).forEach(s -> trie.insert(s));
+        }
+
+        public boolean search(String word) {
+            return trie.relaxedSearch(word);
+        }
+
+        class Trie {
+            private int R;
+            private TrieNode root;
+
+            public Trie(int R) {
+                this.R = R;
+                root = new TrieNode();
+            }
+            
+            public boolean relaxedSearch(String word) {
+                return relaxedSearch(root, word, 0);
+            }
+
+            private boolean relaxedSearch(TrieNode root, String word, int changedTimes) {
+                if (root == null || (!root.isWord && word.isEmpty()) || changedTimes > 1) return false;
+                if (root.isWord && word.isEmpty()) return changedTimes == 1;
+                return Arrays.stream(root.next).anyMatch(nextNode -> relaxedSearch(nextNode, word.substring(1),
+                        root.next[word.charAt(0)] == nextNode ? changedTimes : changedTimes+1));
+            }
+
+            // Inserts a word into the trie.
+            public void insert(String word) {
+                insert(root, word);
+            }
+
+            private void insert(TrieNode root, String word) {
+                if (word.isEmpty()) { root.isWord = true; return; }
+                if (root.next[word.charAt(0)] == null) root.next[word.charAt(0)] = new TrieNode();
+                insert(root.next[word.charAt(0)], word.substring(1));
+            }
+
+            private class TrieNode {
+                private TrieNode[] next = new TrieNode[R];
+                private boolean isWord;
+            }
+
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java HashSet Solution, store all the possibilities while building the dict.
+Set<String> memo;
+/** Initialize your data structure here. */
+public MagicDictionary() {
+    memo = new HashSet<String>();    
+}
+
+/** Build a dictionary through a list of words */
+public void buildDict(String[] dict) {
+    for (String s: dict) {
+        StringBuilder sb = new StringBuilder(s);
+        for (int i = 0; i < s.length(); i++) {
+            char origin = s.charAt(i);
+            for (int j = 0; j < 26; j++) {
+                if ((char)('a' + j) == origin) continue;
+                sb.setCharAt(i, (char)('a' + j));
+                memo.add(sb.toString());
+            }
+            sb.setCharAt(i, origin);
+        }
+    }    
+}
+
+/** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+public boolean search(String word) {
+    return memo.contains(word);
+}
+
+----------------------------------------------------------------------------------------------------
+Efficient Python Trie solution, without traversing all characters (a-z) at each step
+class MagicDictionary(object):
+
+    def __init__(self):
+        self.trie = {}
+
+    def buildDict(self, dict):
+        for word in dict: 
+            node = self.trie 
+            for letter in word: 
+                if letter not in node: 
+                    node[letter] = {}
+                node = node[letter] 
+            node[None] = None 
+
+    def search(self, word):
+        def find(node, i, mistakeAllowed): 
+            if i == len(word):
+                if None in node and not mistakeAllowed: 
+                    return True
+                return False 
+            if word[i] not in node: 
+                return any(find(node[letter], i+1, False) for letter in node if letter) if mistakeAllowed else False 
+            
+            if mistakeAllowed: 
+                return find(node[word[i]], i+1, True) or any(find(node[letter], i+1, False) for letter in node if letter and letter != word[i])
+            return find(node[word[i]], i+1, False)
+            
+        return find(self.trie, 0, True)        
+
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Bug&#93; The question does NOT support Swift!
+<p>Please add the Swift support for the question <a class="plugin-mentions-a" href="https://discuss.leetcode.com/groups/administrators">&#64;administrators</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+Easiest JAVA with Trie, no need to count the number of changes
+class MagicDictionary {
+    class TrieNode {
+        TrieNode[] children = new TrieNode[26];
+        boolean isWord;
+        public TrieNode() {}
+    }
+    TrieNode root;
+    /** Initialize your data structure here. */
+    public MagicDictionary() {
+        root = new TrieNode();
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        for (String s : dict) {
+            TrieNode node = root;
+            for (char c : s.toCharArray()) {
+                if (node.children[c - 'a'] == null) {
+                    node.children[c - 'a'] = new TrieNode();
+                }
+                node = node.children[c - 'a'];
+            }
+            node.isWord = true;
+        }
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        char[] arr = word.toCharArray();
+        for (int i = 0; i < word.length(); i++) {
+            for (char c = 'a'; c <= 'z'; c++) {
+                if (arr[i] == c) {
+                    continue;
+                }
+                char org = arr[i];
+                arr[i] = c;
+                if (helper(new String(arr), root)) {
+                    return true;
+                }
+                arr[i] = org;
+            }
+        }
+        return false;
+    }
+    public boolean helper(String s, TrieNode root) {
+        TrieNode node = root;
+        for (char c : s.toCharArray()) {
+            if (node.children[c - 'a'] == null) {
+                return false;
+            }
+            node = node.children[c - 'a'];
+        }
+        return node.isWord;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++, unordered_set
+class MagicDictionary {
+public:
+    /** Initialize your data structure here. */
+    MagicDictionary() {
+        
+    }
+    
+    /** Build a dictionary through a list of words */
+    void buildDict(vector<string> dict) {
+        for (string &s:dict) words.insert(s);
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    bool search(string word) {
+          for (int i = 0; i < word.size(); i++) {
+            char c = word[i];
+            for (int j = 0; j < 26; j++) {
+                if (c == j+'a') continue;
+                word[i] = j+'a';
+                if (words.count(word)) return true;
+            }
+            word[i] = c;
+        }
+        return false;
+    }
+private:
+    unordered_set<string> words;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Trie Tree Method using JAVA!
+class MagicDictionary {
+
+    /** Initialize your data structure here. */
+    class TrieNode{
+        String str;
+        TrieNode[] children;
+        TrieNode(){
+            children = new TrieNode[26];
+        }
+        
+    }
+    TrieNode root;
+    public MagicDictionary() {
+        root = new TrieNode();
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        for(String ele:dict){
+            buildTree(ele,root);
+        }
+    }
+    
+    public void buildTree(String str,TrieNode root){
+        char[] array = str.toCharArray();
+        TrieNode current = root;
+        for(int i=0;i<array.length;i++){
+            char c = array[i];
+            if(current.children[c-'a']==null){
+                current.children[c-'a'] = new TrieNode();
+            }
+            current = current.children[c-'a'];
+        }
+        current.str = str;
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        char[] array = word.toCharArray();
+        for(int i=0;i<array.length;i++){
+            char original = array[i];
+            for(char c = 'a';c<='z';c++){
+                if(c!=original){
+                    array[i] = c;
+                    if(searchHelper(array,root)){
+                        return true;
+                    }
+                }
+            }
+            
+            array[i] = original;
+        }
+        return false;
+    }
+    
+    public boolean searchHelper(char[] array,TrieNode root){
+        TrieNode current = root;
+        for(int i=0;i<array.length;i++){
+            char c = array[i];
+            if(current.children[c-'a']==null){
+                return false;
+            }
+            current = current.children[c-'a'];
+        }
+        
+        return current.str!=null;
+    }
+}
+
+/**
+ * Your MagicDictionary object will be instantiated and called as such:
+ * MagicDictionary obj = new MagicDictionary();
+ * obj.buildDict(dict);
+ * boolean param_2 = obj.search(word);
+ */
+
+
+
+----------------------------------------------------------------------------------------------------
+Python, easy solution
+
+class MagicDictionary(object):
+
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self.d = dict()
+        
+
+    def buildDict(self, dict):
+        """
+        Build a dictionary through a list of words
+        :type dict: List[str]
+        :rtype: void
+        """
+        for word in dict:
+            self.d[word] = True
+        
+
+    def match(self, s1, s2):
+        ok = False
+        if len(s1) != len(s2):
+            return False
+    
+        for c1, c2 in zip(s1, s2):
+            if c1 != c2:
+                if ok:
+                    return False
+                else:
+                    ok = True
+        return ok
+    
+    def search(self, word):
+        """
+        Returns if there is any word in the trie that equals to the given word after modifying exactly one character
+        :type word: str
+        :rtype: bool
+        """
+        for k in self.d.keys():
+            if self.match(word, k):
+                return True
+        return False
+
+# Your MagicDictionary object will be instantiated and called as such:
+# obj = MagicDictionary()
+# obj.buildDict(dict)
+# param_2 = obj.search(word)
+
+
+
+----------------------------------------------------------------------------------------------------
+java solution, hashset
+class MagicDictionary {
+
+    private Set<String> set;
+    
+    /** Initialize your data structure here. */
+    public MagicDictionary() {
+        
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        set = new HashSet<>(Arrays.asList(dict));
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        for (String s : set) {
+            if (oneDifference(s, word)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean oneDifference(String s, String t) {
+        if (s.length() != t.length()) {
+            return false;
+        }
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) != t.charAt(i)) {
+                count++;
+            }
+        }
+        return (count == 1);
+    }
+}
+
+/**
+ * Your MagicDictionary object will be instantiated and called as such:
+ * MagicDictionary obj = new MagicDictionary();
+ * obj.buildDict(dict);
+ * boolean param_2 = obj.search(word);
+ */
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class MagicDictionary {
+public:
+    /** Initialize your data structure here. */
+    MagicDictionary() {
+        
+    }
+    
+    /** Build a dictionary through a list of words */
+    void buildDict(vector<string> dict) {
+        for (string w : dict) {
+            words.insert(w);
+        }
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    bool search(string word) {
+        for (int i = 0; i < word.size(); i++) {
+            char wi = word[i];
+            for (char ch = 'a'; ch <= 'z'; ch++) {
+                if (ch == wi) continue;
+                word[i] = ch;
+                if (words.count(word)) return true;
+            }
+            word[i] = wi;
+        }
+        return false;
+    }
+private:
+    unordered_set<string> words;
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ easy understanding code
+class MagicDictionary {
+public:
+    /** Initialize your data structure here. */
+    MagicDictionary() {
+        mydict.clear();
+    }
+    
+    /** Build a dictionary through a list of words */
+    void buildDict(vector<string> dict) {
+        mydict = dict;
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    bool search(string word) {
+        int flag;
+        for(int i=0; i<mydict.size(); i++)
+        {
+            string s = mydict[i];
+            if(s.size() != word.size())
+                continue;
+            flag = 0;
+            for(int j=0; j<s.size(); j++)
+            {
+                if(s[j] == word[j])
+                    continue;
+                else if(s[j] != word[j] && flag == 1)
+                {
+                    flag = 2;
+                    break;
+                }
+                else if(s[j] != word[j] && flag == 0)
+                    flag = 1;
+            }
+            if(flag == 1) 
+                return 1;
+        }
+        return 0;
+    }
+private:
+    vector<string> mydict;
+};
+
+/**
+ * Your MagicDictionary object will be instantiated and called as such:
+ * MagicDictionary obj = new MagicDictionary();
+ * obj.buildDict(dict);
+ * bool param_2 = obj.search(word);
+ */
+
+
+----------------------------------------------------------------------------------------------------
+Simple Iterative Java Solution
+class MagicDictionary {
+        private final List<String> words = new ArrayList<>();
+    /** Initialize your data structure here. */
+    public MagicDictionary() {
+    }
+    
+    /** Build a dictionary through a list of words */
+    public void buildDict(String[] dict) {
+        for (String s : dict) {
+            words.add(s);
+        }
+    }
+    
+    /** Returns if there is any word in the trie that equals to the given word after modifying exactly one character */
+    public boolean search(String word) {
+        for (String s : words) {
+            // Only check strings that are the same length
+            if (word.length() != s.length()) {
+                continue;
+            }
+            
+            int numWrong = 0;
+            
+            // Compare each letter of each word and count how many letters are off.
+            for (int i = 0; i < word.length(); i++) {
+                char a = word.charAt(i);
+                char b = s.charAt(i);
+                
+                if (a != b) {
+                    numWrong++;
+                }
+                
+                // optimization
+                if (numWrong > 1) {
+                    break;
+                }
+            }
+
+            // If only one letter for each word is off, this is acceptable.
+            if (numWrong == 1) {
+                return true;
+            } 
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Direct simulation - python
+def __init__(self):
+    """
+    Initialize your data structure here.
+    """
+    self._d = collections.defaultdict(list)
+    
+
+def buildDict(self, word_list):
+    """
+    Build a dictionary through a list of words
+    :type dict: List[str]
+    :rtype: void
+    """
+    self._d = collections.defaultdict(list)
+    for w in word_list:
+        for i, c in enumerate(w):
+            k = w[:i] + w[i+1:]
+            self._d[k].append((c, i))
+    
+
+def search(self, word):
+    """
+    Returns if there is any word in the trie that equals to the given word after modifying exactly one character
+    :type word: str
+    :rtype: bool
+    """
+    for i, c in enumerate(word):
+        k = word[:i] + word[i+1:]
+        l = self._d.get(k, [])
+        
+        for e in l:
+            c_, i_ = e
+            if c_ != c and i_ == i:
+                return True
+        
+    return False
+
+----------------------------------------------------------------------------------------------------
+c++ solution using unordered_map &amp; trie
+class Trie
+{
+public:
+    void insert(const string & str, int pos = 0)
+    {
+        if(pos == str.size())
+            return;
+        
+        if(childs[str[pos]] == nullptr)
+            childs[str[pos]] = new Trie();
+        
+        childs[str[pos]]->insert(str, pos + 1);
+    }
+    
+    bool magicSearch(const string & str, int pos = 0, bool need_change = true)
+    {
+        if(pos == str.size() && need_change == false)
+            return true;
+        
+        for(auto & ele : childs)
+        {
+            if(ele.first == str[pos])
+            {
+                if(ele.second->magicSearch(str, pos + 1, need_change) == true)
+                   return true;
+            }
+            else if(need_change == true)
+            {
+                if(ele.second->magicSearch(str, pos + 1, false) == true)
+                    return true;
+            }
+        }
+                   
+        return false;
+    }
+    
+private:
+    unordered_map<char, Trie *> childs;
+};
+
+
+class MagicDictionary 
+{
+public:
+    /** Initialize your data structure here. */
+    MagicDictionary() 
+    {
+        
+    }
+    
+    /** Build a dictionary through a list of words */
+    void buildDict(vector<string> dict) 
+    {
+        for(const string & str : dict)
+            tries[str.size()].insert(str);
+    }
+    
+    bool search(string word) 
+    {
+        return tries[word.size()].magicSearch(word);
+    }
+
+private:
+    unordered_map<int, Trie> tries;  //<str_len, trie>
+};
+
+
+
+----------------------------------------------------------------------------------------------------

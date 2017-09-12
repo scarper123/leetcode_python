@@ -1,0 +1,649 @@
+3 ways implemented in JAVA (Python): Binary Search, in-order iterative &amp; recursive
+Binary Search (dfs): most preferable
+
+      public int kthSmallest(TreeNode root, int k) {
+            int count = countNodes(root.left);
+            if (k <= count) {
+                return kthSmallest(root.left, k);
+            } else if (k > count + 1) {
+                return kthSmallest(root.right, k-1-count); // 1 is counted as current node
+            }
+            
+            return root.val;
+        }
+        
+        public int countNodes(TreeNode n) {
+            if (n == null) return 0;
+            
+            return 1 + countNodes(n.left) + countNodes(n.right);
+        }
+
+
+DFS in-order recursive:
+
+        // better keep these two variables in a wrapper class
+        private static int number = 0;
+        private static int count = 0;
+
+        public int kthSmallest(TreeNode root, int k) {
+            count = k;
+            helper(root);
+            return number;
+        }
+        
+        public void helper(TreeNode n) {
+            if (n.left != null) helper(n.left);
+            count--;
+            if (count == 0) {
+                number = n.val;
+                return;
+            }
+            if (n.right != null) helper(n.right);
+        }
+
+DFS in-order iterative:
+
+      public int kthSmallest(TreeNode root, int k) {
+            Stack<TreeNode> st = new Stack<>();
+            
+            while (root != null) {
+                st.push(root);
+                root = root.left;
+            }
+                
+            while (k != 0) {
+                TreeNode n = st.pop();
+                k--;
+                if (k == 0) return n.val;
+                TreeNode right = n.right;
+                while (right != null) {
+                    st.push(right);
+                    right = right.left;
+                }
+            }
+            
+            return -1; // never hit if k is valid
+      }
+
+----------------------------------------------------------------------------------------------------
+What if you could modify the BST node&#x27;s structure?
+If we could add a count field in the BST node class, it will take O(n) time when we calculate the count value for the whole tree, but after that, it will take O(logn) time when insert/delete a node or calculate the kth smallest element.
+
+       public class Solution {
+            public int kthSmallest(TreeNode root, int k) {
+                TreeNodeWithCount rootWithCount = buildTreeWithCount(root);
+                return kthSmallest(rootWithCount, k);
+            }
+            
+            private TreeNodeWithCount buildTreeWithCount(TreeNode root) {
+                if (root == null) return null;
+                TreeNodeWithCount rootWithCount = new TreeNodeWithCount(root.val);
+                rootWithCount.left = buildTreeWithCount(root.left);
+                rootWithCount.right = buildTreeWithCount(root.right);
+                if (rootWithCount.left != null) rootWithCount.count += rootWithCount.left.count;
+                if (rootWithCount.right != null) rootWithCount.count += rootWithCount.right.count;
+                return rootWithCount;
+            }
+            
+            private int kthSmallest(TreeNodeWithCount rootWithCount, int k) {
+                if (k <= 0 || k > rootWithCount.count) return -1;
+                if (rootWithCount.left != null) {
+                    if (rootWithCount.left.count >= k) return kthSmallest(rootWithCount.left, k);
+                    if (rootWithCount.left.count == k-1) return rootWithCount.val;
+                    return kthSmallest(rootWithCount.right, k-1-rootWithCount.left.count);
+                } else {
+                    if (k == 1) return rootWithCount.val;
+                    return kthSmallest(rootWithCount.right, k-1);
+                }
+            }
+            
+            class TreeNodeWithCount {
+                int val;
+                int count;
+                TreeNodeWithCount left;
+                TreeNodeWithCount right;
+                TreeNodeWithCount(int x) {val = x; count = 1;};
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+4 Lines in C++.
+Go inorder and decrease `k` at each node. Stop the whole search as soon as `k` is zero, and then the k-th element is immediately returned all the way to the recursion top and to the original caller.
+
+Try the left subtree first. If that made `k` zero, then its answer is the overall answer and we return it right away. Otherwise, decrease `k` for the current node, and if that made `k` zero, then we return the current node's value right away. Otherwise try the right subtree and return whatever comes back from there.
+
+    int kthSmallest(TreeNode* root, int& k) {
+        if (root) {
+            int x = kthSmallest(root->left, k);
+            return !k ? x : !--k ? root->val : kthSmallest(root->right, k);
+        }
+    }
+
+---
+
+You might notice that I changed `k` from `int` to `int&` because I didn't feel like adding a helper just for that and the OJ doesn't mind. Oh well, here is that now:
+
+    int kthSmallest(TreeNode* root, int k) {
+        return find(root, k);
+    }
+    int find(TreeNode* root, int& k) {
+        if (root) {
+            int x = find(root->left, k);
+            return !k ? x : !--k ? root->val : find(root->right, k);
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two Easiest In Order Traverse (Java)
+In order traverse for BST gives the natural order of numbers. No need to use array.
+
+Recursive:
+
+    int count = 0;
+    int result = Integer.MIN_VALUE;
+    
+    public int kthSmallest(TreeNode root, int k) {
+        traverse(root, k);
+        return result;
+    }
+    
+    public void traverse(TreeNode root, int k) {
+        if(root == null) return;
+        traverse(root.left, k);
+        count ++;
+        if(count == k) result = root.val;
+        traverse(root.right, k);       
+    }
+
+Iterative:
+
+     public int kthSmallest(TreeNode root, int k) {
+         Stack<TreeNode> stack = new Stack<TreeNode>();
+         TreeNode p = root;
+         int count = 0;
+         
+         while(!stack.isEmpty() || p != null) {
+             if(p != null) {
+                 stack.push(p);  // Just like recursion
+                 p = p.left;   
+                 
+             } else {
+                TreeNode node = stack.pop();
+                if(++count == k) return node.val; 
+                p = node.right;
+             }
+         }
+         
+         return Integer.MIN_VALUE;
+     }
+
+----------------------------------------------------------------------------------------------------
+Share my C++ iterative ALG.
+    class Solution {
+    public:
+        int kthSmallest(TreeNode* root, int k) {
+            stack<TreeNode *> st;
+            TreeNode *p = root;
+            while(p || !st.empty())
+            {
+                while(p)
+                {
+                    st.push(p);
+                    p = p->left;
+                }
+                p = st.top();
+                if(--k == 0)
+                    return p->val;
+                st.pop();
+                p = p->right;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Pythonic approach with generator
+With generator in python, one very straightforward solution might be:
+
+    class Solution:
+        # @param {TreeNode} root
+        # @param {integer} k
+        # @return {integer}
+        def kthSmallest(self, root, k):
+            for val in self.inorder(root):
+                if k == 1:
+                    return val
+                else:
+                    k -= 1
+            
+        def inorder(self, root):
+            if root is not None:
+                for val in self.inorder(root.left):
+                    yield val
+                yield root.val
+                for val in self.inorder(root.right):
+                    yield val
+
+----------------------------------------------------------------------------------------------------
+Simple and Clean Java solution with explanation
+    public static int ans = 0;
+    public int kthSmallest(TreeNode root, int k) {
+        helper(root, k);
+        return ans;
+    }
+    
+    public int helper(TreeNode root, int k) {
+        if (root == null) {
+            return 0;
+        }
+        int leftCount = helper(root.left, k);
+        int rightCount = helper(root.right, k - leftCount - 1);
+        if (k == leftCount + 1) {
+            ans = root.val;
+        }
+        return leftCount + rightCount + 1;
+    }
+
+We count the number of nodes of left sub tree and right sub tree recursively. Suppose the Kth smallest element is in the right sub tree, then we need to update k as k - leftCount - 1 (leftCount + 1 is the number of nodes of left sub tree plus the root node). Only when k equals leftCount + 1, we find the target.
+
+----------------------------------------------------------------------------------------------------
+Python Easy Iterative and Recursive Solution
+Recursive:
+
+    def kthSmallest(self, root, k):
+        self.k = k
+        self.res = None
+        self.helper(root)
+        return self.res
+    
+    def helper(self, node):
+        if not node:
+            return
+        self.helper(node.left)
+        self.k -= 1
+        if self.k == 0:
+            self.res = node.val
+            return
+        self.helper(node.right)
+
+
+Iterative:
+
+    def kthSmallest(root, k):
+        stack = []
+        while root or stack:
+            while root:
+                stack.append(root)
+                root = root.left
+            root = stack.pop()
+            k -= 1
+            if k == 0:
+                return root.val
+            root = root.right
+
+----------------------------------------------------------------------------------------------------
+Java divide-and-conquer solution considering augmenting tree structure for the follow-up
+The idea behind the follow up question is what extra information is required for divide-and-conquer.  Basically is we can know the number of nodes on the left subtree, we get to know what is the position of the root node in the in-order traversal, which is basically the the kth number.  the left value can be saved in each node of the tree, and when we are finding the kth number, the complexity is O(lgn).
+
+       public class Solution {
+            public int kthSmallest(TreeNode root, int k) {
+                int left = nodeCount(root.left);  // this value can be saved in the root node
+                if(left + 1 == k) {
+                    return root.val;
+                } else if (left + 1 < k) {
+                    return kthSmallest(root.right, k - left - 1);
+                } else {
+                    return kthSmallest(root.left, k);
+                }
+            }
+            
+            private int nodeCount(TreeNode root) {
+                if(root == null) {
+                    return 0;
+                }
+                return 1 + nodeCount(root.left) + nodeCount(root.right);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+C++ solution using in order traversal
+    class Solution {
+    public:
+        void inorder(TreeNode* root, vector<int> &res){
+            if(!root)
+                return;
+            inorder(root->left, res);
+            res.push_back(root->val);
+            inorder(root->right,res);
+            
+        }
+        int kthSmallest(TreeNode* root, int k) {
+            if(!root)
+                return -1;
+            vector<int> arr;
+            inorder(root, arr);
+            return arr[k-1];
+    
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(k) Java solution
+The number of nodes (**n**) in the tree is irrelevant to the complexity.  My code inorder traverse the tree and it stops when it finds the Kth node.  The time complexity for this code is O(k). 
+
+=======Update============
+
+The number of nodes in the tree does change the time complexity. The program actually goes to the left bottom node first and start from there to search for the Kth smallest. Thus the time complexity should be O(log(n) + K). What do you think ?
+
+    public class Solution {
+    public int kthSmallest(TreeNode root, int k) {
+        ArrayList<Integer> buffer = new ArrayList<Integer>();
+        inorderSearch(root, buffer, k);
+        return buffer.get(k-1);
+    }
+    public void inorderSearch(TreeNode node, ArrayList<Integer> buffer, int k){
+        if(buffer.size() >= k)
+            return;
+        if(node.left != null){
+            inorderSearch(node.left, buffer, k);
+        }
+        buffer.add(node.val);
+        if(node.right != null){
+            inorderSearch(node.right, buffer, k);
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(k) space, O(n) time, 10+ short lines, 3 solutions
+The solutions I've seen so far use O(n) space, either for the recursion stack or for the self-managed stack. Here's an iterative inorder traversal version that only uses O(k) space by using a "stack" cut off at k elements. I called it `stac` because of that and had to laugh when I then wrote `stac(k)` :-)
+
+---
+
+**Solution 1, Python with deque(maxlen=k)**
+
+Using a deque, setting its maximum length to k.
+
+    def kthSmallest(self, root, k):
+        stac = collections.deque(maxlen=k)
+        while True:
+            while root:
+                stac.append(root)
+                root = root.left
+            root = stac.pop()
+            if k == 1:
+                return root.val
+            k -= 1
+            root = root.right
+
+---
+
+**Solution 2, C++ with circular vector**
+
+Using a vector of fixed size k and a stack pointer `i` into it which will be used modulo k.
+
+    int kthSmallest(TreeNode* root, int k) {
+        vector<TreeNode*> stac(k);
+        int i = 0, j = k;
+        while (true) {
+            while (root) {
+                stac[i++%k] = root;
+                root = root->left;
+            }
+            root = stac[--i%k];
+            if (! --j)
+                return root->val;
+            root = root->right;
+        }
+    }
+
+---
+
+**Solution 3, C++ with deque**
+
+I really like the previous version, but the fixed size `k` isn't always necessary, so here's a version using a deque:
+
+    int kthSmallest(TreeNode* root, int k) {
+        deque<TreeNode*> stac;
+        while (true) {
+            while (root) {
+                stac.push_front(root);
+                while (stac.size() > k)
+                    stac.pop_back();
+                root = root->left;
+            }
+            root = stac.front();
+            stac.pop_front();
+            if (! --k)
+                return root->val;
+            root = root->right;
+        }
+    }
+
+---
+
+And now I'm waiting for the Morris traversalists to show up...
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution using iteration
+     class Solution:
+            # @param {TreeNode} root
+            # @param {integer} k
+            # @return {integer}
+            def kthSmallest(self, root, k):
+                i=0
+                stack=[]
+                node=root
+                while node or stack:
+                    while node:
+                        stack.append(node)
+                        node=node.left
+                    node=stack.pop()
+                    i+=1
+                    if i==k:
+                        return node.val
+                    node=node.right
+
+For the follow up question, I think we could add a variable to the TreeNode to record the size of the left subtree. When insert or delete a node in the left subtree, we increase or decrease it by 1. So we could know whether the kth smallest element is in the left subtree or in the right subtree by compare the size with k.
+
+----------------------------------------------------------------------------------------------------
+C# code, log(h) space and O(n), concise code
+    public int KthSmallest(TreeNode root, int k) {
+                    // Olog(n) ~ O(h)
+            Stack<TreeNode> s = new Stack<TreeNode>();
+            while (s.Count != 0 || root != null) {
+                if (root != null)
+                {
+                    s.Push(root);
+                    root = root.left;
+                }
+                else {
+                    root = s.Pop();
+                    k--; if (k == 0) break;
+                    root = root.right;
+                }
+            }
+
+            if (k > 0) throw new Exception();
+
+            return root.val;
+
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple 20 ms iterative C++ code
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        int kthSmallest(TreeNode* root, int k) {
+            
+            TreeNode * current = root;
+            stack<TreeNode*> s;
+            while(!s.empty() || current != NULL)
+            {
+                if(current)
+                {
+                    s.push(current);
+                    current = current->left;
+                }
+                else
+                {
+                    current = s.top();
+                    s.pop();
+                    k--;
+                    if(k == 0)
+                        return current->val;
+                    current = current->right;    
+                }
+                
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Iterative in-order traversal using stack (Java solution)
+As a lot of us know, this question can be solved by in-order traversal. Here, I am going to show how you can solve this question easily by performing iterative in-order traversal using stack.
+
+Code below is the iterative inorder traversal solution. It is pretty straightforward though, so I am not going to explain the code.
+
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> list = new ArrayList<>();
+        if(root == null) return list;
+        Stack<TreeNode> stack = new Stack<>();
+        while(root != null || !stack.empty()){
+            while(root != null){
+                stack.push(root);
+                root = root.left;
+            }
+            root = stack.pop();
+            list.add(root.val);
+            root = root.right;
+            
+        }
+        return list;
+    }
+
+Here, we can solve the finding kth smallest element with as little tweak as possible. 
+
+     public int kthSmallest(TreeNode root, int k) {
+         Stack<TreeNode> stack = new Stack<>();
+         while(root != null || !stack.isEmpty()) {
+             while(root != null) {
+                 stack.push(root);    
+                 root = root.left;   
+             } 
+             root = stack.pop();
+             if(--k == 0) break;
+             root = root.right;
+         }
+         return root.val;
+     }
+
+----------------------------------------------------------------------------------------------------
+C++ solution--counting numbers of left tree
+class Solution {
+
+public:
+
+    int kthSmallest(TreeNode* root, int k) {
+        if (!root) return 0;
+        if (k==0) return root->val;
+        
+        int n=count_size(root->left);
+        if (k==n+1) return root->val;
+        
+        if (n>=k){
+            return kthSmallest(root->left, k);
+        }
+        if (n<k){
+            return kthSmallest(root->right, k-n-1);
+        }
+        
+    }
+
+    int count_size(TreeNode* root){
+        if (!root) return 0;
+        return 1+count_size(root->left)+count_size(root->right);
+        
+    }
+  
+};
+
+----------------------------------------------------------------------------------------------------
+Python with generators
+    def iterate_tree(root):
+        # inorder tree traversal generator
+        if root.left:
+            for i in iterate_tree(root.left):
+                yield i
+        yield root
+        if root.right:
+            for i in iterate_tree(root.right):
+                yield i
+    
+    class Solution(object):
+        def kthSmallest(self, root, k):
+            # iterate over tree
+            for p, v in enumerate(iterate_tree(root)):
+                if p+1 == k:
+                    return v.val
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution. Perform in order tree traversal
+    public class Solution {
+    private TreeNode temp;
+    private int counter;
+    public int kthSmallest(TreeNode root, int k) {
+        counter  = 0;
+        dfs(root, k);
+        return temp.val;
+    }
+    public void dfs(TreeNode node, int k){
+        // perform in order tree traversal 
+        if(node == null) return; // base case
+        dfs(node.left, k);
+        if(++counter == k) {
+            temp = node;
+            return;
+        }
+        dfs(node.right, k);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Easy to understand JAVA solution
+    public class Solution {
+        public int kthSmallest(TreeNode root, int k) {
+            int leftNum = countNodes(root.left);
+            
+            if (leftNum + 1 == k)
+                return root.val;
+            else if (leftNum  + 1 > k) {
+                return kthSmallest(root.left, k);
+            }
+            else
+                return kthSmallest(root.right, k - leftNum - 1);
+        }
+        
+        private int countNodes(TreeNode root) {
+            if (root == null)
+                return 0;
+            
+            return 1 + countNodes(root.left) + countNodes(root.right);
+        }
+    }
+
+
+
+The idea is to determine where the target falls (left side, the root, or the right side) at each level. 
+
+----------------------------------------------------------------------------------------------------

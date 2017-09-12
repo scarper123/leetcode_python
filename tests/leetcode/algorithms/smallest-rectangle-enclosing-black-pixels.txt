@@ -1,0 +1,294 @@
+O(1) bit operation C++ solution (8ms)
+    class Solution {
+    public:
+        uint32_t reverseBits(uint32_t n) {
+            n = (n >> 16) | (n << 16);
+            n = ((n & 0xff00ff00) >> 8) | ((n & 0x00ff00ff) << 8);
+            n = ((n & 0xf0f0f0f0) >> 4) | ((n & 0x0f0f0f0f) << 4);
+            n = ((n & 0xcccccccc) >> 2) | ((n & 0x33333333) << 2);
+            n = ((n & 0xaaaaaaaa) >> 1) | ((n & 0x55555555) << 1);
+            return n;
+        }
+    };
+
+for 8 bit binary number *abcdefgh*, the process is as follow:
+
+*abcdefgh -> efghabcd -> ghefcdab -> hgfedcba*
+
+----------------------------------------------------------------------------------------------------
+Java Solution and Optimization
+The Java solution is straightforward, just bitwise operation:
+
+    public int reverseBits(int n) {
+        int result = 0;
+        for (int i = 0; i < 32; i++) {
+            result += n & 1;
+            n >>>= 1;   // CATCH: must do unsigned shift
+            if (i < 31) // CATCH: for last digit, don't shift!
+                result <<= 1;
+        }
+        return result;
+    }
+
+How to optimize if this function is called multiple times? We can divide an int into 4 bytes, and reverse each byte then combine into an int. For each byte, we can use cache to improve performance.
+
+    // cache
+    private final Map<Byte, Integer> cache = new HashMap<Byte, Integer>();
+    public int reverseBits(int n) {
+        byte[] bytes = new byte[4];
+        for (int i = 0; i < 4; i++) // convert int into 4 bytes
+            bytes[i] = (byte)((n >>> 8*i) & 0xFF);
+        int result = 0;
+        for (int i = 0; i < 4; i++) {
+            result += reverseByte(bytes[i]); // reverse per byte
+            if (i < 3)
+                result <<= 8;
+        }
+        return result;
+    }
+    
+    private int reverseByte(byte b) {
+        Integer value = cache.get(b); // first look up from cache
+        if (value != null)
+            return value;
+        value = 0;
+        // reverse by bit
+        for (int i = 0; i < 8; i++) {
+            value += ((b >>> i) & 1);
+            if (i < 7)
+                value <<= 1;
+        }
+        cache.put(b, value);
+        return value;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My 3ms pure C solution
+    uint32_t reverseBits(uint32_t n) {
+        uint32_t m = 0;
+        for (int i = 0; i < 32; i++, n >>= 1) {
+            m <<= 1;
+            m |= n & 1;
+        }
+        return m;
+    }
+
+The process is straightforward, just iterate over all bits.
+
+----------------------------------------------------------------------------------------------------
+Sharing my 2ms Java Solution with Explanation
+
+"
+We first intitialize result to 0. We then iterate from
+0 to 31 (an integer has 32 bits).  In each iteration:  
+  We first shift result to the left by 1 bit.
+  Then, if the last digit of input n is 1, we add 1 to result. To
+  find the last digit of n, we just do: (n & 1)
+    Example, if n=5 (101), n&1 = 101 & 001 = 001 = 1;
+    however, if n = 2 (10), n&1 = 10 & 01 = 0).
+  Finally, we update n by shifting it to the right by 1 (n >>= 1)
+At the end of the iteration, we return result.
+
+Example, if input n = 13 (represented in binary as
+0000_0000_0000_0000_0000_0000_0000_1101, the "_" is for readability),
+calling reverseBits(13) should return:
+1011_0000_0000_0000_0000_0000_0000_0000
+
+Here is how our algorithm would work for input n = 13:
+
+Initially, result = 0 = 0000_0000_0000_0000_0000_0000_0000_0000,
+n = 13 = 0000_0000_0000_0000_0000_0000_0000_1101
+
+Starting for loop:
+  i = 0:
+    result = result << 1 = 0000_0000_0000_0000_0000_0000_0000_0000.
+    n&1 = 0000_0000_0000_0000_0000_0000_0000_1101 &
+          0000_0000_0000_0000_0000_0000_0000_0001 =
+          0000_0000_0000_0000_0000_0000_0000_0001 = 1
+          therefore result = result + 1 =
+          0000_0000_0000_0000_0000_0000_0000_0000 +
+          0000_0000_0000_0000_0000_0000_0000_0001 =
+          0000_0000_0000_0000_0000_0000_0000_0001 = 1
+    We right shift n by 1 (n >>= 1) to get:
+    n = 0000_0000_0000_0000_0000_0000_0000_0110.
+    We then go to the next iteration.
+
+  i = 1:
+    result = result << 1 = 0000_0000_0000_0000_0000_0000_0000_0010;
+    n&1 = 0000_0000_0000_0000_0000_0000_0000_0110 &
+          0000_0000_0000_0000_0000_0000_0000_0001
+        = 0000_0000_0000_0000_0000_0000_0000_0000 = 0;
+    therefore we don't increment result.
+    We right shift n by 1 (n >>= 1) to get:
+    n = 0000_0000_0000_0000_0000_0000_0000_0011.
+    We then go to the next iteration.
+
+  i = 2:
+    result = result << 1 = 0000_0000_0000_0000_0000_0000_0000_0100.
+    n&1 = 0000_0000_0000_0000_0000_0000_0000_0011 &
+          0000_0000_0000_0000_0000_0000_0000_0001 =
+          0000_0000_0000_0000_0000_0000_0000_0001 = 1
+          therefore result = result + 1 =
+          0000_0000_0000_0000_0000_0000_0000_0100 +
+          0000_0000_0000_0000_0000_0000_0000_0001 =
+          result = 0000_0000_0000_0000_0000_0000_0000_0101
+    We right shift n by 1 to get:
+    n = 0000_0000_0000_0000_0000_0000_0000_0001.
+    We then go to the next iteration.
+
+  i = 3:
+    result = result << 1 = 0000_0000_0000_0000_0000_0000_0000_1010. 
+    n&1 = 0000_0000_0000_0000_0000_0000_0000_0001 &
+          0000_0000_0000_0000_0000_0000_0000_0001 =
+          0000_0000_0000_0000_0000_0000_0000_0001 = 1
+          therefore result = result + 1 =
+                           = 0000_0000_0000_0000_0000_0000_0000_1011
+    We right shift n by 1 to get:
+    n = 0000_0000_0000_0000_0000_0000_0000_0000 = 0.
+
+  Now, from here to the end of the iteration, n is 0, so (n&1)
+  will always be 0 and and n >>=1 will not change n. The only change
+  will be for result <<=1, i.e. shifting result to the left by 1 digit.
+  Since there we have i=4 to i = 31 iterations left, this will result
+  in padding 28 0's to the right of result. i.e at the end, we get
+  result = 1011_0000_0000_0000_0000_0000_0000_0000
+
+  This is exactly what we expected to get
+"
+
+    
+    public int reverseBits(int n) {
+        if (n == 0) return 0;
+        
+        int result = 0;
+        for (int i = 0; i < 32; i++) {
+            result <<= 1;
+            if ((n & 1) == 1) result++;
+            n >>= 1;
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+The concise C++ solution(9ms)
+    class Solution {
+    public:
+        uint32_t  reverseBits(uint32_t n) {
+            uint32_t result= 0;
+            for(int i=0; i<32; i++)
+                result = (result<<1) + (n>>i &1);
+            
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Concise Java Solution
+     public int reverseBits(int n) {
+	  int result = 0;
+	  for (int i = 0; i < 32; ++i) {
+	    result = result<<1  | (n & 1);
+	    n >>>= 1;
+	  }
+	return result;  }
+
+----------------------------------------------------------------------------------------------------
+Python AC with 63ms, 3lines
+    class Solution:
+        # @param n, an integer
+        # @return an integer
+        def reverseBits(self, n):
+            oribin='{0:032b}'.format(n)
+            reversebin=oribin[::-1]
+            return int(reversebin,2)
+
+----------------------------------------------------------------------------------------------------
+A short simple Java solution
+public int reverseBits(int n) {
+
+        int res=0;
+        for(int i=0;i<32;i++){
+        	res= ( res << 1 ) | ( n & 1 );         
+        	n = n >> 1;                  
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms C++ code, some ideas about optimization &#91;spoiler&#93;
+The key idea of the optimization is to look up a 4 bit chuck and find out what the reverse is. For example, reverse of 0001 is 1000 (in decimal reverse of 1 is 8). Another example, reverse of 1010 is 0101, meaning reverse of 10 is 5. 
+
+Based on this idea we could create a look up table:
+
+value -> reverse
+
+0  ------>  0
+
+1  ------> 8
+
+... ------> ...
+
+15 ------> 15
+
+This can be further optimized by using bytes lookup table of size 256 but I am too lazy to generate the table : ).  Note, place the table initialization outside the reverseBits() routine is necessary for performance.
+
+
+In theory, using look up table may improve the performance as we are dealing with 4 bits each time. Comparing to the method that iteratively swaps two bits each time, the method below should be faster.
+Given the 600 test cases, the performance difference is not dramatic though.
+
+
+
+During each iteration, shift the output 4 bits to the left, and discard the lowest 4 bits from the input. Make sure the reverse of current lowest 4 bits is saved to the current highest 4 bits in the output. 
+
+
+
+    char tb[16] = {0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15};
+
+    uint32_t reverseBits(uint32_t n) {
+            int curr = 0;
+            uint32_t ret = 0;
+            uint32_t msk = 0xF;
+            for(int i = 0; i< 8; i++) {
+                ret = ret << 4;
+                curr = msk&n;
+                ret |= tb[curr];
+                n = n >> 4;
+            }
+            return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution (9ms) without loop, without calculation
+    class Solution {
+    public:
+        uint32_t reverseBits(uint32_t n) {
+            struct bs
+            {
+                unsigned int _00:1; unsigned int _01:1; unsigned int _02:1; unsigned int _03:1;
+                unsigned int _04:1; unsigned int _05:1; unsigned int _06:1; unsigned int _07:1;
+                unsigned int _08:1; unsigned int _09:1; unsigned int _10:1; unsigned int _11:1;
+                unsigned int _12:1; unsigned int _13:1; unsigned int _14:1; unsigned int _15:1;
+                unsigned int _16:1; unsigned int _17:1; unsigned int _18:1; unsigned int _19:1;
+                unsigned int _20:1; unsigned int _21:1; unsigned int _22:1; unsigned int _23:1;
+                unsigned int _24:1; unsigned int _25:1; unsigned int _26:1; unsigned int _27:1;
+                unsigned int _28:1; unsigned int _29:1; unsigned int _30:1; unsigned int _31:1;
+            } *b = (bs*)&n, 
+            c = 
+            {
+                  b->_31, b->_30, b->_29, b->_28
+                , b->_27, b->_26, b->_25, b->_24
+                , b->_23, b->_22, b->_21, b->_20
+                , b->_19, b->_18, b->_17, b->_16
+                , b->_15, b->_14, b->_13, b->_12
+                , b->_11, b->_10, b->_09, b->_08
+                , b->_07, b->_06, b->_05, b->_04
+                , b->_03, b->_02, b->_01, b->_00
+            };
+    
+            return *(unsigned int *)&c;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java, two methods, using String or bit operation, 6ms and 2ms, easy understand

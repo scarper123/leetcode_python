@@ -1,0 +1,701 @@
+Simple Java solution with clear explanation
+Simply just reverse the list along the way using 4 pointers: dummy, pre, start, then
+
+    public ListNode reverseBetween(ListNode head, int m, int n) {
+        if(head == null) return null;
+        ListNode dummy = new ListNode(0); // create a dummy node to mark the head of this list
+        dummy.next = head;
+        ListNode pre = dummy; // make a pointer pre as a marker for the node before reversing
+        for(int i = 0; i<m-1; i++) pre = pre.next;
+        
+        ListNode start = pre.next; // a pointer to the beginning of a sub-list that will be reversed
+        ListNode then = start.next; // a pointer to a node that will be reversed
+        
+        // 1 - 2 -3 - 4 - 5 ; m=2; n =4 ---> pre = 1, start = 2, then = 3
+        // dummy-> 1 -> 2 -> 3 -> 4 -> 5
+        
+        for(int i=0; i<n-m; i++)
+        {
+            start.next = then.next;
+            then.next = pre.next;
+            pre.next = then;
+            then = start.next;
+        }
+        
+        // first reversing : dummy->1 - 3 - 2 - 4 - 5; pre = 1, start = 2, then = 4
+        // second reversing: dummy->1 - 4 - 3 - 2 - 5; pre = 1, start = 2, then = 5 (finish)
+        
+        return dummy.next;
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my 14 lines C++ solution
+     ListNode *reverseBetween(ListNode *head, int m, int n) {
+        if(m==n)return head;
+		n-=m;
+        ListNode prehead(0);
+        prehead.next=head;
+        ListNode* pre=&prehead;
+        while(--m)pre=pre->next;        
+        ListNode* pstart=pre->next;
+        while(n--)
+        {
+            ListNode *p=pstart->next;
+            pstart->next=p->next;
+            p->next=pre->next;
+            pre->next=p;
+        }
+        return prehead.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+12-lines 4ms C++
+The basic idea is as follows:
+
+(1) Create a `new_head` that points to `head` and use it to locate the immediate node before the `m`-th (notice that it is `1`-indexed) node `pre`;
+ 
+(2) Set `cur` to be the immediate node after `pre` and at each time move the immediate node after `cur` (named `move`) to be the immediate node after `pre`. Repeat it for `n - m` times.
+
+    class Solution {  
+    public:
+        ListNode* reverseBetween(ListNode* head, int m, int n) {
+            ListNode* new_head = new ListNode(0);
+            new_head -> next = head;
+            ListNode* pre = new_head;
+            for (int i = 0; i < m - 1; i++)
+                pre = pre -> next;
+            ListNode* cur = pre -> next;
+            for (int i = 0; i < n - m; i++) {
+                ListNode* move = cur -> next; 
+                cur -> next = move -> next;
+                move -> next = pre -> next;
+                pre -> next = move;
+            }
+            return new_head -> next;
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+Share my Java code
+The basic idea is to build a sub-list when we hit Node m by adding the subsequent nodes to the head of the sub-list one by one until we hit Node n. Then connect the nodes before Node m, the sub-list and the nodes following Node n. 
+
+    public ListNode reverseBetween(ListNode head, int m, int n) {
+    	ListNode dummyhead = new ListNode(0);
+    	dummyhead.next = head;
+    	ListNode sublisthead = new ListNode(0);
+    	ListNode sublisttail = new ListNode(0);
+    	int count = 1;
+    	ListNode pre_cur = dummyhead, cur = head;
+    	while(count <=n){
+			ListNode temp = cur.next;
+    		if (count < m)
+    			pre_cur = cur;
+    		else if (count == m){
+    			sublisttail = cur;
+    			sublisthead.next = cur;
+    		}else if (count > m){
+    			cur.next = sublisthead.next;
+    			sublisthead.next = cur;
+    		}
+    		cur = temp;
+    		++count;
+    	}
+    	pre_cur.next = sublisthead.next;
+    	sublisttail.next = cur;
+    	return dummyhead.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python one pass iterative solution
+The idea is simple and intuitive: find linkedlist [m, n], reverse it, then connect m with n+1, connect n with m-1
+
+    
+    class Solution:
+        # @param head, a ListNode
+        # @param m, an integer
+        # @param n, an integer
+        # @return a ListNode
+        def reverseBetween(self, head, m, n):
+            if m == n:
+                return head
+    
+            dummyNode = ListNode(0)
+            dummyNode.next = head
+            pre = dummyNode
+    
+            for i in range(m - 1):
+                pre = pre.next
+            
+            # reverse the [m, n] nodes
+            reverse = None
+            cur = pre.next
+            for i in range(n - m + 1):
+                next = cur.next
+                cur.next = reverse
+                reverse = cur
+                cur = next
+    
+            pre.next.next = cur
+            pre.next = reverse
+    
+            return dummyNode.next
+
+----------------------------------------------------------------------------------------------------
+240ms Java Solution
+    public class Solution {
+        public ListNode reverseBetween(ListNode head, int m, int n) {
+            ListNode dummy=new ListNode(0);
+            dummy.next=head;
+            ListNode pre=dummy; //pre is the node before orignal M
+            ListNode M=head;    //M is after pre
+            
+            for(int i=1;i<m;i++){ //Move pre and M to orignal place
+                pre=pre.next;
+                M=M.next;
+            }
+            
+            for(int i=0;i<n-m;i++){ 
+                ListNode current=M.next; //Both pre and M are all fixed, only current is assigned every time to M.next. M is pushed back everytime
+                M.next=current.next;     //Move current to the position after pre
+                current.next=pre.next;
+                pre.next=current;
+            }
+            
+            return dummy.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy understanding java solution
+    /**
+     * Definition for singly-linked list.
+     * public class ListNode {
+     *     int val;
+     *     ListNode next;
+     *     ListNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public ListNode reverseBetween(ListNode head, int m, int n) {
+            ListNode dummy = new ListNode(0);
+            dummy.next = head;
+            //first part
+            ListNode cur1 = dummy;
+            ListNode pre1 = null;
+            for(int i=0;i<m;i++){
+                pre1 = cur1;
+                cur1 = cur1.next;
+            }
+            
+            //reverse
+            ListNode cur2 = cur1;
+            ListNode pre2 = pre1;
+            ListNode q2;
+            for(int i=m;i<=n;i++){
+                q2 = cur2.next;
+                cur2.next = pre2;
+                pre2 = cur2;
+                cur2 = q2;
+            }
+            
+            //connect 
+            pre1.next = pre2;
+            cur1.next = cur2;
+            
+            return dummy.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python implementation and detailed explanation
+For List with [1, 2, 3, 4, 5], supposed m ==  2 and n == 4
+
+**Step1:**
+The part I need to reversed is node 2 to node 4, which has `n - m + 1` = 3 nodes.
+Therefore, I would like to maintain a window with `n - m + 1` nodes with the window's head `whead` and window's tail `wtail`, then if `whead` is head,  `wtail` would be the next `n-m` node from head.
+
+-  [123]45 => `whead` is 1 and `wtail` is 3
+
+**Step2:**
+And to get to the right reversed portion we want, we need to shift the window `m-1` times
+
+- 1[234]5 => `whead` is 2 and `wtail` is 4
+
+**Step3:** Isolate the nodes inside the window, reverse the window as [Reverse Linked List](https://leetcode.com/problems/reverse-linked-list/)
+
+**Step4:** combine the outside node with reversed node.
+To do so, I need to record the head outside the window `ohead`, and the tail outside the window `otail` 
+
+- `ohead` is 1, `otail` is 5
+- 1-[432]-5
+
+**Implementation detail:** Since in **step 4**, you need to let `ohead.next = reversed_head`If you create a dummy node, you can save some lines for m == 1 cases, where `ohead` would be `None` and `ohead.next` would fail the program.
+
+
+    class Solution(object):
+        def reverseBetween(self, head, m, n):
+            if m >= n:
+                return head
+            #Step 1#    
+            ohead = dummy = ListNode(0)
+            whead = wtail = head
+            dummy.next = head
+            for i in range(n-m):
+                wtail = wtail.next
+            #Step 2#  
+            for i in range(m-1):
+                ohead, whead, wtail = whead, whead.next, wtail.next
+            #Step 3#  
+            otail, wtail.next = wtail.next, None
+            revhead, revtail = self.reverse(whead)
+            #Step 4#  
+            ohead.next, revtail.next = revhead, otail
+            return dummy.next
+                
+        def reverse(self, head):
+            pre, cur, tail = None, head, head
+            while cur:
+                cur.next, pre, cur = pre, cur, cur.next
+            return pre, tail
+
+----------------------------------------------------------------------------------------------------
+C++ in 14 lines
+    class Solution {
+    public:
+        ListNode* reverseBetween(ListNode* head, int m, int n) {
+            ListNode dummy(0);
+            dummy.next = head;
+            ListNode *slow = &dummy;
+            n -= m;
+            while (--m)
+                slow = slow->next;
+            ListNode *fast = slow->next, *tmp;
+            while (n--) {
+                tmp = fast->next;
+                fast->next = fast->next->next;
+                tmp->next = slow->next;
+                slow->next = tmp;
+            }
+            return dummy.next;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Short Java Solution for Reverse Linked List II
+    public class Solution {
+        public ListNode reverseBetween(ListNode head, int m, int n) {
+            ListNode curr = new ListNode(0);
+            curr.next = head;
+            int k = n - m;
+            int j = m;
+            while(j > 1){
+                curr = curr.next;
+                j--;
+            }
+            ListNode reve = curr.next;
+            while(k > 0){
+                ListNode temp = reve.next;
+                reve.next = reve.next.next;
+                temp.next = curr.next;
+                curr.next = temp;
+                k--;
+            }
+            if(m == 1){
+                head = curr.next;
+            }
+            return head;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+6-10 lines in C++
+Update 4:
+"Code golf" (6 lines)
+-
+
+Not fully golfed, but yeah...
+
+    ListNode* reverseBetween(ListNode *head, int m, int n) {
+        ListNode **a = &head, **b;
+        for (;m--; n--)
+            a = &(*(b=a))->next;
+        for (;n--; swap(*b, *a))
+            swap(*b, (*a)->next);
+        return head;
+    }
+
+---
+
+Update 3:
+Pointer pointers (8 lines)
+-
+
+Removed duplicate code.
+
+    ListNode* reverseBetween(ListNode *head, int m, int n) {
+        ListNode **pivot = &head, **prev;
+        for (int i=0; i<m; i++)
+            pivot = &(*(prev=pivot))->next;
+        for (int i=m; i<n; i++) {
+            swap(*prev, (*pivot)->next);
+            swap(*prev, *pivot);
+        }
+        return head;
+    }
+
+---
+
+Update 2:
+Pointer pointers (9 lines)
+-
+
+Using a second pointer pointer.
+
+    ListNode* reverseBetween(ListNode *head, int m, int n) {
+        ListNode **prev = &head;
+        for (int i=1; i<m; i++)
+            prev = &(*prev)->next;
+        ListNode **pivot = &(*prev)->next;
+        for (int i=m; i<n; i++) {
+            swap(*prev, (*pivot)->next);
+            swap(*prev, *pivot);
+        }
+        return head;
+    }
+
+---
+
+Update 1:
+Pointer pointer (9 lines)
+-
+
+Motivated by quick glance at [lchen77's solution](https://leetcode.com/discuss/74361/less-than-10-lines-c-double-pointer-easy-understanding).
+
+    ListNode* reverseBetween(ListNode *head, int m, int n) {
+        ListNode **prev = &head;
+        for (int i=1; i<m; i++)
+            prev = &(*prev)->next;
+        ListNode *pivot = *prev;
+        for (int i=m; i<n; i++) {
+            swap(*prev, pivot->next->next);
+            swap(*prev, pivot->next);
+        }
+        return head;
+    }
+
+---
+
+Dummy node (10 lines)
+-
+
+My original one.
+
+    ListNode* reverseBetween(ListNode *head, int m, int n) {
+        ListNode dummy(0), *prev = &dummy;
+        dummy.next = head;
+        for (int i=1; i<m; i++)
+            prev = prev->next;
+        ListNode *pivot = prev->next;
+        for (int i=m; i<n; i++) {
+            swap(prev->next, pivot->next->next);
+            swap(prev->next, pivot->next);
+        }
+        return dummy.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python one-pass concise solution with comments.
+        
+    def reverseBetween(self, head, m, n):
+        dummy = pre = ListNode(0)
+        dummy.next = head
+        for _ in xrange(m-1):
+            pre = pre.next
+        cur= pre.next
+        # reverse the defined part 
+        node = None
+        for _ in xrange(n-m+1):
+            nxt = cur.next
+            cur.next = node
+            node = cur
+            cur= nxt
+        # connect three parts
+        pre.next.next = cur
+        pre.next = node
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+My 2 ms C solution - &quot;O(n) time&quot; and &quot;O(1) space&quot; - with comments
+    /**
+     * Definition for singly-linked list.
+     * struct ListNode {
+     *     int val;
+     *     struct ListNode *next;
+     * };
+     */
+    struct ListNode *reverseBetween(struct ListNode *head, int m, int n) {
+        
+    
+        //handle case for empty list
+        if(head == NULL){
+            return NULL;
+        }
+    
+        //handle special case for one node list
+        if(head->next == NULL){
+            return head;
+        }
+        
+        //handle input values of m & n , if m==n - no need to do anything 
+        if(m >= n){
+            return head;
+        }
+        
+
+        struct ListNode * prev  = head;    
+        struct ListNode * curr  = head;
+        struct ListNode * next  = head;
+
+        struct ListNode *mTh   = NULL; //mTh node
+        struct ListNode *nTh   = NULL; //nTh node         
+        struct ListNode *mPrev = NULL; // node just previous to mTh node
+        struct ListNode *nNext = NULL; // node next to the nTh node
+        
+    
+        for(int i = 1 ; curr != NULL ; i++){
+    
+            next = curr->next ;
+    
+            if(i == m){
+               //when we reach the mTh node, save mTh and mPrevious
+                mPrev = prev ; 
+                mTh   = curr ; 
+            }
+    
+            if(i> m && i <= n){    
+                 //revese links if we fall within the m and n range (include n)
+                 curr->next = prev;
+            }
+            
+            if(i == n ){
+               //when we reach the nTh node, save nTh and nNext
+                nNext = next ;
+                nTh   = curr ;  
+            }
+                
+            prev = curr; 
+            curr = next;
+        }
+        
+        if(m == 1 ){
+            //handle special case if head needs to be changed since m==1 
+            mTh->next = nNext;
+            head = nTh;
+        }else{
+            mPrev->next  = nTh ; 
+            mTh->next = nNext; 
+        }
+    
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why nobody does it with recursion, shouldn&#x27;t the code be simpler?
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public ListNode reverseBetween(ListNode head, int m, int n) {
+        if(m==n){
+            return head;
+        }
+        if(m>1){
+            ListNode newHead = head;
+            newHead.next = reverseBetween(head.next, m-1, n-1);
+            return newHead;
+        }else{
+            ListNode next = head.next;
+            ListNode newHead = reverseBetween(next, 1, n-1);
+            ListNode nextnext = next.next;
+            next.next = head;
+            head.next = nextnext;
+            return newHead;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with less pointers and detailed comments
+public ListNode reverseBetween(ListNode head, int m, int n) {
+        if(head == null) return head;
+        ListNode fake_head = new ListNode(0);
+        fake_head.next = head;
+        
+        //move to the start point
+        ListNode pre = fake_head;
+        for(int i = 0; i < m - 1; i ++){
+            pre = pre.next;
+        }
+        
+        //do the reverse
+        ListNode cur = pre.next;
+        ListNode new_head = null;
+        for(int i = 0; i <= n - m; i ++){
+            ListNode next = cur.next;
+            cur.next = new_head;
+            new_head = cur;
+            cur = next;
+        }
+        
+        //reconnect
+        pre.next.next = cur;
+        pre.next = new_head;
+        
+        return fake_head.next;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Less than 10 lines,C++ double pointer,  easy understanding
+    ListNode* reverseBetween(ListNode* head, int m, int n) {
+        ListNode **pre = &head;
+        int steps = m;
+        while (--steps) { pre = &(*pre)->next;}
+        ListNode *cur = *pre;
+        for (int i = m; i < n; i++) {
+            ListNode *next_n = cur->next;
+            cur->next = next_n->next;
+            next_n->next = *pre;
+            *pre = next_n;
+        }
+        return head; 
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean yet efficient solution in C++
+class Solution {
+public:
+    ListNode* reverseBetween(ListNode* head, int m, int n) 
+    {
+        ListNode newHead(0);
+        newHead.next = head;
+        ListNode *pre = &newHead, *cur = head, *next = NULL;
+        int i = 1;
+        while(i < n)
+        {
+            if(i++ < m) { pre = cur; cur = cur->next; }
+            else
+            { 
+                next = cur->next; 
+                cur->next = cur->next->next; 
+                next->next = pre->next; 
+                pre->next = next; 
+            }
+        }
+        return newHead.next;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Getting runtime error
+Hi. I'm getting a runtime error for this with `Last executed input:	{5}, 1, 1`
+
+The code is not great, but i've tested it on my machine and it appears to work. Moreover, because of the very first `if` condition, I have no idea how that test case could fail :S
+
+	public ListNode reverseBetween(ListNode head, int m, int n) {
+		if(head == null || m == n) return head;
+		ListNode head_ = head; // save old head
+		
+		for(int i = 1; i < m-1; i++) head = head.next;
+		
+		ListNode start = head;
+		ListNode revEnd = m == 1 ? head : head.next;
+		ListNode prev = revEnd;
+		head = prev;
+
+		for(int i = m; i <= n; i++){
+			ListNode next = head.next;
+			head.next = prev;
+			prev = head;
+			head = next;
+		}
+
+		// Thread appropriately
+		revEnd.next = head;
+		
+		if(m == 1) head_ = prev; // if we need to replace the head
+		else 	   start.next = prev;
+
+		return head_;
+	}
+
+Anyone see any problems? I'm surprised since it shouldn't get any farther than the first if statement. Thanks.
+
+----------------------------------------------------------------------------------------------------
+Is the expected answer wrong?
+My submission failed for this test case, but unless I misunderstood the question, I think mine is actually the expected output?
+
+Submission Result: Wrong Answer
+
+Input:	{1,2,3,4}, 1, 4
+Output:	{4,2,3,1}
+Expected:	{4,3,2,1}
+
+----------------------------------------------------------------------------------------------------
+4ms one pass C++ solution
+My algorithm stops at the node before mth and nth node. p1 points to mth node. head2 is the beginning of the mth node. We reverse the mth node to nth node and keep track of nodes between m and n by using a counter (cnt). 
+
+    class Solution {
+    public:
+        ListNode *reverseBetween(ListNode *head, int m, int n) {
+            
+            if (m == n) return head;
+            
+            int cnt = 1;
+            ListNode *p1, *p2, *tail;
+            ListNode Dummy(0);
+            Dummy.next = head;
+    
+            // p1 points to mth node
+            for (p1=&Dummy; p1; ) {
+                if (cnt == m)
+                    break;
+                p1 = p1->next;
+                cnt++;
+            }
+            
+            // head2 (points to mth node) is the beginning of the reverse list
+            ListNode *head2 = p1->next;
+            p2 = head2->next;
+            tail = head2;
+            
+            // reverse list from m to n
+            while (p2) {
+                if (cnt == n)
+                    break;
+                ListNode *t = p2->next;
+                p2->next = head2;
+                tail->next = t;
+                head2 = p2;
+                p2 = t;
+                cnt++;
+            }
+    
+            // concatenate two lists
+            p1->next = head2;
+    
+            return Dummy.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

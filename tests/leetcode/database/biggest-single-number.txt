@@ -1,0 +1,110 @@
+A simple solution
+SELECT s1.* FROM stadium AS s1, stadium AS s2, stadium as s3
+    WHERE 
+    ((s1.id + 1 = s2.id
+    AND s1.id + 2 = s3.id)
+    OR 
+    (s1.id - 1 = s2.id
+    AND s1.id + 1 = s3.id)
+    OR
+    (s1.id - 2 = s2.id
+    AND s1.id - 1 = s3.id)
+    )
+    AND s1.people>=100 
+    AND s2.people>=100
+    AND s3.people>=100
+
+    GROUP BY s1.id
+
+
+----------------------------------------------------------------------------------------------------
+What&#x27;s wrong with this answer?
+SELECT DISTINCT s1.id, s1.date, s1.people
+FROM stadium s1, stadium s2, stadium s3
+WHERE s1.people >= 100
+AND s2.people >= 100
+AND s3.people >= 100
+AND ((DATEDIFF(s2.date, s1.date) = 1 AND DATEDIFF(s3.date, s2.date) = 1)
+OR (DATEDIFF(s2.date, s1.date) = -1 AND DATEDIFF(s3.date, s1.date) = 1)
+OR (DATEDIFF(s2.date, s1.date) = -1 AND DATEDIFF(s3.date, s2.date) = -1)
+)
+ORDER BY s1.date;
+
+
+----------------------------------------------------------------------------------------------------
+solution using join
+SELECT t.* FROM stadium t
+    LEFT JOIN stadium p1 ON t.id - 1 = p1.id
+    LEFT JOIN stadium p2 ON t.id - 2 = p2.id
+    LEFT JOIN stadium n1 ON t.id + 1 = n1.id
+    LEFT JOIN stadium n2 ON t.id + 2 = n2.id
+WHERE (t.people >= 100 AND p1.people >= 100 AND p2.people >= 100)
+     OR (t.people >= 100 AND n1.people >= 100 AND n2.people >= 100)
+     OR (t.people >= 100 AND n1.people >= 100 AND p1.people >= 100)
+ORDER BY id;
+
+
+----------------------------------------------------------------------------------------------------
+I use variable to do it
+SELECT 
+  * 
+FROM
+  stadium 
+WHERE INSTR(
+    (SELECT CONCAT(',',GROUP_CONCAT(tmpaa.ids),',') AS ids FROM (SELECT 
+      GROUP_CONCAT(id) AS ids
+    FROM
+      (SELECT 
+        id,
+        CASE
+          WHEN (
+            (@prevone := people) < 100 
+            OR (@prevone >= 100 
+              AND @prevtwo < 100)
+          ) 
+          THEN @group := @group + 1 
+          ELSE @group := @group 
+        END AS groupno,
+        (@prevtwo := people) AS bb 
+      FROM
+        stadium,
+        (SELECT 
+          @group := 0,
+          @prevone := - 1,
+          @prevtwo := - 1) init) AS tmp 
+    GROUP BY tmp.groupno 
+    HAVING COUNT(1) >= 3 ) AS tmpaa),
+    CONCAT(',', id, ',')
+  ) > 0
+
+
+----------------------------------------------------------------------------------------------------
+Is there a better solution?
+<p>&#39;&#39;&#39;<br/>
+SELECT distinct <a href="http://s1.id" rel="nofollow">s1.id</a>, s1.date, s1.people from stadium s1, stadium s2, stadium s3<br/>
+where s1.people &gt;= 100 and s2.people &gt;= 100 and s3.people &gt;= 100<br/>
+and ((<a href="http://s2.id" rel="nofollow">s2.id</a> = <a href="http://s1.id" rel="nofollow">s1.id</a> + 1 and <a href="http://s3.id" rel="nofollow">s3.id</a> = <a href="http://s2.id" rel="nofollow">s2.id</a> +1) or (<a href="http://s2.id" rel="nofollow">s2.id</a> =s1.id-1 and <a href="http://s3.id" rel="nofollow">s3.id</a> = <a href="http://s2.id" rel="nofollow">s2.id</a> -1) or (<a href="http://s1.id" rel="nofollow">s1.id</a> = <a href="http://s2.id" rel="nofollow">s2.id</a> + 1 and <a href="http://s3.id" rel="nofollow">s3.id</a> = <a href="http://s1.id" rel="nofollow">s1.id</a> +1))<br/>
+order by <a href="http://s1.id" rel="nofollow">s1.id</a>&#39;&#39;&#39;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward solution
+<p>Straightforward solution<br/>
+&#39;&#39;&#39;<br/>
+select <a href="http://s1.id" rel="nofollow">s1.id</a>, s1.date, s1.people from stadium s1<br/>
+left outer join stadium s2<br/>
+on s1.id=s2.id-1<br/>
+left outer join stadium s3<br/>
+on s1.id=s3.id-2</p>
+<p>left outer join stadium s4<br/>
+on s1.id=s4.id+1<br/>
+left outer join stadium s5<br/>
+on s1.id=s5.id+2</p>
+<p>where (s1.people&gt;=100 and s2.people&gt;=100 and s3.people&gt;=100)<br/>
+or (s1.people&gt;=100 and s4.people&gt;=100 and s5.people&gt;=100)<br/>
+or (s1.people&gt;=100 and s2.people&gt;=100 and s4.people&gt;=100)<br/>
+&#39;&#39;&#39;</p>
+
+
+----------------------------------------------------------------------------------------------------
+I&#x27;m running successfully in my machine, but failed when sumbit sulotion.

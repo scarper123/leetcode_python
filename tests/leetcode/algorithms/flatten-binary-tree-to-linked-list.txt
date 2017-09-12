@@ -1,0 +1,583 @@
+Accepted Java O(n) Solution
+Hi, this is my accepted JAVA solution. It only go through the list once. It's shorter and easier to understand. Hope this can help someone. Please tell me if you know how to make this better :)
+
+
+    public int[] twoSum(int[] numbers, int target) {
+        int[] result = new int[2];
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int i = 0; i < numbers.length; i++) {
+            if (map.containsKey(target - numbers[i])) {
+                result[1] = i + 1;
+                result[0] = map.get(target - numbers[i]);
+                return result;
+            }
+            map.put(numbers[i], i + 1);
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ O(n) Solution
+    vector<int> twoSum(vector<int> &numbers, int target)
+    {
+        //Key is the number and value is its index in the vector.
+    	unordered_map<int, int> hash;
+    	vector<int> result;
+    	for (int i = 0; i < numbers.size(); i++) {
+    		int numberToFind = target - numbers[i];
+
+                //if numberToFind is found in map, return them
+    		if (hash.find(numberToFind) != hash.end()) {
+                        //+1 because indices are NOT zero based
+    			result.push_back(hash[numberToFind] + 1);
+    			result.push_back(i + 1);			
+    			return result;
+    		}
+
+                //number was not found. Put it in the map.
+    		hash[numbers[i]] = i;
+    	}
+    	return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Here is a Python solution in O(n) time
+    class Solution(object):
+        def twoSum(self, nums, target):
+            """
+            :type nums: List[int]
+            :type target: int
+            :rtype: List[int]
+            """
+            if len(nums) <= 1:
+                return False
+            buff_dict = {}
+            for i in range(len(nums)):
+                if nums[i] in buff_dict:
+                    return [buff_dict[nums[i]], i+1]
+                else:
+                    buff_dict[target - nums[i]] = i+1
+
+----------------------------------------------------------------------------------------------------
+My (short) Java solution &#91;O(n) + HashMap!&#93;
+Hello! At first glance, this can easily be solved through a quadratic algorithm BUT it can actually be done in linear time. The idea here is to use a map to keep track of the needed RIGHT operand in order for the sum to meet its target. So, we iterate through the array, and store the index of the LEFT operand as the value in the map whereas the NEEDED RIGHT operand is used as the key. When we do encounter the right operand somewhere in the array, the answer is considered to be found! We just return the indices as instructed. :]
+
+Feel free to let me know should you have any queries for me OR if this can be improved upon!
+
+    public int[] twoSum(int[] nums, int target) {
+            HashMap<Integer, Integer> tracker = new HashMap<Integer, Integer>();
+            int len = nums.length;
+            for(int i = 0; i < len; i++){
+                if(tracker.containsKey(nums[i])){
+                    int left = tracker.get(nums[i]);
+                    return new int[]{left+1, i+1};
+                }else{
+                    tracker.put(target - nums[i], i);
+                }
+            }
+            return new int[2];
+        }
+
+----------------------------------------------------------------------------------------------------
+Very short and simple Java code for Two Sum
+    public class Solution {
+        public int[] twoSum(int[] numbers, int target) {
+            
+            HashMap<Integer,Integer> hash = new HashMap<Integer,Integer>();
+            for(int i = 0; i < numbers.length; i++){
+
+                Integer diff = (Integer)(target - numbers[i]);
+                if(hash.containsKey(diff)){
+                    int toReturn[] = {hash.get(diff)+1, i+1};
+                    return toReturn;
+                }
+
+                hash.put(numbers[i], i);
+
+            }
+            
+            return null;
+            
+        }
+    }
+
+So the simplest solution using a HashMap is to simply throw all the data in there to start with, then iterate through all of the numbers to see if (target-num) is in there, and if it is, return {lower index, higher index}.
+
+However, we can cut down on some runtime and code length by doing it in a single for loop.
+
+We know that the first number is strictly less than the second number (implying not equal), so if we are returning {value found in HashMap, current loop iteration} then we can be certain that we will never have to insert a value in the HashMap before we check if its difference is. Because of this fact, we can do the inserting and checking in the same loop with no issues. This saves a bit on runtime and memory because it means that you are not guaranteed to have to save all of the data in the HashTable at the start.
+
+----------------------------------------------------------------------------------------------------
+Accepted C solution of HashMap in 4ms
+    typedef struct HashNode {
+        int key;
+        int val;
+    } HashNode;
+    
+    typedef struct HashMap {
+        int size;
+        HashNode** storage;
+    } HashMap;
+    
+    HashMap* hash_create(int size);
+    void hash_destroy(HashMap* hashMap);
+    void hash_set(HashMap* hashMap, int key, int value);
+    HashNode* hash_get(HashMap* hashMap, int key);
+    
+    HashMap* hash_create(int size){
+        HashMap* hashMap = malloc(sizeof(HashMap));
+        hashMap->size = size;
+        hashMap->storage = calloc(size, sizeof(HashNode*));
+        return hashMap;
+    }
+    
+    void hash_destroy(HashMap* hashMap) {
+        for(int i; i < hashMap->size; i++) {
+            HashNode *node;
+            if((node = hashMap->storage[i])) {
+                free(node);
+            }
+        }
+        free(hashMap->storage);
+        free(hashMap);
+    }
+    
+    void hash_set(HashMap *hashMap, int key, int value) {
+        int hash = abs(key) % hashMap->size;
+        HashNode* node;
+        while ((node = hashMap->storage[hash])) {
+            if (hash < hashMap->size - 1) {
+                hash++;
+            } else {
+                hash = 0;
+            }
+        }
+        node = malloc(sizeof(HashNode));
+        node->key = key;
+        node->val = value;
+        hashMap->storage[hash] = node;
+    }
+    
+    HashNode* hash_get(HashMap *hashMap, int key) {
+        int hash = abs(key) % hashMap->size;
+        HashNode* node;
+        while ((node = hashMap->storage[hash])) {
+            if (node->key == key) {
+                return node;
+            }
+    
+            if (hash < hashMap->size - 1) {
+                hash++;
+            } else {
+                hash = 0;
+            }
+        }
+    
+        return NULL;
+    }
+    
+    int* twoSum(int* nums, int numsSize, int target) {
+        HashMap* hashMap;
+        HashNode* node;
+        int rest, i;
+        
+        // make the hashMap 2x size of the numsSize
+        hashMap = hash_create(numsSize * 2);
+        for(i = 0; i < numsSize; i++) {
+            rest = target - nums[i];
+            node = hash_get(hashMap, rest);
+            if (node) {
+                int* result = malloc(sizeof(int)*2);
+                result[0] = node->val + 1;
+                result[1] = i + 1;
+                hash_destroy(hashMap);
+                return result;
+            } else {
+                hash_set(hashMap, nums[i], i);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solution using hash
+    class Solution:
+        # @return a tuple, (index1, index2)
+        # 8:42
+        def twoSum(self, num, target):
+            map = {}
+            for i in range(len(num)):
+                if num[i] not in map:
+                    map[target - num[i]] = i + 1
+                else:
+                    return map[num[i]], i + 1
+    
+            return -1, -1
+            
+
+----------------------------------------------------------------------------------------------------
+TwoSum Java code using HashMap
+    public int[] twoSum(int[] nums, int target) {
+         HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+    		int[] defaultResult = {0, 0};
+    		for (int i = 0; i < nums.length; i++) {
+    			if (map.get(target-nums[i]) != null ) {
+    				int[] result = {map.get(target-nums[i]) + 1, i + 1 };
+    				return result;
+    			}
+    			map.put(nums[i], i);
+    		}
+    		return defaultResult;
+        }
+
+----------------------------------------------------------------------------------------------------
+Java, O(nlogn), beats  98.85%
+The general idea is:
+
+step1 : copy an array, and sort it using quick sort, O(nlogn) 
+
+step2 : using start and end points to find a, b which satifys `a+b==target`, O(n)
+
+step3 : find the index of a, b from origin array, O(n)
+
+`note: in step3, you should judge whethour a==b, if true, you must find the second index of b.`
+
+if you have any higher efficiency solution, contact me, please.
+[https://github.com/yangliguang][1]
+
+As follows:
+
+    //O(nlogn)
+    	    public int[] twoSum_n2(int[] nums, int target) {
+    	    	if(nums == null)
+    	    		return null;
+    	    	int[] nums2 = Arrays.copyOf(nums, nums.length);
+    	    	Arrays.sort(nums2);
+    	    	int a = 0, b = 0;
+    	    	int start = 0, end = nums2.length-1;
+    	    	//find two nums
+    	    	while(start<end){
+    	    		int sum = nums2[start] + nums2[end];
+    	    		if(sum < target)
+    	    			start++;
+    	    		else if(sum > target)
+    	    			end--;
+    	    		else{
+    	    			a = nums2[start]; b = nums2[end];
+    	    			break;
+    	    		}
+    	    	}
+    	    	//find the index of two numbers
+    	    	int[] res = new int[2];
+    	    	for(int i = 0; i < nums.length; i++){
+    	    		if(nums[i] == a){
+    	    			res[0] = i;
+    	    			break;
+    	    		}
+    	    	}
+    	    	if(a != b){
+    	    		for(int i = 0; i < nums.length; i++){
+    		    		if(nums[i] == b){
+    		    			res[1] = i;
+    		    			break;
+    		    		}
+    		    	}
+    	    	} else{
+    	    		for(int i = 0; i < nums.length; i++){
+    		    		if(nums[i] == b && i != res[0]){
+    		    			res[1] = i;
+    		    			break;
+    		    		}
+    		    	}
+    	    	}
+    	    	
+    	    	return res;
+    	    }
+
+
+  [1]: https://github.com/yangliguang
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ in 11 lines
+    class Solution {
+    public:
+        vector<int> twoSum(vector<int>& nums, int target) {
+            unordered_map<int, int> map;
+            int n = (int)nums.size();
+            for (int i = 0; i < n; i++) {
+                auto p = map.find(target-nums[i]);
+                if (p!=map.end()) {
+                    return {p->second+1, i+1};
+                }
+                map[nums[i]]=i;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+11 lines and 1 for in Java
+    public class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for(int i = 0; i < nums.length; i++){
+            if(map.containsKey(target - nums[i])) 
+                return new int[] {map.get(target - nums[i]) + 1, i + 1};
+            else map.put(nums[i], i);
+            }
+        return null;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms accepted solution with C
+    /**
+     * Note: The returned array must be malloced, assume caller calls free().
+     */
+    int* twoSum(int* nums, int numsSize, int target) {
+        int *returnSize = malloc(sizeof(int)*2);
+        returnSize[0]=returnSize[1]=0;
+        int maxPosiNum=0;
+        int minNegaNum=0;
+        
+        for(int i=0;i<numsSize;i++){
+            if(nums[i]>maxPosiNum)
+                maxPosiNum=nums[i];
+            else if(nums[i]<minNegaNum)
+                minNegaNum=nums[i];
+        }
+        
+        int PosiArr[maxPosiNum+1];
+        int PosiArr1[maxPosiNum+1]; //if the number appears more than once, then put it in this array
+        int NegaArr[-minNegaNum+1];
+        int NegaArr1[-minNegaNum+1];
+        memset(PosiArr,0,sizeof(int)*(maxPosiNum+1));
+        memset(PosiArr1,0,sizeof(int)*(maxPosiNum+1));
+        memset(NegaArr,0,sizeof(int)*(-minNegaNum+1));
+        memset(NegaArr1,0,sizeof(int)*(-minNegaNum+1));
+        for(int j=0;j<numsSize;j++){
+            if (nums[j]>=0) {
+                (PosiArr[nums[j]]>0)?(PosiArr1[nums[j]]=j+1):(PosiArr[nums[j]]=j+1);
+            }
+            else{
+                (NegaArr[-nums[j]]>0)?(NegaArr1[-nums[j]]=j+1):(NegaArr[-nums[j]]=j+1);
+            }
+        }
+        int lookforNum=0;
+        for(int k=0;k<numsSize;k++){
+            lookforNum=target-nums[k];
+            if(lookforNum>=minNegaNum&&lookforNum<=maxPosiNum){
+                if(lookforNum>=0&&PosiArr[lookforNum]>0&&lookforNum!=nums[k]){
+                    returnSize[0]=(k+1<PosiArr[lookforNum])?k+1:PosiArr[lookforNum];
+                    returnSize[1]=(k+1>PosiArr[lookforNum])?k+1:PosiArr[lookforNum];
+                    break;
+                }
+                else if(lookforNum<0&&NegaArr[-lookforNum]>0&&lookforNum!=nums[k]){
+                    returnSize[0]=(k+1<NegaArr[-lookforNum])?k+1:NegaArr[-lookforNum];
+                    returnSize[1]=(k+1>NegaArr[-lookforNum])?k+1:NegaArr[-lookforNum];
+                    break;
+                }
+                else if(lookforNum>=0&&PosiArr1[lookforNum]>0&&lookforNum==nums[k]){
+                    returnSize[0]=PosiArr[lookforNum];
+                    returnSize[1]=PosiArr1[lookforNum];
+                    break;
+                }
+                else if(lookforNum<0&&NegaArr1[-lookforNum]>0&&lookforNum==nums[k]){
+                    returnSize[0]=NegaArr[-lookforNum];
+                    returnSize[1]=NegaArr1[-lookforNum];
+                    break;
+                }
+            }
+        }
+        return returnSize;
+    }
+
+----------------------------------------------------------------------------------------------------
+My O(NlogN) and O(N) time complexity solution, with O(N) space
+O(NlogN): Copy the numbers and sort first, and then use two pointers to get the two numbers we want, then check the indices of these two numbers. One from head and the other from tail to avoid duplication if two numbers are the same.
+
+    vector<int> twoSumNlogN(vector<int> &numbers, int target) {
+    	vector<int> tmp = numbers;
+    	sort(tmp.begin(), tmp.end());
+    	int l = 0, r = (int) tmp.size() - 1;
+    	while (l < r) {
+    		int mid = tmp[l] + tmp[r];
+    		if (mid == target) break;
+    		if (mid < target) ++l; else --r;
+    	}
+    	
+    	int index1 = 0, index2 = 0;
+    	for (int i = 0; i < tmp.size(); ++i) {
+    		if (numbers[i] == tmp[l]) { index1 = i; break; }
+    	}
+    	for (int i = (int)tmp.size() - 1; i >= 0; --i) {
+    		if (numbers[i] == tmp[r]) { index2 = i; break; }
+    	}
+    	
+    	if (index1 > index2) { index1 ^= index2; index2 ^= index1; index1 ^= index2;  }
+    	vector<int> result {index1 + 1, index2 + 1};
+    	return result;
+    }
+
+O(N): Use map to record the index of each element, and check if the wanted complementary element exists in the map. Special process the two numbers equal situation.
+
+    vector<int> twoSum(vector<int> &numbers, int target) {
+    	int index1 = 0, index2 = 0;
+    	// Special Case: target = a + a, cannot be solved by map
+    	for (int i = 0; i < numbers.size(); ++i) {
+    		if (numbers[i] == target / 2) {
+    			if (index1 == 0) index1 = i + 1; else index2 = i + 1;
+    		}
+    	}
+    	
+    	if (index1 > 0 && index2 > 0) {
+    		vector<int> result { index1, index2 };
+    		return result;
+    	}
+    	
+    	unordered_map<int, int> m;
+    	for (int i = 0; i < numbers.size(); ++i) m[numbers[i]] = i + 1;
+    	for (int i = 0; i < numbers.size(); ++i) {
+    		if (m[target - numbers[i]] && m[target - numbers[i]] != i + 1) {
+    			index1 = m[numbers[i]];
+    			index2 = m[target - numbers[i]];
+    			break;
+    		}
+    	}
+    	
+    	if (index1 > index2) { index1 ^= index2; index2 ^= index1; index1 ^= index2;  }
+    	
+    	vector<int> result { index1, index2 };
+    	return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python seven lines
+class Solution(object):
+
+    def twoSum(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: List[int]
+        """
+        d={}
+        for i, n in enumerate(nums):
+            if d.has_key(n):
+                return (d[n]+1, i+1)
+            else:
+                d[target-n]=i
+        return (0,0)
+
+----------------------------------------------------------------------------------------------------
+Java solution using hash table
+import java.util.Hashtable;
+
+public class Solution {
+    
+    public int[] twoSum(int[] numbers, int target) {
+        int[] result = new int[2];
+        Hashtable<Integer, Integer> table = new Hashtable<Integer, Integer>();
+        
+        for(int i = 0; i < numbers.length; i++){
+            if(table.containsKey(numbers[i])){
+                result[0] = table.get(numbers[i]) + 1;
+                result[1] = i + 1;
+            }
+            table.put(target - numbers[i], i);
+        }
+        
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My 6ms java solution
+        public int[] twoSum(int[] nums, int target){
+
+             int n = nums.length;
+             int[] result = new int[2];
+  
+             HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+             for(int i=0;i<n;i++){
+                  if(map.containsKey(nums[i])){
+                      result[0] = map.get(nums[i]);
+                      result[1] = i;
+                      break;
+                  }
+                  else{
+                     map.put(target - nums[i], i);
+                  }
+            }
+            
+          return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+How is difficulty evaluated and what does acceptance mean?
+I want to know how the difficulty of a problem is evaluated: it is evaluated by human experts of leetcode.com, or by algorithm-based rules?
+
+And, what does the acceptance rate mean: it is the ratio of passed submissions to all submissions, or the number of accounts for passed submissions to the number of accounts for all submissions? In short, if I use leetcode.com as a debugging tool, will the failed submissions for debugging affect the final acceptance rate, or not?
+
+Thanks!
+
+----------------------------------------------------------------------------------------------------
+Clean 16ms C++ Solution
+The keys are the elements in **nums** and the values are their indices (1-based). Since we are guaranteed with one and only one solution, don't worry about overriding indices.
+
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> hash;
+        vector<int> res(2, 0);
+        for (int i = 0; i < nums.size(); i++) {
+            if (hash.find(target - nums[i]) != hash.end()) {
+                res[0] = hash[target - nums[i]], res[1] = i + 1;
+                return res;
+            }
+            hash[nums[i]] = i + 1;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+5ms java solution
+public class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        
+        HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+        int[] eresult = {0,0};
+        
+        for(int i = 0; i < nums.length; i++) {
+            if(map.get(nums[i]) != null) {
+                int[] result = {map.get(nums[i])+1,i+1};
+                return result;
+            }
+            map.put(target-nums[i], i);
+        }
+        return eresult;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(n) space solution in Java
+Use a map to cahce each element seen so far. While scanning the array left to right , for each element nums[i] check if there is a number K in cache such that A[i] + k = target. That means we need to find in cache for k = target-A[i]. 
+
+
+    public class Solution {
+        public int[] twoSum(int[] nums, int target) {
+            int[] res = new int[2];
+            res[0] = -1;
+            res[1] = -1;
+    
+            final HashMap<Integer, Integer> h = new HashMap<Integer, Integer>();
+    
+            for (int i = 0; i < nums.length; i++) {
+                if (h.containsKey(target - nums[i])) {
+                    int index = h.get(target-nums[i])+1;
+                    res[0] = Math.min(i+1, index);
+                    res[1] = Math.max(i+1, index);
+                }
+                h.put(nums[i], i);
+            }
+    
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

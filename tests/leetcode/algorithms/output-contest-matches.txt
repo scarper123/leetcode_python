@@ -1,0 +1,624 @@
+Verbose Java solution, postOrder traverse, HashMap (18ms)
+public class Solution {
+    Map<Integer, Integer> sumToCount;
+    int maxCount;
+    
+    public int[] findFrequentTreeSum(TreeNode root) {
+        maxCount = 0;
+        sumToCount = new HashMap<Integer, Integer>();
+        
+        postOrder(root);
+        
+        List<Integer> res = new ArrayList<>();
+        for (int key : sumToCount.keySet()) {
+            if (sumToCount.get(key) == maxCount) {
+                res.add(key);
+            }
+        }
+        
+        int[] result = new int[res.size()];
+        for (int i = 0; i < res.size(); i++) {
+            result[i] = res.get(i);
+        }
+        return result;
+    }
+    
+    private int postOrder(TreeNode root) {
+        if (root == null) return 0;
+        
+        int left = postOrder(root.left);
+        int right = postOrder(root.right);
+        
+        int sum = left + right + root.val;
+        int count = sumToCount.getOrDefault(sum, 0) + 1;
+        sumToCount.put(sum, count);
+        
+        maxCount = Math.max(maxCount, count);
+        
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python easy understand solution
+  def findFrequentTreeSum(self, root):
+        if root == None: return []
+
+        def getSum(node):
+            if node == None: return 0
+            s = node.val + getSum(node.left) + getSum(node.right)
+            c[s] += 1
+            return s
+
+        c = collections.Counter()
+        getSum(root)
+        frequent = max(c.values())
+        return [s for s in c.keys() if c[s] == frequent]
+
+
+----------------------------------------------------------------------------------------------------
+Short Clean C++ O(n)  Solution
+class Solution {
+public:
+    vector<int> findFrequentTreeSum(TreeNode* root) {
+        unordered_map<int,int> counts;
+        int maxCount = 0;
+        countSubtreeSums(root, counts, maxCount);
+        
+        
+        vector<int> maxSums;
+        for(const auto& x :  counts){
+            if(x.second == maxCount) maxSums.push_back(x.first);
+        }
+        return maxSums;
+    }
+    
+    int countSubtreeSums(TreeNode *r, unordered_map<int,int> &counts, int& maxCount){
+        if(r == nullptr) return 0;
+        
+        int sum = r->val;
+        sum += countSubtreeSums(r->left, counts, maxCount);
+        sum += countSubtreeSums(r->right, counts, maxCount);
+        ++counts[sum];
+        maxCount = max(maxCount, counts[sum]);
+        return sum;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Short Easy Java
+public class Solution {
+    int max = 0;
+    public int[] findFrequentTreeSum(TreeNode root) {
+        if(root==null) return new int[0];
+        Map<Integer, Integer> map = new HashMap<>();
+        helper(root, map);
+        List<Integer> res = new LinkedList<>();
+        for(Map.Entry<Integer, Integer> me: map.entrySet()){
+            if(me.getValue()==max) res.add(me.getKey());
+        }
+        return res.stream().mapToInt(i->i).toArray();
+    }
+    
+    private int helper(TreeNode n, Map<Integer, Integer> map){
+        int left = (n.left==null) ? 0 : helper(n.left, map);
+        int right = (n.right==null) ? 0 : helper(n.right, map);
+        int sum = left + right + n.val;
+        map.put(sum, map.getOrDefault(sum,0)+1);
+        max = Math.max(max, map.get(sum));
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java divide and conquer
+public class Solution {
+    int maxFreq = 0;
+    int count = 0;
+    public int[] findFrequentTreeSum(TreeNode root) {
+        Map<Integer, Integer> map = new HashMap<>();
+        traverse(root, map);
+        int[] res = new int[count];
+        int i = 0;
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            if (entry.getValue() == maxFreq) {
+                res[i++] = entry.getKey();
+            }
+        }
+        return res;
+    }
+    
+    private int traverse(TreeNode root, Map<Integer, Integer> map) {
+        if (root == null) {
+            return 0;
+        }
+        
+        int left = traverse(root.left, map);
+        int right = traverse(root.right, map);
+        
+        int sum = left + right + root.val;
+        map.put(sum, map.getOrDefault(sum, 0) + 1);
+        if (map.get(sum) > maxFreq) {
+            maxFreq = map.get(sum);
+            count = 1;
+        } else if (map.get(sum) == maxFreq) {
+            count++;
+        }
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy to Understand DFS solution using C#
+    Dictionary<int,int> counts = new Dictionary<int,int>();
+
+    public int[] FindFrequentTreeSum(TreeNode root) {
+        
+        FindFrequentSum(root);
+        
+        int mode = 0;
+        int occurence = 0;
+        foreach (KeyValuePair<int, int> pair in counts)
+        {
+
+            if( pair.Value > occurence)
+            {
+                occurence = pair.Value;
+                mode = pair.Key;
+            }
+        }
+        
+        return (counts.Where(pair => pair.Value == occurence)
+                  .Select(pair => pair.Key)).ToArray();
+    }
+    
+    int FindFrequentSum(TreeNode root)
+    {
+        if(root== null)
+            return 0;
+       if(root.left == null && root.right == null)
+       {
+           AddToDictioanry(root.val);
+           return root.val;
+       }
+       int sum = root.val + FindFrequentSum(root.left) + FindFrequentSum(root.right);
+       AddToDictioanry(sum);
+       return sum;
+    }
+    
+    void AddToDictioanry(int val)
+    {
+        if(counts.ContainsKey(val))
+            counts[val] ++;
+        else counts.Add(val,1);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ unordered_map solution
+class Solution {
+private:
+    unordered_map<int, int> m;
+    int maxCnt = 0;
+    int getSum(TreeNode *root) {
+        if (!root) return 0;
+        int sum = root->val + getSum(root->left) + getSum(root->right);
+        m[sum]++;
+        maxCnt = max(maxCnt, m[sum]);
+        return sum;
+    }
+public:
+    vector<int> findFrequentTreeSum(TreeNode* root) {
+        getSum(root);
+        vector<int> ans;
+        for (auto p : m) {
+            if (p.second == maxCnt) ans.push_back(p.first);
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python clean solution beats 97%
+class Solution(object):
+    def findFrequentTreeSum(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[int]
+        """
+        def helper(root, d):
+            if not root:
+                return 0
+            left = helper(root.left, d)
+            right = helper(root.right, d)
+            subtreeSum = left + right + root.val
+            d[subtreeSum] = d.get(subtreeSum, 0) + 1
+            return subtreeSum
+        
+        d = {}
+        helper(root, d)
+        mostFreq = 0
+        ans = []
+        for key in d:
+            if d[key] > mostFreq:
+                mostFreq = d[key]
+                ans = [key]
+            elif d[key] == mostFreq:
+                ans.append(key)
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+My AC solution use map 18ms
+int max = 0;
+public int[] findFrequentTreeSum(TreeNode root) {
+	Map<Integer, Integer> sums = new HashMap<>();
+	helper(sums, root);
+
+	List<Integer> resList = new ArrayList<>();
+	for (int i : sums.keySet()) 
+		if (sums.get(i) == max) resList.add(i);
+
+	int[] res = new int[resList.size()];
+	for (int i = 0; i < res.length; i++) 
+		res[i] = resList.get(i);
+
+	return res;
+}
+
+private int helper(Map<Integer, Integer> sums, TreeNode root) {
+	if (root == null) return 0;
+	int sum = root.val + helper(sums, root.left) + helper(sums, root.right);
+	sums.put(sum, sums.getOrDefault(sum, 0)+1);
+	max = Math.max(max, sums.get(sum));
+	return sum;
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# - recursive with frequence map - find result as you go
+    public int[] FindFrequentTreeSum(TreeNode root) 
+    {
+        IList<int> items = new List<int>();
+        int total = Find(root, new Dictionary<int,int>(), items);
+        return items.ToArray();
+    }
+    
+    public int Find(TreeNode node, Dictionary<int,int> map, IList<int> items)
+    {
+        if (node == null) return 0;
+        int sum = node.val + Find(node.left, map, items) + Find(node.right, map, items);
+        if (!map.ContainsKey(sum)) map[sum] = 0;
+        
+        int currCnt = items.Count > 0 ? map[items[0]] : 0;
+        map[sum]++;
+        
+        if (map[sum] == currCnt) 
+        {
+            items.Add(sum);
+        }
+        else if (map[sum] > currCnt)
+        {
+            items.Clear();
+            items.Add(sum);
+        }
+        
+        return sum;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C solution, hash table, 9ms
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+/**
+ * Return an array of size *returnSize.
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+struct hash_t {
+	int key;
+	int val;
+	UT_hash_handle hh;
+};
+
+struct hash_t *hash = NULL;
+
+struct hash_t *hash_node_new(int key, int val)
+{
+	struct hash_t *s;
+	s = malloc(sizeof(struct hash_t));
+	s->key = key;
+	s->val = val;
+
+	return s;
+}
+
+int treeSum(struct TreeNode *root, int *num)
+{
+	int sum = 0;
+	struct hash_t *s = NULL;
+	if(!root)	return 0;
+	
+	sum = treeSum(root->left, num) + treeSum(root->right, num) + root->val;
+
+	HASH_FIND_INT(hash, &sum, s);
+	if(s){
+		s->val += 1;
+	}else{
+		s = hash_node_new(sum, 1);
+		HASH_ADD_INT(hash, key, s);
+	}
+	if(s->val > *num)	*num = s->val;
+
+	return sum;
+} 
+
+int* findFrequentTreeSum(struct TreeNode* root, int* returnSize) {
+	int num = 0, n=0, *ret, i=0;
+
+	treeSum(root, &num);
+	struct hash_t *s;
+
+	for(s = hash; s != NULL; s=s->hh.next)
+	{
+		if(s->val == num)	n++;
+	}
+	*returnSize = n;
+	ret = malloc(sizeof(int) * n);
+	for(s = hash, i=0; s != NULL; s=s->hh.next)
+	{
+		if(s->val == num)	ret[i++] = s->key;
+	}
+	HASH_CLEAR(hh, hash);
+
+	return ret;
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+easy understand 14 ms solution(java)
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    Map<Integer,Integer> map=new HashMap<Integer,Integer>();
+    int max=1;//the max frequency
+    int count=0;//the size of max frequency
+    public int[] findFrequentTreeSum(TreeNode root) {
+        getSum(root);
+        int[] ret=new int[count];
+        int index=0;
+        for(Integer i:map.keySet()){
+            if(map.get(i)==max)ret[index++]=i;
+        }
+        return ret;
+    }
+    public int getSum(TreeNode root){
+        if(root==null)return 0;
+        int sum=root.val+getSum(root.left)+getSum(root.right);
+        int tmp=0;
+        if(map.containsKey(sum)){
+            tmp=map.get(sum);
+        }
+        tmp++;
+        if(tmp>max){
+            max=tmp;
+            count=1;
+        }else{
+            if(tmp==max){
+                count++;
+            }
+        }
+        map.put(sum,tmp);
+        return sum;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+13 ms (93.61%) C++ solution using unordered_map
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> findFrequentTreeSum(TreeNode* root) {
+        std::vector<int> results;
+        int max = 0;
+        
+        ConvertTree(root);
+        
+        for(std::pair<int, int> pr : mp) {
+            if(max < pr.second)
+                max = pr.second;
+        }
+        
+        for(std::pair<int, int> pr : mp) {
+            if(pr.second == max)
+                results.push_back(pr.first);
+        }
+        
+        return results;
+    }
+private:
+    int ConvertTree(TreeNode* root) {
+        if(!root)
+          return 0;
+        int l = ConvertTree(root->left), r = ConvertTree(root->right);
+        root->val = root->val + l + r;
+        mp[root->val]++;
+        return root->val;
+    }
+    
+    std::unordered_map<int, int> mp;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution
+    
+    Map<Integer, Integer> map = new HashMap<>();
+    
+    public int[] findFrequentTreeSum(TreeNode root) {
+        updateSumTree(root);
+        List<Integer> ans = new ArrayList<>();
+        int max = 0;
+        
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            int count = entry.getValue();
+            if (count == max) 
+                ans.add(entry.getKey());
+            if (count > max) {
+                max = count;
+                ans = new ArrayList<>();
+                ans.add(entry.getKey());
+            }
+        }
+        
+        int[] result = new int[ans.size()];
+        for (int i = 0;i<result.length;i++)
+            result[i] = ans.get(i);
+        
+        return result;
+    }
+    
+    public void updateSumTree(TreeNode root) {
+        if (root == null)
+            return;
+        if (root.left != null) {
+            updateSumTree(root.left);
+            root.val += root.left.val;
+        }
+        if (root.right != null) {
+            updateSumTree(root.right);
+            root.val += root.right.val;
+        }
+        
+        Integer count = map.get(root.val);
+        if (count == null)
+            map.put(root.val, 1);
+        else
+            map.put(root.val, count + 1);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java easy to understand (two pass)
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    Map<Integer,Integer> map=new HashMap<Integer,Integer>();
+    HashSet<Integer> result=new HashSet<>();
+    int max=0;
+    public int postordercount(TreeNode root){
+        if(root==null) return 0;
+        else{
+            int left=postordercount(root.left);
+            int right=postordercount(root.right);
+            int num=root.val+left+right;
+            if(map.containsKey(num)) map.put(num,map.get(num)+1);
+            else map.put(num,1);
+            return num;
+        }
+    }
+    public int postorderans(TreeNode root){
+        if(root==null) return 0;
+        else{
+            int left=postorderans(root.left);
+            int right=postorderans(root.right);
+            int num=root.val+left+right;
+            if(map.get(num)>max){
+                result.clear();
+                result.add(num);
+                max=map.get(num);
+            }
+            else if(map.get(num)==max) result.add(num);
+            return num;
+        }
+    }
+    public int[] findFrequentTreeSum(TreeNode root) {
+        postordercount(root);
+        postorderans(root);
+         int[] ret = new int[result.size()];
+        Iterator<Integer> iterator = result.iterator();
+        for (int i = 0; i < ret.length; i++)
+        {
+            ret[i] = iterator.next().intValue();
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+list.clear() vs list = new ArrayList&lt;&gt;(); ?
+    Map<Integer, Integer> map = new HashMap<>();
+    List<Integer> maxFrequency = new ArrayList<>();
+    
+    computeFrequency(root, map, maxFrequency);
+    
+    int[] result = new int[maxFrequency.size()];
+    
+    for(int i = 0; i < maxFrequency.size(); i++)
+        result[i] = maxFrequency.get(i);
+    
+    return result;
+}
+
+/* post-order traversal */
+private int computeFrequency(TreeNode root, Map<Integer, Integer> map, List<Integer> maxFrequency){
+    if(root == null)
+        return 0;
+    
+    int sumLeft = computeFrequency(root.left, map, maxFrequency);
+    int sumRight = computeFrequency(root.right, map, maxFrequency);
+    int sum = root.val + sumLeft + sumRight;
+    
+    int frequency = map.getOrDefault(sum, 0) + 1;
+	map.put(sum, frequency);
+    
+    if(frequency > max){
+        maxFrequency.clear();   /* maxFrequency = new ArrayList<>(); */
+        maxFrequency.add(sum);
+        max = frequency;
+    }
+
+    else if(frequency == max)
+        maxFrequency.add(sum);
+    
+    return sum;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Why Timeout? Complexity is O(n*logn).

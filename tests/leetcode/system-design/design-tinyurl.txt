@@ -1,0 +1,187 @@
+A &quot;complete&quot; solution for TinyURL (Leetcode System Design)
+public class URLService {
+    HashMap<String, Integer> ltos;
+    HashMap<Integer, String> stol;
+    static int COUNTER;
+    String elements;
+    URLService() {
+        ltos = new HashMap<String, Integer>();
+        stol = new HashMap<Integer, String>();
+        COUNTER = 1;
+        elements = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    }
+    public String longToShort(String url) {
+        String shorturl = base10ToBase62(COUNTER);
+        ltos.put(url, COUNTER);
+        stol.put(COUNTER, url);
+        COUNTER++;
+        return "http://tiny.url/" + shorturl;
+    }
+    public String shortToLong(String url) {
+        url = url.substring("http://tiny.url/".length());
+        int n = base62ToBase10(url);
+        return stol.get(n);
+    }
+    
+    public int base62ToBase10(String s) {
+        int n = 0;
+        for (int i = 0; i < s.length(); i++) {
+            n = n * 62 + convert(s.charAt(i));
+        }
+        return n;
+        
+    }
+    public int convert(char c) {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'a' && c <= 'z') {
+            return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'Z') {
+            return c - 'A' + 36;
+        }
+        return -1;
+    }
+    public String base10ToBase62(int n) {
+        StringBuilder sb = new StringBuilder();
+        while (n != 0) {
+            sb.insert(0, elements.charAt(n % 62));
+            n /= 62;
+        }
+        while (sb.length() != 6) {
+            sb.insert(0, '0');
+        }
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Suggestion on extra questions
+<p>This is a great problem! Reminds that a programming interview is not only a coding interview :)</p>
+<p>I&#39;d like to suggest a couple of extra questions:</p>
+<ul>
+<li>Keep URLs forever or prune, pros/cons? How we do pruning?</li>
+<li>What API would you provide to a third-party developer?</li>
+</ul>
+
+
+----------------------------------------------------------------------------------------------------
+Question on Caching
+<p>This is really a good problem and makes us think more than just coding!</p>
+<p>Suggestion to add questions to the problem:</p>
+<ul>
+<li>If you can enable caching, what would you cache and what&#39;s the expiry time? Explain!</li>
+</ul>
+
+
+----------------------------------------------------------------------------------------------------
+Should we design a class and name methods encode and decode for completing this question? My solutions isnt getting picked up when i run code
+public class Codec {
+    String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    HashMap<String, String> map = new HashMap<>();
+    Random rand = new Random();
+    String key = getRand();
+    public String getRand() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            sb.append(alphabet.charAt(rand.nextInt(62)));
+        }
+        return sb.toString();
+    }
+
+    public String encode(String longUrl) {
+        while (map.containsKey(key)) {
+            key = getRand();
+        }
+        map.put(key, longUrl);
+        return "http://tinyurl.com/" + key;
+    }
+
+    public String decode(String shortUrl) {
+        return map.get(shortUrl.replace("http://tinyurl.com/", ""));
+    }
+}
+
+class Main {
+    public static void main(String[] args) {     
+        Codec codec = new Codec();
+        String res = codec.encode("https://leetcode.com/problems/design-tinyurl");
+        codec.decode(res);        
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Hierarchy and Duplicate TinyURLs
+http://tinyurl.com/4f0jBl
+
+----------------------------------------------------------------------------------------------------
+How do I make this problem as solved?
+<p>This is only problem in my TODO list.<br/>
+That makes me feel not good.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Need feedback on this code for the tinyUrl.
+// You can type code here and execute it.
+import java.lang.*;
+import java.util.*;
+
+
+class Main {
+    public static void main(String[] args) {
+        String s = "https://leetcode.com/problems/design-tinyurl";
+        // HashTable<String, String> tiny = new HashTable<String, String>();
+        Hashtable<Integer,String> tiny = new Hashtable<Integer, String>();
+        int id = generateId(tiny, s);
+        System.out.println(generateTinyUrl(id));
+    }
+    
+    private static String generateTinyUrl(int id){
+        char[] set = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u',
+            'v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+        };
+        StringBuilder st = new StringBuilder();
+        while(id > 0){
+            char ch = set[id % 62];
+            st.append(ch);
+            id = id / 62;
+        }
+        int size = st.length();
+        // for(int i=size; i < 6;i++){
+        //     st.append(set[randomWithRange(0,61)]);
+        // }
+        
+        System.out.println(st);
+        return new String(st);
+    }
+    
+    private static int randomWithRange(int min, int max)
+    {
+        int range = (max - min) + 1;     
+        return (int)(Math.random() * range) + min;
+    }
+    
+    private static int generateId(Hashtable<Integer, String> tiny, String longUrl){
+        if(tiny.containsValue(longUrl)){
+            for(int key: tiny.keySet()){
+                if(tiny.get(key) == longUrl){
+                    return key;
+                }
+            }
+        }
+        
+        int size = tiny.size();
+        return size+1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+extra Q
+<p>I would consider supporting custom URLs - like <a href="http://tinyurl.com/golangrocks" rel="nofollow">tinyurl.com/golangrocks</a> pointing to some longer URL.</p>
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,524 @@
+Java solution with 3 steps
+This question is a combination of **Reverse a linked list I & II**. It should be pretty straight forward to do it in 3 steps :)
+
+    public void reorderList(ListNode head) {
+                if(head==null||head.next==null) return;
+                
+                //Find the middle of the list
+                ListNode p1=head;
+                ListNode p2=head;
+                while(p2.next!=null&&p2.next.next!=null){ 
+                    p1=p1.next;
+                    p2=p2.next.next;
+                }
+                
+                //Reverse the half after middle  1->2->3->4->5->6 to 1->2->3->6->5->4
+                ListNode preMiddle=p1;
+                ListNode preCurrent=p1.next;
+                while(preCurrent.next!=null){
+                    ListNode current=preCurrent.next;
+                    preCurrent.next=current.next;
+                    current.next=preMiddle.next;
+                    preMiddle.next=current;
+                }
+                
+                //Start reorder one by one  1->2->3->6->5->4 to 1->6->2->5->3->4
+                p1=head;
+                p2=preMiddle.next;
+                while(p1!=preMiddle){
+                    preMiddle.next=p2.next;
+                    p2.next=p1.next;
+                    p1.next=p2;
+                    p1=p2.next;
+                    p2=preMiddle.next;
+                }
+            }
+
+----------------------------------------------------------------------------------------------------
+A concise O(n) time, O(1) in place solution
+    // O(N) time, O(1) space in total
+    void reorderList(ListNode *head) {
+        if (!head || !head->next) return;
+        
+        // find the middle node: O(n)
+        ListNode *p1 = head, *p2 = head->next;
+        while (p2 && p2->next) {
+            p1 = p1->next;
+            p2 = p2->next->next;
+        }
+        
+        // cut from the middle and reverse the second half: O(n)
+        ListNode *head2 = p1->next;
+        p1->next = NULL;
+        
+        p2 = head2->next;
+        head2->next = NULL;
+        while (p2) {
+            p1 = p2->next;
+            p2->next = head2;
+            head2 = p2;
+            p2 = p1;
+        }
+        
+        // merge two lists: O(n)
+        for (p1 = head, p2 = head2; p1; ) {
+            auto t = p1->next;
+            p1 = p1->next = p2;
+            p2 = t;
+        }
+        
+        //for (p1 = head, p2 = head2; p2; ) {
+        //    auto t = p1->next;
+        //    p1->next = p2;
+        //    p2 = p2->next;
+        //    p1 = p1->next->next = t;
+        //}
+    }
+
+----------------------------------------------------------------------------------------------------
+A python solution O(n) time, O(1) space
+
+
+    # Splits in place a list in two halves, the first half is >= in size than the second.
+    # @return A tuple containing the heads of the two halves
+    def _splitList(head):
+        fast = head
+        slow = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next
+            fast = fast.next
+    
+        middle = slow.next
+        slow.next = None
+    
+        return head, middle
+    
+    # Reverses in place a list.
+    # @return Returns the head of the new reversed list
+    def _reverseList(head):
+    
+      last = None
+      currentNode = head
+    
+      while currentNode:
+        nextNode = currentNode.next
+        currentNode.next = last
+        last = currentNode
+        currentNode = nextNode
+    
+      return last
+    
+    # Merges in place two lists
+    # @return The newly merged list.
+    def _mergeLists(a, b):
+    
+        tail = a
+        head = a
+    
+        a = a.next
+        while b:
+            tail.next = b
+            tail = tail.next
+            b = b.next
+            if a:
+                a, b = b, a
+                
+        return head
+    
+    
+    class Solution:
+    
+        # @param head, a ListNode
+        # @return nothing
+        def reorderList(self, head):
+    
+            if not head or not head.next:
+                return
+    
+            a, b = _splitList(head)
+            b = _reverseList(b)
+            head = _mergeLists(a, b)
+            
+
+----------------------------------------------------------------------------------------------------
+Java solution with 3 steps
+      public class Solution {
+        
+        public void reorderList(ListNode head) {
+          if (head == null || head.next == null)
+              return;
+          
+          // step 1. cut the list to two halves
+          // prev will be the tail of 1st half
+          // slow will be the head of 2nd half
+          ListNode prev = null, slow = head, fast = head, l1 = head;
+          
+          while (fast != null && fast.next != null) {
+            prev = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+          }
+          
+          prev.next = null;
+          
+          // step 2. reverse the 2nd half
+          ListNode l2 = reverse(slow);
+          
+          // step 3. merge the two halves
+          merge(l1, l2);
+        }
+        
+        ListNode reverse(ListNode head) {
+          ListNode prev = null, curr = head, next = null;
+          
+          while (curr != null) {
+            next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+          }
+          
+          return prev;
+        }
+        
+        void merge(ListNode l1, ListNode l2) {
+          while (l1 != null) {
+            ListNode n1 = l1.next, n2 = l2.next;
+            l1.next = l2;
+            
+            if (n1 == null)
+              break;
+                
+            l2.next = n1;
+            l1 = n1;
+            l2 = n2;
+          }
+        }
+    
+      }
+
+----------------------------------------------------------------------------------------------------
+My O(n) C++ Method, accepted
+Firstly, I split the list from the middle into two lists. One from head to middle, and the other from middle to the end. Then we reverse the second list. Finally we merge these two lists. O(n) time complexity and O(1) space complexity. 
+
+    /**
+     * Definition for singly-linked list.
+     * struct ListNode {
+     *     int val;
+     *     ListNode *next;
+     *     ListNode(int x) : val(x), next(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        void reorderList(ListNode *head) {
+            if(head == NULL || head->next == NULL || head->next->next==NULL)
+                return;
+            //find the middle of the list, and split into two lists.    
+            ListNode *p=head,*q=head;
+            while(p && q && q->next && q->next->next){
+                p=p->next;
+                q=q->next->next;
+            }
+            
+            ListNode *mid = p->next;
+            p->next=NULL;
+            p=head;
+            //reverse from the middle to the end
+            ListNode *q1=mid, *q2,*q3;
+            if(mid->next){
+                q1=mid;
+                q2=mid->next;
+                while(q2){
+                    q3=q2->next;
+                    q2->next=q1;
+                    q1=q2;
+                    q2=q3;
+                    
+                }
+                mid->next=NULL;
+            }
+            q=q1;
+            //merge these two list
+            ListNode *s=p;
+            p=p->next;
+            while(p && q){
+               s->next=q;
+               s=s->next;
+               q=q->next;
+               
+               s->next=p;
+               s=s->next;
+               p=p->next;
+            }
+            if(p){
+                s->next=p;
+            }
+            if(q){
+                s->next=q;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share a consise recursive solution in C++
+
+ The recursive idea have been posted by yucheng.wang. Given a example, 1->2->3->4->5, the solution will reorder node(3),  then reorder 2 and 4 to have (2->4->3), then 1 and 5 get have 1->5->2->4->3. Each call of reorderList(ListNode* head, int len) will return the last element after this reorderList() call.
+
+   int getLength(ListNode *head){
+        int len = 0;
+        while( head != NULL ){
+            ++len;  head = head->next;
+        }
+        return len;
+    }
+    
+    ListNode * reorderList(ListNode *head, int len){
+        if(len == 0)
+            return NULL;
+        if( len == 1 )
+            return head;
+        if( len == 2 )
+            return head->next;
+        ListNode * tail = reorderList(head->next, len-2);
+        ListNode * tmp = tail->next;
+        tail->next = tail->next->next;
+        tmp->next = head->next;
+        head->next = tmp;
+        return tail;
+    }
+    
+    void reorderList(ListNode *head) {  //recursive
+        ListNode  * tail = NULL;
+        tail = reorderList(head, getLength(head));
+    }
+
+----------------------------------------------------------------------------------------------------
+Does this problem have a solution with O(N) time complexity and O(1) space comlexity?
+I solved it by using O(N) space in O(N) time.
+
+----------------------------------------------------------------------------------------------------
+Use Recursion is simpler and quicker
+This problem could be solved by recursion, we first dig down to the middle node of the list, and recurse back from that point, the time complexity is O(N), and faster than existing algorithm.
+1 -> 2 ->3 ->4, first dig down to 3, then recurse back, concatenate 2->3 (which already together), then 1->4(we return next node of each node starting from middle one)
+     
+    public void reorderList(ListNode head){
+		      if(head == null || head.next == null) return;
+		      ListNode h = reorderList(head, head,head);
+	     }
+	
+	public ListNode reorderList(ListNode prev, ListNode slow, ListNode faster){
+		if(faster == null || faster.next == null) {
+			if(faster != null) {
+                ListNode reverse = slow.next;
+                slow.next = null;
+			    return reverse;
+			}
+			prev.next = null;
+			return slow;
+		}
+		ListNode retNode = reorderList(slow, slow.next, faster.next.next);
+		// concanate
+		ListNode temp = retNode.next;
+		retNode.next = slow.next;
+		slow.next = retNode;
+		return temp;
+	}
+
+----------------------------------------------------------------------------------------------------
+My java solution in O(n) time
+    //1. find the middle node
+    //2. reverse the right side of the list
+    //3. merger the left side list and right side list
+    
+        
+        public class Solution {
+            public void reorderList(ListNode head) {
+                if(head==null) return;
+                ListNode slow = head, fast = head;
+                while(fast!=null && fast.next!=null){
+                    slow = slow.next;
+                    fast = fast.next.next;
+                }
+                ListNode mid = slow, cur = slow.next;
+                if(cur!=null){
+                    ListNode tmp = cur.next;
+                    cur.next = null;
+                    cur = tmp;
+                }
+                while(cur!=null){
+                    ListNode tmp = cur.next;
+                    cur.next = mid.next;
+                    mid.next = cur;
+                    cur = tmp;
+                }
+                ListNode left = head, right = mid.next;
+                while(right!=null){
+                    mid.next = right.next;
+                    right.next = left.next;
+                    left.next = right;
+                    left = right.next;
+                    right = mid.next;
+                }
+                
+            }
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Answer in Java
+    /**
+     * Definition for singly-linked list.
+     * class ListNode {
+     *     int val;
+     *     ListNode next;
+     *     ListNode(int x) {
+     *         val = x;
+     *         next = null;
+     *     }
+     * }
+     */
+    public class Solution {
+        
+        private ListNode start;
+        
+        public void reorderList(ListNode head) {
+            
+            // 1. find the middle point
+            if(head == null || head.next == null || head.next.next == null)return;
+    
+            ListNode a1 = head, a2 = head;
+            
+            while(a2.next!=null){
+                // a1 step = 1
+                a1 = a1.next;
+                // a2 step = 2
+                a2 = a2.next;
+                if(a2.next==null)break;
+                else a2 = a2.next;
+            }
+            // a1 now points to middle, a2 points to last elem
+    
+            // 2. reverse the second half of the list
+            this.reverseList(a1);
+    
+            // 3. merge two lists
+            ListNode p = head, t1 = head, t2 = head;
+            while(a2!=a1){ // start from both side of the list. when a1, a2 meet, the merge finishes.
+                t1 = p;
+                t2 = a2;
+                p = p.next;
+                a2 = a2.next;
+                
+                t2.next = t1.next;
+                t1.next = t2;
+            }
+        }
+        
+        // use recursion to reverse the right part of the list
+        private ListNode reverseList(ListNode n){
+            
+            if(n.next == null){
+                // mark the last node
+                // this.start = n;
+                return n;
+            }
+            
+            reverseList(n.next).next = n;
+            n.next = null;
+            return n;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ code (split, reverse the second half, and merge), 71 ms
+ The basic idea is to split the list in half, then reverse the second half,  and at last merge them. It is O(n) time, O(1) space. I was also wondering if there is a better solution.
+
+    class Solution {
+    public:
+        void reorderList(ListNode *head) {
+      // use fast/slow points to find the second half of the list       
+                ListNode *head1, *head2;
+                ListNode *preNode, *curNode;
+                
+                if(!head || !(head->next) )
+                {// if the list is empty or only has one element
+                    return;
+                }
+                else
+                {
+                    head1 = head;
+                    head2 = head->next;
+                    
+                    // find the starting point of the second half
+                    while(head2 && head2->next)
+                    {
+                        head1 = head1->next;
+                        head2 = (head2->next)->next;
+                    }
+                    
+                    //reverse the second half
+                    head2 =head1->next; // the head of the second half
+                    head1->next =NULL;
+                    preNode = NULL;
+                    
+                    while(head2)
+                    {
+                        curNode = head2->next;
+                        head2->next = preNode;
+                        preNode= head2;
+                        head2 = curNode;
+                    }
+                    
+                    // merge the first half and the reversed second half
+                    head2 = preNode;
+                    head1 = head;
+                    
+                    while(head2)
+                    {
+                        curNode = head1->next;
+                        head1 = head1->next = head2;
+                        head2 = curNode;
+                    }
+                    
+                    return;
+                }
+            }
+
+----------------------------------------------------------------------------------------------------
+Can someone help me with this testcase
+Input:	[]
+Output:	[]
+Expected:	{}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with stack
+I see no one use stack with java as the same idea as me, so I share my code here.
+
+It is a bit straightforward, so need not explaination.
+
+    public class Solution {
+        public void reorderList(ListNode head) {
+            if (head==null||head.next==null) return;
+            Deque<ListNode> stack = new ArrayDeque<ListNode>();
+            ListNode ptr=head;
+            while (ptr!=null) {
+                stack.push(ptr); ptr=ptr.next;
+            }
+            int cnt=(stack.size()-1)/2;
+            ptr=head;
+            while (cnt-->0) {
+                ListNode top = stack.pop();
+                ListNode tmp = ptr.next;
+                ptr.next=top;
+                top.next=tmp;
+                ptr=tmp;
+            }
+            stack.pop().next=null;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

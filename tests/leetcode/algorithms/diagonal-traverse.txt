@@ -1,0 +1,538 @@
+Single pass C++ O(n) space and time solution (8 lines) with detailed explanation.
+    bool find132pattern(vector<int>& nums) {
+        int s3 = INT_MIN;
+        stack<int> st;
+        for( int i = nums.size()-1; i >= 0; i -- ){
+            if( nums[i] < s3 ) return true;
+            else while( !st.empty() && nums[i] > st.top() ){ 
+              s3 = st.top(); st.pop(); 
+            }
+            st.push(nums[i]);
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution using stack in detail explanation
+   class Pair{
+        int min, max;
+        public Pair(int min, int max){
+            this.min = min;
+            this.max = max;
+        }
+    }
+    public boolean find132pattern(int[] nums) {
+        Stack<Pair> stack = new Stack();
+        for(int n: nums){
+            if(stack.isEmpty() || n <stack.peek().min ) stack.push(new Pair(n,n));
+            else if(n > stack.peek().min){ 
+                Pair last = stack.pop();
+                if(n < last.max) return true;
+                else {
+                    last.max = n;
+                    while(!stack.isEmpty() && n >= stack.peek().max) stack.pop();
+                    // At this time, n < stack.peek().max (if stack not empty)
+                    if(!stack.isEmpty() && stack.peek().min < n) return true;
+                    stack.push(last);
+                }
+                
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solutions from O(n^3) to O(n) for &quot;132&quot; pattern (updated with one-pass slution)
+public boolean find132pattern(int[] nums) {
+    for (int n = nums.length, i = n - 1, top = n, third = Integer.MIN_VALUE; i >= 0; i--) {
+        if (nums[i] < third) return true;
+        while (top < n && nums[i] > nums[top]) third = nums[top++];
+        nums[--top] = nums[i];
+    }
+    
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my easy and simple solution
+public class Solution {
+    public boolean find132pattern(int[] nums) {
+        if(nums.length<3) return false;
+        Integer low = null, high = null;
+        int start = 0, end = 0;
+        while(start<nums.length-1){
+            while(start<nums.length-1 && nums[start]>=nums[start+1]) start++;
+            // start is lowest now
+            int m = start+1;
+            while(m<nums.length-1 && nums[m]<=nums[m+1]) m++;
+            // m is highest now
+            int j = m+1;
+            while(j<nums.length){
+                if(nums[j]>nums[start] && nums[j]<nums[m]) return true;
+                j++;
+            }
+            start = m+1;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C ++ solution ,in O(n)
+class Solution {
+public:
+    bool find132pattern(vector<int>& nums) {
+        int i,j,k,n;
+        n = nums.size();
+        if(n<3)
+            return false;
+        vector<int> mn(nums.begin(),nums.end());
+        for(i=1;i<n;i++)
+            mn[i] = min(mn[i],mn[i-1]);
+        int dp[n]{-1};
+        for(i=0;i<n;i++)
+            {
+                j = i-1;
+                while(j!= -1 && nums[j]<=nums[i])
+                    j = dp[j];
+                dp[i] = j;
+            }
+        for(i=2;i<n;i++)
+            {
+                j = dp[i];
+                if(j>0 && mn[j-1]<nums[i])
+                    return true;
+            }
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution in O(nlogn)
+import heapq
+
+class Solution(object):
+    def find132pattern(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        if not nums:
+            return False
+        left = [nums[0]]
+        for num in nums[1:]:
+            left.append(min(left[-1], num))
+        q = []
+        right = [None] * len(nums)
+        for i, num in enumerate(nums[::-1]):
+            heapq.heappush(q, num)
+            while q and q[0] <= left[len(nums) - i - 1]:
+                heapq.heappop(q)
+            if q:
+                right[len(nums) - i - 1] = q[0]
+        for i, num in enumerate(nums):
+            if right and left[i] < right[i] < num:
+                return True
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) Solution Using STL Multimap
+    for(auto it: nums)
+        right.insert(it);
+    
+    for(auto it: nums)
+    {
+        if(left.size() > 0 and right.size() > 0)
+        {    
+            int lo = *left.begin();
+            auto it1 = right.lower_bound(it);
+            if(it1 != right.begin())
+            {
+                it1--;
+                int hi = *it1;
+                if(lo < it and hi < it and hi > lo)
+                return 1;
+            }
+        }
+        
+        left.insert(it);
+        auto it2 = right.find(it);
+        right.erase(it2);
+    }
+    
+    return 0;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution using stack
+    def find132pattern(self, nums):
+        if len(set(nums)) < 3:
+            return False
+        stack = [[nums[0], nums[0]]]
+        current_min = nums[0]
+        for i in range(1, len(nums)):
+            curr = nums[i]
+            if curr >= stack[0][1]:  # curr >= max(nums[:i])
+                stack = [[current_min, curr]]
+            elif curr < current_min:  # curr < min(nums[:i])
+                stack.append([curr, curr])
+                current_min = curr
+            elif curr == current_min:
+                continue
+            else:
+                while stack and curr > stack[-1][0]:
+                    if curr < stack[-1][1]:
+                        return True
+                    else:
+                        stack.pop()
+                stack.append([current_min, curr])
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Simple java accepted well explained O(n^2) solution
+    public boolean find132pattern(int[] nums) {
+        if(nums == null || nums.length < 3) {
+            return false;
+        }
+        
+        for(int i = 0; i < nums.length - 2; i++) {
+            int bigger = nums[i];    
+            for(int j = i + 1; j < nums.length; j++) {
+                // 1. We don't care about numbers
+                // less than a[i]
+                if(nums[j] <= nums[i]) continue;
+                
+                // 2. If num is greater than bigger
+                // then update bigger
+                if(nums[j] >= bigger) {
+                    bigger = nums[j];
+                } else {
+                    // Now this number is greater than nums[i]
+                    // see 1. and less than bigger, see 2.
+                    return true;
+                }  
+            }
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) greedy solution using stack
+class Solution {
+public:
+    bool find132pattern(vector<int>& nums) {
+        stack<int> stk;
+        int s2 = INT_MIN;
+        for (int i = nums.size() - 1; i >= 0; --i) {
+            if (nums[i] < s2)
+                return true;
+            
+            while (!stk.empty() && stk.top() < nums[i]) {
+                s2 = stk.top();
+                stk.pop();
+            }
+            stk.push(nums[i]);
+        }
+        return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(n) space Java solution using Stack. (13ms)
+public class Solution {
+    public boolean find132pattern(int[] nums) {
+	if (nums.length <= 2) {
+	    return false;
+	}
+       	Stack<Point> points = new Stack<Point>();
+	Point now = new Point(nums[0], nums[0]);
+	for (int num : nums) {
+	    if (num < now.x) {
+		points.add(now);
+		now = new Point(num, num);
+	    } else if (num > now.y) {
+		while (points.size() > 0 && points.peek().y <= num) {
+	           points.pop();
+		}
+		if (points.size() > 0 && points.peek().x < num) {
+		   return true;
+		}
+		now.y = num;
+	   } else if (now.x < num && now.y > num) {
+		return true;
+	   }
+	}
+	return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Concise Method in O(n) Time
+
+public class Solution {
+    public boolean find132pattern(int[] nums) {
+        int []big=findCloestGreater(nums);
+        boolean res=findSmaller(nums,big);
+        return res;
+    }
+    public int[] findCloestGreater(int[]nums){
+        int []res=new int[nums.length];
+        Stack<Integer>s=new Stack<>(); 
+        for(int i=0;i<nums.length;i++){
+            if(!s.isEmpty()){
+                while(!s.isEmpty()&&nums[s.peek()]<=nums[i]) s.pop();
+                if(!s.isEmpty()) res[i]=s.peek();
+            }
+            s.push(i);
+        }
+        return res;
+    }
+    public boolean findSmaller(int[]nums,int[] big){
+        int min=Integer.MAX_VALUE;
+        for(int i=1;i<big.length;i++){
+            if(big[i]==0) continue;
+            for(int j=big[i-1];j<big[i];j++)
+                min=Math.min(nums[j],min);
+            if(min<nums[i]) return true;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean java solution O(n)
+public boolean find132pattern(int[] nums) {
+	Stack<Range> stack = new Stack<>();
+	for(int num : nums) {
+		Range cur = new Range(num, num);
+		while(!stack.isEmpty() && cur.max > stack.peek().min) {
+			cur.min = Math.min(stack.peek().min, cur.min);
+			cur.max = Math.max(stack.peek().max, cur.max);
+			stack.pop();
+		}
+		stack.push(cur);
+		
+		if(stack.peek().min < num && num < stack.peek().max)
+			return true;
+	}
+	
+	return false;
+}
+
+public static class Range {
+	public int min;
+	public int max;
+	
+	public Range(int mn, int mx) {
+		min = mn;
+		max = mx;
+	}
+}
+
+Time complexity:  O(n)
+Space complexity: O(n)
+
+----------------------------------------------------------------------------------------------------
+Find most of the O(n) submissions are actually O(n^2).Mine is truly O(nlgn) with binary search.
+typedef pair<int,int> p_type;
+class Solution {
+public:
+    bool find132pattern(vector<int>& nums) {
+        if(nums.size()<3)return 0;
+        deque<p_type>ds;
+        int m=nums[0];
+        for(int i=1;i<nums.size();i++)if(b_s(ds,nums[i],m))return 1;
+        return 0;
+    }
+    bool b_s(deque<p_type>&ds,int t,int&m){
+        int st=0,en=ds.size()-1;
+        int p=-1;
+        while(st<=en){
+            if(t<ds[st].first){p=st-1;break;}
+            if(t>ds[en].first){p=en;break;}
+            int mid=(st+en)/2;
+            if(ds[mid].first==t){p=mid;break;}
+            if(t>ds[mid].first)st=mid+1;
+            else en=mid-1;
+        }
+        if(p==-1){
+            if(t>m)ds.push_front(p_type(m,t));
+            else m=t;
+        }
+        else{
+            if(t>ds[p].first&&t<ds[p].second)return 1;
+            int p2=t>ds[p].second?t:ds[p].second;
+            ds.erase(ds.begin(),ds.begin()+p+1);
+            ds.push_front(p_type(m,p2));
+        }
+        return 0;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+o(nlogn) use treeset
+public boolean find132pattern(int[] nums) {
+    if(nums == null || nums.length <= 2){
+        return false;
+    }
+    int[] leftSmall = new int[nums.length];
+    leftSmall[0] = nums[0];
+    for(int i = 1; i < nums.length; i ++){
+        leftSmall[i] = Math.min(leftSmall[i-1], nums[i]);
+    }
+    int[] rightSec = new int[nums.length];
+    rightSec[nums.length - 1] = Integer.MIN_VALUE;
+    TreeSet<Integer> set = new TreeSet<Integer>();
+    set.add(nums[nums.length - 1]);
+    for(int i = nums.length - 2; i >= 0; i --){
+        Integer lower = set.lower(nums[i]);
+        if(lower == null){
+            rightSec[i] = Integer.MIN_VALUE;
+        }else{
+            rightSec[i] = lower;
+        }
+        set.add(nums[i]);
+    }
+    for(int i = 1; i < nums.length-1; i ++){
+        if(rightSec[i] > leftSmall[i]){
+            return true;
+        }
+    }
+    return false;
+}
+
+----------------------------------------------------------------------------------------------------
+Java O(n logn) solution with Binary Indexed Tree
+class Solution {
+       void update(int[] arr, int k) {
+        int i = k;
+        while (i < arr.length && arr[i] < k) {
+            arr[i] = k;
+            i += i&-i;
+        }
+    }
+    int read(int[] arr, int k) {
+        int max =0;
+        while (k > 0) {
+            max = Math.max(arr[k], max);
+            k -= k&-k;
+        }
+        return max;
+    }
+    public boolean find132pattern(int[] nums) {
+        Map<Integer, Integer> vToI = new HashMap<>();
+        int[] sorted = nums.clone();
+        Arrays.sort(sorted);
+        for (int i = 0; i < sorted.length; ++i) vToI.put(sorted[i], i+1);
+        int[] rightLess = new int[nums.length];
+        int[] bit = new int[nums.length+1];
+        for (int i = nums.length - 1; i >= 0; --i) {
+            update(bit, vToI.get(nums[i]));
+            rightLess[i] = read(bit, vToI.get(nums[i])-1);
+        }
+        int min = Integer.MAX_VALUE;
+        for (int i = 0; i < nums.length; ++i) {
+            min = Math.min(min, nums[i]);
+            int minI = vToI.get(min);
+            if (rightLess[i] > minI) return true;
+
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java, straightforward...
+public boolean find132pattern(int[] nums) {
+        int len = nums.length;
+        if(len < 3) return false;
+        int[] max_cache = new int[len];
+        int[] min_cache = new int[len];
+        
+        min_cache[0] = nums[0];
+        for(int j = 1; j < len ; j++){
+            min_cache[j] = Math.min(min_cache[j-1], nums[j]);
+        }
+        max_cache[len-1] = nums[len-1];
+        for(int j = len-2; j >= 0; j--){
+            max_cache[j] = Math.max(max_cache[j+1], nums[j]);
+        }
+        for(int i = 1; i < len-1; i++){
+            int val = nums[i];
+            int left = min_cache[i-1];
+            if(max_cache[i+1] > left && val > max_cache[i+1]) return true;
+            for(int j = i+1; j < len; j++){
+                if(nums[j] > left && val > nums[j]) return true;
+            }
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java easy-understanding solution by one pass
+    public boolean find132pattern(int[] nums) {
+        List<Integer> start = new ArrayList(), end = new ArrayList();
+        for (int x:nums) {
+            int p = find132(x,start,end);
+            if (p>=0 && p<start.size() && x>start.get(p) && x<end.get(p)) return true;
+            if (p<0) {
+                start.add(0,x);
+                end.add(0,x);
+            } else if (x>end.get(p)) {
+                end.set(0,x);
+                for (int i=p; i>=1; i--) {
+                    start.remove(i);
+                    end.remove(i);
+                }
+            }
+        }
+        return false;
+    }
+    
+    private int find132(int x, List<Integer> start, List<Integer> end) {
+        if (start.isEmpty()) return -1;
+        for (int i=0; i<start.size(); i++)
+            if (start.get(i)>=x) return i-1;
+
+        return start.size()-1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++_AC
+class Solution {
+public:
+bool find132pattern(vector<int>& nums) {
+    if(nums.size() <= 2) return false;
+    int n = nums.size();
+    int i = 0, j = 0, k = 0;
+    while(i < n){
+        while(i + 1 < n && nums[i] >= nums[i+1]) i++;
+        j = i + 1;
+        while(j + 1< n && nums[j] <= nums[j+1]) j++;
+        k = j + 1;
+        while( k < n){
+            if(nums[k] < nums[j] && nums[k] > nums[i]) return true;
+            k++;
+        }
+        i = j + 1;
+    }
+    return false;
+}
+};
+
+----------------------------------------------------------------------------------------------------

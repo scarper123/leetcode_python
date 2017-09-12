@@ -1,0 +1,549 @@
+Java simple O(n) init and O(1) query solution
+public class NumArray {
+
+    int[] nums;
+    
+    public NumArray(int[] nums) {
+        for(int i = 1; i < nums.length; i++)
+            nums[i] += nums[i - 1];
+        
+        this.nums = nums;
+    }
+
+    public int sumRange(int i, int j) {
+        if(i == 0)
+            return nums[j];
+        
+        return nums[j] - nums[i - 1];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+5-lines C++, 4-lines Python
+The idea is fairly straightforward: create an array `accu` that stores the accumulated sum for `nums` such that `accu[i] = nums[0] + ... + nums[i - 1]` in the initializer of `NumArray`. Then just return `accu[j + 1] - accu[i]` in `sumRange`. You may try the example in the problem statement to convince yourself of this idea.
+
+The code is as follows.
+
+----------
+**C++**
+
+    class NumArray {
+    public:
+        NumArray(vector<int> &nums) {
+            accu.push_back(0);
+            for (int num : nums)
+                accu.push_back(accu.back() + num);
+        }
+    
+        int sumRange(int i, int j) {
+            return accu[j + 1] - accu[i];
+        }
+    private:
+        vector<int> accu;
+    };
+    
+    
+    // Your NumArray object will be instantiated and called as such:
+    // NumArray numArray(nums);
+    // numArray.sumRange(0, 1);
+    // numArray.sumRange(1, 2); 
+
+----------
+**Python**
+
+    class NumArray(object):
+        def __init__(self, nums):
+            """
+            initialize your data structure here.
+            :type nums: List[int]
+            """
+            self.accu = [0]
+            for num in nums: 
+                self.accu += self.accu[-1] + num,
+    
+        def sumRange(self, i, j):
+            """
+            sum of elements nums[i..j], inclusive.
+            :type i: int 
+            :type j: int
+            :rtype: int 
+            """
+            return self.accu[j + 1] - self.accu[i]
+    
+    
+    # Your NumArray object will be instantiated and called as such:
+    # numArray = NumArray(nums)
+    # numArray.sumRange(0, 1)
+    # numArray.sumRange(1, 2)
+
+----------------------------------------------------------------------------------------------------
+C++ O(1) queries - just 2 extra lines of code
+    class NumArray {
+    public:
+        NumArray(vector<int> &nums) : psum(nums.size()+1, 0) {
+            partial_sum( nums.begin(), nums.end(), psum.begin()+1);
+        }
+    
+        int sumRange(int i, int j) {
+            return psum[j+1] - psum[i];
+        }
+    private:
+        vector<int> psum;    
+    };
+
+----------------------------------------------------------------------------------------------------
+My java 3ms solution
+    public class NumArray {
+        private int[] sums;
+    
+        public NumArray(int[] nums) {
+            if(nums.length != 0){
+                sums = new int[nums.length];
+            
+                sums[0] = nums[0];
+                for(int i=1; i<nums.length; i++){
+                    sums[i] = nums[i] + sums[i-1];
+                }
+            }
+        }
+    
+        public int sumRange(int i, int j) {
+            return i==0 ? sums[j] : sums[j]-sums[i-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A very short Python solution
+    class NumArray(object):
+        def __init__(self, nums):
+            self.dp = nums
+            for i in xrange(1, len(nums)):
+                self.dp[i] += self.dp[i-1]
+    
+        def sumRange(self, i, j):
+            return self.dp[j] - (self.dp[i-1] if i > 0 else 0)
+
+----------------------------------------------------------------------------------------------------
+My 3ms clean Java DP solution may help u
+    public class NumArray {
+        
+        private static int[] sum;
+    
+    	public NumArray(int[] nums) {
+    		for (int i = 1; i < nums.length; ++i)
+    			nums[i] += nums[i - 1];
+    		this.sum = nums;
+    	}
+    
+    	public int sumRange(int i, int j) {
+    		return sum[j] - (i == 0 ? 0 : sum[i - 1]);
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution, O(n) to build, O(1) to query
+Use a vector to store the sum from 0 to i.
+
+    class NumArray {
+    public:
+        vector<int> memo = {0};
+        NumArray(vector<int> &nums) {
+            int summ = 0;
+            for (int n : nums) {
+                summ += n;
+                memo.push_back(summ);
+            }
+        }
+    
+        int sumRange(int i, int j) {
+            return memo[j+1] - memo[i];
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using sum array built in constructor.
+    public class NumArray {
+        int[] sum;
+        public NumArray(int[] nums) {
+            sum = new int[nums.length];
+            if(nums.length>0)sum[0]=nums[0];
+            for(int i=1; i<nums.length; i++){
+                sum[i]=sum[i-1]+nums[i];
+            }
+        }
+    
+        public int sumRange(int i, int j) {
+            if(i==0)return sum[j];
+            return sum[j]-sum[i-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java: concise solution without &quot;if&quot;
+    public class NumArray {
+	
+	int[] table;
+
+    public NumArray(int[] nums) {
+        int sum = 0;
+        table = new int[nums.length + 1];
+        for(int i = 0; i < nums.length; i++)
+        {
+        	sum = sum + nums[i];
+        	table[i + 1] = sum;
+        }
+    }
+
+    public int sumRange(int i, int j) {
+        return table[j + 1] - table[i];
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Solutions using Binary Indexed Tree and Segment Tree
+ Binary Indexed Tree, O(lgn) modify, O(lgn) query
+
+    public class NumArray {
+        
+        int[] tree;
+        
+        public NumArray(int[] nums) {
+            tree = new int[nums.length + 1];
+            for (int i = 0; i < nums.length; i++) {
+                int j = i + 1;
+                while (j < nums.length + 1) {
+                    tree[j] += nums[i];
+                    j += lowBit(j);
+                }
+            }
+        }
+        
+        public int sumRange(int i, int j) {
+            return getSum(j + 1) - getSum(i);
+        }
+        
+        private int getSum(int i) {
+            int sum = 0;
+            while (i > 0) {
+                sum += tree[i];
+                i -= lowBit(i);
+            }
+            return sum;
+        }
+        
+        private int lowBit(int x) {
+            return x&(-x);
+        }
+    }
+
+
+Segment Tree, O(n) build, O(lgn) modify, O(lgn) query
+
+    public class NumArray {
+    
+        SegmentTreeNode root;
+        public NumArray(int[] nums) {
+            if (nums.length == 0) return;
+            root = buildTree(nums, 0, nums.length - 1);
+        }
+    
+        public int sumRange(int i, int j) {
+            return query(root, i, j);
+        }
+        
+        private int query(SegmentTreeNode node, int start, int end) {
+            int mid = node.start + ((node.end - node.start) >> 1);
+            if (start <= node.start && end >= node.end) {
+                return node.sum;
+            } else if (end <= mid) {
+                return query(node.left, start, end);
+            } else if (start > mid) {
+                return query(node.right, start, end);
+            } else if (start <= mid && end > mid) {
+                return query(node.left, start, mid) + query(node.right, mid + 1, end);
+            }
+            return 0;
+        }
+        
+        private SegmentTreeNode buildTree(int[] nums, int l, int r) {
+            if (l == r) {
+                return new SegmentTreeNode(l, r, nums[l]);
+            }
+            int mid = l + ((r - l) >> 1);
+            SegmentTreeNode leftNode = buildTree(nums, l, mid);
+            SegmentTreeNode rightNode = buildTree(nums, mid + 1, r);
+            SegmentTreeNode node = new SegmentTreeNode(l, r, leftNode.sum + rightNode.sum);
+            node.left = leftNode;
+            node.right = rightNode;
+            return node;
+        }
+        
+        class SegmentTreeNode {
+            int start, end, sum;
+            SegmentTreeNode left, right;
+            public SegmentTreeNode(int s, int e, int val) {
+                start = s;
+                end = e;
+                sum = val;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA-----------Easy Version To Understand!!!!!!!!!!!
+        int[] nums;
+	int[] sum;
+
+	public NumArray(int[] nums) {
+	    if(nums==null||nums.length==0)
+	    return;
+		this.nums = nums;
+		int len = nums.length;
+		sum = new int[len];
+		sum[0] = nums[0];
+		for (int i = 1; i < len; i++)
+			sum[i] = sum[i - 1] + nums[i];
+	}
+
+	public int sumRange(int i, int j) {
+
+		return sum[j] - sum[i] + nums[i];
+	}
+
+----------------------------------------------------------------------------------------------------
+Simple python solution : use dict
+    class NumArray(object):
+        def __init__(self, nums):
+            """
+            initialize your data structure here.
+            :type nums: List[int]
+            """
+            self.dc = {-1:0}
+            for i,v in enumerate(nums):
+                self.dc[i] = self.dc[i-1] + v
+    
+        def sumRange(self, i, j):
+            """
+            sum of elements nums[i..j], inclusive.
+            :type i: int
+            :type j: int
+            :rtype: int
+            """
+            return self.dc[j]-self.dc[i-1]
+
+----------------------------------------------------------------------------------------------------
+Beat 100% c++ solution
+
+
+class NumArray {
+
+    private:
+    vector<int> data;
+public:
+    
+    NumArray(vector<int> &nums) {
+        int sum=0;
+        for(int i=0;i<nums.size();i++)
+        {
+            sum+=nums[i];
+            data.push_back(sum);
+        }
+    }
+
+    int sumRange(int i, int j) {
+        if(i==0)
+            return data[j];
+        else
+            return data[j]-data[i-1];
+    }
+};
+
+
+// Your NumArray object will be instantiated and called as such:
+// NumArray numArray(nums);
+// numArray.sumRange(0, 1);
+// numArray.sumRange(1, 2);
+
+----------------------------------------------------------------------------------------------------
+Accepted Java Range Sum Query Solution
+
+public class NumArray {
+
+    int[] nums;
+    int[] numSum;
+
+    public NumArray(int[] nums) {
+        this.nums = nums;
+        numSum = new int[nums.length + 1];
+        numSum[0] = 0;
+        for(int i = 1; i < numSum.length; i++){
+            numSum[i] = numSum[i - 1] + nums[i - 1];
+        }
+    }
+
+    public int sumRange(int i, int j) {
+        if(i < 0 || j >= nums.length){
+            return 0;
+        }
+        
+        return numSum[j + 1] - numSum[i];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+    class NumArray {
+        vector<int> sums;
+    public:
+        NumArray(vector<int> &nums) {
+            sums.resize(nums.size()+1, 0);
+            for(int i=1; i<=nums.size(); i++){
+                sums[i]=sums[i-1]+nums[i-1];
+            }
+        }
+    
+        int sumRange(int i, int j) {
+            return sums[j+1]-sums[i];
+        }
+    };
+    
+    
+    // Your NumArray object will be instantiated and called as such:
+    // NumArray numArray(nums);
+    // numArray.sumRange(0, 1);
+    // numArray.sumRange(1, 2);
+
+----------------------------------------------------------------------------------------------------
+My simple short Python solution
+    class NumArray(object):
+        def __init__(self, nums):
+            self.dp = [0]+nums[:]
+            for i in xrange(1, len(nums)+1):
+                self.dp[i] += self.dp[i-1]
+
+        def sumRange(self, i, j):
+            return self.dp[j+1]-self.dp[i]
+        
+
+
+----------------------------------------------------------------------------------------------------
+Accepted C solution
+    struct NumArray {
+        int size;
+        int *sum;
+};
+
+    
+/** Initialize your data structure here. */
+
+    struct NumArray* NumArrayCreate(int* nums, int numsSize) {
+        struct NumArray *array;
+        int i;
+
+        array = (struct NumArray*)calloc(1, sizeof(struct NumArray));
+        array->sum = (int *) calloc(numsSize+1, sizeof(int));
+        array->size = numsSize;
+        array->sum[0] = 0;
+        for(i = 0; i < numsSize; i++){
+                array->sum[i+1] = nums[i] + array->sum[i];
+        }
+        return array;
+}
+
+     int sumRange(struct NumArray* numArray, int i, int j)
+    {
+        int sum = 0;
+        if(!numArray)
+                return 0;
+        sum = numArray->sum[j+1] - numArray->sum[i];
+        return sum;
+}
+
+
+    /** Deallocates memory previously allocated for the data structure. */
+    void NumArrayFree(struct NumArray* numArray) {
+        free(numArray->sum);
+        free(numArray);
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution with accumulated sum array
+    class NumArray {
+    public:
+        NumArray(vector<int> &nums) {
+        int accum=0;
+        for(int i=0;i<nums.size();i++)
+            {
+            accum+=nums[i];
+            _acarray.push_back(accum);
+            }
+        }
+    
+        int sumRange(int i, int j) {
+            if(i==0)
+                return (_acarray[j]);
+            else 
+                return (_acarray[j]-_acarray[i-1]);
+        }
+        
+    private:
+        vector<int> _acarray;
+    };
+    
+    
+    // Your NumArray object will be instantiated and called as such:
+    // NumArray numArray(nums);
+    // numArray.sumRange(0, 1);
+    // numArray.sumRange(1, 2);
+
+----------------------------------------------------------------------------------------------------
+My clear cpp code
+    class NumArray {
+    public:
+    
+        vector<int> sums;
+        
+        NumArray(vector<int> &nums) 
+        {
+            sums = vector<int>(nums.size()+1, 0);
+            
+            for(int i=0; i < nums.size(); i++)
+                sums[i+1] = nums[i] + sums[i];
+        }
+    
+        int sumRange(int i, int j) 
+        {
+            if(sums.size() == 1) return sums[0];
+            return sums[j+1] - sums[i];
+        }
+    };
+    
+    
+    // Your NumArray object will be instantiated and called as such:
+    // NumArray numArray(nums);
+    // numArray.sumRange(0, 1);
+    // numArray.sumRange(1, 2);
+
+----------------------------------------------------------------------------------------------------
+C++ beats 100% solutions
+    class NumArray {
+    public:
+        map<int,int> mp;
+        NumArray(vector<int> &nums) {
+            mp[-1] = 0;
+            int sum = 0;
+            for(int i=0;i<nums.size();i++)
+            {
+                sum += nums[i];
+                mp[i] = sum;
+            }
+        }
+    
+        int sumRange(int i, int j) {
+            return (mp[j]-mp[i-1]);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

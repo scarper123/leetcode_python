@@ -1,0 +1,1050 @@
+(Guaranteed) Really Detailed and Good (Perfect) Explanation of The Skyline Problem
+Please, do not ever say detailed explanation if you are not explaining you thoughts very clear!
+Just posting code with some comments is not explanation at all, OK? 
+ 
+All the posts I have seen with explanations is just different style of obscure.
+
+Check the following link, that is authentic detailed explanation! your understanding is almost GUARANTEED!
+
+[https://briangordon.github.io/2014/08/the-skyline-problem.html][1]
+ 
+
+
+  [1]: https://briangordon.github.io/2014/08/the-skyline-problem.html
+
+----------------------------------------------------------------------------------------------------
+Short Java solution
+    	public List<int[]> getSkyline(int[][] buildings) {
+	    List<int[]> result = new ArrayList<>();
+	    List<int[]> height = new ArrayList<>();
+	    for(int[] b:buildings) {
+	        height.add(new int[]{b[0], -b[2]});
+	        height.add(new int[]{b[1], b[2]});
+	    }
+	    Collections.sort(height, (a, b) -> {
+	            if(a[0] != b[0]) 
+	                return a[0] - b[0];
+	            return a[1] - b[1];
+	    });
+	    Queue<Integer> pq = new PriorityQueue<>((a, b) -> (b - a));
+	    pq.offer(0);
+	    int prev = 0;
+	    for(int[] h:height) {
+	        if(h[1] < 0) {
+	            pq.offer(-h[1]);
+	        } else {
+	            pq.remove(h[1]);
+	        }
+	        int cur = pq.peek();
+	        if(prev != cur) {
+	            result.add(new int[]{h[0], cur});
+	            prev = cur;
+	        }
+	    }
+	    return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+Once for all, explanation with clean Java code(O(n^2)time, O(n) space)
+Though I came up with  a solution using PriorityQueue and BST, this problems still confuses me. To make it more clear, I went through it several times and investigated several good solutions on this forum.
+
+Here is my explanation which tries to make understanding this easier and may help you write a bug-free solution quickly.
+
+When visiting all start points and end points in order:
+
+Observations:
+
+1. If a position is shadowed by other buildings
+
+        1. height of that building is larger than the building to which current
+            position belong;
+        2. the start point of that building must be smaller(or equal to) than this
+            position;
+        3. the end point of that building must be larger(or equal to) than this
+            position;
+
+Tus we have:
+
+    1. when you reach a start point, the height of current building immediately
+        takes effect which means it could possibly affect the contour or shadow
+        others when mixed with other following buildings;
+    2. when you reach a end point, the height of current building will stop its
+        influences;
+    3. our target exists at the position where height change happens and there
+        is nothing above it shadowing it;
+
+Obviously, to implement the idea that 'current height takes effect' and 'find out whether current height is shadowed by other buildings',  we need a mechanism to store current taking effect heights, meanwhile, figure out which one is the maximum, delete it if needed efficiently, which hints us to use a priority queue or BST.
+
+Thus, our algorithm could be summarised in following pseudo code:
+
+    for position in sorted(all start points and all end points)
+           if this position is a start point
+                  add its height
+           else if this position is a end point
+                  delete its height
+           compare current max height with previous max height, if different, add
+           current position together with this new max height to our result, at the
+           same time, update previous max height to current max height;
+
+To implement this algorithm, here are some concrete examples:
+
+1. In my implementation, I use a PriorityQueue to store end point values when visiting a start point, and store the [height, end point value] into a TreeMap. Thus:
+      1. when moving to next start point value, I can compare the next start point value with elements in PriorityQueue, thus achieving visiting all start points and end points in order(exploits the fact that start points are already sorted);
+      2. Meantime, I can get current max height from TreeMap in O(logn);
+      3. However, to delete a height when visiting a end point, I have to use 'map.values.remove()' which is a method defined in Collection interface and tends to be slower(O(n) is this case, plz correct me if I'm wrong);
+
+My code can be found at https://leetcode.com/discuss/62617/short-and-clean-java-solution-heap-and-treemap
+
+2. Following is wujin's implementation(plz refer to https://leetcode.com/discuss/54201/short-java-solution). This one is quite straightforward, clean and clever.
+
+Firstly, please notice what we need to achieve:
+
+      1. visit all start points and all end points in order;
+      2. when visiting a point, we need to know whether it is a start point or a
+          end point, based on which we can add a height or delete a height from
+          our data structure;
+
+To achieve this, his implementation:
+
+      1. use a int[][] to collect all [start point, - height] and [end point, height]
+          for every building;
+      2. sort it, firstly based on the first value, then use the second to break
+          ties;
+
+Thus,
+
+      1. we can visit all points in order;
+      2. when points have the same value, higher height will shadow the lower one;
+      3. we know whether current point is a start point or a end point based on the
+          sign of its height;
+
+His code is as follows(clear and concise) as reference with my comment(again, https://leetcode.com/discuss/54201/short-java-solution):
+
+    public List<int[]> getSkyline(int[][] buildings) {
+        List<int[]> result = new ArrayList<>();
+        List<int[]> height = new ArrayList<>();
+        for(int[] b:buildings) {
+            // start point has negative height value
+            height.add(new int[]{b[0], -b[2]});
+            // end point has normal height value
+            height.add(new int[]{b[1], b[2]}); 
+        }
+
+        // sort $height, based on the first value, if necessary, use the second to
+        // break ties
+        Collections.sort(height, (a, b) -> {
+                if(a[0] != b[0]) 
+                    return a[0] - b[0];
+                return a[1] - b[1];
+        });
+
+        // Use a maxHeap to store possible heights
+        Queue<Integer> pq = new PriorityQueue<>((a, b) -> (b - a));
+
+        // Provide a initial value to make it more consistent
+        pq.offer(0);
+
+        // Before starting, the previous max height is 0;
+        int prev = 0;
+
+        // visit all points in order
+        for(int[] h:height) {
+            if(h[1] < 0) { // a start point, add height
+                pq.offer(-h[1]);
+            } else {  // a end point, remove height
+                pq.remove(h[1]);
+            }
+            int cur = pq.peek(); // current max height;
+      
+            // compare current max height with previous max height, update result and 
+            // previous max height if necessary
+            if(prev != cur) {
+                result.add(new int[]{h[0], cur});
+                prev = cur;
+            }
+        }
+        return result;
+    }
+
+Hopefully now, you can write a good solution in a blink with good understanding...
+
+----------------------------------------------------------------------------------------------------
+My C++ code using one priority queue (812 ms)
+The idea is to  do line sweep and just process the buildings only at the start and end points. The key is to use a priority queue to save all the buildings that are still "alive". The queue is sorted by its height and end time (the larger height first and if equal height, the one with a bigger end time first). For each iteration, we  first find the current process time, which is either the next new building start time or the end time of the top entry of the live queue. If the new building start time is larger than the top one end time, then process  the one in the queue first (pop them until it is empty or find the first one that ends after the new building); otherswise, if the new building starts before the top one ends, then process the new building (just put them in the queue). After processing, output it to the resulting vector if the height changes. Complexity is the worst case O(NlogN)
+
+Not sure why my algorithm is so slow considering others' Python solution can achieve 160ms, any commments?
+
+    class Solution {
+    public:
+        vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+            vector<pair<int, int>> res;
+            int cur=0, cur_X, cur_H =-1,  len = buildings.size();
+            priority_queue< pair<int, int>> liveBlg; // first: height, second, end time
+            while(cur<len || !liveBlg.empty())
+            { // if either some new building is not processed or live building queue is not empty
+                cur_X = liveBlg.empty()? buildings[cur][0]:liveBlg.top().second; // next timing point to process
+    
+                if(cur>=len || buildings[cur][0] > cur_X)
+                { //first check if the current tallest building will end before the next timing point
+                      // pop up the processed buildings, i.e. those  have height no larger than cur_H and end before the top one
+                    while(!liveBlg.empty() && ( liveBlg.top().second <= cur_X) ) liveBlg.pop();
+                }
+                else
+                { // if the next new building starts before the top one ends, process the new building in the vector
+                    cur_X = buildings[cur][0];
+                    while(cur<len && buildings[cur][0]== cur_X)  // go through all the new buildings that starts at the same point
+                    {  // just push them in the queue
+                        liveBlg.push(make_pair(buildings[cur][2], buildings[cur][1]));
+                        cur++;
+                    }
+                }
+                cur_H = liveBlg.empty()?0:liveBlg.top().first; // outut the top one
+                if(res.empty() || (res.back().second != cur_H) ) res.push_back(make_pair(cur_X, cur_H));
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my divide and conquer java solution, 464 ms
+Detailed explanation: http://www.geeksforgeeks.org/divide-and-conquer-set-7-the-skyline-problem/
+
+    public class Solution {
+    	public List<int[]> getSkyline(int[][] buildings) {
+    		if (buildings.length == 0)
+    			return new LinkedList<int[]>();
+    		return recurSkyline(buildings, 0, buildings.length - 1);
+    	}
+    
+    	private LinkedList<int[]> recurSkyline(int[][] buildings, int p, int q) {
+    		if (p < q) {
+    			int mid = p + (q - p) / 2;
+    			return merge(recurSkyline(buildings, p, mid),
+    					recurSkyline(buildings, mid + 1, q));
+    		} else {
+    			LinkedList<int[]> rs = new LinkedList<int[]>();
+    			rs.add(new int[] { buildings[p][0], buildings[p][2] });
+    			rs.add(new int[] { buildings[p][1], 0 });
+    			return rs;
+    		}
+    	}
+    
+    	private LinkedList<int[]> merge(LinkedList<int[]> l1, LinkedList<int[]> l2) {
+    		LinkedList<int[]> rs = new LinkedList<int[]>();
+    		int h1 = 0, h2 = 0;
+    		while (l1.size() > 0 && l2.size() > 0) {
+    			int x = 0, h = 0;
+    			if (l1.getFirst()[0] < l2.getFirst()[0]) {
+    				x = l1.getFirst()[0];
+    				h1 = l1.getFirst()[1];
+    				h = Math.max(h1, h2);
+    				l1.removeFirst();
+    			} else if (l1.getFirst()[0] > l2.getFirst()[0]) {
+    				x = l2.getFirst()[0];
+    				h2 = l2.getFirst()[1];
+    				h = Math.max(h1, h2);
+    				l2.removeFirst();
+    			} else {
+    				x = l1.getFirst()[0];
+    				h1 = l1.getFirst()[1];
+    				h2 = l2.getFirst()[1];
+    				h = Math.max(h1, h2);
+    				l1.removeFirst();
+    				l2.removeFirst();
+    			}
+    			if (rs.size() == 0 || h != rs.getLast()[1]) {
+    				rs.add(new int[] { x, h });
+    			}
+    		}
+    		rs.addAll(l1);
+    		rs.addAll(l2);
+    		return rs;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+17-Line O(n log n)-time O(n)-space C++ Accepted Easy Solution w&#x2F; Explanations
+General idea:
+
+- Step 1:
+
+   Use a multimap to sort all boundary points. For a start point of an interval, let the height be positive; otherwise, let the height be negative. Time complexity: *O*(n log n)
+
+- Step 2:
+
+   Use a multiset (rather than a heap/priority_queue) to maintain the current set of heights to be considered. If a new start point is met, insert the height into the set, otherwise, delete the height. The current max height is the back() element of the multiset. For each point, the time complexity is O(log n). The overall time complexity is *O*(n log n).
+
+- Step 3:
+
+   Delete the points with equal heights. Time: *O*(n)
+
+----------
+
+Time Complexity: *O*(n log n)
+
+Space Complexity: *O*(n)
+
+----------
+
+
+**C++**
+
+    class Solution {
+    public:
+    	vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+
+            // Step 1:
+    		multimap<int, int> coords;
+    		for (const vector<int> & building : buildings) {
+    			coords.emplace(building[0], building[2]);
+    			coords.emplace(building[1], -building[2]);
+    		}
+    
+            // Step 2:
+    		multiset<int> heights = { 0 };
+    		map<int, int> corners;
+    		for (const pair<int, int> & p : coords) {
+    			if (p.second > 0) {
+    				heights.insert(p.second);
+    			}
+    			else {
+    				heights.erase(heights.find(-p.second));
+    			}
+    			int cur_y = *heights.rbegin();
+    			corners[p.first] = cur_y;
+    		}
+    
+            // Step 3:
+    		function<bool(pair<int, int> l, pair<int, int> r)> eq2nd = [](pair<int, int> l, pair<int, int> r){ return l.second == r.second;  };
+    		vector<pair<int, int>> results;
+    		unique_copy(corners.begin(), corners.end(), back_insert_iterator<vector<pair<int, int>>>(results), eq2nd);
+    		return results;
+    	}
+    };
+
+
+----------
+
+
+In fact, the last two steps can be merged together:
+
+**Yet another solution (C++):**
+
+
+    class Solution {
+    public:
+    	vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+    		multimap<int, int> coords;
+    		for (const vector<int> & building : buildings) {
+    			coords.emplace(building[0], building[2]);
+    			coords.emplace(building[1], -building[2]);
+    		}
+    
+    		multiset<int> heights = { 0 };
+    		vector<pair<int, int>> corners;
+    		int x = -1;
+    		int y = 0;
+    		for (const pair<int, int> & p : coords) {
+    			if ((x >= 0) && (p.first != x) && (corners.empty() || (corners.rbegin()->second != y))) {
+    				corners.emplace_back(x, y);
+    			}
+    
+    			if (p.second >= 0) {
+    				heights.insert(p.second);
+    			}
+    			else {
+    				heights.erase(heights.find(-p.second));
+    			}
+    
+    			x = p.first;
+    			y = *heights.rbegin();
+    		}
+    		
+    		if (!corners.empty()) {
+    			corners.emplace_back(x, 0);
+    		}
+    		
+    		return corners;
+    	}
+    };
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+108 ms, 17 lines body, explained
+This is a Python version of [my modification](https://leetcode.com/discuss/37630/my-c-code-using-one-priority-queue-812-ms?show=37735#c37735) of [dong.wang.1694's brilliant C++ solution](https://leetcode.com/discuss/37630/my-c-code-using-one-priority-queue-812-ms). It sweeps from left to right. But it doesn't only keep *heights* of "alive buildings" in the priority queue and it doesn't remove them as soon as their building is left behind. Instead, (height, right) *pairs* are kept in the priority queue and they stay in there as long as there's a larger height in there, not just until their building is left behind.
+
+In each loop, we first check what has the smaller x-coordinate: adding the next building from the input, or removing the next building from the queue. In case of a tie, adding buildings wins, as that guarantees correctness (think about it :-). We then either add all input buildings starting at that x-coordinate or we remove all queued buildings ending at that x-coordinate *or earlier* (remember we keep buildings in the queue as long as they're "under the roof" of a larger actually alive building). And then, if the current maximum height in the queue differs from the last in the skyline, we add it to the skyline.
+
+    from heapq import *
+
+    class Solution:
+        def getSkyline(self, LRH):
+            skyline = []
+            i, n = 0, len(LRH)
+            liveHR = []
+            while i < n or liveHR:
+                if not liveHR or i < n and LRH[i][0] <= -liveHR[0][1]:
+                    x = LRH[i][0]
+                    while i < n and LRH[i][0] == x:
+                        heappush(liveHR, (-LRH[i][2], -LRH[i][1]))
+                        i += 1
+                else:
+                    x = -liveHR[0][1]
+                    while liveHR and -liveHR[0][1] <= x:
+                        heappop(liveHR)
+                height = len(liveHR) and -liveHR[0][0]
+                if not skyline or height != skyline[-1][1]:
+                    skyline += [x, height],
+            return skyline
+
+
+----------------------------------------------------------------------------------------------------
+Java divide and conquer solution beats 96%
+public class Solution {
+    public List<int[]> getSkyline(int[][] buildings) {
+        return merge(buildings, 0, buildings.length-1);
+    }
+    
+    private LinkedList<int[]> merge(int[][] buildings, int lo, int hi) {
+        LinkedList<int[]> res = new LinkedList<>();
+        if(lo > hi) {
+            return res;
+        } else if(lo == hi) {
+            res.add(new int[]{buildings[lo][0], buildings[lo][2]});
+            res.add(new int[]{buildings[lo][1], 0});
+            return res;
+        } 
+        int mid = lo+(hi-lo)/2;
+        LinkedList<int[]> left = merge(buildings, lo, mid);
+        LinkedList<int[]> right = merge(buildings, mid+1, hi);
+        int leftH = 0, rightH = 0;
+        while(!left.isEmpty() || !right.isEmpty()) {
+            long x1 = left.isEmpty()? Long.MAX_VALUE: left.peekFirst()[0];
+            long x2 = right.isEmpty()? Long.MAX_VALUE: right.peekFirst()[0];
+            int x = 0;
+            if(x1 < x2) {
+                int[] temp = left.pollFirst();
+                x = temp[0];
+                leftH = temp[1];
+            } else if(x1 > x2) {
+                int[] temp = right.pollFirst();
+                x = temp[0];
+                rightH = temp[1];
+            } else {
+                x = left.peekFirst()[0];
+                leftH = left.pollFirst()[1];
+                rightH = right.pollFirst()[1];
+            }
+            int h = Math.max(leftH, rightH);
+            if(res.isEmpty() || h != res.peekLast()[1]) {
+                res.add(new int[]{x, h});
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+10-line Python solution, 104 ms
+Use an infinite vertical line `x` to scan from left to right. If max height changes, record [x, height] in `res`. Online judge is using Python 2.7.9 and there's no max heap's push and pop method, so we can use a min heap `hp` storing `-H` as "max heap". Thanks to [this discussion][1], set comprehension is faster and shorter than `list(set((R, 0, None) for L, R, H in buildings))`.
+
+    def getSkyline(self, buildings):
+        events = sorted([(L, -H, R) for L, R, H in buildings] + list({(R, 0, None) for _, R, _ in buildings}))
+        res, hp = [[0, 0]], [(0, float("inf"))]
+        for x, negH, R in events:
+            while x >= hp[0][1]: 
+                heapq.heappop(hp)
+            if negH: 
+                heapq.heappush(hp, (negH, R))
+            if res[-1][1] + hp[0][0]: 
+                res += [x, -hp[0][0]],
+        return res[1:]
+
+
+  [1]: https://leetcode.com/discuss/37736/108-ms-17-lines-body-explained
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+    class Solution {
+    public:
+        vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+            vector<pair<int, int>> edges;
+            int left, right, height;
+            for(int i=0; i<buildings.size(); i++){
+                left=buildings[i][0];
+                right=buildings[i][1];
+                height=buildings[i][2];
+                /*** make sure : for the same left point we use the bigger height ***/
+                edges.push_back(make_pair(left, -height));
+                edges.push_back(make_pair(right, height));
+            }
+            sort(edges.begin(), edges.end());
+            vector<pair<int, int>> result;
+            /*** use the multiset to store the max height util current pos ***/
+            multiset<int> m;
+            /*** left most height ***/
+            m.insert(0);
+            int pre=0, cur=0;
+            for(int i=0; i<edges.size(); i++){
+                pair<int, int> e=edges[i];
+                if(e.second < 0)  m.insert(-e.second);
+                else m.erase(m.find(e.second));
+                cur=*(m.rbegin());
+                if(cur!=pre){
+                    result.push_back(make_pair(e.first, cur));
+                    pre=cur;
+                }
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution using priority queue and sweepline
+Sweepline is used in solving the problem.  `List<int[]> height` is used to save each of the line segments including both start and end point.  The trick here is to set the start segment as negative height.  This has a few good uses:  
+
+first, make sure the start segment comes before the end one after sorting.
+
+second, when pushing into the queue, it is very each to distinguish either to add or remove a segment.
+
+lastly, when the two adjacent building share same start and end x value, the next start segment always come before due to the negative height, this makes sure that when we peek the queue, we always get the value we are supposed to get.  When the first building is lower, when we peek the queue, we get the height of the second building, and the first building will be removed in the next round of iteration.  When the second building is lower, the first peek returns the first building and since it equals to `prev`, the height will not be added.
+
+
+----------------------------------------------------------------------------------------------------
+14 line python code, straightforward &amp; easy to understand
+    class Solution(object):
+    def getSkyline(self, buildings):
+        """
+        :type buildings: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        def addsky(pos, hei):
+            if sky[-1][1] != hei:
+                sky.append([pos, hei])
+
+        sky = [[-1,0]]
+        
+        # possible corner positions
+        position = set([b[0] for b in buildings] + [b[1] for b in buildings])
+        
+        # live buildings
+        live = []
+        
+        i = 0
+            
+        for t in sorted(position):
+            
+            # add the new buildings whose left side is lefter than position t
+            while i < len(buildings) and buildings[i][0] <= t:
+                heappush(live, (-buildings[i][2], buildings[i][1]))
+                i += 1
+                
+            # remove the past buildings whose right side is lefter than position t
+            while live and live[0][1] <= t:
+                heappop(live)
+            
+            # pick the highest existing building at this moment
+            h = -live[0][0] if live else 0
+            addsky(t, h)
+
+        return sky[1:]
+
+----------------------------------------------------------------------------------------------------
+Java 570ms Heap+BST and 430ms Divide-and-Conquer Solution with Explanation
+The main idea of the solutions is to keep an eye on the max height of buildings, and whenever the max height changes, we add it to a list. 
+
+For the Heap+BST approach, it's easier if we store both the starting point of a building `[Li, Hi]` and the ending point `[Ri, Hi]` in a PriorityQueue. Therefore for N buildings, we will have 2N points in the PriorityQueue. Its order should be based on 1) x-coordinates and breaking ties with 2) height. At the same time, we need to keep a TreeMap which acts like a histogram of all current heights so that whenever we visit a ending point, we know what the updated max height is going to be. As many already pointed out, `remove(object)` operation in BST is O(logN) whereas in PriorityQueue it's O(N), so we cannot use a PriorityQueue to keep track of the heights. 
+
+I actually spent hours and hours in handling corner cases where multiple starting points and ending points appeared with the same x-coordinate,  For example, if the input is:
+
+    [[1,2,1], [1,2,2], [1,2,3], [1,2,4], [2,3,2], [2,3,4]]
+
+The result should be `[[1,4], [3,0]].` 
+A trick to make the code simpler without worrying about those corner cases is to make sure that, in the PriorityQueue, when multiple points with the same x-coord occur, 1) always keep starting points in front of the ending points, 2) keep the starting points in descending order of its heights (so that you won't keep updating the max height at the same point) and 3) keep the ending points in ascending order of its heights (so that you won't update the max height to the next largest height after you removed the max height ending point).
+
+    public class Solution {
+        public List<int[]> getSkyline(int[][] buildings) {
+            PriorityQueue<Point> points=new PriorityQueue<Point>(new Comparator<Point>(){
+                public int compare(Point a, Point b){
+                    if(a.x!=b.x)
+                        return a.x-b.x;
+                    return a.y-b.y;
+                }
+            });
+            TreeMap<Integer, Integer> heights=new TreeMap<Integer, Integer>();
+            ArrayList<int[]> result=new ArrayList<>();
+            for(int[] building: buildings){
+                points.add(new Point(building[0], -building[2]));
+                points.add(new Point(building[1], building[2]));
+            }
+            heights.put(0, 1);
+            int maxHeight=0;
+            while(!points.isEmpty()){
+                Point point=points.poll();
+                if(point.y<0){
+                    if(!heights.containsKey(-point.y))
+                        heights.put(-point.y, 0);
+                    heights.put(-point.y, heights.get(-point.y)+1);
+                }
+                else{
+                    heights.put(point.y, heights.get(point.y)-1);
+                    if(heights.get(point.y)==0) heights.remove(point.y);
+                }
+                int currentMax=heights.lastEntry().getKey();
+                if(currentMax!=maxHeight){
+                    result.add(new int[]{point.x, currentMax});
+                    maxHeight=currentMax;
+                }
+            }
+            return result;
+        }
+        private class Point{
+            int x;
+            int y;
+            public Point(int x, int y){
+                this.x=x;
+                this.y=y;
+            }
+        }
+    }
+
+For the divide-and-conquer approach, we have to think about how to merge two lists of "key points" into a single list. It's pretty much like mergesort: we compare the first unvisited key points in both lists, and visit the point with a lower x-coordinate. Then we update the max height at that x-coordinate based on the height of the point. In order to do this, we need to keep two variables, `leftMax` and `rightMax` which stores the current max heights from 2 lists. 
+
+    public class Solution {
+        public List<int[]> getSkyline(int[][] buildings) {
+            return getSkyline(buildings, 0, buildings.length-1);
+        }
+        private ArrayList<int[]> getSkyline(int[][] buildings, int lo, int hi){
+            ArrayList<int[]> result=new ArrayList<>();
+            if(lo>hi)   return result;
+            if(lo==hi){
+                result.add(new int[]{buildings[lo][0], buildings[lo][2]});
+                result.add(new int[]{buildings[lo][1], 0});
+                return result;
+            }
+            int mid=(lo+hi)/2;
+            ArrayList<int[]> left=getSkyline(buildings, lo, mid);
+            ArrayList<int[]> right=getSkyline(buildings, mid+1, hi);
+            int leftMax=0, rightMax=0, max=0;
+            for(int i=0, j=0; i<left.size()||j<right.size(); ){
+                int currentMax=0;
+                if(i<left.size()&&j<right.size()&&left.get(i)[0]==right.get(j)[0]){
+                    leftMax=left.get(i)[1];
+                    rightMax=right.get(j)[1];
+                    currentMax=Math.max(leftMax, rightMax);
+                    if(currentMax!=max){
+                        result.add(new int[]{left.get(i)[0], currentMax});
+                        max=currentMax;
+                    }
+                    i++;
+                    j++;
+                }
+                else if(j>=right.size()||i<left.size()&&j<right.size()&&left.get(i)[0]<right.get(j)[0]){
+                    leftMax=left.get(i)[1];
+                    currentMax=Math.max(leftMax, rightMax);
+                    if(currentMax!=max){
+                        result.add(new int[]{left.get(i)[0], currentMax});
+                        max=currentMax;
+                    }
+                    i++;
+                }
+                else if(i>=left.size()||i<left.size()&&j<right.size()&&left.get(i)[0]>right.get(j)[0]){
+                    rightMax=right.get(j)[1];
+                    currentMax=Math.max(leftMax, rightMax);
+                    if(currentMax!=max){
+                        result.add(new int[]{right.get(j)[0], currentMax});
+                        max=currentMax;
+                    }
+                    j++;
+                }
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A Java solution by iteratively checking the starting and ending points
+    public class Solution {
+    public List<int[]> getSkyline(int[][] buildings) {
+        List<int[]> result = new ArrayList<int[]>();
+        ArrayList<Point> points = new ArrayList<Point>();
+        int n = buildings.length;
+        for (int i = 0; i < n; ++i) {
+            points.add(new Point(buildings[i][0], buildings[i][2], 0));
+            points.add(new Point(buildings[i][1], buildings[i][2], 1));
+        }
+        Collections.sort(points, new Comparator<Point>() {
+            public int compare(Point a, Point b) {
+                if (a.val != b.val) return a.val - b.val;
+                if (a.flag != b.flag) return a.flag - b.flag;  // Starting point first.
+                if (a.flag == 0 && b.flag == 0) return b.height - a.height; // Both starting points, with larger height first.
+                return a.height - b.height;     // Both ending points, with smaller height first.
+            }
+        });
+        // Max heap of heights.
+        PriorityQueue<Integer> heights = new PriorityQueue<Integer>(9, Collections.reverseOrder());
+        for(Point p : points) {
+            if (p.flag == 0) {      
+            // p is a starting point.
+               if (heights.isEmpty() || p.height > heights.peek()) {
+                   int[] keyPoint = new int[2];
+                   keyPoint[0] = p.val;
+                   keyPoint[1] = p.height;
+                   result.add(keyPoint);
+               }
+               heights.add(p.height);
+            } else {
+                // This is an ending point.
+                if (p.height == heights.peek()) {
+                    // This happens to be the highest point.
+                    heights.poll();
+                    if (heights.isEmpty() || p.height > heights.peek()) {
+                        int[] keyPoint = new int[2];
+                        keyPoint[0] = p.val;
+                        keyPoint[1] = heights.isEmpty() ? 0 : heights.peek();
+                        result.add(keyPoint);
+                    }
+                } else {
+                    // Does not affect the current height. 
+                	heights.remove(p.height);
+                }
+            }
+        }
+        return result;
+    }
+    
+    public static class Point {
+        int val;
+        int height;
+        int flag;       // 0 for start and 1 for end.
+        Point(int val, int height, int flag) {
+            this.val = val;
+            this.height = height;
+            this.flag = flag;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My 220ms divide and conquer solution in Python  O(nlogn)
+    class Solution:
+        # @param {integer[][]} buildings
+        # @return {integer[][]}
+        def getSkyline(self, buildings):
+            if buildings==[]:
+                return []
+            if len(buildings)==1:
+                return [[buildings[0][0],buildings[0][2]],[buildings[0][1],0]]
+            mid=(len(buildings)-1)/2
+            left=self.getSkyline(buildings[0:mid+1])
+            right=self.getSkyline(buildings[mid+1:])
+            return self.merge(left,right)
+        def merge(self,left,right):
+            i=0
+            j=0
+            result=[]
+            h1=None
+            h2=None
+            while i<len(left) and j<len(right):
+                if left[i][0]<right[j][0]:
+                    h1=left[i][1]
+                    new=[left[i][0],max(h1,h2)]
+                    if result==[] or result[-1][1]!=new[1]:
+                        result.append(new)
+                    i+=1
+                elif left[i][0]>right[j][0]:
+                    h2=right[j][1]
+                    new=[right[j][0],max(h1,h2)]
+                    if result==[] or result[-1][1]!=new[1]:
+                        result.append(new)
+                    j+=1
+                else:
+                    h1=left[i][1]
+                    h2=right[j][1]
+                    new=[right[j][0],max(h1,h2)]
+                    if result==[] or result[-1][1]!=new[1]:
+                        result.append([right[j][0],max(h1,h2)])
+                    i+=1
+                    j+=1
+            while i<len(left):
+                if result==[] or result[-1][1]!=left[i][1]:
+                    result.append(left[i][:])
+                i+=1
+            while j<len(right):
+                if result==[] or result[-1][1]!=right[j][1]:
+                    result.append(right[j][:])
+                j+=1
+                
+            return result
+
+seems nobody use this divide and conquer solution till now, the most tricky part is:
+
+when we do the merge,we maintain two heights :h1 and h2. when we need to choose one element from left part, we update h1,and when we need to choose one element from right part, we update h2, the height we insert is always max(h1,h2).
+
+----------------------------------------------------------------------------------------------------
+My O(nlogn) solution using Binary Indexed Tree(BIT)&#x2F;Fenwick Tree
+we can use Binary Indexed Tree(BIT)/Fenwick Tree to solve this problem, the (Value and (Value xor (Value - 1))), O(nlogn) Solution:
+
+
+    class Solution:
+    # @param {integer[][]} buildings
+    # @return {integer[][]}
+    def CalcBit(self,Value):
+        return (Value & (Value ^(Value -1)))
+    def Add(self,R,H):
+        while R > 0:
+            self.TreeCount[R] = max(self.TreeCount[R],H)
+            R -= self.CalcBit(R)
+    def Find(self,L):
+        Ret = 0
+        while L <= self.INT_MAX:
+            Ret =max(self.TreeCount[L],Ret)
+            L += self.CalcBit(L)
+        return Ret
+    def getSkyline(self, buildings):
+        Ret = []
+        High_Now = 0
+        TB = []
+        for x in range(len(buildings)):
+            TB.append([buildings[x][0],1,x])
+            TB.append([buildings[x][1],2,x])
+        TB.sort()
+        Dict = {}
+        ToT = 0
+        for Num in TB:
+            if Num[0] not in Dict:
+                ToT += 1
+                Dict[Num[0]] = ToT
+        self.INT_MAX = ToT + 10
+        self.TreeCount = [0 for x in range(self.INT_MAX+1)]
+        for Num in TB:
+            if Num[1] == 1:
+                L = buildings[Num[2]][0]
+                R = buildings[Num[2]][1]
+                H = buildings[Num[2]][2]
+                self.Add(Dict[R],H)
+            else:
+                L = buildings[Num[2]][1]
+            Temp = self.Find(Dict[L]+1)
+            if Temp != High_Now:
+                if (len(Ret)>0)and(Ret[-1][0] == L):
+                    Ret[-1][1] = max(Ret[-1][1],Temp)
+                else:
+                    Ret.append([L,Temp])
+                High_Now = Temp
+        return Ret
+
+----------------------------------------------------------------------------------------------------
+50 ms accepted Java solution using MaxHeap (PQ) based on interval overlapping (explained)
+
+The idea is to find overlapping intervals if we consider each building as an interval and the height of the building as the weight of the interval. 
+
+We can separate the left coordinates of the buildings in an array called start and sort it based on the left and the height (because if we have several buildings start from the same left then we want to take the tallest building). Similarly we separate right coordinates of the buildings in another array called end and sort it based on right. 
+
+Now, we will do a similar algorithm as we do to find overlapping intervals. We start scanning both start and end from left to right. If current start is less then prev end then it is part of the current overlap. Otherwise we find end of a set of overlapping intervals.
+
+For each start and end points we will compute one strip as follows - 
+
+1. If start point of current interval is part of current overlap then the height of the strip for this start point is the maximum height seen so far in the overlap. So, we use a max heap to maintain the max so far. 
+2. Otherwise, we have an end of current overlap with the current end point. So, we need to remove the height of this end point from the heap as the overlap ends here. The height of the strip for this end point is the maximum of the remaining buildings in current overlap.
+
+Finally we want to remove all the duplicate stripes (either strips with same height in subsequent positions or strips ending at same position for special case when we have many buildings ending at same right coordinate.  The overall complexity is O(nlgn). This algorithm works for unsorted dataset also. 
+
+
+
+    public class Solution {
+        public List<int[]> getSkyline(int[][] buildings) {
+            int n = buildings.length;
+            if(n == 0){
+                return new ArrayList<int[]>();
+            }
+            
+            Building[] bld = new Building[n];
+            
+            for(int i = 0; i<n; i++){
+                bld[i] = new Building(buildings[i][0],buildings[i][2],buildings[i][1]);
+            }
+            
+            return skyLine(bld);
+        }
+        
+        public static class Building{
+        	int l;
+        	int h;
+        	int r;
+        	
+        	public Building(int left, int height, int right){
+        		l = left;
+        		h = height;
+        		r = right;
+        	}
+        }
+        
+        public static ArrayList<int[]> skyLine(Building[] buildings){
+        	int n = buildings.length;
+        	Building[] start = Arrays.copyOf(buildings, n);
+        	Building[] end = Arrays.copyOf(buildings, n);
+        	PriorityQueue<Integer> maxHeap = new PriorityQueue<Integer>(n, Collections.reverseOrder());
+        	ArrayList<int[]> strips = new ArrayList<int[]>();
+        	
+        	//sort based on left coordinate of a building i.e. start of a range
+        	Arrays.sort(start, new Comparator<Building>() {
+        
+        		@Override
+        		public int compare(Building o1, Building o2) {
+        			int c = Integer.compare(o1.l, o2.l);
+        			if(c == 0){
+        			    c = Integer.compare(o2.h, o1.h);
+        			}
+        			
+        			return c;
+        		}
+        	});
+        	
+        	//sort based on right coordinate of a building i.e. end of a range
+        	Arrays.sort(end, new Comparator<Building>() {
+        
+        		@Override
+        		public int compare(Building o1, Building o2) {
+        			return Integer.compare(o1.r, o2.r);
+        		}
+        	});
+        	
+        	int i = 0, j  = 0;
+        	while(i < n || j < n){
+        		//a new overlapping range i.e. a building
+        		if(i < n && start[i].l <= end[j].r){
+        			//update max height seen so far in current overlap
+        			maxHeap.add(start[i].h);
+        			//max height in current overlap including the current building
+        			int maxHeightIncldingMe = maxHeap.isEmpty() ? 0 : maxHeap.peek();
+        			//add th current strip with the left of building and max height seen so far in currne overlap
+        			strips.add(new int[]{start[i].l, maxHeightIncldingMe});
+        			//try next building
+        			i++;
+        		}
+        		else{
+        			//it's an end of a range of current overlap. So, we need to remove the height
+        			//of this range i.e. building from the max heap
+    			    maxHeap.remove(end[j].h);
+        			//max height of remaining buildings in current overlap
+        			int maxHeightExcldingMe = maxHeap.isEmpty() ? 0 : maxHeap.peek();
+        			//add the current strip with the right of building and max height of remaining buildings
+        			strips.add(new int[]{end[j].r, maxHeightExcldingMe});
+        			//update end index
+        			j++;
+        		}
+        	}
+        	
+        	//strips.add(new int[]{end[n-1].r, 0});
+        	//merge strips to remove successive strips with same height
+        	ArrayList<int[]> mergedStrips = new ArrayList<int[]>();
+        	int prevHeight = 0;
+        	for(int[] st : strips){
+        	    if(st[0] == end[n-1].r && st[1] != 0){
+        	        continue;
+        	    }
+        		if(prevHeight == 0){
+        			prevHeight = st[1];
+        			mergedStrips.add(st);
+        		}
+        		else if(prevHeight != st[1]){
+        			prevHeight = st[1];
+        			mergedStrips.add(st);
+        		}
+        	}
+        	return mergedStrips;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+28 line of Code, My C++ solution (840ms) O(NlogN) with multiset and multimap
+The basic idea is:
+1.put the start and end of each rectangle into a multimap, we will scan it later. The second parameter of the pair is its height.(i.e. as for [0,5,3] we will put {0, 3} and {5, -3} into the map)
+2.for each element in multimap, if the height is greater than zero, we put it into multiset, else we find and erase it from the set. 
+3. the multiset means at each x value, the existing rectangle.
+4. After processing each x value, the max in the set is what we need, just put it into the vector.
+
+
+    class Solution {
+    public:
+        struct comp{
+            bool operator ()(const int &a, const int &b){ return a > b;}
+        };
+        
+        vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+            vector<pair<int, int> > ret;
+            multimap<int, int> mii;
+            for (int i = 0; i < buildings.size(); ++i){
+                vector<int> &vi = buildings[i];
+                mii.insert(make_pair(vi[0], vi[2]));
+                mii.insert(make_pair(vi[1], vi[2] * -1));
+            }
+            multiset<int, comp> msi;
+            msi.insert(0);
+            while (mii.size()){
+                int last_height = *msi.begin();
+                int cur = mii.begin()->first;
+                while (mii.begin()->first == cur){
+                    int height = mii.begin()->second;
+                    if (height > 0){
+                        msi.insert(height);
+                    }else{
+                        msi.erase(msi.find(height * -1));
+                    }
+                    mii.erase(mii.begin());
+                }
+                if (*msi.begin() != last_height){
+                    ret.push_back(make_pair(cur, *msi.begin()));
+                }
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ 69ms 19 lines O(nlogn) clean solution with comments
+vector<pair<int, int>> getSkyline(vector<vector<int>>& buildings) {
+        // use walls to record buildings; left wall is an insertion event, and right wall is a deletion event
+        vector<pair<int, int>> walls, ans;                  // first: x, second: height
+        for (auto b : buildings) {
+            // push in left / right walls
+            // let left wall has negative height to ensure left wall goes to multiset first if with same 'x' as right wall
+            walls.push_back(make_pair(b[0], -b[2]));
+            walls.push_back(make_pair(b[1], b[2]));
+        }
+        sort(walls.begin(), walls.end());                   // sort walls
+        
+        multiset<int> leftWallHeights = {0};                // keep left wall heights sorted; dummy '0' for convenience
+        int top = 0;                                        // current max height among leftWallHeights
+        for (auto w : walls) {
+            if (w.second < 0) {                             // it's a left wall, insert the height
+                leftWallHeights.insert(-w.second);
+            } else {                                        // it's a right wall, delete the height
+                leftWallHeights.erase(leftWallHeights.find(w.second));
+            }
+            
+            if (*leftWallHeights.rbegin() != top) {         // mark a skyline point if top changes
+                ans.push_back(make_pair(w.first, top = *leftWallHeights.rbegin()));
+            }
+        }
+        
+        return ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Why are C++&#x2F;Java so slow? Different test cases?
+The two by far fastest reported times so far are for Python solutions. As much as I'd like to think Python is faster for once, I gotta admit I now doubt it. I just tested my Python solution and two posted C++ solutions on my own PC on a large test case, and the C++ solutions were far faster. Like factor 20. At the OJ, it's the reverse - my Python solution is far faster. Like a factor of 5. Together, that's a mysterious factor 100 (!) between my PC/test and the OJ that I can't explain.
+
+What's going on? Are the C++/Java solutions given harder test cases here? The number is the same, 32 test cases. Or is the compilation time included? Or is it something else?
+
+----------------------------------------------------------------------------------------------------

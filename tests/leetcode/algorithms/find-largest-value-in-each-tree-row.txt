@@ -1,0 +1,516 @@
+Short and Clean Java Binary Search Solution
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        Arrays.sort(heaters);
+        int result = Integer.MIN_VALUE;
+        
+        for (int house : houses) {
+            int index = Arrays.binarySearch(heaters, house);
+            if (index < 0) {
+        	index = -(index + 1);
+            }
+            int dist1 = index - 1 >= 0 ? house - heaters[index - 1] : Integer.MAX_VALUE;
+            int dist2 = index < heaters.length ? heaters[index] - house : Integer.MAX_VALUE;
+        
+            result = Math.max(result, Math.min(dist1, dist2));
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution with 2 Pointers
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        Arrays.sort(houses);
+        Arrays.sort(heaters);
+        
+        int i = 0, res = 0;
+        for (int house : houses) {
+            while (i < heaters.length - 1 && heaters[i] + heaters[i + 1] <= house * 2) {
+                i++;
+            }
+            res = Math.max(res, Math.abs(heaters[i] - house));
+        }
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python
+def findRadius(self, houses, heaters):
+    heaters.sort()
+    return max(min(abs(house - heater)
+                   for i in [bisect.bisect(heaters, house)]
+                   for heater in heaters[i-(i>0):i+1])
+               for house in houses)
+
+----------------------------------------------------------------------------------------------------
+simple C++ solution
+class Solution {
+public:
+    int findRadius(vector<int>& houses, vector<int>& heaters) {
+        if (heaters.size() == 0) {
+            return 0;
+        }
+        sort(houses.begin(), houses.end());
+        sort(heaters.begin(), heaters.end());
+        int radius = 0;
+        int index = 0;
+        for (int i = 0; i < houses.size(); i++) {
+            while (index + 1 < heaters.size() && (abs(heaters[index+1] - houses[i]) <= abs(heaters[index] - houses[i]))) {
+                index++;
+            }
+            radius = max(radius, abs(heaters[index] - houses[i]));
+        }
+        return radius;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ clean solution with explanation
+class Solution {
+public:
+/*
+Example:    h = house,  * = heater  M = INT_MAX
+
+        h   h   h   h   h   h   h   h   h    houses
+        1   2   3   4   5   6   7   8   9    index
+        *           *       *                heaters
+                
+        0   2   1   0   1   0   -   -   -    (distance to nearest RHS heater)
+        0   1   2   0   1   0   1   2   3    (distance to nearest LHS heater)
+
+        0   1   1   0   1   0   1   2   3    (res = minimum of above two)
+
+Result is maximum value in res, which is 3.
+*/
+    int findRadius(vector<int>& A, vector<int>& H) {
+        sort(A.begin(), A.end());
+        sort(H.begin(), H.end());
+        vector<int> res(A.size(), INT_MAX); 
+        
+        // For each house, calculate distance to nearest RHS heater
+        for (int i = 0, h = 0; i < A.size() && h < H.size(); ) {
+            if (A[i] <= H[h]) { res[i] = H[h] - A[i]; i++; }
+            else { h++; }
+        }
+        
+        // For each house, calculate distance to nearest LHS heater
+        for (int i = A.size()-1, h = H.size()-1; i >= 0 && h >= 0; ) {
+            if (A[i] >= H[h]) { res[i] = min(res[i], A[i] - H[h]); i--; }
+            else { h--; }
+        }
+       
+        return *max_element(res.begin(), res.end());
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java  Easy Solution
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        if(houses == null || houses.length == 0) return 0;
+        Arrays.sort(houses);
+        Arrays.sort(heaters);
+        int ans = 0;
+        int i  = 0;
+        int j = 0;
+        while(i<houses.length){
+            if(houses[i] <= heaters[j]){ //if house is located before heater j.
+                if(j == 0){ // corner case when the heater is the first  one
+                    ans = Math.max(ans, heaters[j]-houses[i]);
+                    i++;
+                    continue;
+                }
+            } else { // if house is located after some heater, 
+                while(j!=heaters.length-1 && heaters[j]<houses[i]){ // then find a heater that stands after the house
+                    j++;
+                }
+                if(j == 0 || heaters[j] < houses[i]){ // corner cases if j is 0 or there is no more heaters
+                    ans = Math.max(ans, houses[i]-heaters[j]);
+                    i++;
+                    continue;
+                }
+            }
+            int dist = Math.min(houses[i]-heaters[j-1], heaters[j]-houses[i]); // if house is located between jth and j-1th heaters
+            ans = Math.max(ans, dist);
+            i++;
+        }
+        
+        return ans;
+    }
+
+}
+
+----------------------------------------------------------------------------------------------------
+Java TreeSet log(n) Solution with explanation
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        TreeSet<Integer> treeset = new TreeSet<>();
+        for (int heater : heaters) treeset.add(heater);
+        int res = 0;
+        for (int house : houses) {
+            Integer upper = treeset.ceiling(house); 
+            Integer lower = treeset.floor(house);
+            res = Math.max(res, Math.min(upper == null ? Integer.MAX_VALUE : upper - house, lower == null ? Integer.MAX_VALUE : house - lower));
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution using lower_bound (binary search), with comments
+int findRadius(vector<int>& houses, vector<int>& heaters) {
+    sort(heaters.begin(), heaters.end());
+    int minRadius = 0;
+    for (int i = 0; i < houses.size(); i++) {
+    	// search for the closest heater whose position is at least the current house's position
+    	auto larger = lower_bound(heaters.begin(), heaters.end(), houses[i]);
+    	int curRadius = INT_MAX;
+    	// if there is such a heater, update the radius for that heater to cover this house if necessary
+    	if (larger != heaters.end())
+    	    curRadius = *larger - houses[i];
+    	// if the heater we found is not the first one, then the previous heater is the closest heater
+    	// whose position is smaller than the current house's position
+    	if (larger != heaters.begin()) {
+    	    auto smaller = larger - 1;
+    	   // the heater with the smaller required radius to cover the house wins
+    	    curRadius = min(curRadius, houses[i] - *smaller);
+    	}
+    	minRadius = max(minRadius, curRadius);
+    }
+    return minRadius;
+}
+
+
+----------------------------------------------------------------------------------------------------
+A Binary Search Solution
+/***
+     * \Note
+     * assume both vectors are in sorted order
+     * 
+     * \Algorithm
+     * for each house in houses, apply binary search in heaters,
+     * to find its closest left heater, and closest right side heater.
+     * left = BsearchNoGreaterThan (house, heaters);
+     * right= BsearchNoSmallerThan (house, heaters);
+     * 
+     * HEATER_TO_RADIUS(heater, house)  (heater == -1 ? INT_MAX : abs(house - heater))
+     * radius = min (HEATER_TO_RADIUS(left, house), HEATER_2_RADIUS(right, house));
+     * 
+     * return max {radius for each house}
+     * 
+     * \Analysis
+     * O(m * 2logn) = O(mlogn) time, O(1) auxiliary space
+     */
+    int findRadiusBSearch(vector<int>& houses, vector<int>& heaters) {
+        int ret = 0;
+        
+        /* the input is not necessarily sorted */
+        sort (heaters.begin(), heaters.end());
+        for (int i = 0; i < houses.size(); i++) {
+            int leftHeater = BSearchNoGreaterThan (heaters, houses[i]);
+            int rightHeater= BSearchNoSmallerThan (heaters, houses[i]);
+            
+            //cout << leftHeater << " " << houses[i] << " " << rightHeater << endl;
+            #define HEATER2R(ht, hs)    (ht == -1 ? INT_MAX : abs(hs - ht))
+            int radius = min (HEATER2R(leftHeater, houses[i]), HEATER2R(rightHeater, houses[i]));
+            ret = max (radius, ret);
+        }
+        
+        return ret;
+    }
+    
+    int BSearchNoGreaterThan (vector<int>& nums, int target) {
+        int lo = 0;
+        int hi = nums.size() - 1;
+        
+        while (lo < hi) {
+            int mid = lo + (hi - lo + 1) / 2;
+            if (nums[mid] <= target) {
+                lo = mid;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        
+        if (lo == hi && nums[lo] <= target) {
+            return nums[lo];
+        }
+        
+        /* not found */
+        return -1;
+    }
+    
+    int BSearchNoSmallerThan (vector<int>& nums, int target) {
+        int lo = 0;
+        int hi = nums.size() - 1;
+        
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (target <= nums[mid]) {
+                hi = mid;
+            } else {
+                lo = mid + 1;
+            }
+        }
+        
+        if (lo == hi && target <= nums[lo]) {
+            return nums[lo];
+        }
+        return -1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+The example is not very clear
+<p><img src="/uploads/files/1481434091861-screen-shot-2016-12-10-at-8.39.46-pm.png" alt="0_1481434089890_Screen Shot 2016-12-10 at 8.39.46 PM.png" class="img-responsive img-markdown"/></p>
+<p>For example 2, the output is 1. But in the explanation, &#34;We need to use radius 2 standard&#34;. It is confusing.</p>
+
+
+----------------------------------------------------------------------------------------------------
+10 lines python with easy understanding
+class Solution(object):
+    def findRadius(self, houses, heaters):
+        """
+        :type houses: List[int]
+        :type heaters: List[int]
+        :rtype: int
+        """
+        houses.sort()
+        heaters.sort()
+        heaters=[float('-inf')]+heaters+[float('inf')] # add 2 fake heaters
+        ans,i = 0,0
+        for house in houses:
+            while house > heaters[i+1]:  # search to put house between heaters
+                i +=1
+            dis = min (house - heaters[i], heaters[i+1]- house)
+            ans = max(ans, dis)
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+5-line solution directly using std::lower_bound for binary search (detailed explanation with picture illustration)
+    int findRadius(vector<int>& houses, vector<int>& hts) {
+      sort(hts.begin(), hts.end()); int res = 0; 
+      for (int h:houses) { // find nearest distance to heaters
+        auto i = lower_bound(hts.begin(), hts.end(), h); // next right heater
+        res = max(res, min(i!=hts.begin()? h-*(--i):INT_MAX, i!=hts.end()? *i - h:INT_MAX));
+      }
+      return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+binary search in python
+class Solution(object):
+    def findRadius(self, houses, heaters):
+        
+        heaters.sort()
+        
+        ans = 0
+        
+        for h in houses:
+            hi = bisect.bisect_left(heaters, h)
+            left = heaters[hi-1] if hi-1 >= 0 else float('-inf')
+            right = heaters[hi] if hi < len(heaters) else float('inf')
+            ans = max(ans, min(h-left, right-h))
+            
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+No need consider boundary condition!! C++
+int findRadius(vector<int>& houses, vector<int>& heaters) {
+        heaters.push_back(INT_MAX);
+        heaters.push_back(INT_MIN);
+        sort(heaters.begin(), heaters.end());
+        long long res = 0;
+        for (p : houses){
+            int p1 = lower_bound(heaters.begin(), heaters.end(), p)-heaters.begin();
+            int p2 = p1-1;
+            long long temp = min( ((long long)heaters[p1]-p), ((long long)p-heaters[p2]));
+            res = max(res, temp);
+        }
+        return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+17 lines of code O(N logN) simple Java Solution
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        Arrays.sort(houses);
+        Arrays.sort(heaters);
+        int heaterIdx = 0;
+        int res = 0;
+        for (int i = 0; i < houses.length; i++) {
+            while (heaterIdx != heaters.length - 1 && Math.abs(heaters[heaterIdx + 1] - houses[i]) <= Math.abs(heaters[heaterIdx] - houses[i])) {
+                heaterIdx++;
+            }
+            
+            res = Math.max(res, Math.abs(heaters[heaterIdx] - houses[i]));
+        }
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java binary search solution
+    public int findRadius(int[] houses, int[] heaters) {
+        Arrays.sort(heaters); // nlogn
+        final int N = heaters.length;
+        int maxRadius = 0;
+        for(int house : houses){ // m * logn
+            int index = Arrays.binarySearch(heaters, house);
+            if(index<0) index = -index-1;
+            int dist_r = index<N ? heaters[index] - house : Integer.MAX_VALUE; // right heater
+            int dist_l = index>0 ? house - heaters[index-1] : Integer.MAX_VALUE; // left heater
+            maxRadius = Math.max(maxRadius, Math.min(dist_l, dist_r)); // max, min
+        }
+        return maxRadius;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+232ms cpp easy solution
+    int findRadius(vector<int>& houses, vector<int>& heaters) {
+        set<int> heater_set;
+        for (const int& heater : heaters) {
+            heater_set.insert(heater);
+        }
+        int result = 0, dis;
+
+        for (const int& house : houses) {
+            auto iter = heater_set.lower_bound(house);
+            if (iter == heater_set.begin()) {
+                dis = abs(*iter - house);
+            } else if (iter == heater_set.end()) {
+                // left iterator
+                auto l_iter = next(iter, -1);
+                dis = abs(*l_iter - house);
+            } else {
+                auto l_iter = next(iter, -1);
+                dis = min(abs(*iter - house), abs(*l_iter - house));
+            }
+            result = max(dis, result);
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Easy Solution with Explanation
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        Arrays.sort(houses);
+        Arrays.sort(heaters);
+        
+        // pre represents the heater that's ahead of the current house
+        int pre = heaters[0];
+        // index of the heater
+        int i = 0;
+        int res = 0;
+        for (int house : houses) {
+            // looking for the heater that's immediately after the current house
+            while (i < heaters.length - 1 && heaters[i] < house) {
+                pre = heaters[i];
+                i++;
+            }
+            
+            int distanceToPreHeater = Math.abs(house - pre);
+            int distanceToAfterHeater = Math.abs(house - heaters[i]);
+            res = Math.max(res, Math.min(distanceToPreHeater, distanceToAfterHeater));
+        }
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Binary search easy to understand, a little long
+public class Solution {
+public int findRadius(int[] houses, int[] heaters) {
+    Arrays.sort(heaters);
+    int rad = 0;
+    for(int i = 0; i < houses.length; i++){
+        int pre = Integer.MAX_VALUE;
+        int after = Integer.MAX_VALUE;
+        if(houses[i] >= heaters[heaters.length - 1]){
+            pre = houses[i] - heaters[heaters.length - 1];
+         }
+        else if(houses[i] <= heaters[0]){
+            after = heaters[0] - houses[i];
+        }
+        else{
+            int tem = index(heaters, houses[i]);
+            pre = houses[i] - heaters[tem];
+            after = heaters[tem + 1] - houses[i];
+        }
+        
+        rad = Math.max(rad, Math.min(pre, after));
+    }
+    return rad;
+}
+public int index(int[] heaters, int target){// find the nearest left
+    int left = 0;
+    int right = heaters.length - 1;
+    while(left < right){
+        int mid = left + (right - left) / 2;
+        if(heaters[mid] <= target && heaters[mid + 1] >= target){
+            return mid;
+        }
+        else if(heaters[mid] <= target){
+            left = mid + 1;
+        }
+        else if(heaters[mid] >= target){
+            right = mid;
+        }
+    }
+    return left;
+}
+
+
+----------------------------------------------------------------------------------------------------
+My Java Binary Search Solution, Concise and Easy to Understand
+public class Solution {
+    public int findRadius(int[] houses, int[] heaters) {
+        int m = houses.length;
+        int n = heaters.length;
+        Arrays.sort(houses);
+        Arrays.sort(heaters);
+        int left = 0;
+        int right = Math.max(Math.abs(houses[0] - heaters[n - 1]), Math.abs(houses[m - 1] - heaters[0]));
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (cover(mid, houses, heaters)) right = mid - 1;
+            else left = mid + 1;
+        }
+        return left;
+    }
+    
+    public boolean cover(int radius, int[] houses, int[] heaters) {
+        int m = houses.length;
+        int n = heaters.length;
+        int j = 0;
+        for (int i = 0; i < n; i++) {
+            long low = heaters[i] - radius;
+            long high = heaters[i] + radius;
+            while (j < m && low <= (long)houses[j] && (long)houses[j] <= high) j++;
+        }
+        return j == m;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

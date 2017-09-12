@@ -1,0 +1,707 @@
+Java clear O(n logn) solution based on TreeMap
+public class Solution {
+    public int[] findRightInterval(Interval[] intervals) {
+        int[] result = new int[intervals.length];
+        java.util.NavigableMap<Integer, Integer> intervalMap = new TreeMap<>();
+        
+        for (int i = 0; i < intervals.length; ++i) {
+            intervalMap.put(intervals[i].start, i);    
+        }
+        
+        for (int i = 0; i < intervals.length; ++i) {
+            Map.Entry<Integer, Integer> entry = intervalMap.ceilingEntry(intervals[i].end);
+            result[i] = (entry != null) ? entry.getValue() : -1;
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ map solution
+class Solution {
+public:
+    vector<int> findRightInterval(vector<Interval>& intervals) {
+        map<int, int> hash;
+        vector<int> res;
+        int n = intervals.size();
+        for (int i = 0; i < n; ++i)
+            hash[intervals[i].start] = i;
+        for (auto in : intervals) {
+            auto itr = hash.lower_bound(in.end);
+            if (itr == hash.end()) res.push_back(-1);
+            else res.push_back(itr->second);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python O(nlogn) short solution with explanation
+def findRightInterval(self, intervals):
+    l = sorted((e.start, i) for i, e in enumerate(intervals))
+    res = []
+    for e in intervals:
+        r = bisect.bisect_left(l, (e.end,))
+        res.append(l[r][1] if r < len(l) else -1)
+    return res
+
+
+----------------------------------------------------------------------------------------------------
+Java Concise Binary Search
+public int[] findRightInterval(Interval[] intervals) {
+    Map<Integer, Integer> map = new HashMap<>();
+    List<Integer> starts = new ArrayList<>();
+    for (int i = 0; i < intervals.length; i++) {
+        map.put(intervals[i].start, i);
+        starts.add(intervals[i].start);
+    }
+    
+    Collections.sort(starts);
+    int[] res = new int[intervals.length];
+    for (int i = 0; i < intervals.length; i++) {
+        int end = intervals[i].end;
+        int start = binarySearch(starts, end);
+        if (start < end) {
+            res[i] = -1;
+        } else {
+            res[i] = map.get(start);
+        }
+    }
+    return res;
+}
+
+public int binarySearch(List<Integer> list, int x) {
+    int left = 0, right = list.size() - 1;
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (list.get(mid) < x) { 
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+    return list.get(left);
+}
+
+----------------------------------------------------------------------------------------------------
+2 lines Python &#x2F; Ruby
+def find_right_interval(intervals)
+  starts = intervals.map.with_index { |interval, i| [interval.start, i] }.sort
+  intervals.map { |interval| (starts.bsearch { |s, i| s >= interval.end } || [-1])[-1] }
+end
+
+
+----------------------------------------------------------------------------------------------------
+Java Sweep-Line Solution O(nlogn)
+class Point implements Comparable<Point>{
+    int val;
+    int flag; //1 start, 0 end
+    int index;
+    public Point(int val, int flag, int index) {
+        this.val = val;
+        this.flag = flag;
+        this.index = index;
+    }
+    public int compareTo(Point o) {
+        if (this.val == o.val) return this.flag - o.flag; //end in front of start
+        return this.val - o.val;
+    }
+}
+public int[] findRightInterval(Interval[] intervals) {
+    if (intervals == null || intervals.length == 0) return new int[]{};
+    
+    int[] res = new int[intervals.length];
+    Arrays.fill(res, -1);
+    
+    List<Point> points = new ArrayList<>();
+    for (int i = 0; i < intervals.length; i++) {
+        points.add(new Point(intervals[i].start, 1, i));
+        points.add(new Point(intervals[i].end, 0, i));
+    }
+    
+    Collections.sort(points);
+    
+    List<Integer> prevIdxs = new ArrayList<>();
+    
+    for (Point point: points) {
+        if (point.flag == 1) {
+                for (Integer prevIdx: prevIdxs) {
+                   res[prevIdx] = point.index; 
+                }
+                prevIdxs = new ArrayList<>();
+        } else {
+            prevIdxs.add(point.index);
+        }
+    }
+    
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+Commented Java O(n*logn) solution. Sort + Binary Search.
+public int[] findRightInterval(Interval[] intervals) {
+        
+        int n;
+        // boundary case
+        if (intervals == null || (n = intervals.length) == 0) return new int[]{};
+        
+        // output
+        int[] res = new int[intervals.length];
+        // auxilliary array to store sorted intervals
+        Interval[] sintervals = new Interval[n];
+        
+        // sintervals don't have any use of 'end', so let's use it for tracking original index
+        for (int i = 0; i < n; ++i) {
+            sintervals[i] = new Interval(intervals[i].start, i);
+        }
+        
+        // sort
+        Arrays.sort(sintervals, (a, b)->a.start-b.start);
+        
+        int i = 0;
+        for (; i < n; ++i) {
+            int key = intervals[i].end;
+            // binary search in sintervals for key
+            int l = 0, r = n - 1;
+            int right = -1;
+            while (l <= r) {
+                int m = l + (r - l) / 2;
+                if (sintervals[m].start == key) {
+                    right = sintervals[m].end; // original index is stored in end
+                    break;
+                } else if (sintervals[m].start < key) {
+                    l = m + 1;
+                } else {
+                    r = m - 1;
+                }
+            }
+            
+            // if we haven't found the key, try looking for 'start' that's just greater
+            if ((right == -1) && (l < n) && (sintervals[l].start > key)) {
+                right = sintervals[l].end; // original index is stored in end
+            }
+            
+            res[i] = right;
+        }
+        
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise O(nlgn) C++ solution using BST(std::map)
+class Solution {
+public:
+    vector<int> findRightInterval(vector<Interval>& intervals) {
+        std::map<int,int> start_indexes;
+        for (int index = 0; index < intervals.size(); ++index) {
+        	start_indexes.emplace(intervals[index].start, index);
+        }
+        vector<int> result;
+        for (auto& interval : intervals) {
+        	auto lower_bound_it = start_indexes.lower_bound(interval.end);
+        	result.push_back(lower_bound_it == start_indexes.end() ? -1 : lower_bound_it->second);
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(nlogn) solution with sorting &amp; binary searching
+public int[] findRightInterval(Interval[] intervals) {
+    int[] res = new int[intervals.length];
+    int[][] arr = new int[intervals.length][2];
+        
+    for (int i = 0; i < intervals.length; i++) {
+        arr[i][0] = intervals[i].start;
+        arr[i][1] = i;
+    }
+        
+    Arrays.sort(arr, new Comparator<int[]>() {
+        public int compare(int[] a, int[] b) {
+            return Integer.compare(a[0], b[0]);
+        }
+    });
+     
+    for (int i = 0; i < arr.length; i++) {
+        int l = i + 1, r = arr.length - 1, m = 0;
+            
+        while (l <= r) {
+            m = l + ((r - l) >>> 1);
+                
+            if (intervals[arr[i][1]].end <= arr[m][0]) {
+                r = m - 1;
+            } else {
+                l = m + 1;
+            }
+        }
+            
+        res[arr[i][1]] = (l < arr.length ? arr[l][1] : -1);
+    }
+        
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+My 22ms Java Solution, O(nlogn), simple and easy
+public class Solution {
+    class myNode{
+        int start;
+        int idx;
+        public myNode(int start, int idx){
+            this.start = start; this.idx = idx;
+        }
+    }
+    public int[] findRightInterval(Interval[] intervals) {
+        int[] ret = new int[intervals.length];
+        if(intervals.length<1) return ret;
+        myNode[] ends = new myNode[intervals.length];
+        for(int i=0;i<intervals.length;i++) ends[i] = new myNode(intervals[i].start, i);
+        Arrays.sort(ends, new Comparator<myNode>(){
+            public int compare(myNode A, myNode B){
+                if(A.start!=B.start) return A.start-B.start;
+                else return A.idx-B.idx;
+            }
+        });
+        for(int i=0;i<intervals.length;i++) ret[i] = search(intervals, ret, ends, i);
+        return ret;
+    }
+    public int search(Interval[] intervals, int[] ret, myNode[] ends, int start){
+        int lo = 0, hi = ret.length-1;
+        while(lo<hi){
+            int mid = lo + (hi-lo)/2;
+            if(ends[mid].start>=intervals[start].end && ends[mid].idx!=start) hi = mid;
+            else lo = mid +1;
+        }
+        return ends[lo].start>=intervals[start].end && ends[lo].idx != start?ends[lo].idx:-1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n*logn) solution with explanation
+public class Solution {
+    public int[] findRightInterval(Interval[] intervals) {
+        int len = intervals.length;
+        if(len < 2){
+            return new int[]{-1};
+        }
+        
+        int[] starts = new int[len + 2];
+        int[] res = new int[len];
+        Map<Integer, Integer> map = new HashMap<>();
+        
+        for(int i = 0; i < len; i++){
+            starts[i] = intervals[i].start;
+            map.put(starts[i], i);
+        }
+        starts[len] = Integer.MAX_VALUE;
+        starts[len + 1] = Integer.MIN_VALUE;
+        
+        map.put(Integer.MAX_VALUE, -1);
+        Arrays.sort(starts);
+        
+        for(int i = 0; i < len; i++){
+            int end = intervals[i].end;
+            res[i] = binarySearch(starts, map, end);
+        }
+        
+        return res;
+    }
+    
+    public int binarySearch(int[] starts, Map<Integer, Integer> map, int end){
+        int low = 1;
+        int high = starts.length - 2;
+        while(high >= low){
+            int mid = low + (high - low) / 2;
+            if(starts[mid] > end && end > starts[mid - 1]){
+                return map.get(starts[mid]);
+            }
+            else if(starts[mid] < end){
+                low = mid + 1;
+            }
+            else{
+                high = mid - 1;
+            }
+        }
+        
+        return map.get(starts[low]);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn), just array, with sorting and scanning
+public class Solution 
+{
+    public int[] FindRightInterval(Interval[] intervals) 
+    {
+        if(intervals == null || intervals.Length <= 1) return new int[] { -1 };
+        
+        Wapper[] sIntervals = new Wapper[intervals.Length];
+        Wapper[] eIntervals = new Wapper[intervals.Length];
+        for(int i = 0; i < intervals.Length; i++)
+        {
+            sIntervals[i] = new Wapper(intervals[i], i);
+            eIntervals[i] = new Wapper(intervals[i], i);
+        }
+        Array.Sort(sIntervals, (x, y) => (x.Start).CompareTo(y.Start));
+        Array.Sort(eIntervals, (x, y) => (x.End).CompareTo(y.End));
+
+        int[] result = new int[intervals.Length];
+        for(int i = 0; i < result.Length; i++) result[i] = -1;
+        
+        int sIndex = 0;
+        for(int i = 0; i < eIntervals.Length; i++)
+        {
+            while(sIndex < sIntervals.Length && eIntervals[i].End > sIntervals[sIndex].Start) sIndex++;
+            
+            if(sIndex >= sIntervals.Length) break;
+            else result[eIntervals[i].Position] = sIntervals[sIndex].Position;
+        }
+        
+        return result;
+    }
+    
+    class Wapper
+    {
+        Interval interval;
+        internal int Position { get; set;}
+        internal int Start { get { return interval.start; } }
+        internal int End { get { return interval.end; } }
+        
+        internal Wapper(Interval interval, int position)
+        {
+            this.Position = position;
+            this.interval = interval;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; Abstract + Sort
+    public class Node implements Comparable<Node> {
+        int idx; // which interval it belongs too
+        int val;
+        int flag; // 0 equals end, 1 equals start;
+        public Node (int idx, int val, int flag) {
+            this.idx = idx;
+            this.val = val;
+            this.flag = flag;
+        }
+        @Override
+        public int compareTo(Node that){
+            if(this.val != that.val){
+                return this.val - that.val;
+            } else {
+                return this.flag - that.flag;
+            }
+        }
+        
+    }
+    public int[] findRightInterval(Interval[] intervals) {
+        // One solution is to do one level abstraction
+        // Store the point along with its start,end, idx.
+        // Sort all the points.
+        if(intervals == null || intervals.length == 0) return null;
+        int len = intervals.length;
+        int[] res = new int[len];
+        Arrays.fill(res, -1);
+        
+        //Iterate these the sorted point, if it's start point, pop whatever inside of stk and mark
+        // their next as current start point's idx
+        List<Node> nodes = new ArrayList<>();
+        
+        int cnt = 0;
+        for(Interval itv : intervals) {
+            Node node1 = new Node(cnt, itv.start, 1);
+            Node node2 = new Node(cnt, itv.end, 0);
+            nodes.add(node1);
+            nodes.add(node2);
+            cnt++;
+        }
+        
+        /*2nlog2n Time complexity*/
+        Collections.sort(nodes);
+       
+        Stack<Integer> stk = new Stack<>();
+        for(Node node : nodes) {
+            if(node.flag == 0) {
+                stk.push(node.idx);
+            } else {
+                int start_idx = node.idx;
+                while(!stk.isEmpty()) {
+                    int end_idx = stk.pop();
+                    res[end_idx] = start_idx;
+                }
+            }
+        }
+        
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+using python not binary search  O(nlogn)
+# Definition for an interval.
+# class Interval(object):
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class Solution(object):
+    def findRightInterval(self, intervals):
+        """
+        :type intervals: List[Interval]
+        :rtype: List[int]
+        """
+        index_intervals = [[ele[1].start, ele[1].end, ele[0]] for ele in enumerate(intervals)]
+        post_intervals = sorted(index_intervals, key = lambda x: x[1])
+        pre_intervals = sorted(index_intervals)
+        ret = [-1 for i in range(len(intervals))]
+        
+        i = 0
+        j = 0
+        while j < len(post_intervals) and i < len(pre_intervals):
+            if pre_intervals[i][0] >= post_intervals[j][1]:
+                ret[post_intervals[j][2]] = pre_intervals[i][2]
+                j = j + 1
+            else:
+                i = i + 1
+                
+        return ret
+
+
+----------------------------------------------------------------------------------------------------
+TreeMap&lt;start, index&gt;. O(n*logn)
+public class Solution {
+    public int[] findRightInterval(Interval[] intervals) {
+        int n = intervals.length;
+        if (n==0) return new int[0];
+        
+        TreeMap<Integer, Integer> starts = getStartsMap(intervals);
+        
+        int rights[] = new int[n];
+        for (int i=0; i<n; i++) {
+            int end = intervals[i].end;
+            Map.Entry<Integer, Integer> entry = starts.ceilingEntry(end);
+            if (entry==null) rights[i]=-1;
+            else rights[i] = entry.getValue();
+        }
+        
+        return rights;
+    }
+    
+    public TreeMap<Integer, Integer> getStartsMap(Interval[] intervals) {
+        TreeMap<Integer, Integer> starts = new TreeMap<>();
+        
+        for (int i=0; i<intervals.length; i++) {
+            starts.put(intervals[i].start, i);
+        }
+        return starts;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java, TreeMap &lt;start, index&gt;. O(n*logn)
+public class Solution {
+    public int[] findRightInterval(Interval[] intervals) {
+        int n = intervals.length;
+        if (n==0) return new int[0];
+        
+        TreeMap<Integer, Integer> starts = getStartsMap(intervals);
+        
+        int rights[] = new int[n];
+        for (int i=0; i<n; i++) {
+            int end = intervals[i].end;
+            Map.Entry<Integer, Integer> entry = starts.ceilingEntry(end);
+            if (entry==null) rights[i]=-1;
+            else rights[i] = entry.getValue();
+        }
+        
+        return rights;
+    }
+    
+    public TreeMap<Integer, Integer> getStartsMap(Interval[] intervals) {
+        TreeMap<Integer, Integer> starts = new TreeMap<>();
+        
+        for (int i=0; i<intervals.length; i++) {
+            starts.put(intervals[i].start, i);
+        }
+        return starts;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(nlogn) solution base on BinarySearch &#91;Accepted&#93;
+public int[] findRightInterval(Interval[] intervals) {
+        int n = intervals.length;
+        int[] results = new int[n]; 
+        results[0] = -1;
+        if (n == 1) return results;
+        
+        Interval[] temp = new Interval[n];
+        // O(n)
+        for (int i = 0; i < n; ++i){
+            Interval value = new Interval(intervals[i].start, i);
+            temp[i] = value;
+        }
+        
+        //O(nlogn)
+        Arrays.sort(temp, new Comparator<Interval>() {
+			@Override
+			public int compare(Interval o1, Interval o2) {
+				return o1.start - o2.start;
+			}
+		});
+		
+		//O(nlogn)
+		for (int i = 0; i < n; ++i){
+		    
+		    int left = 0;
+		    int right = n-1;
+		    int index = -1;
+		    while (left <= right){
+		        int mid = left + (right - left)/2;
+		        
+		        if (temp[mid].start == intervals[i].end){
+		            index = temp[mid].end;
+		            break;
+		        }
+		        else if (temp[mid].start > intervals[i].end){
+		            index = temp[mid].end;
+		            right = mid -1;
+		        }
+		        else{
+		            left = mid + 1;
+		        }
+		    }
+		    
+		    results[i] = index;
+		}
+		
+		return results;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+my just so so js solution
+function findRightInterval(intervals) {
+    let n = intervals.length
+    for (let i = 0; i < n; i++) intervals[i].index = i
+    intervals.sort((i, j) => i.start - j.start)
+    function findRightIndex(target) {
+        let left = 0
+        let right = n
+        while (left < right) {
+            let mid = (left + right) >> 1
+            let val = intervals[mid].start
+            if (val < target) left = mid + 1
+            else right = mid
+        }
+        return intervals[left] ? intervals[left].index : -1
+    }
+    
+    let ans = Array(n)
+    for (let interval of intervals) ans[interval.index] = findRightIndex(interval.end)
+    return ans
+}
+
+
+----------------------------------------------------------------------------------------------------
+beat 100% Golang submissions
+/**
+ * Definition for an interval.
+ * type Interval struct {
+ *	   Start int
+ *	   End   int
+ * }
+ */
+func findRightInterval(intervals []Interval) []int {
+	idxMap := make(map[int]int)
+	//keep the original position of each interval
+	for i, itv := range intervals {
+		idxMap[itv.Start] = i
+	}
+	//sort by start point
+	sort.Slice(intervals, func(i, j int) bool {
+		return intervals[i].Start < intervals[j].Start
+	})
+
+	result := make([]int, len(intervals))
+	for i, itv := range intervals {
+		//index of an interval before sort
+		oldIdx := idxMap[itv.Start]
+		found := binarySearch(intervals, i, itv.End)
+		if found != -1 {
+			result[oldIdx] = idxMap[intervals[found].Start]
+		} else {
+			result[oldIdx] = -1
+		}
+	}
+	return result
+}
+
+//find the min index of an interval whose start point >= end
+func binarySearch(intervals []Interval, begin int, point int) int {
+	idx := -1 //default, not found
+	end := len(intervals) - 1
+	for begin <= end {
+		if begin == end { //last try, should end loop
+			if intervals[begin].Start >= point {
+				idx = begin
+			}
+			break
+		}
+
+		mid := (begin + end) / 2
+		if intervals[mid].Start < point {
+			//search in right
+			begin = mid + 1
+		} else { //search in left
+			end = mid
+		}
+
+	}
+	return idx
+}
+
+
+----------------------------------------------------------------------------------------------------
+Alternative solution (sort twice)
+class Solution {
+    public int[] findRightInterval(Interval[] intervals) {        
+        Map<Integer, Integer> startToIndex = new HashMap<>();
+        for (int i=0; i<intervals.length; i++) {
+            startToIndex.put(intervals[i].start, i);
+        }
+        Interval[] byStart = Arrays.copyOf(intervals, intervals.length);
+        Arrays.sort(byStart, (i1, i2) -> i1.start - i2.start);
+        Interval[] byEnd = Arrays.copyOf(intervals, intervals.length);
+        Arrays.sort(byEnd, (i1, i2) -> i1.end - i2.end);
+        int[] result = new int[intervals.length];
+        int index = 0;
+        for (int i=0; i<byEnd.length; i++) {
+            while (index < byStart.length && byStart[index].start < byEnd[i].end) {
+                index++;
+            }
+            if (index < byStart.length) {
+                result[startToIndex.get(byEnd[i].start)] = startToIndex.get(byStart[index].start);
+            } else {
+                result[startToIndex.get(byEnd[i].start)] = -1;
+            }
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,753 @@
+A Concise DP Solution in Java
+The general idea is DP, while I had to add a "quickSolve" function to tackle some corner cases to avoid TLE.
+
+DP: t(i,j) is the max profit for up to i transactions by time j (0<=i<=K, 0<=j<=T).
+
+        public int maxProfit(int k, int[] prices) {
+            int len = prices.length;
+            if (k >= len / 2) return quickSolve(prices);
+            
+            int[][] t = new int[k + 1][len];
+            for (int i = 1; i <= k; i++) {
+                int tmpMax =  -prices[0];
+                for (int j = 1; j < len; j++) {
+                    t[i][j] = Math.max(t[i][j - 1], prices[j] + tmpMax);
+                    tmpMax =  Math.max(tmpMax, t[i - 1][j - 1] - prices[j]);
+                }
+            }
+            return t[k][len - 1];
+        }
+        
+
+        private int quickSolve(int[] prices) {
+            int len = prices.length, profit = 0;
+            for (int i = 1; i < len; i++)
+                // as long as there is a price gap, we gain a profit.
+                if (prices[i] > prices[i - 1]) profit += prices[i] - prices[i - 1];
+            return profit;
+        }
+
+----------------------------------------------------------------------------------------------------
+Clean Java DP solution with comment
+    /**
+	 * dp[i, j] represents the max profit up until prices[j] using at most i transactions. 
+     * dp[i, j] = max(dp[i, j-1], prices[j] - prices[jj] + dp[i-1, jj]) { jj in range of [0, j-1] }
+     *          = max(dp[i, j-1], prices[j] + max(dp[i-1, jj] - prices[jj]))
+     * dp[0, j] = 0; 0 transactions makes 0 profit
+     * dp[i, 0] = 0; if there is only one price data point you can't make any transaction.
+	 */
+
+    public int maxProfit(int k, int[] prices) {
+    	int n = prices.length;
+    	if (n <= 1)
+    		return 0;
+    	
+    	//if k >= n/2, then you can make maximum number of transactions.
+    	if (k >=  n/2) {
+    		int maxPro = 0;
+    		for (int i = 1; i < n; i++) {
+    			if (prices[i] > prices[i-1])
+    				maxPro += prices[i] - prices[i-1];
+    		}
+    		return maxPro;
+    	}
+    	
+        int[][] dp = new int[k+1][n];
+        for (int i = 1; i <= k; i++) {
+        	int localMax = dp[i-1][0] - prices[0];
+        	for (int j = 1; j < n; j++) {
+        		dp[i][j] = Math.max(dp[i][j-1],  prices[j] + localMax);
+        		localMax = Math.max(localMax, dp[i-1][j] - prices[j]);
+        	}
+        }
+        return dp[k][n-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ Solution with O(n + klgn) time using Max Heap and Stack
+We can find all adjacent valley/peak pairs and calculate the profits easily. Instead of accumulating all these profits like Buy&Sell Stock II, we need the highest k ones.
+
+The key point is when there are two v/p pairs (v1, p1) and (v2, p2), satisfying v1 <= v2 and p1 <= p2, we can either make one transaction at [v1, p2], or make two at both [v1, p1] and [v2, p2]. The trick is to treat [v1, p2] as the first transaction, and [v2, p1] as the second. Then we can guarantee the right max profits in both situations, **p2 - v1** for one transaction and **p1 - v1 + p2 - v2** for two.
+
+Finding all v/p pairs and calculating the profits takes O(n) since there are up to n/2 such pairs. And extracting k maximums from the heap consumes another O(klgn).
+
+
+    class Solution {
+    public:
+        int maxProfit(int k, vector<int> &prices) {
+            int n = (int)prices.size(), ret = 0, v, p = 0;
+            priority_queue<int> profits;
+            stack<pair<int, int> > vp_pairs;
+            while (p < n) {
+                // find next valley/peak pair
+                for (v = p; v < n - 1 && prices[v] >= prices[v+1]; v++);
+                for (p = v + 1; p < n && prices[p] >= prices[p-1]; p++);
+                // save profit of 1 transaction at last v/p pair, if current v is lower than last v
+                while (!vp_pairs.empty() && prices[v] < prices[vp_pairs.top().first]) {
+                    profits.push(prices[vp_pairs.top().second-1] - prices[vp_pairs.top().first]);
+                    vp_pairs.pop();
+                }
+                // save profit difference between 1 transaction (last v and current p) and 2 transactions (last v/p + current v/p),
+                // if current v is higher than last v and current p is higher than last p
+                while (!vp_pairs.empty() && prices[p-1] >= prices[vp_pairs.top().second-1]) {
+                    profits.push(prices[vp_pairs.top().second-1] - prices[v]);
+                    v = vp_pairs.top().first;
+                    vp_pairs.pop();
+                }
+                vp_pairs.push(pair<int, int>(v, p));
+            }
+            // save profits of the rest v/p pairs
+            while (!vp_pairs.empty()) {
+                profits.push(prices[vp_pairs.top().second-1] - prices[vp_pairs.top().first]);
+                vp_pairs.pop();
+            }
+            // sum up first k highest profits
+            for (int i = 0; i < k && !profits.empty(); i++) {
+                ret += profits.top();
+                profits.pop();
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my C++ DP solution with O(kn) time O(k) space, 10ms
+This is my DP solution:
+
+class Solution {
+
+    public:
+        int maxProfit(int k, vector<int> &prices) {
+            int len = prices.size();
+            if (len<2) return 0;
+            if (k>len/2){ // simple case
+                int ans = 0;
+                for (int i=1; i<len; ++i){
+                    ans += max(prices[i] - prices[i-1],0);
+                }
+                return ans;
+            }
+            int hold[k+1];
+            int rele[k+1];
+            for (int i=0;i<=k;++i){
+                hold[i] = INT_MIN;
+                rele[i] = 0;
+            }
+            int cur;
+            for (int i=0; i<len; ++i){
+                cur = prices[i];
+                for(int j=k; j>0; --j){
+                    rele[j] = max(rele[j],hold[j] + cur);
+                    hold[j] = max(hold[j],rele[j-1] - cur);
+                }
+            }
+            return rele[k];
+        }
+
+};
+
+Inspired by weijiac in Best Time to Buy and Sell Stock III
+
+https://leetcode.com/discuss/18330/is-it-best-solution-with-o-n-o-1
+
+----------------------------------------------------------------------------------------------------
+Easy understanding and can be easily modified to different situations Java Solution
+The basic idea is to create two tables. hold and unhold. 
+ 
+hold[i][j] means the maximum profit with at most j transaction for 0 to i-th day. hold means you have a stock in your hand.
+
+unhold[i][j] means the maximum profit with at most j transaction for 0 to i-th day. unhold means you don't have a stock in your hand.
+
+The equation is 
+
+> **hold[i][j] = Math.max(unhold[i-1][j]-prices[i],hold[i-1][j]);**
+> 
+> 
+> **unhold[i][j] = Math.max(hold[i-1][j-1]+prices[i],unhold[i-1][j]);**
+
+when you sell your stock this is a transaction but when you buy a stock, it is not considered as a full transaction. so this is why the two equation look a little different.
+
+And we have to initiate hold table when **k = 0**.
+
+When the situation is you can not buy a new stock at the same day when you sell it. For example you can only buy a new stock after one day you sell it. The same idea. Another situation is when you have to pay a transaction fee for each transaction, just make a modification when you sell it, So just change the unhold equation a little. 
+
+ 
+
+    public class Solution {
+        //hold[i][k]  ith day k transaction have stock and maximum profit
+        //unhold[i][k] ith day k transaction do not have stock at hand and maximum profit
+        public int maxProfit(int k, int[] prices) {
+            if(k>prices.length/2) return maxP(prices);
+            int[][] hold = new int[prices.length][k+1];
+            int[][] unhold = new int[prices.length][k+1];
+            hold[0][0] = -prices[0];
+            for(int i=1;i<prices.length;i++) hold[i][0] = Math.max(hold[i-1][0],-prices[i]);
+            for(int j=1;j<=k;j++) hold[0][j] = -prices[0];
+            for(int i=1;i<prices.length;i++){
+                for(int j=1;j<=k;j++){
+                    hold[i][j] = Math.max(unhold[i-1][j]-prices[i],hold[i-1][j]);
+                    unhold[i][j] = Math.max(hold[i-1][j-1]+prices[i],unhold[i-1][j]);
+                }
+            }
+            return Math.max(hold[prices.length-1][k],unhold[prices.length-1][k]);
+        }
+        public int maxP(int[] prices){
+            int res =0;
+            for(int i=0;i<prices.length;i++){
+                if(i>0 && prices[i] > prices[i-1]){
+                    res += prices[i]-prices[i-1];
+                }
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(n)-time 8ms Accepted Solution with Detailed Explanation (C++)
+The idea of this thread was originally proposed by **@yishiluo** in
+https://leetcode.com/discuss/26745/c-solution-with-o-n-klgn-time-using-max-heap-and-stack
+
+**General idea:**
+
+We use the term "valley" to denote a local minimum index of prices, and the term "peak" to denote a local maximum index of prices. Let (v1, p1) and (v2, p2) denote two successive valley-peak pairs of the prices, respectively. Consider the two cases:
+
+- **Case 1**: prices[v1] <= prices[v2] and prices[p1] <= prices[p2]. In this case, if we can conduct one transaction, we will use (v1, p2). If we can conduct two transactions, we will use (v1, p1) and (v2, p2). Equivalently, we can consider (v1, p2) as one transaction opportunity, and (v2, p1) as another transaction opportunity. The key idea is that these two original valley-peak pairs provide two transaction opportunities: (v1, p2) and (v2, p1).
+
+- **Case 2**: prices[v1] >= prices[v2] or prices[p1] >= prices[p2]. In this case, if we can conduct one transaction, we will use either (v1, p1) or (v2, p2). If we can conduct two transactions, we will use both (v1, p1) and (v2, p2). That is, these two valley-peak pairs provides two transaction opportunities: (v1, p1) and (v2, p2).
+
+**The algorithm consists of two steps:**
+
+- **Step 1**: Find all transaction opportunities and record their profits. We use a stack `vps` to store the valley-peak pairs of the stock prices, wherein the valley value is sorted in ascending order. (The valley value at the top of the stack is the largest.) The profit of all transaction opportunities are recorded in the vector `profits`. The time complexity of this step is O(n).
+
+- **Step 2**: Find the k most profitable transaction opportunities. The maximum profit we can get is the summation of the k opportunity. The time complexity of this step is O(n), too.
+
+**Overall complexity:**
+
+- Time: O(n)
+
+- Space: worse-case O(n)
+
+---------------------------
+**C++ code** (Accepted 8ms)
+
+    class Solution {
+    public:
+        int maxProfit(int k, vector<int>& prices) {
+
+            // Step 1: Find out all profit opportunities            
+            vector<int> profits;
+            stack<pair<int, int>> vps; // valley-peak pairs
+            
+            int v;
+            int p = -1;
+            for (;;) {
+                // find next valley-peak pair
+                for (v = p+1; (v+1 < prices.size()) && (prices[v] >= prices[v+1]); ++v);
+                for (p = v  ; (p+1 < prices.size()) && (prices[p] <= prices[p+1]); ++p);
+                
+                if (v == p) { // v==p means that both v and p reach the end of the array
+                    break;
+                }
+                
+                // Consider two transactions (v1, p1) (back of the stack) and (v2, p2) (the new-found).
+                // If prices[v1] >= prices[v2], 
+                // it is meaningless to combine the two transactions.
+                // Save of profit of (v1, p1), and pop it out of the record.
+                while ((!vps.empty()) && (prices[v] <= prices[vps.top().first])) {
+                    profits.push_back(prices[vps.top().second] - prices[vps.top().first]);
+                    vps.pop();
+                }
+                
+                // If prices[v1]<prices[v2] and prices[p1]<prices[p2], 
+                // then it is meaningful to combine the two transactions
+                // update (v1, p1) to (v1, p2), and save the profit of (v2, p1)
+                while ((!vps.empty()) && (prices[p] >= prices[vps.top().second])) {
+                    profits.push_back(prices[vps.top().second] - prices[v]);
+                    v = vps.top().first;
+                    vps.pop();
+                }
+                
+                // save the new-found valley-peak pair
+                vps.emplace(v, p);
+            }
+            
+            // save all remaining profits
+            while (!vps.empty()) {
+                profits.push_back(prices[vps.top().second] - prices[vps.top().first]);
+                vps.pop();
+            }
+            
+            // Step 2: Calculate the k highest profits
+            int ret;
+            if (profits.size() <= k) {
+                ret = accumulate(profits.begin(), profits.end(), 0);
+            } else {
+                nth_element(profits.begin(), profits.end() - k, profits.end());
+                ret = accumulate(profits.end() - k, profits.end(), 0);
+            }
+            return ret;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+DP, O(KN) Time,O(n) Space, cpp , solution.
+if k >= n/2,  we can have transactions any time, it can be solved by O(n).
+
+else, we can do it in DP.
+
+use dp[k][i+1] represents, The max profit of using [0,i] data and k transactions.
+
+So we have:
+
+dp[k][i+1] = max(dp[k-1][i+1], dp[k][i], max( dp[k-1][j]  + prices[i] - prices[j] ))
+
+= max(dp[k-1][i+1], dp[k][i], prices[i] + max( dp[k-1][j] - prices[j] )) { 0 <= j < i }
+
+it can be solved by O(kn).
+
+
+The Code:
+
+
+    class Solution {
+    public:
+        int maxProfit_all(vector<int> &prices) {
+            int n = prices.size();
+            int sum = 0;
+            for(int i = 1;i < n;i++){
+                if(prices[i] > prices[i-1]){
+                    sum += prices[i] - prices[i-1];
+                }
+            }
+            return sum;
+        }
+        int maxProfit(int k, vector<int> &prices) {
+            int n = prices.size();
+            if(k >= n/2){
+                return maxProfit_all(prices);    
+            }
+            int dp[2][n+1];
+            memset(dp,0,sizeof(dp));
+            for(int t = 1; t <= k; t++){
+                int cur_max = 0x80000000;
+                dp[t%2][0] = 0;
+                for(int i = 0; i < n; i++){
+                    dp[t%2][i+1] = max(dp[(t+1)%2][i+1],max(dp[t%2][i],prices[i] + cur_max));
+                    cur_max = max(cur_max,dp[(t+1)%2][i] - prices[i]);
+                }
+            }
+            return dp[k%2][n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Well explained Python DP with comments
+I think the general idea has been thoroughly explained by other brilliant leetcoders. All of the solutions are beautiful and concise. However, most of the them don't look obvious to me, so I wrote this and hope it looks more straight forward.
+It's O(kn),  apparently not optimal. I name the key variables as local profit and global profit to make things much understandable (well, at least , to me). Performance is not too bad though. 
+
+    def maxProfit4(self, k, prices):
+        n = len(prices)
+        if n < 2:
+            return 0
+        # k is big enougth to cover all ramps.
+        if k >= n / 2:
+            return sum(i - j
+                       for i, j in zip(prices[1:], prices[:-1]) if i - j > 0)
+        globalMax = [[0] * n for _ in xrange(k + 1)]
+        for i in xrange(1, k + 1):
+            # The max profit with i transations and selling stock on day j.
+            localMax = [0] * n
+            for j in xrange(1, n):
+                profit = prices[j] - prices[j - 1]
+                localMax[j] = max(
+                    # We have made max profit with (i - 1) transations in
+                    # (j - 1) days.
+                    # For the last transation, we buy stock on day (j - 1)
+                    # and sell it on day j.
+                    globalMax[i - 1][j - 1] + profit,
+                    # We have made max profit with (i - 1) transations in
+                    # (j - 1) days.
+                    # For the last transation, we buy stock on day j and
+                    # sell it on the same day, so we have 0 profit, apparently
+                    # we do not have to add it.
+                    globalMax[i - 1][j - 1],  # + 0,
+                    # We have made profit in (j - 1) days.
+                    # We want to cancel the day (j - 1) sale and sell it on
+                    # day j.
+                    localMax[j - 1] + profit)
+                globalMax[i][j] = max(globalMax[i][j - 1], localMax[j])
+        return globalMax[k][-1]
+
+----------------------------------------------------------------------------------------------------
+Clean Java DP O(nk) solution with O(k) space
+Extend small_box's idea for "Best Time to Buy and Sell Stock III" to general case.
+[https://leetcode.com/discuss/18330/is-it-best-solution-with-o-n-o-1][1]
+
+    public int maxProfit(int k, int[] prices) {
+        if(k>=prices.length/2){
+            int maxProfit = 0;
+            for(int i=1; i<prices.length; i++){
+                if(prices[i]>prices[i-1]) maxProfit += prices[i]-prices[i-1];
+            }
+            return maxProfit;
+        }
+        
+        int[] maxProfit = new int[k+1];
+        int[] lowPrice = new int[k+1];
+        for(int i=0; i<lowPrice.length; i++) lowPrice[i]=Integer.MAX_VALUE;
+        for(int p : prices){
+            for(int i=k; i>=1; i--){
+                maxProfit[i] = Math.max(maxProfit[i],p-lowPrice[i]);
+                lowPrice[i] = Math.min(lowPrice[i],p-maxProfit[i-1]);
+            }
+        }
+        return maxProfit[k];
+    }
+
+
+  [1]: https://leetcode.com/discuss/18330/is-it-best-solution-with-o-n-o-1
+
+----------------------------------------------------------------------------------------------------
+State machine is the easiest way to understand stock problem, could solve all the stock problem in leetcode
+
+[looking for the state machine picture, please click here][1]
+
+[inspired from this link][2]
+
+
+      class Solution {
+        public:
+            int maxProfit(int k, vector<int>& prices) {
+                int m = prices.size();
+                if(m==0 || m==1 || k == 0) return 0;
+                if (k>m/2){ // simple case
+                    int ans = 0;
+                    for (int i=1; i<m; ++i){
+                        ans += max(prices[i] - prices[i-1],0);
+                    }
+                    return ans;
+                }
+                vector<vector<int>> buy(k+1,vector<int>(m+1,0));
+                vector<vector<int>> sell(k+1,vector<int>(m+1,0));
+                vector<int> end(m+1,0);
+                for(int i=1;i<=k;i++)
+                    buy[i][0] = INT_MIN;
+                for(int i=1;i<=m;i++){
+                    for(int j=1;j<=k;j++){
+                        //for the first buy state, need to compare the current price with the previous price. sell[0][0] are all initialized with 0, then sell[0][0] - prices[i-1] is the price of current first buy state
+                        buy[j][i] = max(buy[j][i-1], sell[j-1][i-1] - prices[i-1]);
+                        sell[j][i] = max(buy[j][i-1]+prices[i-1],sell[j][i-1]);
+                    }
+                }
+                return sell[k][m];
+            }
+        };
+
+
+  
+
+
+  [1]: http://y74i.imgup.net/IMG_2016069497.jpg
+  [2]: https://leetcode.com/discuss/72030/share-my-dp-solution-by-state-machine-thinking
+
+----------------------------------------------------------------------------------------------------
+Clear c++ solution
+    int maxProfit(int k, vector<int>& prices) {
+        int n = prices.size();
+        if (k>=n/2) {
+            int sum = 0;
+            for(int i=1; i<n; i++){
+                if(prices[i] > prices[i-1]){
+                    sum += prices[i] - prices[i-1];
+                }
+            }
+            return sum;
+        }
+        vector<int> buy(k+1, INT_MIN), sale(k+1, 0);
+        for(int i=0; i<n; i++){
+            for(int j=1; j<=k; j++){
+                buy[j] = max(buy[j], sale[j-1]-prices[i]);
+                sale[j] = max(sale[j], buy[j] + prices[i]);
+            }
+        }
+        return sale[k];
+    }
+
+It is similar to Buy and Sell Stock III, but (k>=n/2) is needed or it will time limited.
+
+----------------------------------------------------------------------------------------------------
+Accepted 8ms C++
+    int maxProfit(int k, vector<int>& prices) {
+        int n = (int)prices.size();
+        if (n <= 1) return 0;
+        int fm = 0, km = 0;
+        for (int j = 1; j < n; j++) {
+            int f = prices[j]-prices[j-1];
+            if (f>0) {
+                fm += f;
+                km++;
+            }
+        }
+        if (k >= km) {
+            return fm;
+        } else {
+            int f[n], prev;
+            fill_n(f, n, 0);
+            for (int i = 1; i <= k; i++) {
+                int S = INT_MIN;
+                prev = f[0];
+                for (int j = 1; j < n; j++) {
+                    S = std::max(S, prev-prices[j-1]);
+                    prev = f[j];
+                    f[j] = std::max(f[j-1], S+prices[j]);
+                }
+            }
+            return f[n-1];
+        }
+
+----------------------------------------------------------------------------------------------------
+Accepted python solution with explanation, inspired by Leetcoders
+    def maxProfit(self, k, prices):
+        """
+        :type k: int
+        :type prices: List[int]
+        :rtype: int
+        """
+        #The problem is hard
+        #Time complexity, O(nk)
+        #Space complexity, O(nk)
+        length = len(prices)
+        if length < 2:
+            return 0
+        max_profit = 0
+        #if k>= n/2, then it can't complete k transactions. The problem becomes buy-and-sell problem 2
+        if k>=length/2:
+            for i in xrange(1,length):
+                max_profit += max(prices[i]-prices[i-1],0)
+            return max_profit
+        
+        #max_global[i][j] is to store the maximum profit, at day j, and having i transactions already
+        #max_local[i][j] is to store the maximum profit at day j, having i transactions already, and having transaction at day j
+        max_global = [[0]*length for _ in xrange(k+1)]
+        max_local = [[0]*length for _ in xrange(k+1)]
+
+        #i indicates the transaction times, j indicates the times
+        for j in xrange(1,length):
+            cur_profit = prices[j]-prices[j-1] #variable introduced by the current day transaction
+            for i in xrange(1,k+1):
+                #max_global depends on max_local, so updata local first, and then global.
+                max_local[i][j] = max( max_global[i-1][j-1]+max(cur_profit,0), max_local[i][j-1] + cur_profit)
+                #if cur_profit <0, then the current transaction loses money, so max_local[i][j] = max_global[i-1][j-1]
+                #else, it can be max_global[i-1][j-1] + cur_profit, by considering the current transaction
+                #or it can be max_local[i][j-1] + cur_profit, this is to CANCEL the last day transaction and moves to the current transaction. Note this doesn't change the total number of transactions. Also, max_local[i-1] has already been considered by max_global[i-1] term
+                max_global[i][j] = max(max_global[i][j-1], max_local[i][j])
+                #This is more obvious, by looking at whether transaction on day j has influenced max_global or not. 
+        return max_global[k][-1] #the last day, the last transaction
+
+The problem is hard. I looked at many solutions, and find this (type of) solution is easier to understand.
+
+----------------------------------------------------------------------------------------------------
+How to optimize the O(N^3) DP solution ?
+This is my first O(N^3)  DP solution
+
+The recursion equation is like this:
+  
+           dp[k][i] = max{ dp[k][i-1], dp[k-1][j] + prices[i-1]-prices[j] }       0<=j<i-1
+
+Here is the most naive implementation.
+
+ 
+
+      class Solution {
+        public:
+            int maxProfit(int k, vector<int>& prices) {
+                /***
+                 *  dp[k][i]:the max profit we get during prices[0...i-1] with at most k transactions
+                 *  dp[k][i] = max{ dp[k][i-1], dp[k-1][j] + prices[i-1]-prices[j] }       0<=j<i-1
+                 *
+                 *  start :  dp[0][i]=0;  dp[k][0]=0
+                 ***/
+                 int n=prices.size();
+                 if(n<=1)  return 0;
+                 
+                 /** to deal with the bigest cases **/
+                 if(k>n/2){
+                     int result=0;
+                     for(int i=1; i<n; i++)
+                        result+=max(prices[i]-prices[i-1], 0);
+                     return result;
+                 }
+                 
+                 vector<vector<int>> dp(k+1, vector<int>(n+1, 0));
+                 
+                 for(int kk=1; kk<=k; kk++){
+                     for(int i=1; i<=n; i++){
+                         for(int j=0; j<i-1; j++)
+                            dp[kk][i]=max(dp[kk][i-1], dp[kk-1][j]+prices[i-1]-prices[j]);
+                     }
+                 }
+                 return dp[k][n];
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Very understandable solution by reusing Problem III idea
+        if (k >= prices.length / 2) { // if k >= n/2, then you can make maximum number of transactions
+            int profit = 0;
+            for (int i = 1; i < prices.length; i++)
+                if (prices[i] > prices[i - 1]) profit += prices[i] - prices[i - 1];
+            return profit;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+My 8ms DP solution with data preprocessing
+The test time is similar to other solutions reported. But it has significant advantage when prices size becomes large. The basic idea is to merge daily profit array such as "+ - - - + - + +" into array of pattern "+ - + - + ..." and do normal DP.
+
+    class Solution {
+    public:
+        // Merge transactions.
+        int maxProfit(int k, vector<int>& prices) {
+            if(k == 0 || prices.size() < 2) return 0;
+            
+            // The values in profits should be: + - + -...
+            vector<int> profits{0};
+            
+            for(int i = 1; i < prices.size(); ++i) {
+                int diff = prices[i] - prices[i-1];
+                if(diff < 0 && profits.front() == 0) continue;
+                if(diff * profits.back() >= 0) {
+                    profits.back() += diff;
+                } else {
+                    profits.push_back(diff);
+                }
+            }
+            
+            // Number of positive blocks.
+            int pos = ceil(profits.size()/2.0);
+            if(k >= pos) {
+                int sum = 0;
+                for(int i = 0; i < profits.size(); ++i) sum += profits[i] >= 0 ? profits[i] : 0;
+                return sum;
+            } else {
+    			vector<int> global(k, 0);
+                vector<int> local(k, 0);
+    			for (int i = 0; i < pos; ++i) {
+    				for (int j = 0, last = 0; j <= i && j < k; ++j) {
+                        int tmp = global[j];
+                        local[j] = max(last+profits[2*i], i == 0 ? 0 : (local[j] + profits[2 * i] + profits[2 * i - 1]));
+                        global[j] = max(local[j], global[j]);
+                        last = tmp;
+    				}
+    			}
+    			return global.back();
+            }
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+8ms concise c++
+the `if (k >= prices.size()/2)` code block is just the solution to Best Time to Buy and Sell Stock II actually, because when k gets too big and prices is much smaller it will be much faster to calculate this way.
+
+    class Solution {
+    public:
+        int maxProfit(int k, vector<int>& prices) {
+            if (k == 0) return 0;
+            if (k >= prices.size()/2) {
+                int res = 0;
+                for (int i = 1; i < prices.size(); ++i)
+                    res += max(prices[i] - prices[i-1], 0);
+                return res;
+            }
+            vector<int> buy(k, INT_MIN);
+            vector<int> sell(k, 0);
+            for (int price : prices)
+                for (int i = 0; i < k; ++i) {
+                    buy[i] = max(buy[i], (i > 0 ? sell[i-1] : 0) - price);
+                    sell[i] = max(sell[i], buy[i] + price);
+                }
+            return sell.back();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Not elegant but easy to understand (15ms)
+
+
+The idea is to calculate the maximum profit (unlimited transactions), then reduce the number of transactions by either deleting or combing transactions.    
+
+    class Solution {
+        public:
+            int maxProfit(int k, vector<int>& prices) {
+                if(prices.size()<=1 || k==0)
+                    return 0;
+                vector<int> lowPrices;
+                vector<int> highPrices;
+                for(int i=0; i<prices.size(); ++i){
+                    if((i==0 && prices[i] < prices[i+1]) || (i>0 && i<prices.size()-1 && prices[i]<=prices[i-1] && prices[i+1] >prices[i])){
+                        if(lowPrices.size() == highPrices.size())
+                            lowPrices.push_back(prices[i]);
+                    }
+                    if((i==prices.size()-1 && prices[i] >= prices[i-1]) || (i>0 && i<prices.size()-1 && prices[i]>=prices[i-1] && prices[i+1] < prices[i])){
+                        if(lowPrices.size() > highPrices.size())
+                            highPrices.push_back(prices[i]);
+                    }
+                }      
+                int profit = 0;
+                for(int i=0; i<lowPrices.size(); ++i)
+                    profit += highPrices[i] - lowPrices[i];
+                if(k >= lowPrices.size() || profit == 0)
+                    return profit;           
+                int count = lowPrices.size() - k;
+                //either delete some transactions or combine neighbor transactions
+                while(count > 0){
+                    int delLoss = INT_MAX;
+                    int delIndex;
+                    int comLoss = INT_MAX;
+                    pair<int, int> comPair;
+                    for(int i=0; i<lowPrices.size(); ++i){
+                        if(lowPrices[i]!=-1 && highPrices[i]-lowPrices[i]<delLoss){
+                            delIndex = i;
+                            delLoss = highPrices[i]-lowPrices[i];
+                        }
+                        if(lowPrices[i] != -1){
+                            int j = i+1;
+                            while(j<lowPrices.size() && lowPrices[j] == -1)
+                                ++j;
+                            if(j<lowPrices.size() && (highPrices[i]-lowPrices[j] < comLoss)){
+                                comLoss = highPrices[i]-lowPrices[j];
+                                comPair.first = i;
+                                comPair.second = j;
+                            }
+                        }
+                    }
+                    if(delLoss <= comLoss){
+                        lowPrices[delIndex] = -1;
+                        profit -= delLoss;
+                    }
+                    else{
+                        highPrices[comPair.first] = highPrices[comPair.second];
+                        lowPrices[comPair.second] = -1;
+                        profit -= comLoss;
+                    }
+                    --count;
+                }
+                return profit;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Why if k&gt;n&#x2F;2 then this question becomes BEST TIME TO BUY AND SELL STOCK II?
+I saw some solutions use the condition: if(k >= n/2) then it is said that this question becomes "BEST TIME TO BUY AND SELL STOCK II", in which case you can have unlimited transactions. Suppose we have 7 days (n=7) so the above condition implies that as long as we have k >= 7/2 (i.e k=3) we have unlimited transactions. 
+
+However, by definition, unlimited transactions means k=6. So we are actually saying that as long as we have k>=n/2=3, we are as good as if we have k=6.
+
+I don't know if it is correct or not, but I cannot think of a case that this is wrong. Say you have 7 days prices, think of an price array that you will be better off having > 3 transactions than <= 3 transactions. Can anyone think of such an example? If not then it is probably right. Sorry if this is just too trivial to see.
+
+ 
+
+
+
+----------------------------------------------------------------------------------------------------

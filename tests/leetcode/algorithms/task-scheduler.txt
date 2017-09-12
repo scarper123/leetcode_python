@@ -1,0 +1,483 @@
+Java Solution: Use startsWith and indexOf
+public class Solution {
+    public boolean isValid(String code) {
+        Stack<String> stack = new Stack<>();
+        for(int i = 0; i < code.length();){
+            if(i>0 && stack.isEmpty()) return false;
+            if(code.startsWith("<![CDATA[", i)){
+                int j = i+9;
+                i = code.indexOf("]]>", j);
+                if(i < 0) return false;
+                i += 3;
+            }else if(code.startsWith("</", i)){
+                int j = i + 2;
+                i = code.indexOf('>', j);
+                if(i < 0 || i == j || i - j > 9) return false;
+                for(int k = j; k < i; k++){
+                    if(!Character.isUpperCase(code.charAt(k))) return false;
+                }
+                String s = code.substring(j, i++);
+                if(stack.isEmpty() || !stack.pop().equals(s)) return false;
+            }else if(code.startsWith("<", i)){
+                int j = i + 1;
+                i = code.indexOf('>', j);
+                if(i < 0 || i == j || i - j > 9) return false;
+                for(int k = j; k < i; k++){
+                    if(!Character.isUpperCase(code.charAt(k))) return false;
+                }
+                String s = code.substring(j, i++);
+                stack.push(s);
+            }else{
+                i++;
+            }
+        }
+        return stack.isEmpty();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python, accepted but not sure if correct
+def isValid(self, code):
+    code = re.sub(r'<!\[CDATA\[.*?\]\]>|t', '-', code)
+    prev = None
+    while code != prev:
+        prev = code
+        code = re.sub(r'<([A-Z]{1,9})>[^<]*</\1>', 't', code)
+    return code == 't'
+
+----------------------------------------------------------------------------------------------------
+Java Solution, 7 lines, Regular Expression
+public class Solution {
+    public boolean isValid(String code) {
+        if (code.equals("t")) return false;
+        code = code.replaceAll("<!\\[CDATA\\[.*?\\]\\]>", "c");
+
+        String prev = "";
+        while (!code.equals(prev)) {
+            prev = code;
+            code = code.replaceAll("<([A-Z]{1,9})>[^<]*</\\1>", "t");
+        }
+
+        return code.equals("t");
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - Recursive Parser
+class Solution {
+public:
+    bool isValid(string code) {
+        int i = 0;
+        return validTag(code, i) && i == code.size();
+    }
+
+private:
+    bool validTag(string s, int& i) {
+        int j = i;
+        string tag = parseTagName(s, j);
+        if (tag.empty()) return false;
+        if (!validContent(s, j)) return false;
+        int k = j + tag.size() + 2; // expecting j = pos of "</" , k = pos of '>'
+        if (k >= s.size() || s.substr(j, k + 1 - j) != "</" + tag + ">") return false;
+        i = k + 1;
+        return true;
+    }
+
+    string parseTagName(string s, int& i) {
+        if (s[i] != '<') return "";
+        int j = s.find('>', i);
+        if (j == string::npos || j - 1 - i < 1 || 9 < j - 1 - i) return "";
+        string tag = s.substr(i + 1, j - 1 - i);
+        for (char ch : tag) {
+            if (ch < 'A' || 'Z' < ch) return "";
+        }
+        i = j + 1;
+        return tag;
+    }
+
+    bool validContent(string s, int& i) {
+        int j = i;
+        while (j < s.size()) {
+            if (!validText(s, j) && !validCData(s, j) && !validTag(s, j)) break;
+        }
+        i = j;
+        return true;
+    }
+
+    bool validText(string s, int& i) {
+        int j = i;
+        while (i < s.size() && s[i] != '<') { i++; }
+        return i != j;
+    }
+
+    bool validCData(string s, int& i) {
+        if (s.find("<![CDATA[", i) != i) return false;
+        int j = s.find("]]>", i);
+        if (j == string::npos) return false;
+        i = j + 3;
+        return true;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Should add more test case
+<p>Suggest to add this test case:<br/>
+&#34;&lt;!&#91;CDATA&#91;&lt;div&gt;&#93;&#93;&gt;&#34;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def isValid(self, S):
+    CDATA_BEGIN = '![CDATA['
+    CDATA_END = ']]>'
+    
+    def collect_tag(i):
+        for j in xrange(i, len(S)):
+            if S[j] == '>': break
+        else:
+            return None
+        return S[i+1:j]
+    
+    def valid_tag(tag):
+        return 1 <= len(tag) <= 9 and all('A' <= c <= 'Z' for c in tag)
+    
+    if not S or S[0] != '<': return False
+    tag = collect_tag(0)
+    if (tag is None or 
+            not S.startswith('<{}>'.format(tag)) or 
+            not S.endswith('</{}>'.format(tag)) or
+            not valid_tag(tag)):
+        return False
+    S = S[len(tag) + 2: -len(tag) - 3]
+    
+    i = 0
+    stack = []
+    while i < len(S):
+        if S[i] == '<':
+            tag = collect_tag(i)
+            if tag is None: return False
+            if tag.startswith(CDATA_BEGIN):
+                while i < len(S) and S[i:i+3] != CDATA_END:
+                    i += 1
+                if not S[i:i+3] == CDATA_END:
+                    return False
+                i += 2
+            elif tag.startswith('/'):
+                tag = tag[1:]
+                if not valid_tag(tag) or not stack or stack.pop() != tag:
+                    return False
+            else:
+                if not valid_tag(tag):
+                    return False
+                stack.append(tag)
+        i += 1
+
+    return not stack
+
+
+----------------------------------------------------------------------------------------------------
+Java solution. Sequentially build current structure, use stack for tag matching
+public class Solution {
+	public boolean isValid(String code) {
+		if (!code.startsWith("<")) return false;
+		if (code.length() < 2 || !(code.charAt(1) >= 'A' && code.charAt(1) <= 'Z')) return false;
+		
+		Stack<String> stack = new Stack<>();
+		String cur = "";
+		for (int i = 0; i < code.length(); i++) {
+			cur += code.charAt(i);
+			if (cur.startsWith("<![CDATA[")) {
+				if (cur.endsWith("]]>")) {
+					cur = "";
+				}
+			} else if (cur.startsWith("</")) {
+				if (cur.endsWith(">")) {
+					String tag = cur.substring(2, cur.length()-1);
+					if (stack.isEmpty() || !stack.peek().equals("<"+tag+">")) return false;
+					stack.pop();
+					cur = "";
+					if (i < code.length()-1 && stack.isEmpty()) return false;
+				}
+			} else if (cur.startsWith("<")) {
+				if (cur.endsWith(">")) {
+					if (!valid_tag(cur)) return false;
+					stack.push(cur);
+					cur = "";
+				}
+			} else {
+				cur = "";
+			}
+		}
+		return stack.isEmpty() && cur.length() == 0;
+        }
+	boolean valid_tag(String tag) {
+		if (!tag.startsWith("<") || !tag.endsWith(">")) return false;
+		if (tag.length() < 3 || tag.length() > 11) return false;
+		for (int i = 1; i < tag.length()-1; i++) {
+			char c = tag.charAt(i);
+			if (!Character.isUpperCase(c)) return false;
+		}
+		return true;
+	}
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+C# AC solution
+public class Solution {
+        public bool IsValid(string code)
+        {
+            var count = 0; //tag count
+            var stack = new Stack<Tag>();
+            var tagname = new Stack<int>();
+            var isCDataProcessing = false;
+            for (var i = 0; i < code.Length; i++)
+            {
+                if (code[i] == ' ') continue;
+                var sub = code.Substring(i);
+                if (isCDataProcessing)
+                {
+                    if (sub.StartsWith("]]>"))
+                    {
+                        isCDataProcessing = false;
+                        i += 2;
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (sub.StartsWith("<![CDATA["))
+                    {
+                        if (stack.Count == 0) return false;
+
+                        isCDataProcessing = true;
+                        i += 8;
+                        continue;
+                    }
+
+                    if (code[i] == '<')
+                    {
+                        var next = code.IndexOf('>', i + 1);
+                        if (next <= 0) return false;
+
+                        var name = code.Substring(i + 1, next - (i + 1));
+                        if (name.Length < 1) return false;
+                        if (code[i + 1] == '/')
+                        {
+                            name = name.Substring(1);
+                            //end tag
+
+                            if (stack.Count == 0) return false;
+                            var tag = stack.Pop();
+                            if (!tag.TagName.Equals(name)) return false;
+                        }
+                        else
+                        {
+                            if (count > 0 && stack.Count == 0) return false;
+
+                            //start tag
+                            var tag = new Tag()
+                            {
+                                TagName = name,
+                            };
+                            stack.Push(tag);
+                            count++;
+                        }
+                        if (!ValidateTagName(name)) return false;
+                        i = next;
+                    }
+                    else if (count==0)
+                    {
+                        return false;
+                    }
+                    else if (stack.Count == 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return stack.Count ==0 ;
+        }
+
+
+        /// <summary>
+        /// rule3: A valid TAG_NAME only contain upper-case letters, and has length in range [1,9]. Otherwise, the TAG_NAME is invalid.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool ValidateTagName(string name)
+        {
+            foreach(var n in name)
+            {
+                if (!(n >= 'A' && n <= 'Z')) return false;
+            }
+            return name.Length > 0 && name.Length < 10 && name.Equals(name.ToUpper());
+        }
+        public class Tag
+        {
+            public string TagName;
+            public string TagValue;
+
+        }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# Pure string parse, no stack
+public class Solution {
+
+        public bool IsValid(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return false;          
+
+            string content; int rightStartIndex;
+            
+            if (!ValidateClosedTags(code, true, out content, out rightStartIndex))
+            {
+                return false;
+            }
+            return ValidateContent(content);
+        }
+
+        static bool ValidateContent(string c)
+        {
+            string cheader = "<![CDATA[";
+            string cend = "]]>";
+            // remove cdata
+            while (true)
+            {
+                int index = c.IndexOf(cheader);
+                if (index >= 0)
+                {
+                    int p = c.IndexOf(cend, index);
+                    if (p < 0)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        c = c.Substring(0, index) + c.Substring(p + 3);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (c.IndexOf("<") >= 0)
+            {
+                string newcontent;
+                int rightpart = 0;
+
+                if (!ValidateClosedTags(c, false, out newcontent, out rightpart))
+                {
+                    return false;
+                }
+                else
+                {
+                    return (ValidateContent(newcontent) && ValidateContent(c.Substring(rightpart)));
+                }
+            }
+            return true;
+        }
+
+        static bool ValidateClosedTags(string c, bool isRoot, out string content, out int rightStartIndex)
+        {
+            content = "";
+            rightStartIndex = 0;
+            try
+            {
+                // isParent indicate if current tag should be Parent tag, say: <A> <A> </A> </A>
+                // we need to parse to the last </A> when current tag is parent
+                bool isParent = isRoot;
+                int s1 = c.IndexOf("<");
+                int s2 = c.IndexOf(">");
+
+                string stag = c.Substring(s1 + 1, s2 - s1 - 1);
+                string fullstartTag = "<" + stag + ">";
+
+                if (!ValidateTags(stag)) return false;
+
+                string endTag = "</" + stag + ">";
+
+                int e1 = c.IndexOf(endTag, s2);
+
+                // find <A> <A> </A> </A>
+                // then the first </A> is not correct
+                // if contains <A> inside the <A> ... </A>, current tag must be parent
+                if (c.IndexOf(fullstartTag, s2, e1 - s2 - 1) >= 0)
+                {
+                    isParent = true;
+                }
+
+                if (isParent)
+                {
+                    e1 = c.LastIndexOf(endTag);
+                }
+
+                if (e1 < s2)
+                {
+                    return false;
+                }
+
+                if (isRoot)
+                {
+                    if (s1 != 0 || !c.EndsWith(endTag))
+                    {
+                        return false;
+                    }
+                }
+
+                content = c.Substring(s2 + 1, e1 - s2 - 1);
+                rightStartIndex = e1 + endTag.Length;                
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        static bool ValidateTags(string Tag)
+        {
+            string[] special = new string[] { "<", ">", "/", "!", "[", "]" , " "};
+            string[] digit = new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            try
+            {
+                if (string.IsNullOrEmpty(Tag)) return false;                   
+
+                foreach (string s in special)
+                {
+                    if (Tag.Contains(s)) return false;
+                }
+
+                foreach (string s in digit)
+                {
+                    if (Tag.Contains(s)) return false;
+                }
+
+                if (Tag.Length > 9 || Tag.Length < 1) return false;
+               
+                if (Tag.ToUpper() == Tag)
+                {
+                    return true;
+                }                
+            }
+            catch
+            {
+                return false;
+            }
+
+            return false;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+Shared my C++ Solution, not efficient, but more easy to understand

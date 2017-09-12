@@ -1,0 +1,875 @@
+&#91;bucket sort&#93; JAVA solution with explanation, O(N) time and space
+Suppose there are N elements in the array, the min value is ***min*** and the max value is ***max***. Then the maximum gap will be no smaller than ceiling[(***max*** - ***min*** ) / (N - 1)].
+
+Let gap = ceiling[(***max*** - ***min*** ) / (N - 1)]. We divide all numbers in the array into n-1 buckets, where k-th bucket contains all numbers in [***min***  + (k-1)gap, ***min***  + k*gap). Since there are n-2 numbers that are not equal ***min***  or ***max*** and there are n-1 buckets, at least one of the buckets are empty. We only need to store the largest number and the smallest number in each bucket. 
+
+After we put all the numbers into the buckets. We can scan the buckets sequentially and get the max gap.
+[my blog for this problem][1]
+
+    public class Solution {
+    public int maximumGap(int[] num) {
+        if (num == null || num.length < 2)
+            return 0;
+        // get the max and min value of the array
+        int min = num[0];
+        int max = num[0];
+        for (int i:num) {
+            min = Math.min(min, i);
+            max = Math.max(max, i);
+        }
+        // the minimum possibale gap, ceiling of the integer division
+        int gap = (int)Math.ceil((double)(max - min)/(num.length - 1));
+        int[] bucketsMIN = new int[num.length - 1]; // store the min value in that bucket
+        int[] bucketsMAX = new int[num.length - 1]; // store the max value in that bucket
+        Arrays.fill(bucketsMIN, Integer.MAX_VALUE);
+        Arrays.fill(bucketsMAX, Integer.MIN_VALUE);
+        // put numbers into buckets
+        for (int i:num) {
+            if (i == min || i == max)
+                continue;
+            int idx = (i - min) / gap; // index of the right position in the buckets
+            bucketsMIN[idx] = Math.min(i, bucketsMIN[idx]);
+            bucketsMAX[idx] = Math.max(i, bucketsMAX[idx]);
+        }
+        // scan the buckets for the max gap
+        int maxGap = Integer.MIN_VALUE;
+        int previous = min;
+        for (int i = 0; i < num.length - 1; i++) {
+            if (bucketsMIN[i] == Integer.MAX_VALUE && bucketsMAX[i] == Integer.MIN_VALUE)
+                // empty bucket
+                continue;
+            // min value minus the previous value is the current gap
+            maxGap = Math.max(maxGap, bucketsMIN[i] - previous);
+            // update previous bucket value
+            previous = bucketsMAX[i];
+        }
+        maxGap = Math.max(maxGap, max - previous); // updata the final max value gap
+        return maxGap;
+    }
+}
+
+
+  [1]: http://zkfairytale.blogspot.ca/2014/12/maximum-gap.html
+
+----------------------------------------------------------------------------------------------------
+Radix sort solution in Java with explanation
+You can look at radix sort visualization here before reading the code:
+https://www.cs.usfca.edu/~galles/visualization/RadixSort.html
+
+    public class Solution {
+    public int maximumGap(int[] nums) {
+        if (nums == null || nums.length < 2) {
+            return 0;
+        }
+        
+        // m is the maximal number in nums
+        int m = nums[0];
+        for (int i = 1; i < nums.length; i++) {
+            m = Math.max(m, nums[i]);
+        }
+        
+        int exp = 1; // 1, 10, 100, 1000 ...
+        int R = 10; // 10 digits
+
+        int[] aux = new int[nums.length];
+        
+        while (m / exp > 0) { // Go through all digits from LSB to MSB
+            int[] count = new int[R];
+            
+            for (int i = 0; i < nums.length; i++) {
+                count[(nums[i] / exp) % 10]++;
+            }
+            
+            for (int i = 1; i < count.length; i++) {
+                count[i] += count[i - 1];
+            }
+            
+            for (int i = nums.length - 1; i >= 0; i--) {
+                aux[--count[(nums[i] / exp) % 10]] = nums[i];
+            }
+            
+            for (int i = 0; i < nums.length; i++) {
+                nums[i] = aux[i];
+            }
+            exp *= 10;
+        }
+        
+        int max = 0;
+        for (int i = 1; i < aux.length; i++) {
+            max = Math.max(max, aux[i] - aux[i - 1]);
+        }
+         
+        return max;
+    }
+}
+
+ 1. The first step is to find the maximum value in nums array, it will
+     be the threshold to end while loop.    
+ 2. Then use the radix sort algorithm to sort based on each digit from Least Significant Bit
+        (LSB) to Most Significant Bit (MSB), that's exactly what's showing
+        in the link.
+ 3. `(nums[i] / exp) % 10` is used to get the digit, for each digit, basically the digit itself serves as the index to
+    access the count array. Count array stores the index to access aux
+    array which stores the numbers after sorting based on the current
+    digit.
+ 4. Finally, find the maximum gap from sorted array.
+
+Time and space complexities are both O(n). (Actually time is O(10n) at worst case for Integer.MAX_VALUE 2147483647)
+
+----------------------------------------------------------------------------------------------------
+Pigeon hole principle
+Suppose you have n pigeons with labels and you put them into m holes based on their label with each hole of the same size. Why bother putting pigeons into holes? Because you want to disregard the distance between pigeons **within** each one hole. 
+
+Only when at least one hole is empty can we disregard the distance between pigeons within each one hole and compute the maximum gap solely by the distance between pigeons **in adjacent holes**. We make sure that at least one hole is empty by using m=n-1 (i.e. n-2 pigeons in n-1 holes => at least one hole is empty).
+
+    int maximumGap(vector<int>& nums) {
+            const int n = nums.size();
+            if(n<=1) return 0;
+            int maxE = *max_element(nums.begin(),nums.end());
+            int minE = *min_element(nums.begin(),nums.end());
+            double len = double(maxE-minE)/double(n-1);
+            vector<int> maxA(n,INT_MIN);
+            vector<int> minA(n,INT_MAX);
+            for(int i=0; i<n; i++) {
+                int index = (nums[i]-minE)/len;
+                maxA[index] = max(maxA[index],nums[i]);
+                minA[index] = min(minA[index],nums[i]);
+            }
+            int gap = 0, prev = maxA[0];
+            for(int i=1; i<n; i++) {
+                if(minA[i]==INT_MAX) continue;
+                gap = max(gap,minA[i]-prev);
+                prev = maxA[i];
+            }
+            return gap;
+        } 
+
+----------------------------------------------------------------------------------------------------
+My C++ code (12 ms, &quot;bucket sort&quot;, O(n) time and space)
+The key is to use the fact that the lower bound of the gap is (maxV - minV )/ (sSize - 1). With such in mind, we can put all the num elements into different bucket with size (maxV - minV )/ (sSize - 1) (please note when such size is less than 1, then use 1 instead) and in such way, we only need to consider the min and max of each bucket and don't need to worry the numbers in between of each bucket since the gaps among those elements are smaller than the bucket size, and then the lower bound of the gap, so they can not achieve the max gap.
+
+class Solution {
+public:
+    int maximumGap(vector<int> &num) {
+        int sSize = num.size();
+        int i, res =0;
+        int minV, maxV;
+        int bucket_size, bucket_num, bucket_id;
+        int maxGap = INT_MIN;
+        int last_max;
+        
+        if(sSize>1)
+        {
+            minV =  maxV = num[0];
+            for(i=1; i<sSize; i++)
+            {
+                if(minV > num[i]) minV = num[i];
+                else if(maxV < num[i]) maxV = num[i];
+            }
+            
+            bucket_size = max(1, (maxV - minV )/ (sSize - 1)));
+            bucket_num  = (maxV - minV)/bucket_size + 1;
+
+            if(bucket_num <=1) return (maxV - minV); 
+            vector<int> bucket_max(bucket_num, INT_MIN);
+            vector<int> bucket_min(bucket_num, INT_MAX);
+            vector<int> bucket_count(bucket_num, 0);
+            
+            for(i=0; i<sSize; i++)
+            {
+                bucket_id = (num[i] - minV)/bucket_size;
+                bucket_count[bucket_id]++;
+                bucket_min[bucket_id] = bucket_min[bucket_id] > num[i]? num[i]:bucket_min[bucket_id];
+                bucket_max[bucket_id] = bucket_max[bucket_id] < num[i]? num[i]:bucket_max[bucket_id];
+            }
+            
+            last_max = minV;
+            for(i=0; i<bucket_num; i++)
+            {
+                if(bucket_count[i]>0)
+                {
+                    maxGap = max(maxGap, bucket_min[i]- last_max);
+                    last_max = bucket_max[i];
+                }
+            }
+            return maxGap;
+        }
+        return 0;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Beat 99.81% java coder
+    public class Solution {
+    public int maximumGap(int[] nums) {
+        int n = nums.length;
+        if(n < 2) return 0;
+        int min = nums[0];
+        int max = nums[0];
+        for(int i = 1;i < n;i++){
+            if(min > nums[i]) min = nums[i];
+            if(max < nums[i]) max = nums[i];
+        }
+        
+        int gap = (max-min)/(n-1);
+        if(gap == 0) gap++;
+        int len = (max-min)/gap+1;
+        int [] tmax = new int [len];
+        int [] tmin = new int [len];
+        
+        for(int i = 0;i < n;i++){
+            int index = (nums[i]-min)/gap;
+            if(nums[i] > tmax[index]) tmax[index] = nums[i];
+            if(tmin[index] == 0 || nums[i] < tmin[index]) tmin[index] = nums[i];
+        }
+        int myMax = 0;
+        for(int i = 0;i < len;i++){
+            if(myMax < tmin[i]-min) myMax = tmin[i]-min;
+            if(tmax[i] != 0) min = tmax[i];
+        }
+        return myMax;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+I solved it using radix sort
+Since linear time and space is required and all nums are non-negative, radix sort seems to be fit.
+Here is the implementation.
+
+Any better ideas?
+
+    class Solution:
+        # @param num, a list of integer
+        # @return an integer
+        def maximumGap(self, num):
+            if len(num) < 2:
+                return 0
+            num = self.radixSort(num)
+            res = 0
+            for i in range(1, len(num)):
+                res = max(num[i] - num[i - 1], res)
+            return res
+        
+        def radixSort(self, num):
+            for i in range(31):
+                onebucket = []
+                zerobucket = []
+                needle = 1 << i
+                for j in range(len(num)):
+                    if num[j] & needle != 0:
+                        onebucket.append(num[j])
+                    else:
+                        zerobucket.append(num[j])
+                num = []
+                num += zerobucket
+                num += onebucket
+            return num
+
+----------------------------------------------------------------------------------------------------
+12ms C++ Suggested Solution
+This problem has a naive solution using `sort` and linear scan. The suggested solution uses the idea of **bucket sort**. The following is a C++ implementation of the suggested solution. 
+
+Suppose all the `n` elements in `nums` fall within `[l, u]`, the maximum gap will not be smaller than `gap = (u - l) / (n - 1)`. However, this `gap` may become `0` and so we take the maximum of it with `1` to guarantee that the gap used to create the buckets is meaningful.
+
+Then there will be at most `m = (u - l) / gap + 1` buckets. For each number `num`, it will fall in the `k = (num - l) / gap` bucket. After putting all elements of `nums` in the corresponding buckets, we can just scan the buckets to compute the maximum gap. 
+
+The maximum gap is only dependent on the maximum number of the current bucket and the minimum number of the next neighboring bucket (the bucket should not be empty). So we only store the minimum and the maximum of each bucket. Each bucket is initialized as `{minimum = INT_MAX, maximum = INT_MIN}` and then updated while updating the buckets. 
+
+Putting these together, we can have the following solution, barely a straight-forward implementation of the suggested solution.
+
+    class Solution {
+    public:
+        int maximumGap(vector<int>& nums) {
+            int n = nums.size();
+            if (n < 2) return 0;
+            auto lu = minmax_element(nums.begin(), nums.end());
+            int l = *lu.first, u = *lu.second;
+            int gap = max((u - l) / (n - 1), 1);
+            int m = (u - l) / gap + 1;
+            vector<int> bucketsMin(m, INT_MAX);
+            vector<int> bucketsMax(m, INT_MIN);
+            for (int num : nums) {
+                int k = (num - l) / gap;
+                if (num < bucketsMin[k]) bucketsMin[k] = num;
+                if (num > bucketsMax[k]) bucketsMax[k] = num;
+            }
+            int i = 0, j; 
+            gap = bucketsMax[0] - bucketsMin[0];
+            while (i < m) {
+                j = i + 1;
+                while (j < m && bucketsMin[j] == INT_MAX && bucketsMax[j] == INT_MIN)
+                    j++;
+                if (j == m) break;
+                gap = max(gap, bucketsMin[j] - bucketsMax[i]);
+                i = j;
+            }
+            return gap;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean C++ implementation of 3 linear-time-sort-alg with detailed explaination
+As we can see, we should grasp all the 3 typical linear-time-sorting algorithm implementation. 
+All the following 3 implementations have been modified from the GeeksForGeeks.
+I have change the counting sort implementation to support negative numbers.
+And the bucket support any float array input.
+
+> counting sort    [ stable ]       [ support:+/- intergers ]
+> 
+> radix sort        [ use counting sort as sub-routine]   [ support only
+> positive intergers]
+> 
+> bucket sort     [support float : we need to change the array to in the
+> range [0, 1)  ]
+
+
+    #include <iostream>
+    #include <vector>
+    #include <algorithm>
+    using namespace std;
+    
+
+>     /* counting sort  Time O(N)  Space O(N+range) */
+>     /* 
+>        support : positive / negative arrays
+>        the last travese the array X : 
+>              FORWARD->not stable  
+>     		 BACKWARD->stable
+>     */
+
+    void countingSort(vector<int>& X){
+    	int len = X.size();
+    	int start = INT_MAX, end = INT_MIN;
+    	for (int i = 0; i < len; i++){
+    		start = min(start, X[i]);
+    		end = max(end, X[i]);
+    	}
+    	int range = end - start + 1;
+    	vector<int> count(range, 0);
+    	vector<int> result(len, 0);
+    	for (int i = 0; i < len; i++){
+    		count[X[i]-start]++;
+    	}
+    	for (int i = 1; i < range; i++){
+    		count[i]=count[i-1]+count[i];
+    	}
+    	//for-ward traverse is not stable sorting
+    	//for (int i = 0; i < len; i++)
+    	//back-ward traverse is stable sorting
+    	for (int i = len-1; i >= 0; i--){
+    		//as we know that the count array recorded element should '-1' to get the index
+    		result[count[X[i] - start]-1] = X[i];
+    		count[X[i] - start]--;
+    	}
+    	for (int i = 0; i < len; i++){
+    		X[i] = result[i];
+    	}
+    }
+    
+    
+    
+
+>     /* Radix sort  Time O(log(base,MAX)*(N+base))  Space O(constant)  default:base=10 */
+>     /* 
+>        support : only positive interger 
+>        can only deal with positive integers or change the float number 
+>        of the specified precision to intergers by multiplying 10^n 
+>     */
+
+    
+    void countingSort(vector<int>& X, int exp, int base){
+    	int len = X.size();
+    	int start = INT_MAX, end = INT_MIN;
+    	for (int i = 0; i < len; i++){
+    		start = min(start, (X[i] / exp)%base);
+    		end = max(end, (X[i] / exp) % base);
+    	}
+    	int range = end - start + 1;
+    	vector<int> count(range, 0);
+    	vector<int> result(len, 0);
+    	for (int i = 0; i < len; i++){
+    		count[(X[i] / exp) % base -start]++;
+    	}
+    	for (int i = 1; i < range; i++){
+    		count[i] = count[i - 1] + count[i];
+    	}
+    	//back-ward traverse is stable sorting
+    	for (int i = len - 1; i >= 0; i--){
+    		//as we know that the count array recorded element should '-1' to get the index
+    		result[count[(X[i] / exp) % base -start] - 1] = X[i];
+    		count[(X[i] / exp) % base - start]--;
+    	}
+    	for (int i = 0; i < len; i++){
+    		X[i] = result[i];
+    	}
+    }
+    
+    void radixSort(vector<int> &X){
+    	int len = X.size();
+    	int max_val = INT_MIN;
+    	int base = 10;
+    	for (int i = 0; i < len; i++) max_val = max(X[i], max_val);
+    	for (int exp = 1; max_val / exp>0; exp *= base){
+    		countingSort(X, exp, base);
+    	}
+    }
+    
+    
+
+>     /* bubble sort  Time   Space */
+>     /*
+>       support : any float & int numbers
+>       sort a large set of floating nubmers in range from 0.0 to 1.0
+>       uniformly distributed across the range 
+>       the key idea is : 
+>             the insertion sort for all individual bucket is O(N)
+>     */
+
+    void bucketSort(vector<float>& X){
+    	int len = X.size();
+    	float max_val = X[0], min_val = X[0];;
+    	for (int i = 1; i < len; i++) {
+    		max_val = max(max_val, X[i]);
+    		min_val = min(min_val, X[i]);
+    	}
+    	max_val++;
+    
+    	vector<vector<float>> bucket(len, vector<float>());
+    	for (int i = 0; i < len; i++){
+    		int index = len*(X[i]-min_val)/(max_val-min_val);
+    		bucket[index].push_back(X[i]);
+    	}
+    
+    	for (int i = 0; i < len; i++)	sort(bucket[i].begin(), bucket[i].end());
+    
+    	int index = 0;
+    	for (int i = 0; i < len; i++)
+    		for (int j = 0; j < bucket[i].size(); j++)
+    			X[index++] = bucket[i][j];
+    }
+    
+
+>  /*   test all the 3-linear-sorting-implementation  */
+
+    int main(){
+    	vector<int> test1 = { 11, -200, 14, -2000, 30, 400, 10, 22, 456 };
+    	countingSort(test1);
+    	cout << endl<<"counting Sort result: ";
+    	for (int i = 0; i < test1.size(); i++)	 cout << test1[i] <<" - ";
+    	vector<int> test2 = { 11, 200, 14, 2000, 30, 400, 10, 22, 456 };
+    	radixSort(test2);
+    	cout << endl << "radix Sort result: ";
+    	for (int i = 0; i < test2.size(); i++)	 cout << test2[i] << " - ";
+    	vector<float> test3 = { 11, -200, 14, -2000, 30, 400, 10, 22, 456 };
+    	bucketSort(test3);	
+    	cout << endl << "bucket Sort result: ";
+    	for (int i = 0; i < test3.size(); i++)	 cout << test3[i] << " - ";
+    	return 0;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+My concise and short c++ code with comment explanation
+    int maximumGap(vector<int>& nums) {
+        int n = nums.size();
+        if( n < 2 ) return 0;
+        int maxE = *max_element(nums.begin(),nums.end());
+        int minE = *min_element(nums.begin(),nums.end());
+        
+        int len = maxE - minE;
+        if( len <= 1 ) return len;
+        vector<int> buck_max(n, INT_MIN);
+        vector<int> buck_min(n, INT_MAX);
+        
+        for(int i = 0; i < n; i++) {
+            // note the divide and multiply order and the double cast
+            // it's used to avoid the overflow and underflow during calculation
+            int index = (double)( nums[i] - minE )  / len * ( n - 1 );
+            buck_max[index] = max(buck_max[index], nums[i]);
+            buck_min[index] = min(buck_min[index], nums[i]);
+        }
+        
+        int gap = 0, pre = buck_max[0];
+        for(int i = 1; i < n; i++) {
+            if( buck_max[i] == INT_MIN ) continue;
+            gap = max(gap, buck_min[i] - pre);
+            pre = buck_max[i];
+        }
+        return gap;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Bad question description. I think it should say &quot;difference between 2 adjacent elements&quot;.
+The description "maximum difference between the successive elements" confuses me, because the successive elements could mean more than 2 elements that are successive.
+
+----------------------------------------------------------------------------------------------------
+Very simple solution accepted as best in C, well-explained
+Actually I just want to use QuickSort and then search for the value which will actually takes quite good performance accepted with 8ms in C -> even size of the list is 2^32 the sorting time will be controlled in O(32n) -> O(nlogn); but of course we should try some other funny solutions also.
+
+- space cost O(1);
+- time cost O(nlogn) using QuickSort;
+
+
+----------
+
+    void sort(int* nums, int begin, int end)
+    {
+        int l=begin, r=end;
+        int v = nums[l+(r-l)/2];
+        while(l <= r)
+        {
+            while(nums[l] < v) l++;
+            while(nums[r] > v) r--;
+            if(l <= r)
+            {
+                int t = nums[l];
+                nums[l] = nums[r];
+                nums[r] = t;
+                l++; r--;
+            }
+        }
+        if(begin < r)
+        sort(nums, begin, r);
+        if(l < end)
+        sort(nums, l, end);
+    }
+    
+    //AC - 8ms;
+    int maximumGap(int* nums, int size) 
+    {
+        sort(nums, 0, size-1);
+        int max = 0;
+        for(int i = 1; i < size; i++)
+            if(nums[i]-nums[i-1] > max)
+                max = nums[i]-nums[i-1];
+        return max;
+    
+    }
+
+----------
+
+Since we are required to solve it in linear time, we have to abandon our lovely QuickSort which really make the whole code quite clean and concise. Using BucketSort is the way or actually another way as other posts mentioned RadixSort which actually I think is just a derivative of BucketSort. Three steps to solve this problem linearly:
+
+- get the range of the number -> O(n) find the min and max of the numbers; then get the gap within a bucket by gap=(max-min)/(size-1)+1; the bucket will cover [min+k*gap, min+(k+1)*gap) while the left inclusive and the right exclusive; as a result the maximal numbers located in a single bucket will be (max-min)/(size-1) and so there must be a gap between two consecutive numbers are bigger than this average gap -> maximal gap and then located in two different buckets -> that's why we need bucket sorting; if you don't know why, please check  [Pigeonhole Principle](https://en.wikipedia.org/wiki/Pigeonhole_principle) first.
+
+- map the number into buckets; but we actually only need to store the minimal and maximal value of the bucket since the maximal gap will definitely bigger than the average gap;
+- traverse the buckets to get the maximal gap.
+
+End of Story!
+
+- space cost O(n) using space to save time;
+- time cost O(n) actually when the numbers are not that much, this solution can be slower compared with the previous one.
+
+----------
+
+    int maximumGap(int* nums, int size)
+    {
+        if(size < 2) return 0;
+        int min=INT_MAX, max=0;
+        for(int i = 0; i < size; i++)
+        {
+            if(nums[i] < min) min = nums[i];
+            if(nums[i] > max) max = nums[i];
+        }
+        if(min == max) return 0; //some corner cases;
+        if(min+1 == max) return 1;
+        if(size == 2) return max-min;
+        int gap = (max-min)/(size-1)+1; //make later index searching process easier but actually there will be also (max-min)/(size-1) numbers in each bucket;
+        int** buckets = (int**)malloc(sizeof(int*)*size); //only store the min and max in the bucket;
+        for(int i = 0; i < size; i++)
+        {
+            buckets[i] = (int*)malloc(sizeof(int)*2);
+            buckets[i][0] = -1;
+            buckets[i][1] = 0;
+        }
+        for(int i = 0; i < size; i++) //[min+k*gap, min+(k+1)*gap);
+        {
+            int k = (nums[i]-min)/gap; //get the index of the bucket;
+            if(nums[i] > buckets[k][1]) //the greatest in the bucket;
+                buckets[k][1] = nums[i];
+            if(buckets[k][0]==-1 || nums[i]<buckets[k][0]) //store the minimal in the kth gap;
+                buckets[k][0] = nums[i];
+        }
+        int start = buckets[0][1];
+        int end = buckets[0][0];
+        int maxGap = 1;
+        for(int i = 0; i < size; i++)
+        {
+            if(buckets[i][0] > end) //move to the next bucket that has numbers since we initialize bucket with -1 and 0;
+            {
+                end = buckets[i][0]; //the end of the gap;
+                if(end-start > maxGap)
+                    maxGap = end-start;
+                start = buckets[i][1]; //move to the next start;
+            }
+        }
+        return maxGap;
+    }
+
+----------------------------------------------------------------------------------------------------
+Solutions in C++ with explanation, read it and then you get it
+practical
+
+----------------------------------------------------------------------------------------------------
+My accepted java code, time O(n), space O(n)
+    public int maximumGap(int[] num) {
+            int n;
+            if(num == null || (n = num.length) < 2) {
+                return 0;
+            }
+            int min = num[0];
+            int max = num[0];
+            for(int i : num) {
+               if(i > max) {
+                   max = i;
+               } else if(i < min) {
+                   min = i;
+               }
+            }
+            double dist = (double)(max-min)/(double)(n-1);
+            int[] mins = new int[n-1];
+            int[] maxs = new int[n-1];
+            Arrays.fill(mins, -1);
+            Arrays.fill(maxs, -1);
+            for(int i : num) {
+                int idx = (i == max ? n-2 : (int) ((i-min)/dist));
+                if(mins[idx] == -1 || i < mins[idx]) {
+                    mins[idx] = i;
+                }
+                if(maxs[idx] == -1 || i > maxs[idx]) {
+                    maxs[idx] = i;
+                }
+            }
+            int prevMax = maxs[0];
+            int maxGap = maxs[0]-mins[0];
+            for(int i = 1; i < n-1; i++) {
+                if(mins[i] == -1) {
+                    continue;
+                }
+                int gap = mins[i] - prevMax;
+                if(gap > maxGap) {
+                    maxGap = gap;
+                }
+                prevMax = maxs[i];
+            }
+            return maxGap;
+        }
+
+----------------------------------------------------------------------------------------------------
+Python bucket sort from official solution
+    class Solution:
+    # @param num, a list of integer
+    # @return an integer
+    def maximumGap(self, num):
+        if len(num) < 2 or min(num) == max(num):
+            return 0
+        a, b = min(num), max(num)
+        size = math.ceil((b-a)/(len(num)-1))
+        bucket = [[None, None] for _ in range((b-a)//size+1)]
+        for n in num:
+            b = bucket[(n-a)//size]
+            b[0] = n if b[0] is None else min(b[0], n)
+            b[1] = n if b[1] is None else max(b[1], n)
+        bucket = [b for b in bucket if b[0] is not None]
+        return max(bucket[i][0]-bucket[i-1][1] for i in range(1, len(bucket)))
+
+The python version is 3.4, for 2.7 version rewrite the size
+
+----------------------------------------------------------------------------------------------------
+C++ solution, using bucket to record!
+    int maximumGap(vector<int>& nums) {
+        const int size_num = nums.size();
+        if (size_num < 2) return 0;
+        int maxV = *max_element(nums.begin(), nums.end());
+        int minV = *min_element(nums.begin(), nums.end());
+        if (maxV == minV) return 0;
+        double range = (maxV - minV) / double(size_num - 1);
+        vector<int> max_b(size_num, INT_MIN), min_b(size_num, INT_MAX);
+        for (int i = 0; i < size_num; i++) {
+            int index = (nums[i] - minV) / range;
+            max_b[index] = max(max_b[index], nums[i]);
+            min_b[index] = min(min_b[index], nums[i]);
+        }
+        int max_g = (int)range,  start = max_b[0];
+        for (int i = 1; i < size_num; i++) {
+            if (min_b[i] == INT_MAX) continue;
+            max_g = max(max_g, min_b[i] - start);
+            start = max_b[i];
+        }
+        return max_g;
+    }
+
+----------------------------------------------------------------------------------------------------
+Don&#x27;t understand the problem
+it's said "Given an unsorted array, find the maximum difference between the successive elements in its sorted form."
+
+What does it mean by "difference"? What is the difference between the successive elements? What does "in its sorted form" mean?
+
+----------------------------------------------------------------------------------------------------
+Simple radix sort solution in python
+    class Solution:
+        # @param {integer[]} nums
+        # @return {integer}
+        def radixSort(self, A): 
+            for k in xrange(10):     
+                s=[[] for i in xrange(10)]
+                for i in A:
+                    s[i/(10**k)%10].append(i)
+                A=[a for b in s for a in b] 
+            return A
+        
+        def maximumGap(self, nums): 
+            A = self.radixSort(nums)
+            ans = 0
+            if len(A) == 0: return 0
+            prev = A[0]
+            for i in A:
+                if i - prev > ans: ans = i - prev
+                prev = i
+            return ans
+
+----------------------------------------------------------------------------------------------------
+Concise AC java: standard buckets
+   I believe it's the simplest approach to distributed also min/max. It simplifies also last loop. Regards.
+
+    public class Solution {
+      private class Pair {
+        int min, max;
+        public Pair(int min, int max) {
+            this.min = min; this.max = max;
+        }
+      }
+      public int maximumGap(int[] num) {
+        if (num == null || num.length < 2) {
+            return 0;
+        }
+        int min=num[0], max=num[0], N=num.length;
+        for (int n: num) {
+            min = Math.min(min, n);
+            max = Math.max(max, n);
+        }
+        if (max == min) return 0;
+        int dist=(((max-min)-1)/(N-1))+1;
+        Pair[] buckets = new Pair[N];
+        for(int n: num) {
+            int bucket = (n-min)/dist;
+            Pair p = buckets[bucket];
+            if (p == null) {
+                buckets[bucket] = new Pair(n, n);
+            } else {
+                p.min = Math.min(p.min, n);
+                p.max = Math.max(p.max, n);
+            }
+        }
+        max = dist;
+        int prevBucketMax=buckets[0].max;
+        for (int i=1; i<buckets.length; i++) {
+            if (buckets[i] == null) continue;
+            max = Math.max(max, buckets[i].min-prevBucketMax);
+            prevBucketMax = buckets[i].max;
+        }
+        return max;
+      }
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean C++ implementation based on radix sort
+ Please refer to  
+[https://leetcode.com/discuss/80529/recommend-beginners-implementation-detailed-explaination][1]
+
+for implementation details and explainations.
+
+      class Solution {
+        public:
+            /* radix-based-sorting-implementation */
+            int maximumGap(vector<int>& nums){
+                radixSort(nums);
+            	int result = 0;
+            	for (int i = 1; i < nums.size(); i++){
+            		result = max(result, nums[i] - nums[i - 1]);
+            	}
+            	return result;
+            }
+            
+            void countingSort(vector<int>& X, int exp, int base){
+            	int len = X.size();
+            	int start = INT_MAX, end = INT_MIN;
+            	for (int i = 0; i < len; i++){
+            		start = min(start, (X[i] / exp)%base);
+            		end = max(end, (X[i] / exp) % base);
+            	}
+            	int range = end - start + 1;
+            	vector<int> count(range, 0);
+            	vector<int> result(len, 0);
+            	for (int i = 0; i < len; i++){
+            		count[(X[i] / exp) % base -start]++;
+            	}
+            	for (int i = 1; i < range; i++){
+            		count[i] = count[i - 1] + count[i];
+            	}
+            	//back-ward traverse is stable sorting
+            	for (int i = len - 1; i >= 0; i--){
+            		//as we know that the count array recorded element should '-1' to get the index
+            		result[count[(X[i] / exp) % base -start] - 1] = X[i];
+            		count[(X[i] / exp) % base - start]--;
+            	}
+            	for (int i = 0; i < len; i++){
+            		X[i] = result[i];
+            	}
+            }
+        
+            void radixSort(vector<int> &X){
+            	int len = X.size();
+            	int max_val = INT_MIN;
+            	int base = 10;
+            	for (int i = 0; i < len; i++) max_val = max(X[i], max_val);
+            	for (int exp = 1; max_val / exp>0; exp *= base){
+            		countingSort(X, exp, base);
+            	}
+            }
+        };
+
+  [1]: https://leetcode.com/discuss/80529/recommend-beginners-implementation-detailed-explaination
+
+
+----------------------------------------------------------------------------------------------------
+java radix sort
+public class Solution {
+    public int maximumGap(int[] nums) {
+        if(nums == null || nums.length == 0 || nums.length == 1) {
+            return 0;
+        }
+        int res = 0;
+        radixsort(nums);
+        for(int i = 1 ; i < nums.length ; i++) {
+            res = Math.max(res , nums[i] - nums[i-1]);
+        }
+        return res;
+    }
+    
+    protected void radixsort(int[] nums) {
+        int[] temp = new int[nums.length];
+        for(int i = 0 ; i < 32 ; i++) {
+            int[] c = new int[2];
+            for(int num : nums) {
+                int digit = num >> i;
+                if((digit & 1) == 0) c[0]++;
+                else c[1]++;
+            }
+            c[1] = c[0] + c[1];
+            for(int j = nums.length-1 ; j >= 0 ; j--) {
+                int digit = (nums[j] >> i) & 1;
+                temp[c[digit]-1] = nums[j];
+                c[digit]--;
+            }
+            for(int j = 0 ; j < nums.length ; j++) {
+                nums[j] = temp[j];
+            }
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------

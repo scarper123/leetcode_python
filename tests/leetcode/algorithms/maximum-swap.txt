@@ -1,0 +1,548 @@
+Java simple solution, O(n) time
+class Solution {
+    public int maximumSwap(int num) {
+        char[] digits = Integer.toString(num).toCharArray();
+        
+        int[] buckets = new int[10];
+        for (int i = 0; i < digits.length; i++) {
+            buckets[digits[i] - '0'] = i;
+        }
+        
+        for (int i = 0; i < digits.length; i++) {
+            for (int k = 9; k > digits[i] - '0'; k--) {
+                if (buckets[k] > i) {
+                    char tmp = digits[i];
+                    digits[i] = digits[buckets[k]];
+                    digits[buckets[k]] = tmp;
+                    return Integer.valueOf(new String(digits));
+                }
+            }
+        }
+        
+        return num;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; 3ms, O(n) time, O(n) space, DP solution
+int maximumSwap(int num) {
+    string numString = to_string(num);
+    int n = numString.length();
+    vector<int> dpPosition(n, -1);
+        
+    int curMaxPos = n - 1;
+    for (int i = n - 1; i >= 0; i--) {
+        if (numString[i] > numString[curMaxPos]) {
+            curMaxPos = i;
+        }
+        dpPosition[i] = curMaxPos;
+    }
+        
+    for (int i = 0; i < n; i++) {
+        if(numString[dpPosition[i]] != numString[i]) {
+            swap(numString[i], numString[dpPosition[i]]);
+            break;
+        }
+    }
+        
+    return stoi(numString);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Fastest O(n) time java solution w&#x2F; detailed explanation. Intuitive and easy to understand.
+class Solution {
+    public int maximumSwap(int num) {          
+        String temp = Integer.toString(num);     //Convert to int array (num -> digits[])
+        int[] digits = new int[temp.length()];
+        for (int i = 0; i < temp.length(); i++){
+            digits[i] = temp.charAt(i) - '0';
+        }                                       //Ignore all digits until decreasing, until (next digit > prev). store the min and minindex
+        int min = digits[0], minIndex = 0;
+        for (int i = 0; i < digits.length - 1; i++){
+            if (digits[i + 1] > digits[i]) {
+                minIndex = i;
+                min = digits[i];
+                break;
+            } else if (i == digits.length - 2)  //Reached end. Nothing to swap. Return original number.           
+                return num;
+        }                                       //Starting from minindex find the largest digit in the remaining digits.
+        int max = min, maxIndex = -1;
+        for (int j = minIndex; j < digits.length; j++){
+            if (digits[j] >= max) {
+                max = digits[j];
+                maxIndex = j;
+            }
+        }                                       //Iterate through the array till minIndex to find any digit that might be lesser than max 
+        int result = 0, swapindex = minIndex;
+        for (int i = 0; i <= minIndex; i++){
+            if (digits[i] < max) {
+                swapindex = i;
+                break;
+            }
+        }                                       //Swap the maxIndex digit with swapIndex
+        int tmp = digits[swapindex];
+        digits[swapindex] = digits[maxIndex];
+        digits[maxIndex] = tmp;
+                                                //Convert the result into integer(digits -> result) 
+        for (int i = digits.length - 1, j = 0; i >= 0; i--) {
+            result = result + (digits[j] * ((int) Math.pow(10, i)));
+            j++;
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple AC O(n) java solution with ex
+public int maximumSwap(int num) {
+    char[] digits = (""+num).toCharArray();
+    int frist_greater = 0; //find the first digit greater than previous
+    while(++frist_greater<digits.length&&digits[frist_greater-1]>=digits[frist_greater]);
+    if(frist_greater==digits.length) return num; //all digits are reversed sorted, no swap needed
+    
+    char max = '0';               
+    int max_position=frist_greater;    
+    for(int i=frist_greater;i<digits.length;i++)//find max digit in remain digits
+        if(max<=digits[i]){
+            max = digits[i];
+            max_position = i;
+        }
+    
+    for(int i=0;i<frist_greater;i++)  //find first digit that smaller than max digit in the second part
+        if(max>digits[i]){
+            StringBuilder s = new StringBuilder(String.valueOf(digits));
+            s.setCharAt(max_position,digits[i]);
+            s.setCharAt(i,max);
+            return Integer.parseInt(s.toString());  //no need to check overflow since max value is 10^8
+        }
+    return num;
+}
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def maximumSwap(self, num):
+    A = map(int, str(num))
+    last = {x: i for i, x in enumerate(A)}
+    for i, x in enumerate(A):
+        for d in xrange(9, x, -1):
+            if last.get(d, None) > i:
+                A[i], A[last[d]] = A[last[d]], A[i]
+                return int("".join(map(str, A)))
+    return num
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time O(n) space w&#x2F; Explanation
+class Solution {
+    public int maximumSwap(int num) {
+        int maxSeen = 0, maxIdx = -1, power = 0, swapIdx1 = 0, swapIdx2 = 0;
+        List<Integer> list = new ArrayList<>();
+        while(num > 0){
+            int digit = num % 10;
+            list.add(digit);
+            if(maxSeen > digit){
+                swapIdx1 = power;
+                swapIdx2 = maxIdx;
+            }
+            else if(digit > maxSeen){
+                maxSeen = digit;
+                maxIdx = power;
+            }
+            num = num/10;
+            power++;
+        }
+        
+        Collections.swap(list, swapIdx1, swapIdx2);
+
+        int result = 0;
+        for(int i = 0; i < list.size(); i++){
+            result += (int)(Math.pow(10, i) * list.get(i));
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution based on sorting and finding indices to swap
+public static int maximumSwap(int num) {
+        String str = ""+num;
+        char[] originalString = str.toCharArray();
+        char[] sortedString = str.toCharArray();
+        // Sort the digits in reverse order
+        Arrays.sort(sortedString);
+        sortedString = new StringBuilder(new String(sortedString)).reverse().toString().toCharArray();
+
+        int i; // Find the position of mismatch between the original and sorted string
+        for(i = 0; i < str.length(); i++) {
+            if(originalString[i] != sortedString[i]) break;
+        }
+
+        if(i == str.length()) return num; // if no mismatch, no swap needed, return the original number
+        int j = str.lastIndexOf(sortedString[i]); // find the last position of the mismatching digit in the original string
+
+        // Interchange digits in position i and j
+        char temp = originalString[i];
+        originalString[i] = originalString[j];
+        originalString[j] = temp;
+        
+        return Integer.parseInt(new String(originalString));
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ linear time solution using two stacks
+class Solution {
+public:
+    int maximumSwap(int num) {
+        stack<int> minS, maxS;
+        string temp = to_string(num);
+        int maxi=INT_MIN;
+
+        for (int i=temp.size()-1;i>=0;i--){
+            int num = temp[i]-'0';
+            if (num>maxi){
+                maxi = num;
+                maxS.push(i);
+            }else if (num<maxi){
+                minS.push(i);
+            }
+        }
+        
+        if (minS.empty())
+            return num;
+        
+        while (maxS.top()<=minS.top()){
+            maxS.pop();
+        }
+        swap(temp[minS.top()], temp[maxS.top()]);
+        return stoi(temp);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python straightforward solution
+class Solution:
+    def maximumSwap(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        from collections import defaultdict
+        num = list(map(int, str(num)))
+        mydict = defaultdict(list)
+        for i, x in enumerate(num):
+            mydict[x].append(i)
+        for i, x in enumerate(num):
+            for max_val in range(9, x-1, -1):
+                if max_val in mydict:
+                    break
+            if x == max_val:
+                mydict[x].remove(mydict[x][0])
+                if len(mydict[x]) == 0:
+                    del mydict[x]
+            else:
+                idx = mydict[max_val].pop()
+                num[i], num[idx] = num[idx], num[i]
+                break
+        return int(''.join(map(str, num)))
+
+
+----------------------------------------------------------------------------------------------------
+Does &quot;O(n)&quot; make sense?
+<p>I&#39;ve seen many people say their solution is O(n). I don&#39;t think that makes sense. Either you do consider that the number of digits is bounded by a constant and then you&#39;d say O(1), or you really consider the general case of n digits (i.e., something like BigInteger), and then it&#39;s not O(n) because of your translation to string and back (or however else you&#39;re extracting and recombining the digits). Saying &#34;O(n)&#34; looks like a nonsensical mix of both viewpoints to me.</p>
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class Solution {
+public:
+    int maximumSwap(int num) {
+        string s = to_string(num);
+        swaponce(s);
+        int l = stoi(s);
+        return l;
+    }
+private:
+    void swaponce(string& s) {
+        for (int i = 0; i < s.size(); i++) {
+            int maxpos = i;
+            for (int j = s.size() - 1; j > i; j--) {
+                if (s[j] > s[maxpos]) {
+                    maxpos = j;
+                }
+            }
+            if (maxpos != i) {
+                swap(s[i], s[maxpos]);
+                break;
+            }
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, brute force
+class Solution {
+    public int maximumSwap(int num) {
+        char[] arr = (num + "").toCharArray();
+        for (int i = 0; i < arr.length - 1; i++) {
+            int k = -1, idx = -1;
+            for (int j = i + 1; j < arr.length; j++) {
+                if (arr[j] >= k) {
+                    k = arr[j];
+                    idx = j;
+                }
+            }
+            if (arr[i] < k) {
+                arr[idx] = arr[i];
+                arr[i] = (char)k;
+                int res = 0;
+                for (int l = 0; l < arr.length; l++) {
+                    res = res * 10 + arr[l] - '0';
+                }
+                return res;
+            }
+        }
+        
+        return num;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+10 Lines Python
+def maximumSwap(self, num):
+    a = list(str(num))
+    n = len(a)
+    for i in range(n):
+        curmax = float('-inf')
+        for ind, val in enumerate(a[i:]):
+            if curmax <= val:   indmax, curmax = ind, val
+        if a[i] != curmax:
+            a[i], a[i+indmax] = curmax, a[i]
+            break
+    return int(''.join(a))
+
+----------------------------------------------------------------------------------------------------
+share my java solution!
+class Solution {
+    public int maximumSwap(int num) {
+        String str = String.valueOf(num);
+        char[] array = str.toCharArray();
+        Map<Character,Integer> map = new HashMap<>();
+        for(int i=0;i<array.length;i++){
+            map.put(array[i],i);
+        }
+        char[] copy = new char[array.length];
+        for(int i=0;i<array.length;i++){
+            copy[i]=array[i];
+        }
+        
+        Arrays.sort(copy);
+        reverse(copy);
+        if(str.equals(new String(copy))){
+            return num;
+        }
+        
+        for(int i=0;i<array.length;i++){
+            if(array[i]!=copy[i]){
+                int j = map.get(copy[i]);
+                swap(array,i,j);
+                break;
+            }
+        }
+        
+        
+        return Integer.parseInt(new String(array));
+        
+    }
+    
+    public void reverse(char[] array){
+        int i = 0;
+        int j = array.length-1;
+        while(i<j){
+            char c = array[i];
+            array[i] = array[j];
+            array[j] = c;
+            i++;
+            j--;
+        }
+    }
+    
+    public void swap(char[] array,int i,int j){
+        char c = array[i];
+        array[i]=array[j];
+        array[j]=c;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ using std::string and std::stoi()
+class Solution {
+public:
+    int maximumSwap(int num) {
+        string str = to_string(num);
+        if (str.size()==1) { return num; }
+        for (int i=0; i < str.size()-1; i++){
+            for (int j=i+1; j < str.size(); j++) {
+                string swapped = str;
+                swapped[i] = str[j];
+                swapped[j] = str[i];
+                int new_num = stoi(swapped);
+                if (new_num > num){
+                    num = new_num;
+                }
+            }
+        }
+        return num;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(n) space, kinda messy though
+public int maximumSwap(int num) {
+        //find the first number that has a number greater than it to its right
+        //take the right-most greatest number (if there are multiple same ones), swap and return
+        //else return num
+        String input = String.valueOf(num);
+        if(input.length() < 2){
+            return num;
+        }
+        char[] out = input.toCharArray();
+        int[] max = new int[input.length()];
+        int currMax = num % 10;
+        for(int i = input.length()-2; i >= 0; i--){
+            max[i] = currMax;
+            currMax = Math.max(currMax, Character.getNumericValue(input.charAt(i)));
+        }
+        for(int i = 0; i < input.length(); i++){
+            if(max[i] > Character.getNumericValue(input.charAt(i))){
+                int idxToSwap = input.lastIndexOf(String.valueOf(max[i]));
+                out[idxToSwap] = out[i];
+                out[i] = input.charAt(idxToSwap);
+                return Integer.parseInt(new String(out));
+            }
+        }
+        return num;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java and C# solution using sorting - With explanation
+    public int MaximumSwap(int num)
+    {
+        int[] digits = new int[num.ToString().Length];
+
+        for (int i = 0; i < digits.Length; i++)
+        {
+            digits[digits.Length-1-i] = num % 10;
+            num /= 10;
+        }
+
+        int[] sortedDigits = new int[digits.Length];
+        digits.CopyTo(sortedDigits, 0);
+        Array.Sort(sortedDigits);
+        Array.Reverse(sortedDigits);
+
+        for(int i=0; i<digits.Length; i++)
+        {
+            if(digits[i]!=sortedDigits[i])
+            {
+                int j = digits.Length - 1;
+                while(j>i && digits[j]!=sortedDigits[i])
+                {
+                    j--;
+                }
+
+                if(j>i)
+                {
+                    int temp = digits[j];
+                    digits[j] = digits[i];
+                    digits[i] = temp;
+                }
+                break;
+            }
+        }
+        int res = 0;
+        for(int i=0; i<digits.Length; i++)
+        {
+            res += digits[digits.Length - i - 1] * (int)Math.Pow(10, i);
+        }
+
+        return res;
+    }   
+
+
+----------------------------------------------------------------------------------------------------
+Another Java brute force solution
+public int maximumSwap(int num) {
+
+        String numStr = String.valueOf(num);
+
+        char[] numChars = numStr.toCharArray();
+
+        for (int i = 0; i < numChars.length; i++) {
+
+            char maxDigit = Character.MIN_VALUE;
+            int maxPos = -1;
+
+            for (int j = numChars.length - 1; j >= i + 1; j--) {
+                if (numChars[i] < numChars[j]) {
+                    if (numChars[j] > maxDigit) {
+                        maxPos = j;
+                        maxDigit = numChars[j];
+                    }
+                }
+            }
+
+            if (maxPos != -1) {
+                char tmp = numChars[i];
+                numChars[i] = numChars[maxPos];
+                numChars[maxPos] = tmp;
+                return Integer.valueOf(String.valueOf(numChars));
+            }
+        }
+
+        return num;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) solution
+  public int maximumSwap(int num) {
+        if (num == 0) return 0;
+        List<Integer> l = new ArrayList<>();
+        while (num > 0) {
+            l.add(num%10);
+            num/=10;
+        }
+        for (int i = l.size()-1; i>= 0; --i) {
+            int max = l.get(i), k = -1;
+            for (int j = i-1; j >= 0; --j) {
+                if (l.get(j) >= max) {
+                    max = l.get(j);
+                    k = j;
+                }
+            }
+            if (max == l.get(i)) continue;
+            int t = l.get(i);
+            l.set(i, max);
+            l.set(k, t);
+            break;
+        }
+        for (int i = l.size()-1; i >= 0; --i) {
+            num = num * 10 + l.get(i);
+        }
+        return num;
+    }
+
+
+----------------------------------------------------------------------------------------------------

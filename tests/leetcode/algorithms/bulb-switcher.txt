@@ -1,0 +1,447 @@
+Simple AC solution in Java in O(n) with explanation
+Since this question is a follow-up to House Robber, we can assume we already have a way to solve the simpler question, i.e. given a 1 row of house, we know how to rob them. So we already have such a helper function. We modify it a bit to rob a given range of houses.
+    
+    private int rob(int[] num, int lo, int hi) {
+        int include = 0, exclude = 0;
+        for (int j = lo; j <= hi; j++) {
+            int i = include, e = exclude;
+            include = e + num[j];
+            exclude = Math.max(e, i);
+        }
+        return Math.max(include, exclude);
+    }
+
+Now the question is how to rob a circular row of houses. It is a bit complicated to solve like the simpler question. It is because in the simpler question whether to rob *num[lo]* is entirely our choice. But, it is now constrained by whether *num[hi]* is robbed. 
+
+However, since we already have a nice solution to the simpler problem. We do not want to throw it away. Then, it becomes how can we reduce this problem to the simpler one. Actually, extending from the logic that if house i is not robbed, then you are free to choose whether to rob house i + 1, you can break the circle by assuming a house is not robbed.
+
+For example, 1 -> 2 -> 3 -> 1 becomes 2 -> 3 if 1 is not robbed.
+
+Since every house is either robbed or not robbed and at least half of the houses are not robbed, the solution is simply the larger of two cases with consecutive houses, i.e. house i not robbed, break the circle, solve it, or house i + 1 not robbed. Hence, the following solution. I chose i = n and i + 1 = 0 for simpler coding. But, you can choose whichever two consecutive ones.
+
+    public int rob(int[] nums) {
+        if (nums.length == 1) return nums[0];
+        return Math.max(rob(nums, 0, nums.length - 2), rob(nums, 1, nums.length - 1));
+    }
+
+----------------------------------------------------------------------------------------------------
+9-lines 0ms O(1)-Space C++ solution
+This problem is a little tricky at first glance. However, if you have finished the **House Robber** problem, this problem can simply  be **decomposed into two House Robber problems**. 
+    Suppose there are `n` houses, since house `0` and `n - 1` are now neighbors, we cannot rob them together and thus the solution is now the maximum of
+
+ 1. Rob houses `0` to `n - 2`;
+ 2. Rob houses `1` to `n - 1`.
+
+The code is as follows. Some edge cases (`n < 2`) are handled explicitly.
+
+    class Solution {
+    public:
+        int rob(vector<int>& nums) {
+            int n = nums.size(); 
+            if (n < 2) return n ? nums[0] : 0;
+            return max(robber(nums, 0, n - 2), robber(nums, 1, n - 1));
+        }
+    private:
+        int robber(vector<int>& nums, int l, int r) {
+            int pre = 0, cur = 0;
+            for (int i = l; i <= r; i++) {
+                int temp = max(pre + nums[i], cur);
+                pre = cur;
+                cur = temp;
+            }
+            return cur;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Twice pass solution, C++
+Twice pass:
+
+1. not rob nums[n-1]
+2. not rob nums[0]
+
+and the other is same as [House Robber](https://leetcode.com/problems/house-robber/ ).
+
+    int rob(vector<int>& nums)
+    {
+        if(nums.size() == 0)
+            return 0;
+        if(nums.size() == 1)
+            return nums[0];
+        
+        int pre1 = 0, cur1 = 0;
+        for(int i = 0; i < nums.size() - 1; ++ i)
+        {
+            int temp = pre1;
+            pre1 = cur1;
+            cur1 = max(temp + nums[i], pre1);
+        }
+        
+        int pre2 = 0, cur2 = 0;
+        for(int i = 1; i < nums.size(); ++ i)
+        {
+            int temp = pre2;
+            pre2 = cur2;
+            cur2 = max(temp + nums[i], pre2);
+        }
+        
+        return max(cur1, cur2);
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Super Simple 0ms solution with explanation
+Since you cannot rob both the first and last house, just create two separate vectors, one excluding the first house, and another excluding the last house. The best solution generated from these two vectors using the original House Robber DP algorithm is the optimal one. 
+
+    class Solution {
+    public:
+    
+        int robOriginal(vector<int>& nums) {
+            int a = 0, b = 0, res = 0;
+            
+            for(int i = 0; i < nums.size(); ++i){
+                res = max(b + nums[i], a);
+                b = a;
+                a = res;
+            }
+            
+            return res;
+        }
+    
+        int rob(vector<int>& nums) {
+            if(nums.empty()) return 0;
+            if(nums.size() == 1) return nums[0];
+            
+            vector<int> numsA(nums.begin() + 1, nums.end());
+            vector<int> numsB(nums.begin(), nums.end()-1);
+            
+            return max(robOriginal(numsA), robOriginal(numsB));
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java clean short solution DP
+    public class Solution {
+	public int rob(int[] nums) {
+		return Math.max(rob(nums, 0, nums.length-2), rob(nums, 1, nums.length-1));
+	}
+	
+    public int rob(int[] nums, int lo, int hi) {
+        int preRob = 0, preNotRob = 0, rob = 0, notRob = 0;
+        for (int i = lo; i <= hi; i++) {
+          	rob = preNotRob + nums[i];
+        	notRob = Math.max(preRob, preNotRob);
+        	
+        	preNotRob = notRob;
+        	preRob = rob;
+        }
+        return Math.max(rob, notRob);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Good performance DP solution using Java
+    public class Solution {
+        public int rob(int[] nums) {
+            if (nums.length == 0)
+                return 0;
+            if (nums.length < 2)
+                return nums[0];
+            
+            int[] startFromFirstHouse = new int[nums.length + 1];
+            int[] startFromSecondHouse = new int[nums.length + 1];
+            
+            startFromFirstHouse[0]  = 0;
+            startFromFirstHouse[1]  = nums[0];
+            startFromSecondHouse[0] = 0;
+            startFromSecondHouse[1] = 0;
+            
+            for (int i = 2; i <= nums.length; i++) {
+                startFromFirstHouse[i] = Math.max(startFromFirstHouse[i - 1], startFromFirstHouse[i - 2] + nums[i-1]);
+                startFromSecondHouse[i] = Math.max(startFromSecondHouse[i - 1], startFromSecondHouse[i - 2] + nums[i-1]);
+            }
+            
+            return Math.max(startFromFirstHouse[nums.length - 1], startFromSecondHouse[nums.length]);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+0ms O(N) time O(1) space C++ solution
+This solution is based on house robber 1. The idea is that either the first house or the last house is not robbed. The final solution is max of (house robber without last element) and (house robber without the first element). Note *endIndex* is not inclusive in the second rob function.
+
+    class Solution {
+    public:
+    int rob(vector<int>& nums) {
+        if (nums.size() == 0) return 0;
+        if (nums.size() == 1) return nums[0];
+        
+        return max(rob(nums, 0, nums.size()-1), rob(nums, 1, 0));
+    }
+
+    int rob(vector<int>& nums, int startIndex, int endIndex) {
+        int p = 0, q = 0;
+        for (int i = startIndex; i != endIndex; /* do nothing */) {
+            int tmp = p;
+            p = max(p, q + nums[i]);
+            q = tmp;
+            i = (i + 1) % nums.size();
+        }
+        return p;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple and easy C++ solution modified from the best solution of House Robber (Easy)
+    int rob_line(vector<int>& nums, int start, int end) {
+        int odd_sum=0;
+        int even_sum=0;
+        
+        for(int i=start; i<end; i++) {
+            if(i%2)
+                odd_sum = max(even_sum, odd_sum+nums[i]);
+            else
+                even_sum = max(odd_sum, even_sum+nums[i]);
+        }
+        
+        return max(odd_sum, even_sum);
+    }
+    
+    int rob(vector<int>& nums) {
+        if(nums.size()==0) return 0;
+        else if(nums.size()==1) return nums[0];
+        else return max(rob_line(nums,0,nums.size()-1), rob_line(nums,1,nums.size()));
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+6 lines function body
+Standard solution, I guess, except I take a shortcut for the one-house case.
+
+    class Solution:
+        def rob(self, nums):
+            def rob(nums):
+                now = prev = 0
+                for n in nums:
+                    now, prev = max(now, prev + n), now
+                return now
+            return max(rob(nums[len(nums) != 1:]), rob(nums[:-1]))
+
+
+
+----------------------------------------------------------------------------------------------------
+Jave O(1) space, O(n) time optimal solution
+Helper method returns DP solution from 0 - n-2  and 1 - n-1. Final answer is the max between two. 
+
+ 
+
+      public class Solution {
+            public int rob(int[] nums) {
+                if (nums == null || nums.length == 0)
+                    return 0;
+                int n = nums.length;
+                if (n == 1) {
+                    return nums[0];
+                }
+                return Math.max(robHelper(nums, 0, n - 2), robHelper(nums, 1, n - 1));
+            }
+            
+            private int robHelper(int[] nums, int start, int end) {
+                int curr, prev, prev2;
+                curr = prev = prev2 = 0;
+                for (int i = start; i <= end; i++) {
+                    curr = Math.max(prev2 + nums[i], prev);
+                    prev2 = prev;
+                    prev = curr;
+                }
+                return curr;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My 15 line c++ code, 0MS runtime for test data.
+       /************************************
+       **  author : s2003zy
+       **  blog :  s2003zy.com
+       ** weibo:  weibo.com/songzy982
+       ****************************************/ 
+       class Solution {
+        public:
+            int res(vector<int>& nums, int left, int right) {
+                int last = 0, lastlast = 0;
+                for (int i = left; i < right; i++) {
+                    lastlast = max(last, lastlast + nums[i]);
+                    swap(last, lastlast);
+                }
+                return last;
+            }
+            int rob(vector<int>& nums) {
+                if (nums.size() == 1) return nums[0];
+                return max(res(nums, 0, nums.size() - 1) ,res(nums, 1, nums.size()));
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+An easy-understanding solution in C++
+This problem is an advanced version of Problem "House Robber", the only difference is that the houses are arranged in a circle, which means the first house is adjacent to the last house.
+
+From a global view, any rob solution has two possible cases: rob the first house, or not.
+
+If we rob the first house, we can't rob the last house, so the problem transfer to "how to rob in house[1, n-1]". If we do not rob the first house, the problem transfer to "how to rob in house[2, n]".
+
+Assuming that we have understand the solution for problem "House Robber", now we can simply design the new strategy as below:
+
+    class Solution {
+    public:
+        int rob(vector<int> &nums) {
+            if (nums.size() == 0) {
+                return 0;
+            }
+            if (nums.size() == 1) {
+                return nums.at(0);
+            }
+            vector<int> case1(nums);
+            vector<int> case2(nums);
+        
+            vector<int>::iterator v1 = case1.begin();
+            case1.erase(v1);
+            case2.pop_back();
+        
+            int maxRobValue1 = simpleRob(case1);
+            int maxRobValue2 = simpleRob(case2);
+            int maxRobValue = max(maxRobValue1, maxRobValue2);
+            return maxRobValue;
+        }
+        int simpleRob(vector<int> &num){
+            int *f = new int[num.size() + 1];
+            f[0] = 0;
+            for (int i = 1; i <= num.size(); i++) {
+                if (i == 1) {
+                    f[i] = num.at(i-1);
+                }
+                else {
+                    f[i] = max(f[i-2] + num.at(i-1), f[i-1]);
+                }
+            }
+            int robMaxValue = f[num.size()];
+            return robMaxValue;
+        }    
+    };
+
+----------------------------------------------------------------------------------------------------
+My Python Solution
+    class Solution(object):
+        def rob(self, nums):
+            """
+            :type nums: List[int]
+            :rtype: int
+            """
+            n = len(nums)
+            if n == 0: return 0
+            if n < 4: return max(nums)
+    
+            first, second = 0, 0
+            for i in nums[:-1]: first, second = second, max(first + i, second)
+            result = second
+    
+            first, second = 0, 0
+            for i in nums[1:]: first, second = second, max(first + i, second)
+            return max(result, second)
+
+----------------------------------------------------------------------------------------------------
+Java solution beats 96% of submissions
+I maintained 4 variables, 
+**firstInc**: the sum that includes the current element of nums[], and can also contain the first number of nums[];
+
+**firstExc**: the sum that excludes the current element of nums[], and can also contain the first number of nums[];
+
+**nonFirstInc**: the sum that includes the current element of nums[], and DO NOT contain the first number of nums[];
+
+**nonFirstExc**: the sum that excludes the current element of nums[], and DO NOT contain the first number of nums[];
+
+  
+
+      public class Solution {
+            public int rob(int[] nums) {
+                if(nums.length == 0) return 0;
+                if(nums.length == 1) return nums[0];
+                int firstInc = nums[0];
+                int firstExc = 0;
+                int nonFirstInc = 0;
+                int nonFirstExc = 0;
+                
+                for(int i = 1; i < nums.length; i++) {
+                    int preFirstInc = firstInc;
+                    firstInc = firstExc + nums[i];
+                    firstExc = Math.max(preFirstInc, firstExc);
+                    
+                    int preNFinc = nonFirstInc;
+                    nonFirstInc = nonFirstExc + nums[i];
+                    nonFirstExc = Math.max(preNFinc, nonFirstExc);
+                }
+                
+                int maxInc = Math.min(firstInc, nonFirstInc);
+                
+                return Math.max(maxInc, firstExc);
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+House robber II O(1) space solution C++
+    //house robber II, change to O(1) solution
+    //do dynamic programming from 0----->n-2 and 1----->n-1 repsectively, and get the maximum
+    //dp[i] indicates the maximum amount you can rob ending in indexing i
+    //dp[i] = max{dp[i-1], dp[i-2] + nums[i]}
+    class Solution {
+    public:
+        int rob(vector<int>& nums) {
+            int n = nums.size();
+            if (n == 0) return 0;
+            if (n == 1) return nums[0];
+            if (n == 2) return max(nums[0], nums[1]);
+            //first calcualte from 0----->n-2
+            int previous = nums[0];
+            int current = max(nums[0], nums[1]);
+            for (int i = 2; i <= n - 2; i++) {
+                int tmp = current;
+                current = max(previous + nums[i], current);
+                previous = tmp;
+            }
+            int maxInPreviousHalf = current;
+            //next calculate from 1------->n-1
+            previous = nums[1];
+            current = max(nums[1], nums[2]);
+            for (int i = 3; i <= n - 1; i++) {
+                int tmp = current;
+                current = max(previous + nums[i], current);
+                previous = tmp;
+            }
+            return max(maxInPreviousHalf, current);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple DP Java solution in 1ms
+public class Solution {
+
+    public int rob(int[] nums) {
+        if(nums.length==1) return nums[0];
+        int rob=0,notrob=0;
+        for(int i=0;i<nums.length-1;i++){
+            int currob=notrob+nums[i];
+            notrob=Math.max(rob,notrob);
+            rob=currob;
+        }
+        int firstcase=Math.max(rob,notrob);
+        rob=0;notrob=0;
+        for(int i=1;i<nums.length;i++){
+            int currob=notrob+nums[i];
+            notrob=Math.max(rob,notrob);
+            rob=currob;
+        }
+        int secondcase=Math.max(rob,notrob);
+        return Math.max(firstcase,secondcase);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+One Pass O(1) space O(N) time, simple &amp; short code, with detailed explanation

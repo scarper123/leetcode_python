@@ -1,0 +1,730 @@
+DFS with one LinkedList , accepted java solution
+	public List<List<Integer>> pathSum(TreeNode root, int sum){
+		List<List<Integer>> result  = new LinkedList<List<Integer>>();
+		List<Integer> currentResult  = new LinkedList<Integer>();
+		pathSum(root,sum,currentResult,result);
+		return result;
+	}
+
+	public void pathSum(TreeNode root, int sum, List<Integer> currentResult,
+			List<List<Integer>> result) {
+
+		if (root == null)
+			return;
+		currentResult.add(new Integer(root.val));
+		if (root.left == null && root.right == null && sum == root.val) {
+			result.add(new LinkedList(currentResult));
+			currentResult.remove(currentResult.size() - 1);//don't forget to remove the last integer
+			return;
+		} else {
+			pathSum(root.left, sum - root.val, currentResult, result);
+			pathSum(root.right, sum - root.val, currentResult, result);
+		}
+		currentResult.remove(currentResult.size() - 1);
+	}
+
+----------------------------------------------------------------------------------------------------
+12ms 11-lines C++ Solution
+Well, a typical backtracking problem. The code is as follows. You may walk through it using the example in the problem statement to see how it works.
+
+    class Solution {
+    public:
+        vector<vector<int>> pathSum(TreeNode* root, int sum) {
+            vector<vector<int> > paths;
+            vector<int> path;
+            findPaths(root, sum, path, paths);
+            return paths;  
+        }
+    private:
+        void findPaths(TreeNode* node, int sum, vector<int>& path, vector<vector<int> >& paths) {
+            if (!node) return;
+            path.push_back(node -> val);
+            if (!(node -> left) && !(node -> right) && sum == node -> val)
+                paths.push_back(path);
+            findPaths(node -> left, sum - node -> val, path, paths);
+            findPaths(node -> right, sum - node -> val, path, paths);
+            path.pop_back();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple DFS Java Solution
+Save intermediate result into stack and save the stack into result array once its sum == required sum.
+
+    public class Solution {
+        private List<List<Integer>> resultList = new ArrayList<List<Integer>>();
+        
+        public void pathSumInner(TreeNode root, int sum, Stack<Integer>path) {
+            path.push(root.val);
+            if(root.left == null && root.right == null)
+                if(sum == root.val) resultList.add(new ArrayList<Integer>(path));
+            if(root.left!=null) pathSumInner(root.left, sum-root.val, path);
+            if(root.right!=null)pathSumInner(root.right, sum-root.val, path);
+            path.pop();
+        }
+        
+        public List<List<Integer>> pathSum(TreeNode root, int sum) {
+            if(root==null) return resultList;
+            Stack<Integer> path = new Stack<Integer>();
+            pathSumInner(root, sum, path);
+            return resultList;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (Recursively, BFS+queue, DFS+stack)
+    def pathSum(self, root, sum):
+        if not root:
+            return []
+        res = []
+        self.dfs(root, sum, [], res)
+        return res
+        
+    def dfs(self, root, sum, ls, res):
+        if not root.left and not root.right and sum == root.val:
+            ls.append(root.val)
+            res.append(ls)
+        if root.left:
+            self.dfs(root.left, sum-root.val, ls+[root.val], res)
+        if root.right:
+            self.dfs(root.right, sum-root.val, ls+[root.val], res)
+            
+    def pathSum2(self, root, sum):
+        if not root:
+            return []
+        if not root.left and not root.right and sum == root.val:
+            return [[root.val]]
+        tmp = self.pathSum(root.left, sum-root.val) + self.pathSum(root.right, sum-root.val)
+        return [[root.val]+i for i in tmp]
+    
+    # BFS + queue    
+    def pathSum3(self, root, sum): 
+        if not root:
+            return []
+        res = []
+        queue = [(root, root.val, [root.val])]
+        while queue:
+            curr, val, ls = queue.pop(0)
+            if not curr.left and not curr.right and val == sum:
+                res.append(ls)
+            if curr.left:
+                queue.append((curr.left, val+curr.left.val, ls+[curr.left.val]))
+            if curr.right:
+                queue.append((curr.right, val+curr.right.val, ls+[curr.right.val]))
+        return res
+        
+    # DFS + stack I  
+    def pathSum4(self, root, sum): 
+        if not root:
+            return []
+        res = []
+        stack = [(root, sum-root.val, [root.val])]
+        while stack:
+            curr, val, ls = stack.pop()
+            if not curr.left and not curr.right and val == 0:
+                res.append(ls)
+            if curr.right:
+                stack.append((curr.right, val-curr.right.val, ls+[curr.right.val]))
+            if curr.left:
+                stack.append((curr.left, val-curr.left.val, ls+[curr.left.val]))
+        return res 
+    
+    # DFS + stack II   
+    def pathSum5(self, root, s): 
+        if not root:
+            return []
+        res = []
+        stack = [(root, [root.val])]
+        while stack:
+            curr, ls = stack.pop()
+            if not curr.left and not curr.right and sum(ls) == s:
+                res.append(ls)
+            if curr.right:
+                stack.append((curr.right, ls+[curr.right.val]))
+            if curr.left:
+                stack.append((curr.left, ls+[curr.left.val]))
+        return res    
+
+----------------------------------------------------------------------------------------------------
+Java Solution: iterative and recursive
+    //1. iterative: Using a stack to implement DFS
+    //2. Recursive: 
+
+    public class Solution {
+        public List<List<Integer>> pathSum(TreeNode root, int sum) {
+            List<List<Integer>> res = new ArrayList<>();
+            List<Integer> path = new ArrayList<>();
+            Stack<TreeNode> stack = new Stack<TreeNode>();
+            int SUM = 0;
+            TreeNode cur = root;
+            TreeNode pre = null;
+            while(cur!=null || !stack.isEmpty()){
+                while(cur!=null){
+                    stack.push(cur);
+                    path.add(cur.val);
+                    SUM+=cur.val;
+                    cur=cur.left;
+                }
+                cur = stack.peek();
+                if(cur.right!=null && cur.right!=pre){
+                    cur = cur.right;
+                    continue;
+                } 
+                if(cur.left==null && cur.right==null && SUM==sum) 
+                    res.add(new ArrayList<Integer>(path));
+      
+                pre = cur;
+                stack.pop();
+                path.remove(path.size()-1);
+                SUM-=cur.val;
+                cur = null;
+            
+            }
+            return res;
+        }
+    }
+
+   
+    
+        public class Solution {
+            public List<List<Integer>> pathSum(TreeNode root, int sum) {
+                List<List<Integer>> res = new ArrayList<>();
+                List<Integer> path = new ArrayList<>();
+                dfs(root, sum, res, path);
+                return res;
+            }
+            
+            public void dfs(TreeNode root, int sum, List<List<Integer>> res, List<Integer> path){
+                if(root==null) return;
+                path.add(root.val);
+                
+                if(root.left==null && root.right==null ){
+                    if(root.val==sum)
+                        res.add(new ArrayList<Integer>(path));
+                    return;
+                }
+                if(root.left!=null) {
+                    dfs(root.left,sum-root.val,res,path);
+                    path.remove(path.size()-1);
+                }
+                if(root.right!=null) {
+                    dfs(root.right,sum-root.val,res,path);
+                    path.remove(path.size()-1);
+                }
+                
+            }
+        }
+
+
+----------------------------------------------------------------------------------------------------
+18 ms c++ recursive solution
+    vector<vector<int> > pathSum(TreeNode *root, int sum) {
+            vector<vector<int> > result;
+            vector<int> cur_path(0);
+            pathSumRec(root, sum, result, cur_path);
+            return result;
+        }
+        
+        // pass the current path as a reference and remember to pop out the last added element
+        // this improves the performance by 5 times
+        void pathSumRec(TreeNode* root, int sum, vector<vector<int> >& result, vector<int>& cur_path) {
+            if (root == NULL) {
+                return;
+            }
+            
+            if (root->val == sum && root->left == NULL && root->right == NULL) {
+                cur_path.push_back(root->val);
+                result.push_back(cur_path);
+                cur_path.pop_back();
+                return;
+            }
+            
+            int sum_left = sum - root->val;
+            cur_path.push_back(root->val);
+            pathSumRec(root->left, sum_left, result, cur_path);
+            //cur_path.pop_back();
+            pathSumRec(root->right, sum_left, result, cur_path);
+            cur_path.pop_back();
+        }
+
+----------------------------------------------------------------------------------------------------
+Short python solution
+    class Solution:
+ 
+    def pathSum(self, root, sum):
+        if not root: return []
+        if root.left == None and root.right == None:
+            if sum == root.val: 
+                return [[root.val]]
+            else: 
+                return []
+        a = self.pathSum(root.left, sum - root.val) + \
+            self.pathSum(root.right, sum - root.val)
+        return [[root.val] + i for i in a]
+
+----------------------------------------------------------------------------------------------------
+Why does this code give time limit exceeded? Java
+    /**
+     * Definition for binary tree
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public LinkedList<LinkedList<Integer>> pathSum(TreeNode root, int sum) {
+            LinkedList<Integer> list = new LinkedList<Integer>();
+            LinkedList<LinkedList<Integer>> bigList = new LinkedList<LinkedList<Integer>>();
+            get(root,sum,0,list,bigList);
+            return bigList;
+        }
+        public void get(TreeNode node, int target, int sum, LinkedList<Integer> list, LinkedList<LinkedList<Integer>> bigList){
+            if (node == null) return;
+            int number = sum + node.val;
+            if (number == target && node.left == null && node.right == null){// leaf & target check
+                list.add(node.val);//add it to list
+                bigList.add(list);//add list to big list
+                return;
+            }
+            else {
+                list.add(node.val);
+                //recurse
+                if (node.left != null) get(node.left, target, number, list, bigList);
+                if (node.right != null) get(node.right, target, number, list, bigList);
+            }
+        }
+        
+    }
+
+For the test case: 
+[1,1,#,1,#...,1,#,1] 1000"
+
+----------------------------------------------------------------------------------------------------
+Another accepted Java solution
+    public class Solution {
+        public List<List<Integer>> pathSum(TreeNode root, int sum) {
+            List<List<Integer>> res = new ArrayList<List<Integer>>();
+            pathSum(root, sum, new ArrayList<Integer>(), res);
+            return res;
+        }
+        
+        void pathSum(TreeNode root, int sum, List<Integer> sol, List<List<Integer>> res) {
+            if (root == null) {
+                return;
+            }
+            
+            sol.add(root.val);
+            
+            if (root.left == null && root.right == null && sum == root.val) {
+                res.add(new ArrayList<Integer>(sol));
+            } else {
+                pathSum(root.left, sum - root.val, sol, res);
+                pathSum(root.right, sum - root.val, sol, res);
+            }
+            
+            sol.remove(sol.size() - 1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python Solution: DFS
+    class Solution:
+    # @param {TreeNode} root
+    # @param {integer} sum
+    # @return {integer[][]}
+    def pathSum(self, root, sum):
+        ans = []
+        self.dfs(root, sum, [],ans)
+        return ans
+    
+    def dfs(self, root, sum, tmp, ans):
+        if not root:
+            return
+        
+        if root.left == None and root.right == None and sum == root.val:
+            ans.append(tmp+[root.val])
+            return
+        
+        self.dfs(root.left, sum-root.val, tmp+[root.val], ans)
+        self.dfs(root.right, sum-root.val, tmp+[root.val], ans)
+        
+
+----------------------------------------------------------------------------------------------------
+My simple java solution
+    private List<List<Integer>> result = new ArrayList<List<Integer>>();
+    
+    public List<List<Integer>> pathSum(TreeNode root, int sum) {
+        helper(new ArrayList<Integer>(), root, sum);
+        return result;
+    }
+    
+    private void helper(List<Integer> list, TreeNode root, int sum) {
+        if (root == null) return;
+        list.add(root.val);
+        sum -= root.val;
+        if (root.left == null && root.right == null) {
+            if (sum == 0) result.add(list);
+            return;
+        }
+        helper(new ArrayList<Integer>(list), root.left, sum);
+        helper(new ArrayList<Integer>(list), root.right, sum);
+    }
+
+----------------------------------------------------------------------------------------------------
+A recursive solution (accepted)
+This is a recursive solution, we can change it to iterative easily:
+
+class Solution {
+public:
+    vector<vector<int> > pathSum(TreeNode *root, int sum) {
+        vector<vector<int>> res;
+        vector<int> path;
+        
+        findAllPath (root, sum, path, res);
+        return res;
+    }
+    
+private:
+    void findAllPath (TreeNode *root, int sum, vector<int> &path, vector<vector<int>> &res)
+    {
+        if (!root) return;
+        
+        path.push_back (root->val);
+        if (!root->left && !root->right && root->val == sum)
+            res.push_back (path);
+        if (root->left)
+            findAllPath (root->left, sum - root->val, path, res);
+        if (root->right)
+            findAllPath (root->right, sum - root->val, path, res);
+        path.pop_back ();
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Should Python be given more time?
+I use the same algorithms, but accepted in Java and TLE in Python.
+
+Since OJ is to practice the algorithms, they should be accepted or denied at the same time.
+Right?
+
+Here is my algorithms in both languages:
+
+Java:
+
+    public class Solution {
+        public ArrayList<Integer> stack;
+        public ArrayList<ArrayList<Integer>> res;
+        public void search(TreeNode root, int sum) {
+            if (root == null) return;
+            stack.add(root.val);
+            if ((root.left == null) && (root.right == null)) {
+                if (root.val == sum) {
+                    ArrayList<Integer> ans = new ArrayList<Integer>();
+                    for (Integer item: stack) ans.add(item);
+                    res.add(ans);
+                }
+            } else {
+                search(root.left, sum - root.val);
+                search(root.right, sum - root.val);
+            }
+            stack.remove(stack.size() - 1);
+        }
+        public ArrayList<ArrayList<Integer>> pathSum(TreeNode root, int sum) {
+            stack = new ArrayList<Integer>();
+            res = new ArrayList<ArrayList<Integer>>();
+            search(root, sum);
+            return res;
+        }
+    }
+
+And Python:
+
+    class Solution:
+    # @param root, a tree node
+    # @param sum, an integer
+    # @return a list of lists of integers
+    def pathSum(self, root, sum):
+        stack = []
+        res = []
+        def search(root, sum):
+            if (root == None) or (root.val > sum): return
+            stack.append(root.val)
+            if (root.left == None) and (root.right == None):
+                if root.val == sum:
+                    res.append(list(stack)) # copy stack to res
+            else:
+                search(root.left, sum - root.val)
+                search(root.right, sum - root.val)
+            stack.pop()
+        search(root, sum)
+        return res
+
+----------------------------------------------------------------------------------------------------
+My accepted JAVA solution
+The basic idea is to find every correct path and create a list for them. After searching the left child and right child of the root, merge two lists.
+
+
+    /**
+     * Definition for binary tree
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public List<List<Integer>> pathSum(TreeNode root, int sum) {
+            List<List<Integer>> pathList = new ArrayList<List<Integer>>();
+    		if(root==null){
+    			return pathList;
+    		}
+            if(root.left==null&&root.right==null){//if find a path, create a new list and add to the pathList.
+            	if(root.val==sum){
+    	        	List<Integer> list = new ArrayList<Integer>();
+    	        	list.add(root.val);
+    	        	pathList.add(list);
+            	}
+            	return pathList;
+            }
+            //find path left and right child and merge two list together.
+            pathList = pathSum(root.left, sum-root.val);
+            List<List<Integer>> pathList_right = pathSum(root.right, sum-root.val);
+            for(List<Integer> l:pathList_right){
+            	pathList.add(l);
+            }
+            //add current root to every list in path list.
+            for(List<Integer> l:pathList){
+            	l.add(0, root.val);
+            }
+            return pathList;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short C++ recursive solution
+Obviously this problem is suited for recursive method. However, the main problem is that one needs to find all possible paths. My solution is to recursively descend to all leafs. At the same time, pass by value a vector<int> to store the current path, while pass by reference a vector<vector<int> > to store all paths that meet the criteria.
+
+        class Solution {
+    public:
+        vector<vector<int> > pathSum(TreeNode *root, int sum) {
+            vector<vector<int> > finishedSearch;
+            vector<int> currentSearch;
+            pathDesend(root, sum, currentSearch, finishedSearch);
+            return finishedSearch;
+        }
+            
+        void pathDesend(TreeNode* current_root, int sum, vector<int> currentSearch, vector<vector<int> > & finishedSearch){
+            if(current_root==NULL) return;
+            currentSearch.push_back(current_root->val);
+            if(sum == current_root->val && current_root->left==NULL && current_root->right==NULL){
+                  finishedSearch.push_back(currentSearch);
+                  return;
+            }
+            pathDesend(current_root->left, sum-current_root->val,currentSearch,finishedSearch);
+            pathDesend(current_root->right,sum-current_root->val,currentSearch,finishedSearch);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ Solution ,  with one more function
+      class Solution {
+       public:
+        vector<vector<int>> pathSum(TreeNode* root, int sum) {
+        vector< vector<int> > ret;
+    vector<int> row;
+    FindSum(root,sum,row,ret);
+    return ret;
+    
+    
+    }
+    void FindSum(TreeNode *root, int sum, vector<int> row, vector< vector<int> > &ret)
+    {
+        if(root==NULL)
+            return;
+        else if(root->val==sum&&root->left==NULL && root->right==NULL)
+            {
+            row.push_back(root->val);
+            ret.push_back(row);
+            return;
+            }
+
+        row.push_back(root->val);
+        FindSum(root->left, sum-root->val,row,ret);
+        FindSum(root->right, sum-root->val,row,ret);
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++ DFS 17ms non-recursive solution
+    class Solution {
+    public:
+        vector<vector<int>> pathSum(TreeNode* root, int sum) {
+            vector<vector<int> > result;
+            vector<TreeNode*> st;
+            TreeNode *pre = NULL, *cur = root;
+            int value = 0;
+            while (cur || !st.empty()) {
+                while (cur) {
+                    st.push_back(cur);
+                    value += cur->val;
+                    cur = cur->left;
+                }
+                cur = st.back();
+                if (!cur->left && !cur->right && value == sum) {
+                    vector<int> t;
+                    for (auto i : st) {
+                        t.push_back(i->val);
+                    }
+                    result.push_back(t);
+                }
+                if (cur->right && cur->right != pre) {
+                    cur = cur->right;
+                } else {
+                    pre = cur;
+                    value -= cur->val;
+                    st.pop_back();
+                    cur = NULL;
+                }
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java bit 94.02%
+
+
+    public class Solution {
+        private int maxPathLen = 2000;
+        private int[] path = new int[maxPathLen];
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+
+        /**
+         * <br/>
+         * <strong>result of test:</strong><br/>
+         * 114 / 114 test cases passed<br/>
+         * Status: Accepted<br/>
+         * Runtime: 3 ms, bit 38.48%<br/>
+         * <p>
+         * here the size of maxPathLen is very influence program run speed
+         * if maxPathLen = 9999, Runtime: 3 ms, bit 38.48%
+         * if maxPathLen = 2000, Runtime: 2 ms, bit 94.02%
+         *
+         * @param root
+         * @param sum
+         * @return
+         */
+        public List<List<Integer>> pathSum(TreeNode root, int sum) {
+            findAllPath(0, root, sum);
+            return result;
+        }
+
+        private void findAllPath(int index, TreeNode root, int sum) {
+            if (root == null) {
+                return;
+            }
+            path[index] = root.val;
+            if (root.left == null && root.right == null && root.val == sum) {
+                List<Integer> list = new ArrayList<Integer>();
+                for (int i = 0; i <= index; i++) {
+                    list.add(path[i]);
+                }
+                result.add(list);
+                return;
+            }
+            findAllPath(index + 1, root.left, sum - root.val);
+            findAllPath(index + 1, root.right, sum - root.val);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my non-recursive solution
+ post order 
+
+
+    vector<vector<int> > pathSum(TreeNode *root, int sum) {
+        vector<vector<int>> result;
+        if(root == NULL)
+        {
+            return result;
+        }
+        
+        stack<TreeNode*> nodeStack;
+        TreeNode *current = root;
+        TreeNode *last = NULL;
+        vector<int> set;
+        int pathSum = 0;
+        
+        while(!nodeStack.empty() || current != NULL)
+        {
+            if(current == NULL)
+            {
+                TreeNode *node = nodeStack.top();
+                
+                if(node->right != NULL && last != node->right)
+                {
+                    current = node->right;   
+                }
+                else
+                {
+                    last = node;
+                    nodeStack.pop();
+                    set.pop_back();
+                    pathSum -= node->val;
+                }
+            }
+            else
+            {
+                nodeStack.push(current);
+                set.push_back(current->val);
+                pathSum += current->val;
+                
+                if(current->left == NULL && current->right == NULL && pathSum == sum)
+                {
+                    vector<int> row;
+                        
+                    for(int i =0;i<set.size();i++)
+                    {
+                        row.push_back(set[i]);
+                    }
+                    
+                    result.push_back(row);
+                }
+                
+                current = current->left;
+            }
+        }
+        
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 17 ms recursion
+    class Solution {
+    public:
+        vector<vector<int> > pathSum(TreeNode *root, int sum) {
+            vector<vector<int> > result;
+            vector<int> path_num;
+            helper(root, sum, path_num, result);
+            return result;
+        }
+        void helper(TreeNode *root, int sum, vector<int> &path_num, vector<vector<int> > &result) {
+            if(root == NULL)
+                return;
+            path_num.push_back(root->val);
+            if(root->left == NULL && root->right == NULL && sum == root->val) {
+                result.push_back(path_num);
+                path_num.pop_back();
+                return;
+            }
+            helper(root->left, sum - root->val, path_num, result);
+            helper(root->right, sum - root->val, path_num, result);
+            path_num.pop_back();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

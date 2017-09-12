@@ -1,0 +1,499 @@
+One pass Java solution
+The idea is to iterate over the numbers in `secret` and in `guess` and count all bulls right away. For cows maintain an array that stores count of the number appearances in `secret` and in `guess`. Increment cows when either number from `secret` was already seen in `guest` or vice versa.
+
+
+    public String getHint(String secret, String guess) {
+        int bulls = 0;
+        int cows = 0;
+        int[] numbers = new int[10];
+        for (int i = 0; i<secret.length(); i++) {
+            int s = Character.getNumericValue(secret.charAt(i));
+            int g = Character.getNumericValue(guess.charAt(i));
+            if (s == g) bulls++;
+            else {
+                if (numbers[s] < 0) cows++;
+                if (numbers[g] > 0) cows++;
+                numbers[s] ++;
+                numbers[g] --;
+            }
+        }
+        return bulls + "A" + cows + "B";
+    }
+
+A slightly more concise version:
+
+    public String getHint(String secret, String guess) {
+        int bulls = 0;
+        int cows = 0;
+        int[] numbers = new int[10];
+        for (int i = 0; i<secret.length(); i++) {
+            if (secret.charAt(i) == guess.charAt(i)) bulls++;
+            else {
+                if (numbers[secret.charAt(i)-'0']++ < 0) cows++;
+                if (numbers[guess.charAt(i)-'0']-- > 0) cows++;
+            }
+        }
+        return bulls + "A" + cows + "B";
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; 4ms Straight forward solution two pass O(N) time
+The idea is simple, if two char is match, add aCnt, otherwise, record it and process bCnt in second pass.
+
+    class Solution {
+    public:
+        // only contains digits 
+        string getHint(string secret, string guess) {
+            int aCnt = 0;
+            int bCnt = 0;
+            vector<int> sVec(10, 0); // 0 ~ 9 for secret
+            vector<int> gVec(10, 0); // 0 ~ 9 for guess 
+            if (secret.size() != guess.size() || secret.empty()) { return "0A0B"; }
+            for (int i = 0; i < secret.size(); ++i) {
+                char c1 = secret[i]; char c2 = guess[i];
+                if (c1 == c2) {
+                    ++aCnt; 
+                } else {
+                    ++sVec[c1-'0'];
+                    ++gVec[c2-'0'];
+                }
+            }
+            // count b 
+            for (int i = 0; i < sVec.size(); ++i) {
+                bCnt += min(sVec[i], gVec[i]);
+            }
+            return to_string(aCnt) + 'A' + to_string(bCnt) + 'B';
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python 3 lines solution
+use `Counter` to count `guess` and `secret` and sum their overlap. Then use `zip` to count `A`.
+
+        s, g = Counter(secret), Counter(guess)
+        a = sum(i == j for i, j in zip(secret, guess))
+        return '%sA%sB' % (a, sum((s & g).values()) - a)
+
+----------------------------------------------------------------------------------------------------
+My 3ms Java solution may help u
+    public class Solution {
+        public String getHint(String secret, String guess) {
+            int len = secret.length();
+    		int[] secretarr = new int[10];
+    		int[] guessarr = new int[10];
+    		int bull = 0, cow = 0;
+    		for (int i = 0; i < len; ++i) {
+    			if (secret.charAt(i) == guess.charAt(i)) {
+    				++bull;
+    			} else {
+    				++secretarr[secret.charAt(i) - '0'];
+    				++guessarr[guess.charAt(i) - '0'];
+    			}
+    		}
+    		for (int i = 0; i < 10; ++i) {
+    			cow += Math.min(secretarr[i], guessarr[i]);
+    		}
+    		return "" + bull + "A" + cow + "B";
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very easy solution using two arrays
+    public class Solution {
+    public String getHint(String secret, String guess) {
+        int temp = 0;
+        int bulls = 0;
+        int[] nums1 = new int[10];
+        int[] nums2 = new int[10];
+        for(int i = 0; i < secret.length(); i++){
+            char s = secret.charAt(i);
+            char g = guess.charAt(i);
+            if(s == g){
+                bulls++;
+            }
+            else{
+                nums1[s - '0']++;
+                nums2[g - '0']++;
+            }
+        }
+        int cows = 0;
+        for(int i = 0; i < 10; i++){
+            cows += Math.min(nums1[i], nums2[i]);
+        }
+        String res = bulls + "A" + cows + "B";
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+3 lines in Python
+    def getHint(self, secret, guess):
+        bulls = sum(map(operator.eq, secret, guess))
+        both = sum(min(secret.count(x), guess.count(x)) for x in '0123456789')
+        return '%dA%dB' % (bulls, both - bulls)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with two buckets
+    public class Solution {
+        public String getHint(String secret, String guess) {
+            int bull = 0, cow = 0;
+            
+            int[] sarr = new int[10];
+            int[] garr = new int[10];
+            
+            for(int i = 0; i < secret.length(); i++){
+                if(secret.charAt(i) != guess.charAt(i)){
+                    sarr[secret.charAt(i)-'0']++;
+                    garr[guess.charAt(i)-'0']++;
+                }else{
+                    bull++;
+                }
+            }
+            
+            for(int i = 0; i <= 9; i++){
+                cow += Math.min(sarr[i], garr[i]);
+            }
+            
+            return (bull + "A" + cow + "B");
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution without hashing, 3ms
+public String getHint(String secret, String guess) {
+        
+        if(secret.length() == 0){return "0A0B";}
+        
+        int bull = 0;
+        int cow = 0;
+        int [] result = new int [10];
+        
+        for(int i = 0;i<secret.length();i++)
+        {
+            int x = secret.charAt(i) - 48;
+            int y = guess.charAt(i) - 48;
+            
+            if(x == y)
+            {
+                bull++;
+            }
+            else
+            {
+                if(result[x] < 0){cow++;}
+                result[x]++;
+                
+                if(result[y] > 0){cow++;}
+                result[y]--;
+            }
+        }
+        
+        return bull+"A"+cow+"B";
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+C++, one pass, O(N) time, O(1) space
+    class Solution {
+    public:
+        string getHint(string secret, string guess) {
+            unordered_map<char, int> s_map;
+            unordered_map<char, int> g_map;
+            int n = secret.size();
+            int A = 0, B = 0;
+            for (int i = 0; i < n; i++)
+            {
+                char s = secret[i], g = guess[i];
+                if (s == g)
+                    A++;
+                else
+                {
+                    (s_map[g] > 0) ? s_map[g]--, B++ : g_map[g]++;
+                    (g_map[s] > 0) ? g_map[s]--, B++ : s_map[s]++; 
+                }
+            }
+            return to_string(A) + "A" + to_string(B) + "B";;
+        }         
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy java solution
+    public class Solution {
+    public String getHint(String secret, String guess) {
+        int bull = 0, cow = 0;
+        int[] array = new int[10];
+        
+        for(int i = 0; i < secret.length(); i++) {
+            char s = secret.charAt(i);
+            char g = guess.charAt(i);
+            if(s == g){
+                bull++;
+            }else {
+                if(array[s - '0'] < 0) {
+                    cow++;
+                }
+                array[s - '0']++;
+                
+                if(array[g - '0'] > 0) {
+                    cow++;
+                }
+                array[g -'0']--;
+            }
+        }
+        return bull + "A" + cow + "B";
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python simple solution
+    class Solution(object):
+        def getHint(self, secret, guess):
+            """
+            :type secret: str
+            :type guess: str
+            :rtype: str
+            """
+            bulls = 0
+            l1, l2 = [0]*10, [0]*10
+            nums1, nums2 = map(int, secret), map(int, guess)
+            length = len(secret)
+            for i in xrange(length):
+                if nums1[i] == nums2[i]:
+                    bulls += 1
+                else:
+                    l1[nums1[i]] += 1
+                    l2[nums2[i]] += 1
+            cows = sum(map(min, zip(l1,l2)))
+            return '%dA%dB' % (bulls, cows)
+
+----------------------------------------------------------------------------------------------------
+My Concise JAVA Solution
+    public String getHint(String secret, String guess) {
+        int a=0,b=0;
+        int[] digits=new int[10];
+        for(int i=0;i<secret.length();i++){
+            if(secret.charAt(i)==guess.charAt(i)) a++;
+            else{
+                if(++digits[secret.charAt(i)-'0']<=0) b++;
+                if(--digits[guess.charAt(i)-'0']>=0) b++;
+            }
+        }
+        return a+"A"+b+"B";
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms C++ One Array Clean Solution
+    class Solution {
+    public:
+        string getHint(string secret, string guess) {
+            int map[10] = {0};
+            int a = 0, b = 0;
+            for (int i = 0; i < guess.size(); ++i) {
+                if (guess[i] == secret[i]) ++a;
+                ++map[guess[i] - '0'];
+            }
+            for (int i = 0; i < secret.size(); ++i) {
+                if (map[secret[i] - '0']-- > 0) ++b;
+            }
+            return to_string(a) + "A" + to_string(b - a) + "B";
+        }
+    };
+
+`a` stores "bulls" while `b` stores sum of "bulls" and "cows". <br>
+We only need to build one hash map for "guess". First loop is to build hash map as well as to find "bulls". The second one is to find all "guess" numbers existing in "secret". When there is a match, we reduce the value for this number to handle situation like ("11" "10"). <br>
+Time: O(n) Space: O(1)
+
+----------------------------------------------------------------------------------------------------
+Java without hash( 3 ms)
+    public String getHint(String secret, String guess) {
+        char[] s = secret.toCharArray();
+        char[] g = guess.toCharArray();
+        int a = 0, b = 0;
+        int[] count = new int[10];
+        for(int i = 0; i < s.length; i++){
+            if(s[i] == g[i]) a++;
+            else{
+                if(count[s[i] - '0']++ < 0) b++;
+                if(count[g[i] - '0']-- > 0) b++;
+            }
+        }
+        return a+"A"+b+"B";
+    }
+
+----------------------------------------------------------------------------------------------------
+My one-pass solution in C++
+    class Solution {
+    public:
+        string getHint(string secret, string guess) {
+            vector<int>tb_guess(10),tb_secret(10);
+            int A=0,B=0;
+            for (int i=0;i<secret.size();++i){
+                if (secret[i]==guess[i]) A++;
+                else {
+                    tb_guess[guess[i]-'0']++;
+                    tb_secret[secret[i]-'0']++;
+                }
+            }
+            for (int i=0;i<10;++i){
+                B=B+ min(tb_guess[i],tb_secret[i]);
+            }
+            return to_string(A)+'A'+to_string(B)+'B';
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Why &quot;1&quot; &quot;0&quot; input results 0A0B output?
+Why not **0A1B**? Any one mind elaborating the reason?
+
+> Input: "1" "0"
+> 
+> Output: "0A1B"
+> 
+> Expected: "0A0B"
+
+Update: Now I got it: the guess digits that in wrong positions should also be among secret digits. 
+
+----------------------------------------------------------------------------------------------------
+Two AC C++ solution, 92 ms and 4 ms.
+The basic idea of this problem is calculate Bulls number firstly, then calculate Cows number.
+This is my first solution code:
+
+    string getHint(string s, string g) 
+    {
+    	if (s.empty())
+    		return "0A0B";
+    	int i, j, a, b;
+    	int sz = s.size();
+    	a = b = 0;
+    	vector<int> vs(sz, 1);
+    	vector<int> vg(sz, 1);
+    	for (i = 0; i < sz; ++i)
+    	{
+    		if (s[i] == g[i])
+    		{
+    			++a;
+    			vs[i] = vg[i] = 0;
+    			continue;
+    		}
+    	}
+    	for (i = 0; i < sz; ++i)
+    	{
+    		if (0 == vs[i])
+    			continue;
+    		for (j = 0; j < sz; ++j)
+    		{
+    			if (0 == vg[j] || i == j)
+    				continue;
+    			if (s[i] == g[j])
+    			{
+    				++b;
+    				vg[j] = 0;
+    				break;
+    			}
+    		}
+    	}
+    	return to_string(a) + "A" + to_string(b) + "B";
+    }
+
+It costs 92 ms.
+
+The problem also told us character only '0'~'9' be used. Then the code can be improved as follow:
+
+    string getHint(string s, string g)
+    {
+    	if (s.empty())
+    		return "0A0B";
+    	int i, j, a, b;
+    	int sz = s.size();
+    	a = b = 0;
+    	vector<int> vs(10, 0);
+    	vector<int> vg(10, 0);
+    	for (i = 0; i < sz; ++i)
+    	{
+    		if (s[i] == g[i])
+    		{
+    			++a;
+    			continue;
+    		}
+    		++vs[s[i] - '0'];
+    		++vg[g[i] - '0'];
+    	}
+    	for (i = 0; i < 10; ++i)
+    		b += min(vs[i], vg[i]);
+    	return to_string(a) + "A" + to_string(b) + "B";
+    }
+
+In the first loop calculate the digits' ('0'~'9') number that didn't paired. In the second loop choose the smaller number means at least these numbers of digits could be paired but at wrong position now.
+
+----------------------------------------------------------------------------------------------------
+4ms concise c++ solution
+    class Solution {
+    public:
+        string getHint(string secret, string guess) {
+            vector<int> s(10, 0); // s[i]: number of occurrences of i in secret
+            vector<int> g(10, 0); // g[i]: number of occurrences of i in guess
+            int A = 0;
+            for(int i = 0; i < secret.size(); ++i){
+                if(secret[i] == guess[i])
+                    ++A;
+                s[secret[i] - '0']++;
+                g[guess[i] - '0']++;
+            }
+            int B = -A;
+            for(int i = 0; i < 10; ++i){
+                B += min(s[i], g[i]);
+            }
+            return to_string(A) + "A" + to_string(B) + "B";
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Java solution without HashTable
+ public String getHint(String secret, String guess) {
+
+        int bull=0;
+        int cow=0;
+        int[] marks=new int[10];
+        int[] markg=new int[10];
+        for(int i =0;i<secret.length();i++){
+            if(secret.charAt(i)==guess.charAt(i))
+            bull++;
+            marks[secret.charAt(i)-'0']++;
+            markg[guess.charAt(i)-'0']++;
+        }
+        for(int i =0;i<10;i++){
+            cow+=Math.min(marks[i],markg[i]);
+        }
+        StringBuffer sb=new StringBuffer();
+        sb.append(bull);
+        sb.append("A");
+        sb.append(cow-bull);
+        sb.append("B");
+        String returnStr=new String(sb);
+        return returnStr;
+
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy c++ solution with unordered_map
+    string getHint(string secret, string guess) {
+    	unordered_map<char, int> mp;
+    	int n = secret.size(), cA = 0, cB = 0;
+    	for (int i = 0; i < n; i++) {
+    		if (secret[i] == guess[i]) {
+    			cA++;
+    			continue;
+    		}
+    		mp[secret[i]]++;
+    	}
+    	for (int i = 0; i < n; i++) {
+    		if (secret[i] != guess[i] && mp[guess[i]] > 0) {
+    			mp[guess[i]]--;
+    			cB++;
+    		}
+    	}
+    	return to_string(cA) + 'A' + to_string(cB) + 'B';
+    }
+
+----------------------------------------------------------------------------------------------------

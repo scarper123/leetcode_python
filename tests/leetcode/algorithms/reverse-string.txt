@@ -1,0 +1,502 @@
+Simple Java solution in O(n) without extra space
+    public class Solution {
+    public int[] productExceptSelf(int[] nums) {
+        int n = nums.length;
+        int[] res = new int[n];
+        res[0] = 1;
+        for (int i = 1; i < n; i++) {
+            res[i] = res[i - 1] * nums[i - 1];
+        }
+        int right = 1;
+        for (int i = n - 1; i >= 0; i--) {
+            res[i] *= right;
+            right *= nums[i];
+        }
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My simple Java solution
+Use `tmp` to store temporary multiply result by two directions. Then fill it into `result`. Bingo!
+
+    public int[] productExceptSelf(int[] nums) {
+        int[] result = new int[nums.length];
+        for (int i = 0, tmp = 1; i < nums.length; i++) {
+            result[i] = tmp;
+            tmp *= nums[i];
+        }
+        for (int i = nums.length - 1, tmp = 1; i >= 0; i--) {
+            result[i] *= tmp;
+            tmp *= nums[i];
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time and O(1) space C++ solution with explanation
+First, consider O(n) time and O(n) space solution.
+
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            int n=nums.size();
+            vector<int> fromBegin(n);
+            fromBegin[0]=1;
+            vector<int> fromLast(n);
+            fromLast[0]=1;
+            
+            for(int i=1;i<n;i++){
+                fromBegin[i]=fromBegin[i-1]*nums[i-1];
+                fromLast[i]=fromLast[i-1]*nums[n-i];
+            }
+            
+            vector<int> res(n);
+            for(int i=0;i<n;i++){
+                res[i]=fromBegin[i]*fromLast[n-1-i];
+            }
+            return res;
+        }
+    };
+
+We just need to change the two vectors to two integers and note that we should do multiplying operations for two related elements of the results vector in each loop.
+
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            int n=nums.size();
+            int fromBegin=1;
+            int fromLast=1;
+            vector<int> res(n,1);
+            
+            for(int i=0;i<n;i++){
+                res[i]*=fromBegin;
+                fromBegin*=nums[i];
+                res[n-1-i]*=fromLast;
+                fromLast*=nums[n-1-i];
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My solution beats 100% java solutions
+The idea is simply. The product basically is calculated using the numbers before the current number and the numbers after the current number. Thus, we can scan the array twice. First, we calcuate the running product of the part before the current number. Second, we calculate the running product of the part after the current number through scanning from the end of the array.
+
+    public class Solution {
+    public int[] productExceptSelf(int[] nums) {
+        int leng = nums.length;
+        int[] ret = new int[leng];
+        if(leng == 0)
+            return ret;
+        int runningprefix = 1;
+        for(int i = 0; i < leng; i++){
+            ret[i] = runningprefix;
+            runningprefix*= nums[i];
+        }
+        int runningsufix = 1;
+        for(int i = leng -1; i >= 0; i--){
+            ret[i] *= runningsufix;
+            runningsufix *= nums[i];
+        }
+        return ret;
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python solution (Accepted), O(n) time, O(1) space
+    class Solution:
+        # @param {integer[]} nums
+        # @return {integer[]}
+        def productExceptSelf(self, nums):
+            p = 1
+            n = len(nums)
+            output = []
+            for i in range(0,n):
+                output.append(p)
+                p = p * nums[i]
+            p = 1
+            for i in range(n-1,-1,-1):
+                output[i] = output[i] * p
+                p = p * nums[i]
+            return output
+        
+        
+
+----------------------------------------------------------------------------------------------------
+Super easy (Java) solution in O(N) time and O(1) space
+You traverse twice, applying the appropriate multiplier.
+      
+    public int[] productExceptSelf(int[] nums) {
+    
+        int len = nums.length;
+        int [] output = new int[len];
+        
+        int leftMult = 1, rightMult = 1;
+        
+        for(int i = len-1; i >= 0; i--){
+            output[i] = rightMult;
+            rightMult *= nums[i];
+        }
+        for(int j = 0; j < len; j++){
+            output[j] *= leftMult;
+            leftMult *= nums[j];
+           
+        }
+        
+        return output; 
+
+    }
+
+----------------------------------------------------------------------------------------------------
+My one-pass Java solution without extra spaces
+One pass, if don't count the initialization of the 'result'...
+
+        int[] result = new int[nums.length];
+        for (int i = 0; i < result.length; i++) result[i] = 1;
+        int left = 1, right = 1;
+        for (int i = 0, j = nums.length - 1; i < nums.length - 1; i++, j--) {
+            left *= nums[i];
+            right *= nums[j];
+            result[i + 1] *= left;
+            result[j - 1] *= right;
+        }
+        return result;
+
+-
+
+edit 2016/04/05:
+
+**EXPLAINATION:**
+
+Thinking of the 'nums' array [1, 2, 3, 4, 5, 6], and the 'result' array [1, 1, 1, 1, 1, 1]. Every number in 'nums' will be multiplied in 'result' array except itself, then we will get the map below:
+
+
+      1 2 3 4 5 6
+      -----------
+    1|  1 1 1 1 1
+    2|2   2 2 2 2
+    3|3 3   3 3 3
+    4|4 4 4   4 4
+    5|5 5 5 5   5
+    6|6 6 6 6 6
+    
+    (horizontal axis is nums array, vertical axis is multiplied times)
+
+
+Noticed the regular pattern of the upper triangular and lower triangular. Using integers to store the products of the lower and upper triangulars, then we can do it in one pass:
+
+- i : left index of the nums array
+- j : right index of the nums array
+- left : left products multiplied from nums[0] to nums[i].
+- right : right products multiplied from nums[j] to nums[nums.length - 1].
+
+We multiply left to result[i + 1] ((i, i + 1) in the uppper triangular),
+
+and multiply right to result[j - 1] ((j, j - 1) in the lower triangular),
+
+finally we have calculated the products of the nums except current.
+
+-
+
+Sorry for my poor English...= =!
+
+----------------------------------------------------------------------------------------------------
+Very easy two passes solution
+    // two passes, O(2n)
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> ans(n, 1);
+        
+        for (int i = 1; i < n; ++i) {
+            ans[i] = ans[i-1] * nums[i-1];
+        }
+        
+        int m = 1;
+        for (int i = n-1; i >= 0; --i) {
+            ans[i] *= m;
+            m *= nums[i];
+        }
+        
+        return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+How from O(N)  to O(1)
+Here is the O(N) based C++ implementation
+
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            int len=nums.size();
+            vector<int> left(len, 1);
+            vector<int> right(len, 1);
+            vector<int> result(len, 0);
+            for(int i=1; i<len; i++)  left[i]=left[i-1]*nums[i-1];
+            for(int i=len-2; i>=0; i--)  right[i]=right[i+1]*nums[i+1];
+            for(int i=0; i<len; i++) result[i]=left[i]*right[i];
+            return result;
+        }
+    };
+
+How to use O(1) ?
+
+By observing the above code, we can just for every position multiply it to its right position.
+
+Just the idea to think reversly !
+
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            int n=nums.size();
+            int left=1, right=1;
+            vector<int> result(n, 1);
+            for(int i=0; i<n; i++){
+                result[i]*=left;
+                result[n-1-i]*=right;
+                left*=nums[i];
+                right*=nums[n-1-i];
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java O(n) without additional space (no temp accumulator vars either)
+Uses only return array as accumulator:
+
+    public class Solution {
+        public int[] productExceptSelf(int[] nums) {
+            int[] res = new int[nums.length];
+    
+            res[0] = 1;
+            for(int i=1; i < nums.length; i++) {
+                res[i] = res[i-1] * nums[i-1];
+            }
+            for(int j = nums.length - 1; j > 0; j--) {
+                res[j] *= res[0];
+                res[0] *= nums[j];
+            }
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ solution, O(n) time with no extra space
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int N = nums.size();
+        vector<int> res(N,1);
+        
+        for(int i=0; i<N; i++){
+            if (i==0)   res[i] = 1;
+            else res[i] = res[i-1]*nums[i-1];
+        }
+        
+        int r_prod = 1;
+        for(int i=N-1; i>=0; i--){
+            res[i] *= r_prod;
+            r_prod *= nums[i];
+        }
+        
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ One pass O(n) time + O(1) space solution
+
+
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            int n = nums.size();
+            vector<int> result(n, 1);
+            int left_fac = 1, right_fac = 1, i = 0;
+            while(i < n)
+            {
+                result[i] *= left_fac;
+                left_fac *= nums[i];
+                result[n - ++i] *= right_fac;
+                right_fac *= nums[n - i];
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution with O(n) time and constant space (only the output array)
+    public class Solution {
+        public int[] productExceptSelf(int[] nums) {
+            int[] output = new int[nums.length];
+    
+            // from left to right process
+            // output[i] = product of all numbers left of i
+            for (int i = 0; i < nums.length; i++) {
+                if (i == 0) {
+                    output[i] = 1;
+                } else {
+                    output[i] = output[i - 1] * nums[i - 1];
+                }
+            }
+    
+            // from right to left
+            // t is the product of all numbers right of j
+            for (int j = nums.length - 1, t = 1; j >= 0; j--) {
+                // the final result
+                output[j] = output[j] * t;
+                t = t * nums[j];
+            }
+    
+            return output;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Two time scan solution
+ 1. First round: 
+     scan from left to right to compute the product of all elements to the left  of i  
+     starting value is 1
+ 2. Second round: 
+     scan from right to left to compute the product of all elements to the right of i  
+     use the left product to time the right product
+
+
+----------
+
+     public int[] productExceptSelf(int[] nums) {
+            int[] p = new int[nums.length];
+            
+            int product = 1;
+            for(int i=0;i<p.length;++i){
+                p[i] = product;
+                product *= nums[i];
+            }
+            
+            product = 1;
+            for(int i=p.length-1;i>=0;--i){
+                p[i]*=product;
+                product*=nums[i];
+            }
+            return p;
+        }
+
+----------------------------------------------------------------------------------------------------
+Only one pass, no extra spaces solution
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            const int N = nums.size();
+            vector<int> ret(N, 1);
+            int left = 1, right = 1;
+            for (int i = 0; i < N; ++i) {
+                ret[i] *= left;
+                ret[N-1-i] *= right;
+                left *= nums[i];
+                right *= nums[N-1-i];
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution with O(n) time and O(n) space
+    public class Solution {
+    public int[] productExceptSelf(int[] nums) {
+        int n=nums.length;
+        int A[]=new int[n];
+        int B[]=new int[n];
+        A[0]=1;B[n-1]=1;
+        for(int i=1;i<n;i++) {
+            A[i]=A[i-1]*nums[i-1];
+            B[n-1-i]=B[n-i]*nums[n-i];
+        } 
+        for(int i=0;i<n;i++){
+            nums[i]=A[i]*B[i];
+        }
+        return nums;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++, O(n) time, O(1) extra space
+
+
+    class Solution {
+    public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int k = nums.size();
+        vector<int> res(k,1);
+        for (int i=1;i<k;i++){
+            res[i]=res[i-1]*nums[i-1];
+        }
+        int temp = 1;
+        for (int i=k-1;i>=0;i--){
+            res[i]=res[i]*temp;
+            temp*=nums[i];
+        }
+        return res;
+    }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+See my concise solution with Constant space and O(n) complexity
+        class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            vector<int> result;
+            int current = 1;
+            for (int i = 0;i < nums.size();++ i) {
+                result.push_back(current);
+                current *= nums[i];
+            }
+            int n = nums.size();
+            current = 1;
+            for (int i = n-1;i >= 0;-- i) {
+                result[i] = current * result[i];
+                current *= nums[i];
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy java solution in O(n) time and no extra space(2ms)
+    public class Solution {
+    public int[] productExceptSelf(int[] nums) {
+        final int[] result = new int[nums.length];
+        for(int i=0, leftProduct=1; i<nums.length; i++) { // left product
+            result[i] = leftProduct;
+            leftProduct *= nums[i];
+        }
+        for(int i=nums.length-1, rightProduct=1; i>=0; i--) { // right product
+            result[i] *= rightProduct;
+            rightProduct *= nums[i];
+        }
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ o(1)space and o(n)time
+    class Solution {
+    public:
+        vector<int> productExceptSelf(vector<int>& nums) {
+            if(nums.empty()){
+                return vector<int>{};
+            }
+            int n = nums.size();
+            vector<int> ans(n, 1);
+            int begin = 1, end = 1;
+            for(int i = 0;i < n; ++i){
+                ans[i] *= begin;
+                begin *= nums[i];
+                ans[n - 1 - i] *= end;
+                end *= nums[n - 1 - i];
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

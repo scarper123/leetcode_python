@@ -1,0 +1,519 @@
+Share my explained Greedy solution as the highest voted java solution right now is not ideal
+public int findMinArrowShots(int[][] points) {
+        if (points.length == 0) {
+            return 0;
+        }
+        Arrays.sort(points, (a, b) -> a[1] - b[1]);
+        int arrowPos = points[0][1];
+        int arrowCnt = 1;
+        for (int i = 1; i < points.length; i++) {
+            if (arrowPos >= points[i][0]) {
+                continue;
+            }
+            arrowCnt++;
+            arrowPos = points[i][1];
+        }
+        return arrowCnt;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Greedy Soution
+public int findMinArrowShots(int[][] points) {
+	if(points==null || points.length==0 || points[0].length==0) return 0;
+	Arrays.sort(points, new Comparator<int[]>() {
+		public int compare(int[] a, int[] b) {
+			if(a[0]==b[0]) return a[1]-b[1];
+			else return a[0]-b[0];
+		}
+	});
+	
+	int minArrows = 1;
+	int arrowLimit = points[0][1];
+	for(int i=1;i<points.length;i++) {
+		int[] baloon = points[i];
+		if(baloon[0]<=arrowLimit) {
+			arrowLimit=Math.min(arrowLimit, baloon[1]);
+		} else {
+			minArrows++;
+			arrowLimit=baloon[1];
+		}
+	}
+	return minArrows;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Greedy, Python (132 ms)
+class Solution(object):
+    def findMinArrowShots(self, points):
+        """
+        :type points: List[List[int]]
+        :rtype: int
+        """
+        points = sorted(points, key = lambda x: x[1])
+        res, end = 0, -float('inf')
+        for interval in points:
+            if interval[0] > end:
+                res += 1
+                end = interval[1]
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+C++ easy understood solution (sort)
+    int findMinArrowShots(vector<pair<int, int>>& points) {
+        int count = 0, arrow = INT_MIN;
+        sort(points.begin(), points.end(), mysort);
+        for(int i = 0; i<points.size(); i++){
+            if(arrow!=INT_MIN && points[i].first<=arrow){continue;} //former arrow shot points[i] 
+            arrow = points[i].second; // new arrow shot the end of points[i]
+            count++;
+        }
+        return count;
+    }
+    static bool mysort(pair<int, int>& a, pair<int, int>& b){
+        return a.second==b.second?a.first<b.first:a.second<b.second;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise Java solution tracking the end of overlapping intervals
+public class Solution {
+    public int findMinArrowShots(int[][] points) {
+        if(points == null || points.length < 1) return 0;
+        Arrays.sort(points, (a, b)->(a[0]-b[0]));
+        int result = 1;
+        int end = points[0][1];
+        for(int i = 1; i < points.length; i ++) {
+            if(points[i][0] > end) {
+                result ++;
+                end = points[i][1];
+            } else {
+                end = Math.min(end, points[i][1]);
+            }
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+A Concise Template for &quot;Overlapping Interval Problem&quot;
+int eraseOverlapIntervals(vector<Interval>& intervals) {
+        int total = 0, minEnd = INT_MIN, overNb = 1;
+        sort(intervals.begin(), intervals.end(), [&](Interval& inter1, Interval& inter2) {return inter1.start < inter2.start;});
+        for(auto& p: intervals) {
+            if(p.start >= minEnd) {
+                total += overNb-1;
+                overNb = 1;
+                minEnd = p.end;
+            }
+            else {
+                overNb++;
+                minEnd = min(minEnd, p.end);
+            }
+        }
+        return total + overNb-1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java easy to understand solution
+public class Solution {
+    public int findMinArrowShots(int[][] points) {
+        if (points == null || points.length == 0)   return 0;
+
+        Arrays.sort(points,(a, b) -> a[0] - b[0]);       //sort the balloons according to their start coordinate
+        
+        int minRight = Integer.MAX_VALUE, count = 0;
+        //minRight record the leftmost end of previous balloons
+        for (int i = 0; i < points.length; ++i) {
+            //whenever current balloon's start is bigger than minRight
+            //that means we need an arrow to clear all previous balloons
+            if (points[i][0] > minRight) {                   
+                count++;
+                minRight = points[i][1];
+            } else {
+                minRight = Math.min(minRight, points[i][1]);
+            }
+        }
+        return count + 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) solution in 8 lines
+int findMinArrowShots(vector<pair<int, int>>& points) {
+    int res = 0, i = 0, temp;
+    sort(points.begin(), points.end(), [](pair<int, int> a, pair<int, int> b){return a.second < b.second;});
+    while (i < points.size()) {
+        res++;
+        temp = points[i++].second;
+        while (i < points.size() && points[i].first <= temp) i++;
+    }
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------
+Share my greedy solution, simple and easy
+public class Solution {
+    public int findMinArrowShots(int[][] points) {
+        if(points.length==0 || points[0].length==0) return 0;
+        PriorityQueue<int[]> pq = new PriorityQueue<>(new Comparator<int[]>(){
+            public int compare(int[] a, int[] b){
+                if(a[0]!=b[0]) return a[0]-b[0];
+                else return a[1]-b[1];
+            }
+        });
+        for(int[] p : points) pq.offer(p);
+        int count = 0;
+        int[] arrow = new int[]{5, 3};
+        while(!pq.isEmpty()){
+            int[] cur = pq.poll();
+            if(arrow[0]>arrow[1] || arrow[0]>cur[1] || arrow[1]<cur[0]){
+                count++;
+                arrow[0] = cur[0];
+                arrow[1] = cur[1];
+            }
+            else{
+                arrow[0] = Math.max(arrow[0], cur[0]);
+                arrow[1] = Math.min(arrow[1], cur[1]);
+            }
+        }
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(nlogn) solution with detailed explanation
+class Solution {
+public:
+    int findMinArrowShots(vector<pair<int, int>>& points) {
+        if(points.empty()) return 0;
+        int ans = 0;
+        sort(points.begin(), points.end(), cmp);
+        for(int i = 0; i < points.size(); ++ i) {
+            int j = i + 1;
+            while(j < points.size() && points[j].first <= points[i].second) {
+                points[i].second = min(points[i].second, points[j].second);
+                j ++;
+            }
+            ans += 1;
+            i = j - 1;
+        }
+    
+        return ans;
+    }
+    
+    static bool cmp(pair<int, int>& a, pair<int, int>& b) {
+        if(a.first == b.first) return a.second < b.second;
+        return a.first < b.first;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple 4 lines O(NlogN) C++ implementation with step by step thought process.
+    int findMinArrowShots(vector<pair<int, int>>& points) {
+        int prevArrow, arrowCount = 0;
+        sort( points.begin(), points.end(), [](pair<int,int> a, pair<int,int> b){return a.second<b.second;});
+        for( auto pt: points ) if( arrowCount == 0||pt.first > prevArrow ){ arrowCount++; prevArrow = pt.second;}
+        return arrowCount;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java greedy solution using stack;
+public class Solution {
+    public int findMinArrowShots(int[][] points) {
+        if(points == null || points.length <= 1) {
+            return points.length;
+        }
+        int res = 0;
+        Arrays.sort(points , new Comparator<int[]>() {
+            public int compare(int[] p1 ,int[] p2) {
+                if(p1[0] != p2[0]) {
+                    return p1[0] - p2[0];
+                }else {
+                    return p1[1] - p2[1];
+                }
+            }});
+        LinkedList<int[]> stack = new LinkedList<int[]>();
+        for(int[] p : points) {
+            if(stack.isEmpty()) {
+                stack.push(p);
+            }else {
+                int[] temp = merge(stack.peek() , p);
+                if(temp != null) {
+                    stack.pop();
+                    stack.push(temp);
+                }else {
+                    stack.pop();
+                    res++;
+                    stack.push(p);
+                }
+            }
+        }
+        return stack.isEmpty() ? res : res + 1;
+        
+    }
+    
+    protected int[] merge(int[] p1 , int[] p2) {
+        if(p1[1] >= p2[0]) {
+            int[] res = new int[2];
+            res[0] = Math.max(p1[0] , p2[0]);
+            res[1] = Math.min(p1[1] , p2[1]);
+            return res;
+        }
+        return null;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution using Greedy
+public class Solution {
+    public int findMinArrowShots(int[][] points) {
+        if(points==null || points.length==0 || points[0].length==0) return 0;
+	   Arrays.sort(points, new Comparator<int[]>() {
+		   public int compare(int[] a, int[] b) {
+			if(a[1]==b[1]) return a[0]-b[0];
+			else return a[1]-b[1];
+		}
+	});
+	int pre_end = points[0][1];
+	int num = 1;
+	for( int i = 1; i < points.length; i++){
+	    if(points[i][0] > pre_end){
+	        num++;
+	        pre_end = points[i][1];
+	    }
+	}
+	return num;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Greedy C++ (105 ms) O(n log(n))
+class Solution {
+    
+    typedef struct ext
+    {
+        pair<int, int> val;
+        bool seen;
+        ext(): val(0,0), seen(false) {}
+    } ext;
+
+    static bool compare_first(ext *&a, ext *&b)
+    {
+        return a->val.first < b->val.first;
+    }
+    
+    static bool compare_second(ext *&a, ext *&b)
+    {
+        return a->val.second < b->val.second;
+    }
+    
+    
+public:
+    int findMinArrowShots(vector<pair<int, int>>& points)
+    {
+        if (points.empty())
+            return 0;
+            
+        int res = 0;
+        
+        ext *first[points.size()], *second[points.size()];
+        for (int i = 0; i < points.size(); ++i)
+        {
+            ext *obj = new ext();
+            obj->val = points[i];
+            obj->seen = false;
+            first[i] = obj;
+            second[i] = obj;
+        }
+
+        std::sort(first, first + points.size(), compare_first);
+        std::sort(second, second + points.size(), compare_second);
+        int index = 0;
+        
+        for (int i = 0; i < points.size() && index < points.size(); ++i)
+        {
+            if (second[i]->seen)
+                continue;
+    
+            ++res;
+            while (index < points.size() && first[index]->val.first <= second[i]->val.second)
+            {
+                first[index]->seen = true;
+                ++index;
+            }
+        }
+        
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C# - sort by start - count when start is non-overlapping
+    public int FindMinArrowShots(int[,] points) 
+    {
+        // multidimensional array cannot be sorted directly - copy to objects
+        Pt[] pts = new Pt[points.GetLength(0)];
+        for (int i = 0; i < points.GetLength(0); i++) pts[i] = new Pt(points[i,0], points[i,1]);
+        Array.Sort(pts, (a,b) => a.start.CompareTo(b.start));
+        
+        int cnt = 0;
+        Pt prev = null;
+        for (int i = 0; i < pts.Length; i++)
+        {
+            if (prev == null || prev.end < pts[i].start)
+            {
+                cnt++;
+                prev = pts[i];
+            }
+            else if (pts[i].end < prev.end)
+            {
+                prev.end = pts[i].end;
+            }
+        }
+        return cnt;
+    }
+    
+    public class Pt
+    {
+        public int start;
+        public int end;
+        public Pt(int s, int e) { start = s; end = e; }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ Very Concise Solution
+class Solution {
+public:
+    int findMinArrowShots(vector<pair<int, int>>& points) {
+        vector<pair<int, int>> vec;
+        for (int i = 0; i < points.size(); i++) {
+            vec.push_back({points[i].first, i + 1});
+            vec.push_back({points[i].second, - (i + 1)});
+        }
+        auto comp = [](const pair<int, int>& i1, const pair<int, int>& i2)
+            { return i1.first < i2.first || (i1.first == i2.first && i1.second > i2.second); };
+        sort(vec.begin(), vec.end(), comp);
+        int res = 0;
+        unordered_set<int> cache;
+        for (int i = 0; i < vec.size(); i++) {
+            if (vec[i].second > 0) cache.insert(vec[i].second);
+            else if (cache.count(-vec[i].second)) {
+                cache.clear();
+                res++;
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ Simple One-pass, Greedy.
+class Solution {
+public:
+    int findMinArrowShots(vector<pair<int, int>>& points) {
+        if (points.empty()) return 0;
+        sort(points.begin(), points.end());
+        int last_end = points[0].second, count = 1;
+        for (int i = 1; i < points.size(); ++ i)
+            if (points[i].first > last_end)
+                last_end = points[i].second, count ++;
+            else
+                last_end = min(last_end, points[i].second);
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Greedy Solution relatable to Interval Scheduling Concept
+import java.util.Comparator;
+import java.util.Arrays;
+public class Solution {
+    
+    public int findMinArrowShots(int[][] points) {
+        if(points == null || points.length == 0 || points[0].length == 0)
+        return 0;
+        
+        // sort by finishing time way we do in task scheduling
+        Arrays.sort(points, new Comparator<int[]>() {
+        public int compare(int[] int1, int[] int2) {
+        Integer numOfKeys1 = int1[1];
+        Integer numOfKeys2 = int2[1];
+        return numOfKeys1.compareTo(numOfKeys2);
+    }
+});
+
+int arrows = 1;
+int value = points[0][1];
+// continue for the one which are already covered
+        for(int i=1;i<points.length;i++)
+        {
+            if(points[i][0]<=value && points[i][1]>=value)
+            continue;
+            else
+            {
+                value=points[i][1];
+                  arrows++;
+            }
+        }
+        return arrows;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple greedy python solution
+        if len(points)<2:return len(points)
+        count=0
+        points.sort()
+        start=points[0][0]
+        end=points[0][1]
+        for i in range(1,len(points)):
+            if points[i][1]<=end:
+                count+=1
+                start=points[i][0]
+                end=points[i][1]
+            elif points[i][0]<=end:
+                count+=1
+                start=points[i][0]
+            else:
+                start=points[i][0]
+                end=points[i][1]
+        return len(points)-count
+
+
+----------------------------------------------------------------------------------------------------
+Why Swift Code Does not work?
+func findMinArrowShots(_ points: [[Int]]) -> Int {
+    var points = points
+    if points.count == 0 { return 0 }
+    points.sort { $0[1] < $1[1] }
+    var currentPos = points[0][1]
+    var count = 1
+    for i in 1 ..< points.count {
+        if currentPos >= points[i][0] {
+            continue
+        } else {
+            count += 1
+            currentPos = points[i][1]
+        }
+    }
+    
+    return count
+}
+
+
+----------------------------------------------------------------------------------------------------

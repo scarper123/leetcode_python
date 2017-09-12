@@ -1,0 +1,556 @@
+Please change the misleading description
+It seems not only me misunderstood the question. Please modify the description, since it's frustrating if you are solving a "different" question. Thanks.
+
+----------------------------------------------------------------------------------------------------
+Examples of nth sequence
+At the beginning, I got confusions about what is the nth sequence. Well, my solution is accepted now, so I'm going to give some examples of nth sequence here. The following are sequence from n=1 to n=10:
+
+     1.     1
+     2.     11
+     3.     21
+     4.     1211
+     5.     111221 
+     6.     312211
+     7.     13112221
+     8.     1113213211
+     9.     31131211131221
+     10.   13211311123113112211
+
+From the examples you can see, the (i+1)th sequence is the "count and say" of the ith sequence!
+
+Hope this helps!
+
+----------------------------------------------------------------------------------------------------
+Show an Answer in Java
+I found nobody answered this question in Java. Actually I got some trouble even this question is not so hard.
+
+Maybe many other people had some trouble too. So I put my answer here.
+
+
+
+    public class Solution {
+        public String countAndSay(int n) {
+    	    	StringBuilder curr=new StringBuilder("1");
+    	    	StringBuilder prev;
+    	    	int count;
+    	    	char say;
+    	        for (int i=1;i<n;i++){
+    	        	prev=curr;
+    	 	        curr=new StringBuilder();       
+    	 	        count=1;
+    	 	        say=prev.charAt(0);
+    	 	        
+    	 	        for (int j=1,len=prev.length();j<len;j++){
+    	 	        	if (prev.charAt(j)!=say){
+    	 	        		curr.append(count).append(say);
+    	 	        		count=1;
+    	 	        		say=prev.charAt(j);
+    	 	        	}
+    	 	        	else count++;
+    	 	        }
+    	 	        curr.append(count).append(say);
+    	        }	       	        
+    	        return curr.toString();
+            
+        }
+    }
+
+@code StringBuilder.append() is the default way to append one string to another. While I have tried String.cancate(),which is not working properly.
+
+Any comment is welcomed.
+
+----------------------------------------------------------------------------------------------------
+C++ solution easy-understand
+    string countAndSay(int n) {
+        if (n == 0) return "";
+        string res = "1";
+        while (--n) {
+            string cur = "";
+            for (int i = 0; i < res.size(); i++) {
+                int count = 1;
+                 while ((i + 1 < res.size()) && (res[i] == res[i + 1])){
+                    count++;    
+                    i++;
+                }
+                cur += to_string(count) + res[i];
+            }
+            res = cur;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+I suggest we should add the description: The &quot;1&quot; is the 1st string, and calculate the n th string.
+Because usually we start from the 0 th item, so add this description to avoid misunderstanding.
+
+----------------------------------------------------------------------------------------------------
+4-5 lines Python solutions
+**Solution 1** ... using a regular expression
+
+    def countAndSay(self, n):
+        s = '1'
+        for _ in range(n - 1):
+            s = re.sub(r'(.)\1*', lambda m: str(len(m.group(0))) + m.group(1), s)
+        return s
+
+---
+
+**Solution 2** ... using a regular expression
+
+    def countAndSay(self, n):
+        s = '1'
+        for _ in range(n - 1):
+            s = ''.join(str(len(group)) + digit
+                        for group, digit in re.findall(r'((.)\2*)', s))
+        return s
+
+---
+
+**Solution 3** ... using `groupby`
+
+    def countAndSay(self, n):
+        s = '1'
+        for _ in range(n - 1):
+            s = ''.join(str(len(list(group))) + digit
+                        for digit, group in itertools.groupby(s))
+        return s
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java Solution
+     public class Solution {
+        public String countAndSay(int n) {
+            String s = "1";
+            for(int i = 1; i < n; i++){
+                s = countIdx(s);
+            }
+            return s;
+        }
+        
+        public String countIdx(String s){
+            StringBuilder sb = new StringBuilder();
+            char c = s.charAt(0);
+            int count = 1;
+            for(int i = 1; i < s.length(); i++){
+                if(s.charAt(i) == c){
+                    count++;
+                }
+                else
+                {
+                    sb.append(count);
+                    sb.append(c);
+                    c = s.charAt(i);
+                    count = 1;
+                }
+            }
+            sb.append(count);
+            sb.append(c);
+            return sb.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution
+Idea here is keep track of the first letter in the sequence and count consecutive occurances.  Once you encounter a new letter you add the previous count and letter to the chain.  Repeat n-1 times (since we seeded the initial '1' case).  We always update temp after the inner loop since we will never have already added the last sequence.
+
+         def countAndSay(self, n):
+            s = '1'
+            for _ in range(n-1):
+                let, temp, count = s[0], '', 0
+                for l in s:
+                    if let == l:
+                        count += 1
+                    else:
+                        temp += str(count)+let
+                        let = l
+                        count = 1
+                temp += str(count)+let
+                s = temp
+            return s
+
+----------------------------------------------------------------------------------------------------
+How to proof the COUNT is always less than 10?
+At first, I solved this problem with the considering of the cases when COUNT is greater than 9, which can not be handled using:`curString +=count+'0';`, since it is more than one digit. And I solved it using `itoa`. But when I thinked about the problem, it seems that the COUNT is always less than 10, even 4. Then I re-writed the solution and also accepted by OJ.
+
+Can you guys help me proof it?
+My code:
+
+    class Solution {
+    public:
+        string countAndSay(int n) {
+    		string prevString;
+    		string curString = "1";
+    		for (int i = 1; i<n; ++i){
+    			prevString = curString;
+    			curString = "";
+    			int count = 1;
+    			char digit = prevString[0];
+    			for (int j = 1; j<prevString.length(); ++j){
+    				if (prevString[j] == digit){
+    					++count;
+    				}
+    				else{
+    					
+    					curString +=count+'0'; //myItoa(count);
+    					curString += digit;
+    					digit = prevString[j];
+    					count = 1;
+    				}
+    			}
+    			curString += count+'0';//myItoa(count);
+    			curString += digit;
+    		}
+    		return curString;
+        }
+    /*private:
+    	string myItoa(int i){
+    		string str;
+    		while (i){
+    			str += i%10+'0';
+    			i /=10;
+    		}
+    		reverse(str.begin(), str.end());
+    		return str;
+    	}*/
+    };
+     
+
+----------------------------------------------------------------------------------------------------
+C++ solution, runtime O(n), space O(n)
+Please see the comments in the code. 
+The solution is quite straight-forward. We generate k-th string, and from k-th string we generate k+1-th string, until we generate n-th string.
+We use string-helper to save temporary result, 
+I'm sure there is a way for in-place solution also.
+
+    class Solution {
+    public:
+    
+        std::string countAndSay(int n) {
+        
+        	if (0 == n) return "";  
+        	if (1 == n) return "1";
+        	
+        	std::string res="1";
+        	std::string s;
+        
+        	for (int i = 1; i < n; i++){    // run from starting to generate second string
+        
+        		int len = res.size();
+                
+                //cheack all digits in the string
+        		for (int j = 0; j < len; j++){  
+        		    
+        		    int count=1; // we have at least 1 occourence of each digit
+        
+                    // get the number of times same digit occurred (be carefull with the end of the string)
+    				while ((j + 1 < len) && (res[j] == res[j + 1])){
+    					count++;    
+    					j++;        // we need to keep increasing the index inside of the string
+    				}
+                    
+                    // add to new string "count"+"digit itself"
+        			s += std::to_string(count) + res[j];
+        		}
+        
+                // save temporary result
+        		res = s;
+        		
+        		// clean our string-helper
+        		s.clear();
+        
+        	}
+        
+        	return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java, easy to read, also fast.
+    public String countAndSay(int n) {
+        String ret = ""+1;
+        
+        while(--n  > 0)
+            ret = apply(ret);
+        
+        return ret;
+    }
+    
+    String apply(String s){
+        StringBuilder ret = new StringBuilder();
+        
+        for(int i = 0, count =0; i  < s.length() ; ){
+            while(i + count < s.length() && s.charAt(i) == s.charAt(i + count))
+                count ++;
+                    
+            ret.append(count).append(s.charAt(i));
+            i += count; 
+            count = 0;
+        }
+        
+        return ret.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ iterative solution with explanation, easy to understand.
+<h1>Renewed Solution</h1>
+
+The key point here is to find the maximum consecutive identical numbers, which means, for example:
+
+Say there is a array like this `[1, 1, 2, 3, 4, 4, 5, 5, 5]`, we will need to divide the array into different segments like this, `[1, 1]`, `[2]`, `[3]`, `[4, 4]`, `[5, 5, 5]`. Only in this way, can we count the occurrence of each consecutive segments and convert them into `"21 12 13 24 35"`. 
+
+The description of the problem is misleading and I struggled for a while, after some searching I found the right explanation. The number `n` has nothing to do with the algorithm directly, but but only control the number of iteration.
+
+The problem can be solved by using iterative algorithm.
+
+<h2>Code</h2>
+
+    string countAndSay(int n)
+    {
+        string curr_str;
+
+		// The initial case, when n = 1
+		curr_str += '1';
+
+		// The iterative case, when n > 1
+		for (int i = 0; i < n - 1; i++)
+		{
+			string buffer;
+
+			// Handle the current string
+			int index = 0;
+			for (int index = 0; index < curr_str.size(); ++index)
+			{
+				// Count the occurance of each digit
+				int cnt = 1; // At least one occurance
+				
+				while (index + 1 < curr_str.size() and curr_str[index + 1] == curr_str[index]) 
+				{
+					index++;
+					cnt++;
+				}
+
+				buffer.push_back(cnt + '0');
+				buffer.push_back(curr_str[index]);
+			}
+
+			// Update the current string
+			curr_str = buffer;
+		}
+
+		return curr_str;
+    }
+
+----------------------------------------------------------------------------------------------------
+0ms C language Solution
+    char* countAndSay(int n) {
+        if( n == 1 ) return "1";
+    	char *cur = malloc(2), *tmp;
+    	cur[0] = '1';
+    	cur[1] = 0;
+    	
+    	int len, idx, j, count;
+    	for(int i = 2; i <= n; ++i)
+    	{
+    		len = strlen(cur);
+    		tmp = malloc(len * 3);
+    		memset(tmp, 0, len * 3);
+    		count = 1;
+    		for(idx = 1, j = 0; idx < len; ++idx)
+    		{
+    			if(cur[idx] == cur[idx-1])
+            	{
+                	++count;
+            	}
+    			else
+            	{
+                	tmp[j++] = '0' + count;
+                	tmp[j++] = cur[idx-1];
+                	count = 1;
+            	}
+    		}//end of for
+    		tmp[j++] = '0' + count;
+        	tmp[j++] = cur[len-1];
+    		free(cur);
+    		cur = tmp;
+    	}	
+    	return cur;
+    }  
+        
+       
+
+----------------------------------------------------------------------------------------------------
+Examples Needed for this question
+I am confused why input 1; output shoud be  1 instead of 11;
+Also, input 2, what is the output ? 
+
+More examples would be really helpful for me to understand this question.
+
+----------------------------------------------------------------------------------------------------
+Accepted python solution: not efficiency but easy to read
+    class Solution:
+    # @return a string
+    def countAndSay(self, n):
+        s = ['1']
+        result = '1'
+        # The n-th sequance, input 1 should output '1'
+        for i in range(n-1):
+            start = 0
+            temp = []
+            # Process one sequence, scan from start to end
+            while start < len(s):
+                count = 1
+                next = start + 1
+                # Scan until s[next] is different
+                while next < len(s) and s[start] == s[next]:
+                    next += 1
+                    count += 1
+                # Get the new items in
+                temp.append(str(count))
+                temp.append(s[start])
+                # Start from next one
+                start = next
+            # Concatenate list into string, using "," as separator in default 
+            result = ''.join(temp)
+            s = temp
+        return result
+
+----------------------------------------------------------------------------------------------------
+16-line Clean Recursion C++ Solution
+    class Solution {
+    public:
+        string countAndSay(int n) {
+            if(n==1) return "1"; // base case
+            string res,tmp = countAndSay(n-1); // recursion
+            char c= tmp[0];
+            int count=1;
+            for(int i=1;i<tmp.size();i++)
+                if(tmp[i]==c)
+                    count++;
+                else {
+                    res+=to_string(count);
+                    res.push_back(c);
+                    c=tmp[i];
+                    count=1;
+                }
+            res+=to_string(count);
+            res.push_back(c);
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple java solution
+
+    public String countAndSay(int n) {
+        if (n <= 0) {return "";}
+        String res = "1";
+        for (int i = 1; i < n; i++) {
+            String pre = res;
+            res = "";
+            char temp = pre.charAt(0);
+            int count = 1;
+            for (int j = 1; j < pre.length(); j++) {
+                if (pre.charAt(j) != temp) {
+                    res = res + count + temp;
+                    temp = pre.charAt(j);
+                    count = 1;
+                } else {
+                    count++;
+                }
+            }
+            res = res + count + temp;
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Simple Java Solution
+    public class Solution {
+        public String countAndSay(int n) {
+            if(n <= 0) return "";
+            String init = "1";
+            while(n-- > 1){
+                init = say(init);
+            }
+            return init;
+        }
+        public String say(String str){
+            if(str.length() < 1) return "";
+            int count = 1;
+            StringBuilder sb = new StringBuilder();
+            char c = str.charAt(0);
+            if(str.length() == 1){
+                sb.append(count);
+                sb.append(c);
+                return sb.toString();
+            }
+            for(int i = 1; i < str.length(); i ++){
+                if(str.charAt(i) == str.charAt(i - 1)){
+                    count ++;
+                }else{
+                    sb.append(count);
+                    sb.append(c);
+                    count = 1;
+                    c = str.charAt(i);
+                }
+            }
+            sb.append(count);
+            sb.append(c);
+            return sb.toString();
+        }
+    }
+A simple java solution, say function is to return the next item in the sequence using the previous item.
+
+----------------------------------------------------------------------------------------------------
+Test cases wrong?
+Input:	2
+Output:	"12"
+Expected:	"11"
+
+----------------------------------------------------------------------------------------------------
+While Executing 1 the expected out is 1 while it should be 11. Am I interpreting something wrongly
+public String countAndSay(int n) {
+        String s = Integer.toString(n);
+		String c = "";
+		int k=0;
+		
+		for(int i=0;i<s.length();){
+			if(k==1){
+				break;
+			}
+				
+			int count = 1;
+						
+			if((i==s.length()-1)){
+				c = c + count + s.charAt(i);
+				break;
+			}
+			else{
+				for(int j=i+1;j<s.length();){
+					if(s.charAt(i)==s.charAt(j)){
+						count++;
+						if(j==s.length()-1){
+							c = c + count + s.charAt(i);
+							k = 1;
+							break;
+						}
+						else
+							j++;
+					}
+					else{
+						c = c + count + s.charAt(i);
+						i=j;
+						break;
+					}
+					
+				}
+				
+				
+			}
+			
+		}
+		return c;
+    }
+
+----------------------------------------------------------------------------------------------------

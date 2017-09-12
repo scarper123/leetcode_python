@@ -1,0 +1,433 @@
+easy dp
+    public int findLongestChain(int[][] pairs) {
+        if (pairs == null || pairs.length == 0) return 0;
+        Arrays.sort(pairs, (a, b) -> (a[0] - b[0]));
+        int[] dp = new int[pairs.length];
+        Arrays.fill(dp, 1);
+        for (int i = 0; i < dp.length; i++) {
+            for (int j = 0; j < i; j++) {
+                dp[i] = Math.max(dp[i], pairs[i][0] > pairs[j][1]? dp[j] + 1 : dp[j]);
+            }
+        }
+        return dp[pairs.length - 1];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java O(nlog(n)) Time O(1) Space
+public int findLongestChain(int[][] pairs) {
+    Arrays.sort(pairs, (a,b) -> a[1] - b[1]);
+    int sum = 0, n = pairs.length, i = -1;
+    while (++i < n) {
+        sum++;
+        int curEnd = pairs[i][1];
+        while (i+1 < n && pairs[i+1][0] <= curEnd) i++;
+    }
+    return sum;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, 10 lines, DP
+public class Solution {
+    public int findLongestChain(int[][] pairs) {
+        Arrays.sort(pairs, (a, b) -> (a[0] - b[0]));
+        
+        int i, j, max = 0, n = pairs.length;
+        int dp[] = new int[n];
+      
+        for (i = 0; i < n; i++) dp[i] = 1;
+        
+        for (i = 1; i < n; i++)
+            for (j = 0; j < i; j++)
+                if (pairs[i][0] > pairs[j][1] && dp[i] < dp[j] + 1)
+                    dp[i] = dp[j] + 1;
+
+        for (i = 0; i < n; i++) if (max < dp[i]) max = dp[i];
+        
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+4-Liner Python Greedy
+def findLongestChain(self, pairs):
+    cur, res = float('-inf'), 0
+    for p in sorted(pairs, key=lambda x: x[1]):
+        if cur < p[0]: cur, res = p[1], res + 1
+    return res
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class Solution {
+public:
+    int findLongestChain(vector<vector<int>>& pairs) {
+        sort(pairs.begin(), pairs.end(), cmp);
+        int cnt = 0;
+        for (int i = 0, j = 0; j < pairs.size(); j++) {
+            if (j == 0 || pairs[i][1] < pairs[j][0]) {
+                cnt++;
+                i = j;
+            }
+        }
+        return cnt;
+    }
+
+private:
+    static bool cmp(vector<int>& a, vector<int>&b) {
+        return a[1] < b[1];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Earliest Deadline first algorithm (greedy). Same as Maximum jobs we can accomplish.
+public class Solution {
+    public int findLongestChain(int[][] pairs) {
+        if(pairs == null || pairs.length ==0 ) return 0;
+        Arrays.sort(pairs, (a, b) -> (a[1] - b[1]));
+        int res=1, end = pairs[0][1];
+        for(int i =1; i<pairs.length; i++) {
+            if(pairs[i][0]>end){
+                res++;
+                end = pairs[i][1];
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; Very Simple without DP
+public int findLongestChain(int[][] pairs) {
+    Arrays.sort(pairs, (p1, p2)->p1[0]-p2[0]);
+    int len = 0;
+    int pre = Integer.MIN_VALUE;
+    for(int[] pair : pairs){
+        if(pair[0] > pre){  // not overlap
+            len++;
+            pre = pair[1];
+         }else if(pair[1] < pre){ // overlap but with smaller second element
+            pre = pair[1];
+        }
+    }
+    return len;
+}
+
+
+----------------------------------------------------------------------------------------------------
+6 Line Python Soln
+
+class Solution(object):
+    def findLongestChain(self, pairs):
+        pairs = sorted(pairs, key=lambda x: x[1])
+        newli = [pairs[0]]
+        for i in range(0, len(pairs)-1):
+            if newli[len(newli)-1][1] < pairs[i + 1][0]:
+                newli.append(pairs[i + 1])
+        return len(newli)
+
+
+----------------------------------------------------------------------------------------------------
+Java one pass solution after sorting using heap.
+<p>public class Solution {<br/>
+public int findLongestChain(int&#91;&#93;&#91;&#93; pairs) {<br/>
+if(pairs.length==0) return 0;<br/>
+Arrays.sort(pairs,new Comparator&lt;int&#91;&#93;&gt;(){<br/>
+public int compare(int&#91;&#93; a,int&#91;&#93; b){<br/>
+return a&#91;0&#93;-b&#91;0&#93;;<br/>
+}<br/>
+});<br/>
+PriorityQueue&lt;Integer&gt; pq=new PriorityQueue&lt;Integer&gt;(Collections.reverseOrder());<br/>
+pq.offer(pairs&#91;0&#93;&#91;1&#93;);<br/>
+for(int i=1;i&lt;pairs.length;i++){<br/>
+//if the max number of the chain greater than cur right number, replace the max with the smaller one<br/>
+if(pq.peek()&gt;pairs&#91;i&#93;&#91;1&#93;){<br/>
+pq.poll();<br/>
+pq.offer(pairs&#91;i&#93;&#91;1&#93;);<br/>
+}<br/>
+else{<br/>
+//add the cur right number if chain can be formed;<br/>
+if(pq.peek()&lt;pairs&#91;i&#93;&#91;0&#93;) pq.offer(pairs&#91;i&#93;&#91;1&#93;);<br/>
+}<br/>
+}<br/>
+return pq.size();<br/>
+}<br/>
+}</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java memoization solution with explanation - O(nlogn) solution
+public class Solution {
+    public int findLongestChain(int[][] pairs) {
+        Arrays.sort(pairs, new Comparator<int[]>() {
+			@Override
+			public int compare(int[] o1, int[] o2) {
+				int cmp = o1[0] - o2[0];
+				return cmp != 0 ? cmp : o1[1] - o2[1];
+			}
+		});
+        
+        int[] memo = new int[pairs.length];
+		int result = 1;
+        for(int i = 0; i < pairs.length; i++) {
+        	result = Math.max(chain(pairs, i, memo), result);
+        }
+        
+        return result;
+    }
+    
+    private int chain(int[][] pairs, int index, int[] memo) {        
+        if(memo[index] != 0) {
+            return memo[index];
+        }
+        
+        int max = 0;
+        for(int i = index + 1; i < pairs.length; i++) {
+            if(pairs[index][1] < pairs[i][0]) {
+                max = Math.max(chain(pairs, i, memo), max);    
+            }
+        }
+        memo[index] = max + 1;
+     
+        return memo[index];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation (N log N)
+def findLongestChain(self, A):
+    dp = [float('-inf')]
+    for x, y in sorted(A, key = lambda z: z[1]):
+        ix = bisect.bisect_left(dp, x)
+        if ix == len(dp):
+            dp.append(y)
+        elif y < dp[ix]:
+            dp[ix] = y
+    return len(dp) - 1
+
+
+----------------------------------------------------------------------------------------------------
+C++ code with detailed explanation
+class Solution {
+private:
+    //Our compare function to make sure the pairs is in ascending order
+    static bool compare(vector<int>& a, vector<int>&b) {
+        return a[1] < b[1];
+    }
+    
+public:
+    int findLongestChain(vector<vector<int>>& pairs) {
+        //Sort the pairs by the second element in the pair
+        //Because the chain is based on (a,b)->(c,d) if and only if b<c, so the smallest
+        //one in the chain always start with the smallest "b", which is the second element
+        //in the pair
+        sort(pairs.begin(), pairs.end(), compare);
+        //Count the length of chain
+        int count = 0;
+        for (int i = 0, j = 0; j < pairs.size(); j++) {
+            //If it is the first time, we increase the count to 1
+            //If for the two pairs (a,b)->(c,d), b is smaller than c, then we find it
+            //After increase the count, we make i equal to j because we need to maintain
+            //the chain's property, make sure the second smallest one in the chain and 
+            //the following third smallest one in the chain in the chain fulfill
+            //the property (a,b)->(c,d) if and only if b<c
+            if (j == 0 || pairs[i][1] < pairs[j][0]) {
+                count++;
+                i = j;
+            }
+        }
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+from bisect import bisect_left
+class Solution:
+    def findLongestChain(self, pairs):
+        """
+        :type pairs: List[List[int]]
+        :rtype: int
+        """
+        pairs.sort(key = lambda x:x[0])
+        tails = []
+        for p in pairs:
+            idx = bisect_left(tails, p[1])
+            if idx == len(tails):
+                if len(tails) == 0 or (idx>=1 and p[0] > tails[idx-1]):
+                    tails.append(p[1])
+            else:
+                tails[idx] = p[1]
+        return len(tails)
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) Python solution, binary search, easy to understand
+def findLongestChain(self, pairs):
+    """
+    :type pairs: List[List[int]]
+    :rtype: int
+    """
+    # sort by x for pairs (x1, y1), (x2, y2), (x3, y3)...
+    pairs.sort()
+        
+    # min_end_y[i] is the ending tuple minimum y of length=i chain
+    min_end_y = [float('inf')] * len(pairs)
+    for x, y in pairs:
+        # since (a, b) can chain (c, d) iff b < c, use bisect_left
+        i = bisect.bisect_left(min_end_y, x)
+        # greedy method, for the same length chain, the smaller y the better
+        min_end_y[i] = min(min_end_y[i], y)  
+    
+    return bisect.bisect_left(min_end_y, float('inf'))
+
+
+----------------------------------------------------------------------------------------------------
+Java sort solution - Longest Increasing Subsequence
+public int findLongestChain(int[][] pairs) {
+    Arrays.sort(pairs, (a,b)->a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+
+    List<int[]> chain = new ArrayList<>();
+    chain.add(pairs[0]);
+    for(int i = 1; i < pairs.length; i++) {
+        int[] pair = pairs[i];
+        if(pairs[i][0] == pairs[i-1][0]) continue;
+        int idx = Collections.binarySearch(chain, pair,(a,b) -> a[1] == b[0] ? 0 : a[1] - b[1]);
+        if(idx < 0) {
+            if(-idx-1 < chain.size()) chain.set(-idx-1, pair);
+            else {
+                if(chain.get(chain.size()-1)[1] > pair[1]) {
+                    chain.set(-idx-1-1, pair);
+                }else if(chain.get(chain.size()-1)[1] < pair[0]){
+                    chain.add(pair);
+                }
+            }
+        }
+    }
+    return chain.size();
+}
+
+----------------------------------------------------------------------------------------------------
+Concise Java DP solution.
+public int findLongestChain(int[][] pairs) {
+      if (pairs.length == 0)  return 0;
+      int len = pairs.length;
+      Arrays.sort(pairs, (a, b) -> a[0] - b[0]);
+      int[] dp = new int[len];
+      Arrays.fill(dp, 1);
+      int max = 1;
+      for (int i = 1; i < len; i++) {
+        int[] cur = pairs[i];
+        for (int j = 0; j < i; j++) {
+          int[] pre = pairs[j];
+          if (cur[0] > pre[1]) {
+            dp[i] = Math.max(dp[i], dp[j] + 1);
+            max = Math.max(dp[i], max);
+          }
+        }
+      }
+      return max;
+  }
+
+
+----------------------------------------------------------------------------------------------------
+O(nlog(n)) easy to understand solution
+bool cmp(vector<int> &a, vector<int> &b){
+    return a[1] == b[1] ? a[0] < b[0]: a[1] < b[1];
+}
+class Solution {
+public:    
+    int findLongestChain(vector<vector<int>>& pairs) {        
+        sort(pairs.begin(),pairs.end(),cmp);
+        int last = pairs[0][1];
+        int res = 1;
+        for(int i = 1; i < pairs.size();++i){
+            if(pairs[i][0] > last){
+                ++res;
+                last = pairs[i][1];
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution using DP
+public class Solution {
+    public int findLongestChain(int[][] pairs) {
+        int l = pairs.length;
+        if(l == 0){
+            return 0;
+        }
+        int ans = 1;
+        Arrays.sort(pairs,(a,b)->Integer.compare(a[0],b[0]));
+        
+        int lis[] = new int[l];
+        int i,j;
+        
+        Arrays.fill(lis,1);
+        for (i = 1; i < l;i++){
+            for(j =0;j < i; j++){
+                 if (pairs[i][0] > pairs[j][1] && lis[i] < lis[j] + 1)
+                    lis[i] = lis[j] + 1;
+            }
+            ans = Math.max(ans,lis[i]);         
+        }
+        
+        return ans;
+              
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Greedy Java AC Solution
+public int findLongestChain(int[][] pairs) {
+        if(pairs==null||pairs.length==0) return 0;
+        int n = pairs.length;
+        Arrays.sort(pairs,new Comparator<int[]>(){
+            public int compare(int [] o1,int [] o2){
+                return o1[1] - o2[1];
+            }
+        });
+        int num = 1;
+        int i = 1;
+        int index = 0;
+        while(i<n){
+            if(pairs[i][0]>pairs[index][1]){
+                index = i;
+                num++;
+            }
+            i++;
+        }
+        return num;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(nlogn) solution w&#x2F; Python &amp; C++
+class Solution {
+public:
+    int findLongestChain(vector<vector<int>>& pairs) {
+        sort(pairs.begin(), pairs.end());
+        int count = 1, end = pairs[0][1];
+        for ( auto & p : pairs ) {
+            if ( p[0] <= end ) {
+                end = min(end, p[1]);
+            } else {
+                ++count;
+                end = p[1];
+            }
+        }
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

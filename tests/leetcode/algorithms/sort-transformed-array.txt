@@ -1,0 +1,668 @@
+Java Standard Backtrace AC Solutoin, short and clear
+This problem has a lot of edge cases to be considered:
+
+1. overflow: we use a long type once it is larger than Integer.MAX_VALUE or minimum, we get over it. 
+2. 0 sequence: because we can't have numbers with multiple digits started with zero, we have to deal with it too.
+3. a little trick is that we should save the value that is to be multiplied in the next recursion.
+
+---
+
+    public class Solution {
+        public List<String> addOperators(String num, int target) {
+            List<String> rst = new ArrayList<String>();
+            if(num == null || num.length() == 0) return rst;
+            helper(rst, "", num, target, 0, 0, 0);
+            return rst;
+        }
+        public void helper(List<String> rst, String path, String num, int target, int pos, long eval, long multed){
+            if(pos == num.length()){
+                if(target == eval)
+                    rst.add(path);
+                return;
+            }
+            for(int i = pos; i < num.length(); i++){
+                if(i != pos && num.charAt(pos) == '0') break;
+                long cur = Long.parseLong(num.substring(pos, i + 1));
+                if(pos == 0){
+                    helper(rst, path + cur, num, target, i + 1, cur, cur);
+                }
+                else{
+                    helper(rst, path + "+" + cur, num, target, i + 1, eval + cur , cur);
+                    
+                    helper(rst, path + "-" + cur, num, target, i + 1, eval -cur, -cur);
+                    
+                    helper(rst, path + "*" + cur, num, target, i + 1, eval - multed + multed * cur, multed * cur );
+                }
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+17 lines solution, dfs (C++)
+    class Solution {
+    private:
+        // cur: {string} expression generated so far.
+        // pos: {int}    current visiting position of num.
+        // cv:  {long}   cumulative value so far.
+        // pv:  {long}   previous operand value.
+        // op:  {char}   previous operator used.
+        void dfs(std::vector<string>& res, const string& num, const int target, string cur, int pos, const long cv, const long pv, const char op) {
+            if (pos == num.size() && cv == target) {
+                res.push_back(cur);
+            } else {
+                for (int i=pos+1; i<=num.size(); i++) {
+                    string t = num.substr(pos, i-pos);
+                    long now = stol(t);
+                    if (to_string(now).size() != t.size()) continue;
+                    dfs(res, num, target, cur+'+'+t, i, cv+now, now, '+');
+                    dfs(res, num, target, cur+'-'+t, i, cv-now, now, '-');
+                    dfs(res, num, target, cur+'*'+t, i, (op == '-') ? cv+pv - pv*now : ((op == '+') ? cv-pv + pv*now : pv*now), pv*now, op);
+                }
+            }
+        }
+    
+    public:
+        vector<string> addOperators(string num, int target) {
+            vector<string> res;
+            if (num.empty()) return res;
+            for (int i=1; i<=num.size(); i++) {
+                string s = num.substr(0, i);
+                long cur = stol(s);
+                if (to_string(cur).size() != s.size()) continue;
+                dfs(res, num, target, s, i, cur, cur, '#');         // no operator defined.
+            }
+    
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java AC solution, 19ms, beat 100.00%.
+I am surprised that it beats 100.00% other solutions, so i have to share this.
+
+    void dfs(List<String> ret, char[] path, int len, long left, long cur, char[] digits, int pos, int target) {
+        if (pos == digits.length) {
+            if (left + cur == target) ret.add(new String(path, 0, len));
+            return;
+        }
+        long n = 0;
+        int j = len + 1;
+        for (int i = pos; i < digits.length; i++) {
+            n = n * 10 + digits[i] - '0';
+            path[j++] = digits[i];
+            path[len] = '+';
+            dfs(ret, path, j, left + cur, n, digits, i + 1, target);
+            path[len] = '-';
+            dfs(ret, path, j, left + cur, -n, digits, i + 1, target);
+            path[len] = '*';
+            dfs(ret, path, j, left, cur * n, digits, i + 1, target);
+            if (digits[pos] == '0') break; 
+        }
+    }
+    public List<String> addOperators(String num, int target) {
+        List<String> ret = new LinkedList<>();
+        if (num.length() == 0) return ret;
+        char[] path = new char[num.length() * 2 - 1];
+        char[] digits = num.toCharArray();
+        long n = 0;
+        for (int i = 0; i < digits.length; i++) {
+            n = n * 10 + digits[i] - '0';
+            path[i] = digits[i];
+            dfs(ret, path, i + 1, 0, n, digits, i + 1, target);
+            if (n == 0) break;
+        }
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted C++ Solution
+    void addOperators(vector<string>& result, string nums, string t, long long last, long long curVal, int target) {
+		if (nums.length() == 0) {
+			if (curVal == target)
+				result.push_back(t);
+			return;
+		}
+
+		for (int i = 1; i<=nums.length(); i++) {
+			string num = nums.substr(0, i);
+			if(num.length() > 1 && num[0] == '0')
+			    return;
+			
+			string nextNum = nums.substr(i);
+
+			if (t.length() > 0) {
+				addOperators(result, nextNum, t + "+" + num, stoll(num), curVal + stoll(num), target);
+				addOperators(result, nextNum, t + "-" + num, -stoll(num), curVal - stoll(num), target);
+				addOperators(result, nextNum, t + "*" + num, last * stoll(num), (curVal - last) + (last * stoll(num)), target);
+			}
+			else 
+				addOperators(result, nextNum, num, stoll(num), stoll(num), target);
+		}
+	}
+
+	vector<string> addOperators(string num, int target) {
+		vector<string> result;
+		addOperators(result, num, "", 0, 0, target);
+		return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+    class Solution {
+    public:
+        vector<string> addOperators(string num, int target) {
+            vector<string> result;
+            if(num.size()==0)   return result;
+            help(result, "", num, target, 0, 0, 0);
+            return result;
+        }
+        
+        void help(vector<string> &result, string path, string num, int target, int pos, long cur, long prev){
+            if(pos==num.size()){
+                if(cur==target)   result.push_back(path);
+                return;
+            }
+            for(int i=pos; i<num.size(); i++){
+                /*** corner-case-added-code ***/
+                if(num[pos]=='0' && i>pos) break;
+                string _str=num.substr(pos, i-pos+1);
+                long _value=stol(_str);
+                if(pos==0)  {
+                    help(result, path+_str, num, target, i+1, _value, _value);
+                }
+                else{
+                    help(result, path+"+"+_str, num, target, i+1, cur+_value, _value);
+                    help(result, path+"-"+_str, num, target, i+1, cur-_value, -_value);
+                    help(result, path+"*"+_str, num, target, i+1, cur-prev+prev*_value, prev*_value);
+                }
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean Python DFS with comments
+dfs() parameters:  
+num:   remaining num string  
+temp:  temporally string with operators added  
+cur:     current result of "temp" string  
+last:     last multiply-level number in "temp". if next operator is "multiply", "cur" and "last" will be updated  
+res:      result to return
+
+    def addOperators(self, num, target):
+        res, self.target = [], target
+        for i in range(1,len(num)+1):
+            if i == 1 or (i > 1 and num[0] != "0"): # prevent "00*" as a number
+                self.dfs(num[i:], num[:i], int(num[:i]), int(num[:i]), res) # this step put first number in the string
+        return res
+
+    def dfs(self, num, temp, cur, last, res):
+        if not num:
+            if cur == self.target:
+                res.append(temp)
+            return
+        for i in range(1, len(num)+1):
+            val = num[:i]
+            if i == 1 or (i > 1 and num[0] != "0"): # prevent "00*" as a number
+                self.dfs(num[i:], temp + "+" + val, cur+int(val), int(val), res)
+                self.dfs(num[i:], temp + "-" + val, cur-int(val), -int(val), res)
+                self.dfs(num[i:], temp + "*" + val, cur-last+last*int(val), last*int(val), res)
+
+----------------------------------------------------------------------------------------------------
+16ms C++ solution
+The idea is to cut a value from the left of the string and then for each of operations '+', '-', '*' repeat the procedure recursively. The trick is to pass the sum of all left summands and the product of rightmost factors. This allows to calculate the left sum and the right product on the next step depending on the next chosen operation.
+
+    class Solution {
+        typedef long long int i64;
+        
+        string myS;
+        const char* s;
+        i64 target;
+        int slen;
+        
+    public:
+      
+        vector<string> addOperators(const string& num, int t) {
+            myS = num;
+            slen = myS.size();
+            s = myS.c_str();
+            target = t;
+            
+            vector<string> res;
+            char buf[slen*2+1];
+            
+            int lmax = (s[0] == '0' ? 1 : slen);
+            i64 v = 0;
+            for (int l=1; l<=lmax; ++l) {
+                int c = s[l-1];
+                v = v*10 + (c-'0');   // add next digit
+                buf[l-1] = c;  // only need to append the last digit
+                processTail(0, v, l, buf, l, res);
+            }
+            return res;
+        }
+    
+        void processTail(i64 prevsum, i64 last, int pos, char* buf, int bufpos, vector<string>& res) {
+            if (pos == slen) {
+                // end of string
+                // check the value and save
+                if (prevsum+last == target) {
+                    buf[bufpos] = 0;
+                    res.push_back(buf);
+                }
+                return;
+            }
+            
+            int lmax = (s[pos] == '0' ? 1 : slen-pos); // don't allow multichar intergers starting from a '0'
+            i64 v = 0;
+            for (int l=1; l<=lmax; ++l) {
+                int c = s[pos+l-1];
+                v = v*10 + (c-'0');     // add next digit to v
+    
+                buf[bufpos] = '+';
+                buf[bufpos+l] = c;      // only need to append the last digit of v
+                processTail(prevsum+last, v, pos+l, buf, bufpos+l+1, res);
+    
+                buf[bufpos] = '-'; 
+                processTail(prevsum+last, -v, pos+l, buf, bufpos+l+1, res);
+    
+                buf[bufpos] = '*'; 
+                processTail(prevsum, last*v, pos+l, buf, bufpos+l+1, res);
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Elegant JAVA solution
+    public class Solution {
+    List<String> result =new ArrayList<String>();
+    public List<String> addOperators(String num, int target) {
+        for(int i=1;i<=num.length();i++){
+            if(i>=2 && num.charAt(0)=='0') continue;
+            bfs(num.substring(i),num.substring(0,i),target,0,Long.parseLong(num.substring(0,i)),true);
+        }
+        return result;
+    }
+    
+    public void bfs(String s,String trace,int target,long pre,long current,boolean sign){
+        long sum = sign? pre+current:pre-current;
+        if(s.length()==0){
+            if(sum==(long) target) result.add(trace);
+            return;
+        }
+        for(int i=1;i<=s.length();i++){
+            if(i>=2 && s.charAt(0)=='0') continue;
+            int number = Integer.parseInt(s.substring(0,i));
+            bfs(s.substring(i),trace+"+"+number,target,sum,number,true);
+            bfs(s.substring(i),trace+"-"+number,target,sum,number,false);
+            bfs(s.substring(i),trace+"*"+number,target,pre,current*number,sign);
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+AC Solution  C++  short
+    class Solution {
+    public:
+        vector<string> addOperators(string num, int target) {
+    		vector<string> ret;
+    		if (num.length() == 0) return ret;
+    		help(num, target, ret, num[0] - '0', num.substr(0, 1), 1, 1);
+    		return ret;
+    	}
+    
+    	void help(const string num, int target, vector<string> & v, long long last, string s, int idx, int left) {
+    		if (target == last*left && idx == num.length())
+    		{
+    			v.push_back(s);
+    			return;
+    		}
+    		else if (idx == num.length()) return;
+    		else {
+    			if(last!=0) help(num, target, v, last * 10 + num[idx] - '0', s + num.substr(idx, 1), idx + 1, left);
+    			help(num, target, v, num[idx] - '0', s + '*' + num.substr(idx, 1), idx + 1, last*left);
+    			help(num, target - left*last, v, num[idx] - '0', s + '+' + num.substr(idx, 1), idx + 1, 1);
+    			help(num, target - left*last, v, num[idx] - '0', s + '-' + num.substr(idx, 1), idx + 1, -1);
+    		}
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Most solutions are dfs solution, who knows divide and conquer solution?
+who knows divide and conquer solution for this problem?
+
+----------------------------------------------------------------------------------------------------
+Java simple solution beats 96.56%
+Inspired by [this great solution][1]. 
+
+What's different is, I use backtracking with `StringBuilder` instead of directly String addition.
+
+This increase speed by `20%`.
+
+    public List<String> addOperators(String num, int target) {
+        List<String> res = new ArrayList<>();
+       	StringBuilder sb = new StringBuilder();
+        dfs(res, sb, num, 0, target, 0, 0);
+        return res;
+        
+    }
+    public void dfs(List<String> res, StringBuilder sb, String num, int pos, int target, long prev, long multi) { 
+    	if(pos == num.length()) {
+    		if(target == prev) res.add(sb.toString());
+    		return;
+    	}
+    	for(int i = pos; i < num.length(); i++) {
+    		if(num.charAt(pos) == '0' && i != pos) break;
+    		long curr = Long.parseLong(num.substring(pos, i + 1));
+    		int len = sb.length();
+    		if(pos == 0) {
+    			dfs(res, sb.append(curr), num, i + 1, target, curr, curr); 
+    			sb.setLength(len);
+    		} else {
+    			dfs(res, sb.append("+").append(curr), num, i + 1, target, prev + curr, curr); 
+    			sb.setLength(len);
+    			dfs(res, sb.append("-").append(curr), num, i + 1, target, prev - curr, -curr); 
+    			sb.setLength(len);
+    			dfs(res, sb.append("*").append(curr), num, i + 1, target, prev - multi + multi * curr, multi * curr); 
+    			sb.setLength(len);
+    		}
+    	}
+    }
+
+
+  [1]: https://leetcode.com/discuss/58614/java-standard-backtrace-ac-solutoin-short-and-clear
+
+----------------------------------------------------------------------------------------------------
+Some thoughts on the algorithm: SLR(1) and optimization: meet-in-the-middle (, spatial data structure)
+Share some thoughts of mine.
+
+This algorithm resembles a SLR(1) parser.
+
+Each parse tree can be represented by 3 semantic values: add+mul*last.
+While adding a symbol and a digit on the right side, the right spine of the parse tree may change. This process resembles the linear construction algorithm of a Cartesian tree.
+
+In the figure below, the 3 trees on the right are derived from the leftmost.
+
+      +         +         +           +
+     / \       / \       / \         / \
+    2   *     2   *     2   *       +   6
+       / \       / \       / \     / \
+      3   @     3   @     *   6   2   *
+         / \       / \   / \         / \
+        4   5     @   6 3   @       3   @
+                 / \       / \         / \
+                4   5     4   5       4   5
+
+Neglecting the leading zero issue (which can be easily rectified in a recursive parser), the grammar is:
+
+    E ::= E "+" F | E "-" F
+    F ::= F "*" L
+    L ::= "0" | ... | "9" | L "0" | ... | L "9"
+
+Each production contributes one node in the right spine of the parse tree, and these productions are hierarchical, that is, a lower-priority symbol cannot occur in the subtree of a higher-priority symbol. Thus the longest distance of the rightmost node to the root is 3. On the other hand, the LR(0) item sets are acyclic and the longest distance is 3.
+
+`-` can be seen as `+` if we regard the following digit as the opposite number. Addition and multiplication have units, so we can attach a `+`/`*` node if there is none. Juxtaposition has the highest priority so we can reduce them immediately. Thus 3 leaves and 2 inner nodes can represent a parse tree. That is why there are 3 semantic values in most solutions.
+
+State sets of each position can be represented by semantic values to minimize the space consumption.
+For each prefix of the enumerated expression in question, the rightmost node of the partial syntax tree represents current symbol and it has no more than 3 ancestors. For each ancestor `v`, we keep the semantic value of its left subtree, thus 3 integers are sufficient to represent the state.
+
+This process can also be applied from right to left, so we can use a meet-in-the-middle algorithm to accelerate. We enumerate symbols in the right half and get many suffixes, each of which contributes 3 semantic values. The sum is indispensable, the first addend is necessary if we take account of multiplication. The first number in the first addend is necessary if we take in to account juxtaposition.
+
+If we combine the partial results from the left side and the right side with `+` or `-`, the enumeration is `O(4^(n/2)*2^(n/2)) = O(2^(1.5n))`, better than brute-force `O(4^n) = O(2^(2n))`.
+The combination of `*` is tough, as it takes 2 semantic values (juxtaposition requires 3 which is unsolvable). How can be combine `a+b` from the left with `*c+d` from the right, and let the result `a+b*c+d=result` ? We can handle it with geometry method.
+'c,d' from the right represents a line: `y=c*x+d`, the point (b, target-a) is on the line iff `target-a=c*b+d <=> a+b*c+d=target`. We turn the problem into: given `O(4^(n/2))` points and `O(4^(n/2))` lines, for each point, find the lines passing through it.
+Organize those points into a spatial data structure like quad-tree may be helpful. 
+
+If you can read Chinese, see [http://maskray.me/blog/2015-10-16-leetcode-expression-add-operators][1] , where I have written these thoughts in detail . It also gives some examples demonstrating the limit of the length of the right spine. 
+
+    
+    typedef long long ll;
+    class Solution {
+      string a;
+      int n, nn, target;
+      vector<multimap<ll, string>> e_plus, e_minus;
+      vector<string> res;
+      void backward(int k, string s, ll add, ll mul, ll last, ll ten) {
+        if (k < nn) return;
+        int x = a[k-1]-'0';
+        ll ten2 = 10*ten, sum = add+mul*last;
+        backward(k-1, string(1, a[k-1])+s, add, mul, last+ten2*x, ten2);
+        if (ten == 1 || last >= ten) { // `last` has no leading zero
+          backward(k-1, string(1, a[k-1])+'*'+s, add, mul*last, x, 1);
+          backward(k-1, string(1, a[k-1])+'+'+s, sum, 1, x, 1);
+          backward(k-1, string(1, a[k-1])+'-'+s, add-mul*last, 1, x, 1);
+          e_plus[k].insert(make_pair(sum, s));
+          e_minus[k].insert(make_pair(add-mul*last, s));
+        }
+      }
+      void forward(int k, string s, ll add, ll mul, ll last) {
+        ll sum = add+mul*last;
+        if (k == n) {
+          if (sum == target)
+            res.push_back(s);
+          return;
+        }
+        int x = a[k]-'0';
+        if (last) // no leading zero
+          forward(k+1, s+a[k], add, mul, last*10+x);
+        forward(k+1, s+'*'+a[k], add, mul*last, x);
+        if (k < nn) {
+          forward(k+1, s+'+'+a[k], sum, 1, x);
+          forward(k+1, s+'-'+a[k], sum, -1, x);
+        } else {
+          auto rg = e_plus[k].equal_range(target-sum);
+          for (auto it = rg.first; it != rg.second; ++it)
+            res.push_back(s+'+'+it->second);
+          rg = e_minus[k].equal_range(target-sum);
+          for (auto it = rg.first; it != rg.second; ++it)
+            res.push_back(s+'-'+it->second);
+        }
+      }
+    public:
+      vector<string> addOperators(string num, int target) {
+        a = num;
+        n = a.size();
+        if (n) {
+          nn = n/2; // 0 < nn < n
+          this->target = target;
+          e_plus.resize(n);
+          e_minus.resize(n);
+          backward(n-1, string(1, a[n-1]), 0, 1, a[n-1]-'0', 1);
+          forward(1, string(1, a[0]), 0, 1, a[0]-'0');
+        }
+        return res;
+      }
+    };
+
+
+  [1]: http://maskray.me/blog/2015-10-16-leetcode-expression-add-operators
+
+----------------------------------------------------------------------------------------------------
+Shortest C++ solution
+    //cur: current position in s
+    //cnum: number formed by s[position of previous op...cur]
+    //num: result of a1*a2*a3... before previous op
+    //res: result of previous calculation, not including num
+    //str: current string
+    //s:   original string
+    //when we add an op at cur:
+    //		1) +: num=1, res=res+num*cnum
+    //		2) -: num=-1, res=res+num*cnum
+    //		3) *: num=num*cnum, res=res
+
+    class Solution {
+    public:
+    	vector<string>ans;
+    	void dfs(int cur, long long cnum, long long num, long long res, string str, string s){
+    		cnum = cnum * 10 + s[cur] - '0';
+    		if (cur+1 == s.size()){
+    			if (res + num*cnum == 0)ans.push_back(str + s[cur]);
+    			return;
+    		}
+    		if (cnum != 0)dfs(cur + 1, cnum, num, res, str + s[cur], s);//no op here and no leading 0
+    		dfs(cur + 1, 0, 1, res + num*cnum, str + s[cur] + '+', s);//+
+    		dfs(cur + 1, 0, -1, res + num*cnum, str + s[cur] + '-', s);//-
+    		dfs(cur + 1, 0, num*cnum, res, str + s[cur] + '*', s);//* 
+    	}
+    	vector<string> addOperators(string num, int target) {
+    		if (num.size() > 0)dfs(0, 0, 1, -(long long)target, "", num);
+    		return ans;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Very concise C++ solution
+    class Solution {
+    public:
+        void DFS(string num, long sum, string path, int pos, long pre, int val)
+        {
+            pre = pre*10 + num[pos]-'0';
+            if(pre > INT_MAX) return;
+            if(sum+pre*val ==0 && pos== num.size()-1) result.push_back(path+num[pos]);
+            if(pos== num.size()-1) return;
+            if(pre) DFS(num, sum, path+num[pos], pos+1, pre, val);
+            DFS(num, sum+pre*val, path+num[pos]+'+', pos+1, 0, 1);
+            DFS(num, sum+pre*val, path+num[pos]+'-', pos+1, 0, -1);
+            DFS(num, sum, path+num[pos]+'*', pos+1, 0, val*pre);
+        }
+    
+        vector<string> addOperators(string num, int target) {
+            if(num.size() ==0) return {};
+            DFS(num, -target, "", 0, 0, 1);
+            return result;
+        }
+    private:
+        vector<string> result;
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java Solution, use the function in basic calculateII
+**The basic idea is to generate all possible expressions using backtrace.**
+
+    public List<String> addOperators(String num, int target) {
+        if(num.length() == 0) return new ArrayList<String>();
+        List<String> res = new ArrayList<String>();
+        ArrayList<String> ops = new  ArrayList<String>();
+        ops.add("+");ops.add("-");ops.add("*");ops.add("");
+        gen(num,0,"",res,ops,target,num.charAt(0) == '0');
+        return res;
+    }
+    // the last digit in num is treated separately,beacase we can not add operator after the last digit
+    public void gen(String num,int index,String cur,List<String> res,ArrayList<String> operators,int target,boolean flag){
+        if(index == num.length()-1){
+            String tmp = new String(cur+num.charAt(index));
+            // when the situation is 10+01 this is not valid, and 100+1 is valid, special case. 
+            if( (cur.length() == 0 ||  (!flag && Character.isDigit(cur.charAt(cur.length()-1))) || !Character.isDigit(cur.charAt(cur.length()-1)) )&&calculate(tmp) == target){
+                res.add(tmp);
+            }
+        }else {
+            for(int j=0;j<operators.size();j++){
+                // the last element in operators is "" .If the situation is 123+03
+                // this is not valid , but 123+10003 is valid, if the index point to last '0'
+                // flag is used to determine whether we can use concat operator
+                if(flag && j == operators.size()-1) continue;
+                // set the flag if we use "+","-","*" operator
+                gen(num,index+1,cur+num.charAt(index)+operators.get(j),res,operators,target, j== operators.size()-1 ? flag:num.charAt(index+1) == '0' );
+            }
+        }
+    }
+    //use long to pass the special case 
+    public int calculate(String s) {
+        s = s+"+";
+        long res = 0;
+        long val = 0;
+        char sign = '+';
+        Stack<Long> st = new Stack<Long>();
+        for(int i=0;i<s.length();i++){
+            if(Character.isDigit(s.charAt(i))){
+                val = val*10+s.charAt(i)-'0';
+            }else if(s.charAt(i) !=' '){
+                switch(sign){
+                    case '+':
+                        st.push(val);
+                        break;
+                    case '-':
+                        st.push(-val);
+                        break;
+                    case '*':
+                        st.push(st.pop()*val);
+                        break;
+                    case '/':
+                        st.push(st.pop()/val);
+                        break;
+                }
+                val = 0;
+                sign = s.charAt(i);
+            }
+        }
+        for(long x:st) res+=x;
+        return res > Integer.MAX_VALUE ? Integer.MAX_VALUE:(int) res;
+    }
+
+----------------------------------------------------------------------------------------------------
+17-Line Accepted C# DFS Solution
+    public IList<string> AddOperators(string num, int target) {
+        IList<string> result = new List<string>();
+        dfs(result, "", 0, 0, num, target);
+        return result;
+    }
+    private void dfs(IList<string> result, string curStr, long curSum, long curHead, string curNum, long target){
+        if(curNum.Length == 0 && target - curSum - curHead == 0) result.Add(curStr);
+        for(int i = 1; i < 11 && i <= curNum.Length; i++){
+            string strNum = curNum.Substring(0, i); long lNum = Convert.ToInt64(strNum);
+            if(lNum > int.MaxValue || curHead > int.MaxValue) break;
+            if(curStr.Length == 0) dfs(result, strNum, 0, lNum, curNum.Substring(i), target);
+            else{
+                dfs(result, curStr + "*" + strNum, curSum, curHead * lNum, curNum.Substring(i), target);
+                dfs(result, curStr + "+" + strNum, curSum + curHead, lNum, curNum.Substring(i), target);
+                dfs(result, curStr + "-" + strNum, curSum + curHead, -lNum, curNum.Substring(i), target);
+            }
+            if(lNum == 0) break; // avoid result of "000"/"012" etc
+        }
+    }
+
+The first version accepted here.
+
+    public IList<string> AddOperators(string num, int target) {
+        IList<long> curList = new List<long>();
+        IList<string> result = new List<string>();
+        if(num.Length == 0) return result;
+        for(int i = 1; i < 11 && i <= num.Length; i++){
+            string curStr = num.Substring(0, i);
+            if(Convert.ToInt64(curStr) <= int.MaxValue){
+                curList.Add(Convert.ToInt64(curStr));
+                dfs(result, curStr, curList, num.Substring(i), target);
+                curList.RemoveAt(curList.Count - 1);
+            }
+            if(curStr == "0") break;
+        }
+        return result;
+    }
+    
+    private void dfs(IList<string> result, string curStr, IList<long> curList, string curNum, long target){
+        if(curNum.Length == 0){
+            foreach(int i in curList) target -= i;
+            if(target == 0) result.Add(curStr);
+            return;
+        }
+        for(int i = 1; i < 11 && i <= curNum.Length; i++){
+            string tmpNum = curNum.Substring(0, i);
+            long lNum = Convert.ToInt64(tmpNum);
+            if(lNum <= int.MaxValue){
+                long tmp = curList[curList.Count - 1];
+                curList[curList.Count - 1] *= lNum;
+                if(Math.Abs(curList[curList.Count - 1]) <= int.MaxValue)
+                    dfs(result, curStr + "*" + tmpNum, curList, curNum.Substring(i), target);
+                curList[curList.Count - 1] = tmp;
+
+                curList.Add(lNum);
+                dfs(result, curStr + "+" + tmpNum, curList, curNum.Substring(i), target);
+                curList[curList.Count - 1] = -lNum;
+                dfs(result, curStr + "-" + tmpNum, curList, curNum.Substring(i), target);
+                curList.RemoveAt(curList.Count - 1);
+            }
+            if(lNum == 0) break;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Why does not the problem expect &quot;05&quot; to be equal to &quot;5&quot;

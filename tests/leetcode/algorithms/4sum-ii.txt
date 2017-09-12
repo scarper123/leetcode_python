@@ -1,0 +1,607 @@
+Very easy to understand JAVA solution with explanations
+    public boolean canCross(int[] stones) {
+        if (stones.length == 0) {
+        	return true;
+        }
+        
+        HashMap<Integer, HashSet<Integer>> map = new HashMap<Integer, HashSet<Integer>>(stones.length);
+        map.put(0, new HashSet<Integer>());
+        map.get(0).add(1);
+        for (int i = 1; i < stones.length; i++) {
+        	map.put(stones[i], new HashSet<Integer>() );
+        }
+        
+        for (int i = 0; i < stones.length - 1; i++) {
+        	int stone = stones[i];
+        	for (int step : map.get(stone)) {
+        		int reach = step + stone;
+        		if (reach == stones[stones.length - 1]) {
+        			return true;
+        		}
+        		HashSet<Integer> set = map.get(reach);
+        		if (set != null) {
+        		    set.add(step);
+        		    if (step - 1 > 0) set.add(step - 1);
+        		    set.add(step + 1);
+        		}
+        	}
+        }
+        
+        return false;
+    } 
+
+
+----------------------------------------------------------------------------------------------------
+Straight-forward 9ms 7-line c++ solution with explanation
+unordered_map<int, bool> dp;
+
+bool canCross(vector<int>& stones, int pos = 0, int k = 0) {
+    int key = pos | k << 11;
+
+    if (dp.count(key) > 0)
+        return dp[key];
+
+    for (int i = pos + 1; i < stones.size(); i++) {
+        int gap = stones[i] - stones[pos];
+        if (gap < k - 1)
+            continue;
+        if (gap > k + 1)
+            return dp[key] = false;
+        if (canCross(stones, i, gap))
+            return dp[key] = true;
+    }
+
+    return dp[key] = (pos == stones.size() - 1);
+}
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DFS 17ms beat 99.28% so far
+ public boolean canCross(int[] stones) {
+        if (stones == null || stones.length == 0) {return false;}
+        int n = stones.length;
+        if (n == 1) {return true;}
+        if (stones[1] != 1) {return false;}
+        if (n == 2) {return true;}
+        int last = stones[n - 1];
+        HashSet<Integer> hs = new HashSet();
+        for (int i = 0; i < n; i++) {
+            if (i > 3 && stones[i] > stones[i - 1] * 2) {return false;} // The two stones are too far away. 
+            hs.add(stones[i]);
+        }
+        return canReach(hs, last, 1, 1);
+    }
+    
+    private boolean canReach(HashSet<Integer> hs, int last, int pos, int jump) {
+        if (pos + jump - 1 == last || pos + jump == last || pos + jump + 1 == last) {
+            return true;
+        }
+        if (hs.contains(pos + jump + 1)) {
+            if (canReach(hs, last, pos + jump + 1, jump + 1)) {return true;}
+        }
+        if (hs.contains(pos + jump)) {
+            if (canReach(hs, last, pos + jump, jump)) {return true;}
+        }
+        if (jump > 1 && hs.contains(pos + jump - 1)) {
+            if (canReach(hs, last, pos + jump - 1, jump - 1)) {return true;}
+        }
+        return false;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy Version java
+public boolean canCross(int[] stones) {
+        if(stones[1] > 1) return false;
+        if(stones.length == 2) return true;
+        return helper(stones, 1, 1);
+    }
+    private boolean helper(int[] arr, int i, int step){
+        boolean pass = false;
+        if(i == arr.length-1) return true;
+        for(int j = i+1; j < arr.length; j++){
+            if(arr[j] <= arr[i] + step + 1 && arr[j] >= arr[i]+step-1){
+                pass = pass || helper(arr, j, arr[j] - arr[i]);
+            }
+        }
+        return pass;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python DFS easy understanding using memo
+class Solution(object):
+    def canCross(self, stones):
+        self.memo = set()
+        target = stones[-1]
+        stones = set(stones)
+
+        res = self.bt(stones, 1, 1, target)
+        return res
+
+    def bt(self, stones, cur, speed, target):
+        # check memo
+        if (cur, speed) in self.memo:
+            return False
+
+        if cur==target:
+            return True
+        
+        if cur>target or cur<0 or speed<=0 or cur not in stones:
+            return False
+        # dfs
+        candidate = [speed-1, speed, speed+1]
+        for c in candidate:
+            if (cur + c) in stones:
+                if self.bt(stones, cur+c, c, target):
+                    return True
+
+        self.memo.add((cur,speed))
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Simple Easy to Understand Java solution
+public static boolean canCross(int[] stones) {
+        Map<Integer, Set<Integer>> stoneMap = new HashMap<>();
+        for (int i = 1; i < stones.length; i++) {
+            stoneMap.put(stones[i], new HashSet<Integer>());
+        }
+        if(stones[0]+1 == stones[1]) {
+            stoneMap.get(stones[1]).add(1);
+        }
+        for(int i = 1; i < stones.length; i++) {
+            int eachStone = stones[i];
+            for(Integer K: stoneMap.get(eachStone)) {
+                if(K != 1 &&  stoneMap.containsKey(eachStone + K - 1)) {
+                    stoneMap.get(eachStone + K - 1).add(K - 1);
+                }
+                if(stoneMap.containsKey(eachStone + K)) {
+                    stoneMap.get(eachStone + K).add(K);
+                }
+                if(stoneMap.containsKey(eachStone + K + 1)) {
+                    stoneMap.get(eachStone + K + 1).add(K + 1);
+                }
+            }
+        }
+        return stoneMap.get(stones[stones.length - 1]).size() >= 1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ 9 lines O(n^2) iterative DP solution
+bool canCross(vector<int>& stones) {
+        // To record available last steps to reach current position. Position 0 need 0 step to be reached
+        unordered_map<int, unordered_set<int>> steps = {{0, {0}}};  
+        
+        for (int pos : stones) {
+            for (auto it = steps[pos].begin(); it != steps[pos].end(); it++) {  // record all future reachable positions
+                if (*it - 1) { steps[pos + *it - 1].insert(*it - 1); }
+                steps[pos + *it].insert(*it);
+                steps[pos + *it + 1].insert(*it + 1);
+            }
+        }
+        
+        return steps[stones.back()].size();                                     // check if the last position is reachable
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution Using HashMap
+public class Solution {
+    public boolean canCross(int[] stones) {
+        final int l = stones != null ? stones.length : 0;
+        if (l < 1 || stones[0] != 0) return false;
+        final Map<Integer, Set<Integer>> map = new HashMap<>();
+        for (int s : stones) map.put(s, new HashSet<Integer>());
+        for (int s : stones) {
+            Set<Integer> jSet = map.get(s);
+            // Initial condition
+            if (s == 0) {
+                jSet.add(0);
+                if (map.containsKey(1)) map.get(1).add(1);
+                continue;
+            }
+            // For other stones
+            for (int j : jSet) {
+                int jj = j - 1;
+                int ss = s + jj;
+                // Previous jump - 1
+                if (ss != s && map.containsKey(ss)) map.get(ss).add(jj);
+                // Previous jump
+                jj++; ss++;
+                if (ss != s && map.containsKey(ss)) map.get(ss).add(jj);
+                // Previous jump + 1
+                jj++; ss++;
+                if (ss != s && map.containsKey(ss)) map.get(ss).add(jj);
+            }
+        }
+        return !map.get(stones[l - 1]).isEmpty();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+60ms Java O(N^2)   use a matrix for memorization
+public class Solution {
+    public boolean canCross(int[] stones) {
+        if(stones[1] != 1) return false;
+        int n = stones.length;
+        int[][] memo = new int[n][n];
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++)
+            {
+                memo[i][j] = -1;
+            }
+        }
+        
+        return canCross(stones, 0, 0, memo, n);
+    }
+    private boolean canCross(int[] stones, int i, int j, int[][] memo, int n) {
+        if(memo[i][j]!=-1) return memo[i][j] == 1;
+        if(i == n - 1) {
+            memo[i][j] = 1;
+            return true;
+        }
+
+        for(int k = i + 1; k < n; k++) { 
+            if(stones[k] < j - 1 + stones[i]) continue;
+            else if(stones[k] > j + 1 + stones[i]) {
+                memo[i][j] = 0;
+                return false;
+            }
+            else {
+                if(canCross(stones, k, stones[k] - stones[i], memo, n)) {
+                    memo[i][j] = 1;
+                    return true;
+                }
+            }
+        }
+        memo[i][j] = 0;
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Slow but easy understanding DP solution(C++)
+class Solution {
+public:
+    bool canCross(vector<int>& stones) 
+    {
+        if(stones[1]!=1)
+            return false;
+        /* use auxilary array to store the range that can be 
+       reached from each stone, only store the lower bound and 
+       upper bound of each stone*/
+        vector<pair<int, int>> dp(stones.size(), {INT_MAX,INT_MIN});
+        dp[1] = {1,3};
+        for(int i=2; i<=stones.size()-1; i++)
+        {
+            for(int j = i-1; j>0; j--)
+            {
+                if(stones[i]>=dp[j].first && stones[i]<= dp[j].second)
+                {
+                    dp[i].first = min(dp[i].first, stones[i]+stones[i]-stones[j]-1);
+                    dp[i].second = max(dp[i].second, stones[i]+stones[i]-stones[j]+1);
+                }
+            }
+            if(dp[i].first==INT_MAX)
+                return false;
+        }
+        return dp.back().first!=INT_MAX;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Python&#93; Documented solution that is easy to understand
+class Solution(object):
+    def canCross(self, stones):
+        
+        # create a dictionary where the keys are the stones 
+        # and the values are empty sets that will contain 
+        # integers which represent the jump lengths that 
+        # can reach the stone represented by the key
+        d = dict((x,set()) for x in stones)
+        
+        # catches a tricky test case: stones = [0,2]
+        if stones[1] != 1:
+            return False
+            
+        # the problems says that the first jump made is 
+        # always of length 1 and starts at stone 0. That
+        # means the jump length that was used to reach 
+        # stone 1 is 1 so I add it into the set at stone 1
+        d[1].add(1)
+        
+        # iterate over all the stones after 0
+        for i in xrange(len(stones[1:])):
+            
+            # iterate over each jump length used to reach
+            # the current stone
+            for j in d[stones[i]]:
+                
+                # iterate over every jump length possible 
+                # (k-1, k, k+1) given the current jump length
+                for k in xrange(j-1, j+2):
+                    
+                    # if that jump length lands on a stone
+                    if k > 0 and stones[i]+k in d:
+                        
+                        # add that jump length used to get there to
+                        # the set of jump lengths for the stone the 
+                        # jump puts the frog on
+                        d[stones[i]+k].add(k)
+                        
+        # if the last stone has any jump lengths in it's
+        # set, that means that it is possible to get to 
+        # the last stone
+        return d[stones[-1]] != set()
+
+----------------------------------------------------------------------------------------------------
+Simple and easy understand java solution
+public boolean canCross(int[] stones) {
+        if (stones == null || stones.length == 0) {
+            return false;
+        }
+        if (stones[1] > 1) {
+            return false;
+        }
+
+        Set[] lastJump = new Set[stones.length];
+        for (int i = 1; i < stones.length; i++) {
+            lastJump[i] = new HashSet<Integer>();
+        }
+        lastJump[1].add(1);
+        
+        for (int i = 2; i < stones.length; i++) {
+            for (int j = 1; j < i; j++) {
+                //cell j can be reached
+                if (lastJump[j].size() > 0) {
+                    int currJump = stones[i] - stones[j];
+                    if (lastJump[j].contains(currJump) || 
+                        lastJump[j].contains(currJump + 1) ||
+                        lastJump[j].contains(currJump - 1)) {
+                        lastJump[i].add(currJump);
+                    }
+                }
+            }
+        }
+        return lastJump[stones.length - 1].size() > 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+    StoneValue(int stoneValue, int unitValue) {
+        this.stoneValue = stoneValue;
+        this.unitValue = unitValue;
+    }
+    
+    public int compareTo(Object sv) {
+        return Integer.compare(this.stoneValue, ((StoneValue)sv).stoneValue);
+    }
+}
+public boolean canCross(int[] stones) {
+    if (!(stones[0] == 0 && stones[1] == 1)) {
+        return false;
+    }
+    int last = stones[stones.length - 1];
+    Set mySet = new HashSet();
+    for (Integer i : stones) {
+        mySet.add(i);
+    }
+    PriorityQueue<StoneValue> queue = new PriorityQueue<StoneValue>(Collections.reverseOrder());
+    queue.add(new StoneValue(1, 1));
+    
+    while (!queue.isEmpty()) {
+        StoneValue stone = queue.remove();
+        if (stone.stoneValue == last) {
+            return true;
+        }
+        if (mySet.contains(stone.stoneValue + stone.unitValue)) {
+            queue.add(new StoneValue(stone.stoneValue + stone.unitValue, stone.unitValue));
+        } 
+        if (stone.stoneValue + stone.unitValue - 1 > stone.stoneValue) {
+            if (mySet.contains(stone.stoneValue + stone.unitValue - 1)) {
+                queue.add(new StoneValue(stone.stoneValue + stone.unitValue - 1, stone.unitValue - 1));
+            }
+        }
+        
+        if (mySet.contains(stone.stoneValue + stone.unitValue + 1)) {
+            queue.add(new StoneValue(stone.stoneValue + stone.unitValue + 1, stone.unitValue + 1));
+        }
+    }
+    return false;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) iterative memoization solution using HashMap
+public class Solution {
+    public boolean canCross(int[] stones) {
+        if(stones[1] != 1) return false;
+        HashMap<Integer,HashSet<Integer>> h = new HashMap<Integer,HashSet<Integer>>();
+        HashSet<Integer> s = new HashSet<Integer>();
+        s.add(0);
+        h.put(0,s);
+        for(int i = 1; i< stones.length;i++)
+        {
+            for(int j = 0; j< i;j++)
+            {
+                if(h.containsKey(stones[j]))
+                {
+                    int dis = stones[i] - stones[j];
+                    
+                    s = h.get(stones[j]);
+                    if(s.contains(dis) || s.contains(dis-1) || s.contains(dis+1))
+                    {
+                        HashSet<Integer> t = new HashSet<Integer>();
+                        if(h.containsKey(stones[i]))
+                        {
+                          t = h.get(stones[i]);
+                        }
+                         
+                        t.add(dis);
+                        h.put(stones[i],t);
+                    }
+                }
+            }
+            
+        }
+        if(h.containsKey(stones[stones.length-1]))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Slow but intuitive method using map which stores the previous steps
+public boolean canCross(int[] stones) {
+    int len = stones[stones.length-1];
+    if(len == 0) return true;
+    Map<Integer, HashSet<Integer>> map = new HashMap<Integer, HashSet<Integer>>();
+    map.put(1, new HashSet<Integer>());
+    map.get(1).add(1);
+    for(int i : stones) {
+        if(i == 0) continue;
+        if(!map.containsKey(i)) continue;
+        for(int step: map.get(i)) {
+            if(step > 1) {
+                int min = step - 1;
+                if(!map.containsKey(i+min)) map.put(i+min, new HashSet<Integer>());
+                map.get(i+min).add(min);
+            }
+            if(!map.containsKey(i+step)) map.put(i+step, new HashSet<Integer>());
+            map.get(i+step).add(step);
+            int max = step + 1;
+            if(!map.containsKey(i+max)) map.put(i+max, new HashSet<Integer>());
+            map.get(i+max).add(max);
+        }
+    }
+    return map.containsKey(len) && map.get(len).size() > 0 ;
+}
+
+----------------------------------------------------------------------------------------------------
+Easy java memory + backtracking solution
+public class Solution {
+    public boolean canCross(int[] stones) {
+        if(stones.length <= 1) return true;
+        Set<String> visited = new HashSet<>();
+        if(stones[1] != 1) return false;
+        return canCross(stones, visited, 1, 1);
+    }
+    
+    private boolean canCross(int[] stones, Set<String> visited, int k, int pos) {
+        if(pos == stones.length - 1) return true;
+        if(k <= 0) return false;
+        if(!visited.add(k + "," + pos)) {
+            return false;
+        }
+        int des = stones[pos] + k;
+        for(int i = pos + 1; i < stones.length; i++) {
+            if(stones[i] > des + 1) break;
+            else if(stones[i] >= des - 1 && stones[i] <= des + 1) {
+                if(canCross(stones, visited, stones[i] - stones[pos], i))
+                    return true;
+            }
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+accepted c++ solution, dfs
+class Solution {
+public:
+    bool canCross(vector<int>& stones) {
+    	vector<set<int>> visit(stones.size(), set<int>());
+        return jumpHelper(stones, 0, 1, visit);
+    }
+
+    bool jumpHelper(vector<int>& stones, int index, int units, vector<set<int>>& visit) {
+    	if (index == stones.size() - 1) return true;
+    	if (index >= stones.size()) return false;
+    	if (visit[index].count(units)) return false;
+    	for (int i = index; i < stones.size() && stones[index] + units >= stones[i]; ++i) {
+    		if (stones[index] + units == stones[i]) {
+    			if (units > 0 && jumpHelper(stones, i, units - 1, visit)) return true;
+    			if (units > 0 && jumpHelper(stones, i, units, visit)) return true;
+    			if (jumpHelper(stones, i, units + 1, visit)) return true;		
+    		}
+    	}
+    	visit[index].insert(units);
+    	return false;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+java dp solution, only use array, 15ms
+
+public class Solution {
+    public boolean canCross(int[] stones) {
+        if (stones.length <= 1){
+            return true;
+        }
+        int n = stones.length;
+        int[] minNextStep = new int[n];
+        int[] maxNextStep = new int[n];
+        Arrays.fill(minNextStep, Integer.MAX_VALUE);
+        minNextStep[0] = 1;
+        maxNextStep[0] = 1;
+        for (int i = 0; i < n; i++){
+            if (minNextStep[i] > maxNextStep[i]){
+                return false;
+            }
+            int j = i + 1;
+            for (int k = Math.max(1, minNextStep[i]); k <= maxNextStep[i]; k++){
+                if (j >= n){
+                    break;
+                }
+                if (stones[i] + k < stones[j]){
+                    continue;
+                } else if (stones[i] + k == stones[j]){
+                    minNextStep[j] = Math.min(minNextStep[j], k - 1);
+                    maxNextStep[j] = Math.max(maxNextStep[j], k + 1);
+                    j++;
+                } else{
+                    j++;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution without map
+public boolean canCross(int[] stones) {
+        int n = stones.length;
+        // DP tracks the max units of last jump to reach each stone
+        int[] dp = new int[n];
+        
+        for (int i = 0; i < n; i++) {
+            // Skip if no previous jumps can reach this stone
+            if (i > 0 && dp[i] == 0) continue;
+            
+            // Greedy try to jump forward as far as possible
+            for (int j = i + 1; j < n; j++) {
+                int gap = stones[j] - stones[i];
+                if (gap > dp[i] + 1) break;      // Too far to reach
+
+                if (gap == dp[i] - 1 || gap == dp[i] || gap == dp[i] + 1) {
+                    dp[j] = Math.max(gap, dp[j]);     // Update DP if a stone is reachable
+                }
+            }
+        }
+        return dp[n - 1] > 0;
+    }
+
+
+----------------------------------------------------------------------------------------------------

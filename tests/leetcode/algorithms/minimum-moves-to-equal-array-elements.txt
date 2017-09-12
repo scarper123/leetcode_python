@@ -1,0 +1,463 @@
+A greedy method using stack, O(n) time and O(n) space
+public class Solution {
+    public String removeKdigits(String num, int k) {
+        int digits = num.length() - k;
+        char[] stk = new char[num.length()];
+        int top = 0;
+        // k keeps track of how many characters we can remove
+        // if the previous character in stk is larger than the current one
+        // then removing it will get a smaller number
+        // but we can only do so when k is larger than 0
+        for (int i = 0; i < num.length(); ++i) {
+            char c = num.charAt(i);
+            while (top > 0 && stk[top-1] > c && k > 0) {
+                top -= 1;
+                k -= 1;
+            }
+            stk[top++] = c;
+        }
+        // find the index of first non-zero digit
+        int idx = 0;
+        while (idx < digits && stk[idx] == '0') idx++;
+        return idx == digits? "0": new String(stk, idx, digits - idx);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward Java Solution Using Stack
+public class Solution {
+    public String removeKdigits(String num, int k) {
+        int len = num.length();
+        //corner case
+        if(k==len)        
+            return "0";
+            
+        Stack<Character> stack = new Stack<>();
+        int i =0;
+        while(i<num.length()){
+            //whenever meet a digit which is less than the previous digit, discard the previous one
+            while(k>0 && !stack.isEmpty() && stack.peek()>num.charAt(i)){
+                stack.pop();
+                k--;
+            }
+            stack.push(num.charAt(i));
+            i++;
+        }
+        
+        // corner case like "1111"
+        while(k>0){
+            stack.pop();
+            k--;            
+        }
+        
+        //construct the number from the stack
+        StringBuilder sb = new StringBuilder();
+        while(!stack.isEmpty())
+            sb.append(stack.pop());
+        sb.reverse();
+        
+        //remove all the 0 at the head
+        while(sb.length()>1 && sb.charAt(0)=='0')
+            sb.deleteCharAt(0);
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Two algorithms with detailed explaination
+string removeKdigits(string num, int k) {
+        string res;
+        int keep = num.size() - k;
+        for (int i=0; i<num.size(); i++) {
+            while (res.size()>0 && res.back()>num[i] && k>0) {
+                res.pop_back();
+                k--;
+            }
+            res.push_back(num[i]);
+        }
+        res.erase(keep, string::npos);
+        
+        // trim leading zeros
+        int s = 0;
+        while (s<(int)res.size()-1 && res[s]=='0')  s++;
+        res.erase(0, s);
+        
+        return res=="" ? "0" : res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Short Python, one O(n) and one RegEx
+def removeKdigits(self, num, k):
+    sub = re.compile('1[0]|2[01]|3[0-2]|4[0-3]|5[0-4]|6[0-5]|7[0-6]|8[0-7]|9[0-8]|.$').sub
+    for _ in range(k):
+        num = sub(lambda m: m.group()[1:], num, 1)
+    return num.lstrip('0') or '0'
+
+----------------------------------------------------------------------------------------------------
+6ms Java Solution with detailed comment
+public class Solution {
+    public String removeKdigits(String num, int k) {
+        int remain = num.length() - k;
+        char[] numArray = num.toCharArray(), res = new char[remain];
+        int index = 0;
+        for(int i = 0; i < numArray.length; i++) {
+            // (1)  (n - i > remain - index): have enough remaining digits to be compared
+            // (2)  (res[index - 1] > nums[i]): at this time, the (index-1) is the newest added digit,
+            //      compare this digit with the current num, if the res is greater and you have enough 
+            //      remaining digits to be compared, decrease the index(it ensures that the future added digit is 
+            //      always smaller than before and the size is remain) until get the right and 'safe' position
+            while((numArray.length - i > remain - index) && (index > 0 && numArray[i] < res[index - 1])) index--;
+            if(index < remain) res[index++] = numArray[i];
+        }
+        
+        // check leading zeroes
+        index = -1;
+        while(++index < remain) {
+            if(res[index] != '0') break;
+        }
+        String s = new String(res).substring(index);
+        
+        return s.length() == 0 ? "0" : s;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My Easy Understandable C++ Solution
+class Solution {
+public:
+    string removeKdigits(string num, int k) {
+        string res = "";
+        int n = num.size(), keep = n - k;
+        for (char c : num) {
+            while (k && res.size() && res.back() > c) {
+                res.pop_back();
+                --k;
+            }
+            res.push_back(c);
+        }
+        res.resize(keep);
+        while (!res.empty() && res[0] == '0') res.erase(res.begin());
+        return res.empty() ? "0" : res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short 10 lines O(n) Java Code
+public class Solution {
+    public static String removeKdigits(String num, int k) {
+        StringBuilder sb = new StringBuilder();
+        for(char c : num.toCharArray()) {
+            while(k > 0 && sb.length() != 0 && sb.charAt(sb.length() - 1) > c) {
+                sb.setLength(sb.length() - 1);
+                k--;
+            }
+            if(sb.length() != 0 || c != '0') sb.append(c);  // Only append when it is not leading zero
+        }
+        if(k >= sb.length()) return "0";
+        sb.setLength(sb.length() - k);  // use all remaining k
+        return sb.toString();  
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 6ms 10 lines solution with comments
+string removeKdigits(string num, int k) {
+       string ans = "";                                         // treat ans as a stack in below for loop
+       
+       for (char c : num) {
+           while (ans.length() && ans.back() > c && k) {
+               ans.pop_back();                                  // make sure digits in ans are in ascending order
+               k--;                                             // remove one char
+           }
+           
+           if (ans.length() || c != '0') { ans.push_back(c); }  // can't have leading '0'
+       }
+       
+       while (ans.length() && k--) { ans.pop_back(); }          // make sure remove k digits in total
+       
+       return ans.empty() ? "0" : ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy python solution
+class Solution(object):
+    def removeKdigits(self, num, k):
+        """
+        :type num: str
+        :type k: int
+        :rtype: str
+        """
+        while k > 0:
+            k -= 1
+            i = 0
+            while i < len(num)-1:
+                if num[i] > num[i+1]:
+                    break
+                i += 1
+            num = num[:i] + num[i+1:]
+        
+        if len(num) == 0:
+            return "0"
+        else:
+            return str(int(num))
+
+
+----------------------------------------------------------------------------------------------------
+My simple O(N) idea
+<p>Scan from start to end, then check if</p>
+<ul>
+<li>s&#91;i&#93;&gt;s&#91;i+1&#93;, delete s&#91;i&#93;;</li>
+<li>s&#91;i&#93;&lt;=s&#91;i+1&#93;, don&#39;t delete s&#91;i&#93; continue;</li>
+</ul>
+<p>If we still need to delete, delete from the end.</p>
+<p>Total: O(N).</p>
+<p>Correctness: we only delete if there is &#34;descending&#34;. The reason is, if there is an &#34;ascending&#34;, say s&#91;i&#93;&lt;=s&#91;i+1&#93;, and we delete s&#91;i&#93;, then since s&#91;i+1&#93;&gt;s&#91;i&#93;, the result can&#39;t be the minimal.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Hit &quot;Internal Error&quot; several times, then got accepted finally.
+<p>The OJ seems pretty unstable lately.</p>
+
+
+----------------------------------------------------------------------------------------------------
+This is a typical monotonic queue question. Share my c++ solution
+    string removeKdigits(string num, int k) {
+        string res="";
+        if(num.size()==k)
+            return "0";
+        for(int i=0;i<num.size();i++){
+            while(!res.empty()&&res.back()>num[i]&&k>0){
+                res.pop_back();
+                k--;
+            }
+            res.push_back(num[i]);
+        }
+        auto pos=res.find_first_not_of('0');
+        if(pos==string::npos)
+            return "0";
+        return res.substr(pos,num.size()-k);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+You only need 3 simple observations to solve this! Intuitive and well commented JAVA solution.
+/*
+Observation 1: our highest prioirty is to move the number that is at index 0, with index 1 being 0
+    For example, if we have 3004567 and we want to remove 1 digit, we defintely want to remove 3, so that we can
+    get rid of the following 2 zeros, ending up with 4567, which will always give us the biggest decrease
+
+Observation 2: if there is no case of observation 1, then we want to remove the biggest number in the first ascenging sequence.
+    For example, if we have 234543, we want to remove the 5 first, since after 5 the number starts going down.
+    
+Observatino 3: if we have to remove more than 1 digit, every digit removal can use the same strategy, i.e we can use greedy algorithm here, aka not dp. 
+
+*/
+
+public class Solution {
+    public String removeKdigits(String num, int k) {
+        //change to list
+        List<Character> list = new ArrayList<Character>();
+        for(char c : num.toCharArray()){
+            list.add(c);
+        }
+        //we need to remove k digits
+        for(int i = 0; i<k; i++){
+            int size = list.size();
+            //observation 1
+            if(size > 1 && list.get(1) == '0'){
+                list.remove(0);
+                while(!list.isEmpty() && list.get(0) == '0'){
+                    list.remove(0);
+                }
+            }
+            //if no observation 1, use observation 2
+            if(size == list.size()){
+                for(int j = 0; j < size; j++){
+                    if((j < size - 1 && list.get(j) > list.get(j+1)) || (j == size - 1)){
+                        list.remove(j);
+                        break;
+                    }  
+                }
+            }
+        }
+        //generate output
+        if(list.size() == 0) return "0";
+        StringBuilder result = new StringBuilder();
+        for(Character c : list){
+            result.append(c);
+        }
+        return result.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution
+var removeKdigits = function(num, k) {
+
+    let i = 0;
+    while (i < num.length - 1 && k > 0) {
+        if (i === 0 && num[i] === '0') {
+            num = num.slice(0, i) + num.slice(i + 1);
+        } else if (num[i] > num[i + 1]) {
+            num = num.slice(0, i) + num.slice(i + 1);
+            i--; k--;
+        } else
+            i++;
+    }
+
+    num = num.replace(/^0+/, '');
+    return num.slice(0, num.length - k) || '0';
+};
+
+
+----------------------------------------------------------------------------------------------------
+Share my concise C++ solution
+    string removeKdigits(string num, int k) {
+        int len = num.size();
+        if( len == k) return string("0");
+        
+        string res;
+        k = len-k;
+        int beg_idx = 0;
+        while(k){
+            int min_idx = beg_idx;
+            for(int i=min_idx; i<=len-k; ++i){
+                if(num[min_idx] > num[i]){
+                    min_idx = i;
+                }
+            }
+            if(!res.empty() || num[min_idx] != '0' || k==1 ){
+                res.push_back(num[min_idx]);    
+            }
+            beg_idx = min_idx + 1;
+            k--;
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Lengthy but easy to understand solution
+public class Solution {
+    public String removeKdigits(String num, int k) {
+        Objects.requireNonNull(num);
+
+        if(k==0)return num;
+        if(num.length()==1 && k==1)return "0";
+        int pre=0,cur=1;
+        StringBuilder sb = new StringBuilder(num);
+        //from left to right, delete character that is bigger than right neighbor
+        while(k>0 && cur<sb.length()){
+            if(sb.charAt(cur)<sb.charAt(pre)){
+                sb.deleteCharAt(pre);
+                if(pre>0){
+                	//we now need to compare the left and right neighbors of the one being removed
+                	pre--;
+                	cur--;
+                }
+
+                k--;
+            }else{
+            	//moving forward if element in cur is greater than element at pre cursor
+	            pre=cur;
+	            cur++;
+            }
+        }
+        //last pass might not remove enough characters
+        int rightPosition = sb.length()-1;
+      //then need to go through it from right to left and remove the right most non-zero one
+        while(k>0 && rightPosition>=0){
+        	if(sb.charAt(rightPosition)!='0'){
+	            sb.deleteCharAt(rightPosition);
+	            k--;
+        	}
+            rightPosition--;
+        }
+        //remove leading 0s
+        while(sb.length()>0 && sb.charAt(0)=='0'){
+        	sb.deleteCharAt(0);
+        }
+        return (sb.length()==0?"0":sb.toString());
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python recursive and iterative solutions
+    def removeKdigits(self, num, k):
+        ret = []
+        for i in num:
+            while k > 0 and ret and ret[-1] > i:
+                ret.pop()
+                k -= 1
+            ret.append(i)
+        if k != 0: ret = ret[:len(ret)-k]
+        ret = ''.join(ret).lstrip('0')
+        return ret if ret else '0'
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java Solution using only StringBuffer.
+    StringBuilder sb = new StringBuilder(num);
+    if(k >= sb.length())
+        return "0";
+        
+    int i = 1;
+    while(k>0 && i<sb.length()){
+        if(i>0){
+            if(sb.charAt(i) >= sb.charAt(i-1)){
+                i++;
+            }
+            else{
+                sb.deleteCharAt(i-1);  
+                i--;
+                k--;
+            }
+        }
+        else
+            i++;
+    }
+    
+    if(k > 0)
+        sb.delete(sb.length()-k, sb.length());
+    return sb.toString().replaceAll("^0+(?!$)", ""); //removing leading zeroes
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Greedy with explanation
+def removeKdigits(self, num, k):
+        #The whole idea is to remove the peak at each iteration
+        while k > 0:
+            for i in xrange(0, len(num)):
+                #if length is one, then return 0
+                if len(num) == 1:
+                    return "0"
+                #if the first number is greater than second then remove the fist
+                elif i == 0 and num[i] > num[i+1]:
+                    num = num[1:]
+                    break
+                #if the last number is greater than the second last, then remove the last number 
+                elif i == len(num) - 1 and num[i] >= num[i-1]:
+                    num = num[:len(num)-1]
+                    break
+                #if the middle number is less or equal to the previous one and greater than the later one, remove mid one
+                elif num[i] >= num[i-1] and num[i] > num[i+1]:
+                    num = num[:i] + num[i+1:]
+                    break
+            k -= 1
+        #remove the leading zeroes
+        while(len(num) > 1 and num[0] == "0"):
+            num = num[1:]
+        return num
+
+----------------------------------------------------------------------------------------------------
+java use stack with chinese comment

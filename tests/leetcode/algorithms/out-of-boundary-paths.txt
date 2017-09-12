@@ -1,0 +1,562 @@
+Neat DFS java solution
+public class Solution {
+    public void dfs(int[][] M, int[] visited, int i) {
+        for (int j = 0; j < M.length; j++) {
+            if (M[i][j] == 1 && visited[j] == 0) {
+                visited[j] = 1;
+                dfs(M, visited, j);
+            }
+        }
+    }
+    public int findCircleNum(int[][] M) {
+        int[] visited = new int[M.length];
+        int count = 0;
+        for (int i = 0; i < M.length; i++) {
+            if (visited[i] == 0) {
+                dfs(M, visited, i);
+                count++;
+            }
+        }
+        return count;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution, Union Find
+public class Solution {
+    class UnionFind {
+        private int count = 0;
+        private int[] parent, rank;
+        
+        public UnionFind(int n) {
+            count = n;
+            parent = new int[n];
+            rank = new int[n];
+            for (int i = 0; i < n; i++) {
+                parent[i] = i;
+            }
+        }
+        
+        public int find(int p) {
+        	while (p != parent[p]) {
+                parent[p] = parent[parent[p]];    // path compression by halving
+                p = parent[p];
+            }
+            return p;
+        }
+        
+        public void union(int p, int q) {
+            int rootP = find(p);
+            int rootQ = find(q);
+            if (rootP == rootQ) return;
+            if (rank[rootQ] > rank[rootP]) {
+                parent[rootP] = rootQ;
+            }
+            else {
+                parent[rootQ] = rootP;
+                if (rank[rootP] == rank[rootQ]) {
+                    rank[rootP]++;
+                }
+            }
+            count--;
+        }
+        
+        public int count() {
+            return count;
+        }
+    }
+    
+    public int findCircleNum(int[][] M) {
+        int n = M.length;
+        UnionFind uf = new UnionFind(n);
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (M[i][j] == 1) uf.union(i, j);
+            }
+        }
+        return uf.count();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Oneliners :-P
+import numpy as np
+
+class Solution(object):
+    def findCircleNum(self, M):
+        return len(set(map(tuple, (np.matrix(M, dtype='bool')**len(M)).A)))
+
+
+----------------------------------------------------------------------------------------------------
+Python, Simple Explanation
+def findCircleNum(self, A):
+    N = len(A)
+    seen = set()
+    def dfs(node):
+        for nei, adj in enumerate(A[node]):
+            if adj and nei not in seen:
+                seen.add(nei)
+                dfs(nei)
+    
+    ans = 0
+    for i in xrange(N):
+        if i not in seen:
+            dfs(i)
+            ans += 1
+    return ans
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - DFS|UnionFind
+class Solution {
+public:
+    int findCircleNum(vector<vector<int>>& M) {
+        if (M.empty()) return 0;
+        int n = M.size();
+
+        vector<int> leads(n, 0);
+        for (int i = 0; i < n; i++) { leads[i] = i; }   // initialize leads for every kid as themselves
+
+        int groups = n;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {   // avoid recalculate M[i][j], M[j][i]
+                if (M[i][j]) {
+                    int lead1 = find(i, leads);
+                    int lead2 = find(j, leads);
+                    if (lead1 != lead2) {       // if 2 group belongs 2 different leads, merge 2 group to 1
+                        leads[lead1] = lead2;
+                        groups--;
+                    }
+                }
+            }
+        }
+        return groups;
+    }
+
+private:
+    int find(int x, vector<int>& parents) {
+        return parents[x] == x ? x : find(parents[x], parents);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS - Equivalent to Finding Connected Components in a Graph
+public int findCircleNum(int[][] M) {
+    int count = 0;
+    for (int i=0; i<M.length; i++)
+        if (M[i][i] == 1) { count++; BFS(i, M); }
+    return count;
+}
+
+public void BFS(int student, int[][] M) {
+    Queue<Integer> queue = new LinkedList<>();
+    queue.add(student);
+    while (queue.size() > 0) {
+        int queueSize = queue.size();
+        for (int i=0;i<queueSize;i++) {
+            int j = queue.poll();
+            M[j][j] = 2; // marks as visited
+            for (int k=0;k<M[0].length;k++) 
+                if (M[j][k] == 1 && M[k][k] == 1) queue.add(k);
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+union find AC solution
+class Solution {
+public:
+    int findParent(unordered_map<int,int> &m, int pt){
+        int parent = pt;
+        while(parent != m[parent])
+            parent = m[parent];
+        int p = pt;
+        while(m[p] != parent)
+        {
+            int tmp = m[p];
+            m[p] = parent;
+            p = tmp;
+        }
+        return parent;
+    }
+    void unite(unordered_map<int,int> &m, int a, int b, int &res){
+        int pa = findParent(m,a);
+        int pb = findParent(m,b);
+        if(pa != pb)
+        {
+            m[pa] = pb;
+            --res;
+        }
+    }
+    int findCircleNum(vector<vector<int>>& M) {
+        int n = M.size();
+        if(!n) return 0;
+        unordered_map<int,int> m;
+        for(int i = 0; i < n; ++i)
+           m[i] = i;
+        int res = n;
+        for(int i = 0; i < n; ++i)
+        for(int j = i+1; j < n; ++j)
+        {
+            if(M[i][j] == 1)
+            {
+                unite(m,i,j,res);
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+python solution using union find
+class Solution(object):
+    def findCircleNum(self, M):
+        """
+        :type M: List[List[int]]
+        :rtype: int
+        """
+        ds = DisjointSet()
+
+        for i in range(len(M)):
+            ds.make_set(i)
+
+        for i in range(len(M)):
+            for j in range(len(M)):
+                if M[i][j] == 1:
+                    ds.union(i, j)
+
+        return ds.num_sets
+
+class Node(object):
+    def __init__(self, data, parent=None, rank=0):
+        self.data = data
+        self.parent = parent
+        self.rank = rank
+
+class DisjointSet(object):
+    def __init__(self):
+        self.map = {}
+        self.num_sets = 0
+
+    def make_set(self, data):
+        node = Node(data)
+        node.parent = node
+        self.map[data] = node
+        self.num_sets += 1
+
+    def union(self, data1, data2):
+        node1 = self.map[data1]
+        node2 = self.map[data2]
+
+        parent1 = self.find_set_util(node1)
+        parent2 = self.find_set_util(node2)
+
+        if parent1.data == parent2.data:
+            return
+
+        if parent1.rank >= parent2.rank:
+            if parent1.rank == parent2.rank:
+                parent1.rank += 1
+            parent2.parent = parent1
+        else:
+            parent1.parent = parent2
+
+        self.num_sets -= 1
+
+
+    def find_set(self, data):
+        return self.find_set_util(self.map[data])
+
+    def find_set_util(self, node):
+        parent = node.parent
+        if parent == node:
+            return parent
+
+        node.parent = self.find_set_util(node.parent) # path compression
+        return node.parent
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java Union Find Solution
+public class Solution {
+    public int findCircleNum(int[][] M) {
+        int count = M.length;
+        int[] root = new int[M.length];
+        for(int i=0;i<M.length;i++){
+            root[i] =i;
+        }
+        for(int i=0;i<M.length;i++){
+            for(int j=0;j<M[0].length;j++){
+                if(M[i][j]==1){
+                    int rooti = findRoot(root,i);
+                    int rootj = findRoot(root,j);
+                    if(rooti!=rootj){
+                        root[rooti] = rootj;
+                        count--;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+    public int findRoot(int[] roots,int id){
+        while(roots[id]!=id){
+            roots[id] = roots[roots[id]];
+            id = roots[id];
+        }
+        return id;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+The problem description is quite confusing isn&#x27;t it?
+<p>The matrix representation is a bit confusing by looking at it. It appears to be asking to number the disjoint sets in the graph. But what it actually asks is who are forming a single disjoint set and how many disjoint sets are there. M&#91;i&#93;&#91;i&#93; can simply be ignored. M&#91;i&#93;&#91;j&#93; means i and j are connected.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Easy understandable BFS use Queue(python)
+from collections import deque
+class Solution(object):
+    def findCircleNum(self, M):
+        """
+        :type M: List[List[int]]
+        :rtype: int
+        """
+        cnt = 0
+
+        Q = deque()
+        N = len(M)
+        for i in range(N):
+            for j in range(N):
+                if M[i][j] == 1:
+                    cnt += 1
+                    M[i][j] = 0
+                    Q.append(j)
+                    while Q:
+                        tmp = Q.popleft()
+                        for t in range(N):
+                            if M[tmp][t] == 1:
+                                Q.append(t)
+                                M[tmp][t] = 0
+        return cnt
+
+
+----------------------------------------------------------------------------------------------------
+python dfs iter version
+class Solution(object):
+    def findCircleNum(self, M):
+        """
+        :type M: List[List[int]]
+        :rtype: int
+        """
+        def dfs(node):
+            visited.add(node)
+            for friend in xrange(len(M)):
+                if M[node][friend] and friend not in visited:
+                    dfs(friend)
+
+        circle = 0
+        visited = set()
+        for node in xrange(len(M)):
+            if node not in visited:
+                dfs(node)
+                circle += 1
+        return circle
+
+
+----------------------------------------------------------------------------------------------------
+Question: must every pair of students in the same group be direct&#x2F;indirect friends?
+{{1,1,0,0},
+ {1,1,1,0},
+ {0,1,1,1},
+ {0,0,1,1}}
+
+
+----------------------------------------------------------------------------------------------------
+Java Graph Theory using DFS (detailed explanation)
+    public int findCircleNum(int[][] M) {
+        List<List<Integer>> people = new ArrayList<>(M.length);
+        for(int i=0;i<M.length;i++) {
+            people.add(new ArrayList<>());
+            for(int j=0;j<M.length;j++) {
+                if(M[i][j]==1) {
+                    people.get(i).add(j);
+                }
+            }
+        }
+        
+        Stack<Integer> stack = new Stack<>();
+        Set<Integer> visited = new HashSet<>();
+        int count=0;
+        for(int i =0;i<people.size();i++) {
+            //new circle if it doesn't exist in the set of visited friends.
+            if(!visited.contains(i)) {
+                count++;
+            }
+            
+            stack.push(i);
+            visited.add(i);
+            while(!stack.isEmpty()) {
+                int val = stack.pop();
+                for(int f : people.get(val)) {
+                    if(!visited.contains(f)) {
+                        stack.push(f);
+                        visited.add(f);
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+wrong test case ?
+<p>&#91;&#91;1,0,0,1&#93;,&#91;0,1,1,0&#93;,&#91;0,1,1,1&#93;,&#91;1,0,1,1&#93;&#93;<br/>
+why does this test case expect 1 as result? Shouldn&#39;t it be 4?</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ DFS 9 lines 24ms using vectors
+void discoverFriends(vector<vector<int>>& m, int row, vector<bool>& circle) {
+    circle[row] = true;
+    for (auto i = 0; i < m.size(); ++i)
+        if (!circle[i] && m[row][i] == 1) discoverFriends(m, i, circle);
+}
+int findCircleNum(vector<vector<int>>& m) {
+    vector<vector<bool>> circles;
+    for (auto i = 0; i < m.size(); ++i) {
+        if (none_of(begin(circles), end(circles), [i](vector<bool>& c){ return c[i];})) {
+            circles.push_back(vector<bool>(m.size()));
+            discoverFriends(m, i, circles.back());
+        }
+    }
+    return circles.size();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Union Find Solution
+    public int findCircleNum(int[][] M) {
+        int n = M.length;
+        if (n == 0)
+            return 0;
+        int i,j;
+        
+        int[] ufset = new int[n];
+        for (i=0;i<n;i++) {
+            ufset[i] = i;
+        }
+        
+        for (i=0;i<n;i++) {
+            for (j=0;j<i;j++) {
+                if (M[i][j] == 1) {
+                    union(ufset, i, j);
+                }
+            }
+        }
+        int result = 0;
+        for (i=0;i<n;i++) {
+            if (ufset[i] == i)
+                result++;
+        }
+        return result;
+    }
+    
+    public int find(int[] ufset, int i) {
+        int root = i;
+        while (ufset[root] != root) {
+            root = ufset[root];
+        }
+        while (i != root) {
+            int temp = ufset[i];
+            ufset[i] = root;
+            i = temp;
+        }
+        return root;
+    }
+    
+    public void union (int[] ufset, int i, int j) {
+        int rootI = find(ufset, i);
+        int rootJ = find(ufset, j);
+        
+        if (rootI != rootJ) {
+            ufset[rootJ] = rootI;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C# Solution
+public int FindCircleNum(int[,] M) {
+        int result = 0;
+        bool[] visited = new bool[M.GetLength(0)];
+        
+        for (int i = 0; i <= M.GetLength(0) - 1; i++)
+            if(!visited[i])
+            {
+                DFS(i, M, visited);
+                result++;
+            }
+            
+        return result;
+    }
+    
+    private void DFS(int startNode, int[,] graph, bool[] visited)
+    {
+        visited[startNode] = true;
+        
+        for (int i = 0; i <= graph.GetLength(1) - 1; i++)
+        {
+            if (startNode == i)
+                continue;
+            
+            if (graph[startNode, i] == 1 && !visited[i])
+                DFS(i, graph, visited);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Non-graph Python solution
+class Solution(object):
+    def findCircleNum(self, M):
+        N = len(M)
+        fc = []
+        dic = {}
+        l = 0
+        for i in xrange(N):
+            dic[i] = -1
+        for i in xrange(N):
+            for j in xrange(i+1, N):
+                if M[i][j]==1:
+                    if (not dic[i]==-1) or (not dic[j]==-1):
+                        if (not dic[j]==-1) and (not dic[i]==-1):
+                            if not dic[i]==dic[j]:
+                                tmp = fc[dic[j]]
+                                fc[dic[j]]=[]
+                                fc[dic[i]] += tmp
+                                for f in tmp:
+                                    dic[f]=dic[i]
+                        else:
+                            if (not dic[i]==-1):
+                                fc[dic[i]].append(j)
+                                dic[j]=dic[i]
+                            else:
+                                fc[dic[j]].append(i)
+                                dic[i]=dic[j]
+                    else:
+                        dic[i]=len(fc)
+                        dic[j]=len(fc)
+                        fc.append([i,j])
+            if dic[i]==-1:
+                l += 1
+        l += len([f for f in fc if len(f)>0])
+        return l
+
+
+----------------------------------------------------------------------------------------------------

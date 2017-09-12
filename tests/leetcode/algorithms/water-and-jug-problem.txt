@@ -1,0 +1,480 @@
+8 lines simple Java
+    public boolean wordPattern(String pattern, String str) {
+        String[] words = str.split(" ");
+        if (words.length != pattern.length())
+            return false;
+        Map index = new HashMap();
+        for (Integer i=0; i<words.length; ++i)
+            if (index.put(pattern.charAt(i), i) != index.put(words[i], i))
+                return false;
+        return true;
+    }
+
+I go through the pattern letters and words in parallel and compare the indexes where they last appeared.
+
+**Edit 1:** Originally I compared the **first** indexes where they appeared, using `putIfAbsent` instead of `put`. That was based on [mathsam's solution](https://leetcode.com/discuss/36438/1-liner-in-python?show=39066#a39066) for the old [Isomorphic Strings](https://leetcode.com/problems/isomorphic-strings/) problem. But then [czonzhu's answer](https://leetcode.com/discuss/62374/9-lines-simple-java?show=62383#a62383) below made me realize that `put` works as well and why.
+
+**Edit 2:** Switched from
+
+        for (int i=0; i<words.length; ++i)
+            if (!Objects.equals(index.put(pattern.charAt(i), i),
+                                index.put(words[i], i)))
+                return false;
+
+to the current version with `i` being an `Integer` object, which allows to compare with just `!=` because there's no autoboxing-same-value-to-different-objects-problem anymore. Thanks to lap_218 for somewhat pointing that out in the comments.
+
+----------------------------------------------------------------------------------------------------
+Short C++, read words on the fly
+I think all previous C++ solutions read all words into a vector at the start. Here I read them on the fly.
+
+    bool wordPattern(string pattern, string str) {
+        map<char, int> p2i;
+        map<string, int> w2i;
+        istringstream in(str);
+        int i = 0, n = pattern.size();
+        for (string word; in >> word; ++i) {
+            if (i == n || p2i[pattern[i]] != w2i[word])
+                return false;
+            p2i[pattern[i]] = w2i[word] = i + 1;
+        }
+        return i == n;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very fast (3ms) Java Solution using HashMap
+    public class Solution {
+        public boolean wordPattern(String pattern, String str) {
+            String[] arr= str.split(" ");
+            HashMap<Character, String> map = new HashMap<Character, String>();
+            if(arr.length!= pattern.length())
+                return false;
+            for(int i=0; i<arr.length; i++){
+                char c = pattern.charAt(i);
+                if(map.containsKey(c)){
+                    if(!map.get(c).equals(arr[i]))
+                        return false;
+                }else{
+                    if(map.containsValue(arr[i]))
+                        return false;
+                    map.put(c, arr[i]);
+                }    
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Short in Python
+This problem is pretty much equivalent to [Isomorphic Strings](https://leetcode.com/problems/isomorphic-strings/). Let me reuse two old solutions.
+
+From [here](https://leetcode.com/discuss/36438/1-liner-in-python?show=39070#c39070):
+
+    def wordPattern(self, pattern, str):
+        s = pattern
+        t = str.split()
+        return map(s.find, s) == map(t.index, t)
+
+Improved version also from there:
+
+    def wordPattern(self, pattern, str):
+        f = lambda s: map({}.setdefault, s, range(len(s)))
+        return f(pattern) == f(str.split())
+
+From [here](https://leetcode.com/discuss/41379/1-line-in-python?show=41382#a41382):
+        
+    def wordPattern(self, pattern, str):
+        s = pattern
+        t = str.split()
+        return len(set(zip(s, t))) == len(set(s)) == len(set(t)) and len(s) == len(t)
+
+Thanks to zhang38 for pointing out the need to check len(s) == len(t) here.
+
+----------------------------------------------------------------------------------------------------
+0ms C++ solution using istringstream and double maps
+        bool wordPattern(string pattern, string str) {
+            istringstream strcin(str);
+            string s;
+            vector<string> vs;
+            while(strcin >> s) vs.push_back(s);
+            if (pattern.size() != vs.size()) return false;
+            map<string, char> s2c;
+            map<char, string> c2s;
+            for (int i = 0; i < vs.size(); ++i) {
+                if (s2c[vs[i]] == 0 && c2s[pattern[i]] == "") { 
+                    s2c[vs[i]] = pattern[i]; 
+                    c2s[pattern[i]] = vs[i]; 
+                    continue; 
+                }
+                if (s2c[vs[i]] != pattern[i]) return false;
+            }
+            return true;
+        }
+
+----------------------------------------------------------------------------------------------------
+Haven&#x27;t seen a C solution, post mine here
+    bool wordPattern(char* pattern, char* str)
+    {
+            int i, j, len = strlen(pattern);
+            int search[len];
+            char *token, *saveptr; char strtmp[strlen(str)];
+            for(i = 0; i < len; i++) search[i] = -1;
+    
+            strcpy(strtmp, str);
+            token = strtok_r(strtmp, " ", &saveptr);
+            for(i = 0; i < len; i++)
+            {
+                    int a = strchr(pattern, pattern[i]) - pattern;
+    
+                    if(token == NULL) break;
+                    int b = strstr(str, token) - str;
+    
+                    for(j = 0; j < a; j++)
+                            if(search[j] == b) return false;
+                    if(search[a] == -1) search[a] = b;
+                    else if(search[a]!= b) return false;
+                    token = strtok_r(NULL, " ", &saveptr);
+            }
+            if((token == NULL) ^ (i== len)) return false;
+            return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution in python
+    class Solution(object):
+        def wordPattern(self, pattern, str):
+            """
+            :type pattern: str
+            :type str: str
+            :rtype: bool
+            """
+            x = str.split(' ')
+            lsp = len(set(pattern))
+            lsx = len(set(x))
+            return len(x)==len(pattern) and lsx==lsp and lsp== len(set(zip(pattern, x)))
+
+please point out if there's anything i should improve
+
+----------------------------------------------------------------------------------------------------
+My 3ms java solution using only one hashmap
+
+    public boolean wordPattern(String pattern, String str) {
+        if (pattern == null || str == null) {
+            return false;
+        }
+        char[] patterns = pattern.toCharArray();
+        String[] strs = str.split(" ");
+        if (patterns.length != strs.length) {
+            return false;
+        }
+        Map<Character, String> map = new HashMap<Character, String>();
+        for (int i=0; i<patterns.length; i++) {
+            if (map.containsKey(patterns[i])) {
+                if (!map.get(patterns[i]).equals(strs[i])) {
+                    return false;
+                }
+            } else if (map.containsValue(strs[i])) {
+                return false;
+            }
+            map.put(patterns[i], strs[i]);
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Java Hashtable Solution
+    import java.util.Hashtable;
+    public class Solution {
+        public boolean wordPattern(String pattern, String str) {
+            String[] arr = str.split(" ");
+            int len = pattern.length();
+            if(arr.length != len){
+                return false;
+            }
+            Hashtable<Character, String> table = new Hashtable<Character, String>();
+            for( int i = 0; i < len; i++){
+                char c = pattern.charAt(i);
+                if( table.containsKey(c) && !table.get(c).equals(arr[i])){
+                    return false;
+                }
+                else if( !table.containsKey(c) && table.contains(arr[i])){
+                    return false;
+                }
+                else{
+                    table.put(c, arr[i]);
+                }
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java Solution with a hashmap and a hashset
+    public class Solution {
+        public boolean wordPattern(String pattern, String str) {
+            String[] words = str.split(" ");
+            if (words.length != pattern.length()) {
+      			return false;
+            }
+            
+            Map<Character, String> dict = new HashMap();
+            Set<String> set = new HashSet();
+            
+            for (int i = 0; i < words.length; ++i) {
+            	char c = pattern.charAt(i);
+            	if (!dict.containsKey(c)) {
+            	    if (!set.add(words[i])) {
+            	        return false;
+            	    }
+            		dict.put(c, words[i]);
+            	} else if (!dict.get(c).equals(words[i])) {
+            		return false;
+            	}
+            }
+            
+            return true;
+        }
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+0 ms C++ solution
+    class Solution {
+    public:
+        bool wordPattern(string pattern, string str) {
+            map<char, string> m;
+            set<string> set_string;
+            istringstream input(str);
+            string s;
+
+            for(int i = 0; i < pattern.size(); i++){
+                if(input>>s){
+                if(m.find(pattern[i]) != m.end()){
+                    if(m[pattern[i]] != s)return false; //pattern already mapped with some other string
+                }
+                else {
+                    if(set_string.count(s)){
+                        return false;//string already exist for some pattern char 
+                    }
+                    else{
+                        m[pattern[i]] = s;
+                        set_string.insert(s);
+                    }
+                }
+                }
+                else return false ;
+            }
+            if(input>>s)return false ;//more string compared to pattern
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ 0 ms very clean and easy to read
+    bool wordPattern(string pattern, string str) 
+    {
+        istringstream ss(str);
+        string word;
+        unordered_map<char, string> bmap;
+        unordered_map<string, char>rbmap;
+        
+        for (char c : pattern)
+        {
+            if (! (getline(ss, word, ' ')))
+                return false;
+            if ( bmap.emplace(c,word).first->second != word)
+                return false;
+            if (rbmap.emplace(word,c).first->second != c)
+                return false;
+        }
+        return ! getline(ss, word, ' ');   
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand JAVA solution with explanation
+    public class Solution {
+    public boolean wordPattern(String pattern, String str) {
+        String[] words =str.split(" ");
+        if(words.length!=pattern.length()) return false;
+        Map<Character,String> map =new HashMap();
+        Set<String> set =new HashSet();
+        int index=0;
+        for(String word: words){
+            String pre = map.put(pattern.charAt(index++),word); // previous word related to the key
+            if((pre!=null && !pre.equals(word)) || (pre==null && set.contains(word))) return false; 
+            set.add(word);
+        }
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Share my python solution with two dictionaries
+Use two dictionaries with index as values
+
+    class Solution(object):
+        def wordPattern(self, pattern, word_str):
+            """
+            :type pattern: str
+            :type str: str
+            :rtype: bool
+            """
+            words = word_str.split(" ")
+            if len(pattern) != len(words):
+                return False
+    
+    		# use two dictionaries, mapping character / string with index
+            pattern_map, word_map = {}, {}
+            for i in xrange(len(pattern)):
+                if pattern_map.get(pattern[i], -1) != word_map.get(words[i], -1):
+                    return False
+                pattern_map[pattern[i]] = word_map[words[i]] = i
+    
+            return True
+
+
+
+----------------------------------------------------------------------------------------------------
+A Simple Python Solution Using BIF zip(), 36ms
+    class Solution(object):
+        def wordPattern(self, pattern, str):
+            """
+            :type pattern: str
+            :type str: str
+            :rtype: bool
+            """            
+            # split str into single words.
+            slist = str.split()
+            
+           
+            # here we need to consider the len difference
+            # eg: pattern:"aaa" str:"aa aa aa aa"
+            if len(pattern) != len(slist):
+                return False
+            
+            # just like we do in isomorphic problem.
+            return (len(set(pattern)) == len(set(slist)) == len(set(zip(pattern, slist))))
+
+----------------------------------------------------------------------------------------------------
+Python solution using 1 dictionary
+        wordList = str.split()
+        n1 = len(pattern)
+        n2 = len(wordList)
+        if (n1 != n2):
+            return False
+        else:
+            wordList = str.split()
+            # wordList = [s.encode('ascii') for s in wordList]
+            # pattern = [s.encode('ascii') for s in pattern]
+            mydict = {}
+            result = True
+            for i in range(len(pattern)):
+                if (pattern[i] not in mydict):
+                    if wordList[i] not in mydict.values():
+                        mydict[pattern[i]] = wordList[i]
+                    else:
+                        result = False
+                        break
+                else:
+                    if (mydict[pattern[i]] != wordList[i]):
+                        result = False
+                        break
+            return result
+
+----------------------------------------------------------------------------------------------------
+JAVA easy to understand solution
+public class Solution {
+    
+    public boolean wordPattern(String pattern, String str) {
+        Map<Character, String> map = new HashMap<Character, String>();
+        
+        String[] words = str.split(" ");
+        
+        if(pattern.length() != words.length) {
+            return false;
+        }
+        
+        else {
+            for(int i = 0; i < pattern.length(); i++) {
+                if(map.containsKey(pattern.charAt(i))) {
+                    if(!map.get(pattern.charAt(i)).equals(words[i])) {
+                        return false;
+                    }
+                }
+                else {
+                    if(map.containsValue(words[i])) {
+                        return false;
+                    }
+                    map.put(pattern.charAt(i), words[i]);
+                }
+            }
+        }
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Test case return incorrect result
+when input
+ 'aaa'
+'aa aa aa aa'
+
+leetcode give true and it should be false I think
+
+----------------------------------------------------------------------------------------------------
+JAVA 2MS solution hasmap
+    public boolean wordPattern(String pattern, String str) {
+        String[] strs = str.split(" ");
+        int length = pattern.length();
+        if(strs.length!=length)return false;
+        Map<String,Integer> map = new HashMap<String,Integer>();
+        for(Integer i = 0;i<length;i++){
+            if(map.put(pattern.charAt(i)+"*",i)!=map.put(strs[i],i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+My c++ solution with two unordered_map and istringstream
+    bool wordPattern(string pattern, string str) {
+        string tmp;
+        vector<string> strvec;
+        istringstream isstream(str);
+        unordered_map<char, string> m1;
+        unordered_map<string, char> m2;
+        
+        while(isstream >> tmp){
+            strvec.push_back(tmp);
+        }
+        
+        if(pattern.size() != strvec.size()){
+            return false;
+        }
+        
+        for(int i =0; i < pattern.size(); ++i){
+            if(m1.find(pattern[i]) != m1.end()){
+                if(m1[pattern[i]] != strvec[i]){
+                    return false;
+                }
+            }
+            else{
+                m1[pattern[i]] = strvec[i];
+            }
+            
+            if(m2.find(strvec[i]) != m2.end()){
+                if(m2[strvec[i]] != pattern[i]){
+                    return false;
+                }
+            }
+            else{
+                m2[strvec[i]] = pattern[i];
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------

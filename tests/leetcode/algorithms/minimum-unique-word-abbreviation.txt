@@ -1,0 +1,753 @@
+Accepted C++ codes with explanation and references
+The naive solution is brute-force, which is O((mn)^2). In order to be more efficient, I tried something similar to Kadane's algorithm. The only difference is that here we have upper bound restriction K. Here's the easily understanding video link for the problem "find the max sum rectangle in 2D array": [Maximum Sum Rectangular Submatrix in Matrix dynamic programming/2D kadane][1] (Trust me, it's really easy and straightforward). 
+
+Once you are clear how to solve the above problem, the next step is to find the max sum no more than K in an array. This can be done within O(nlogn), and you can refer to this article: [max subarray sum no more than k][2].
+
+For the solution below, I assume that the number of rows is larger than the number of columns. Thus in general time complexity is O[min(m,n)^2 * max(m,n) * log(max(m,n))], space O(max(m, n)).
+
+    int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+        if (matrix.empty()) return 0;
+        int row = matrix.size(), col = matrix[0].size(), res = INT_MIN;
+        for (int l = 0; l < col; ++l) {
+            vector<int> sums(row, 0);
+            for (int r = l; r < col; ++r) {
+                for (int i = 0; i < row; ++i) {
+                    sums[i] += matrix[i][r];
+                }
+                
+                // Find the max subarray no more than K 
+                set<int> accuSet;
+                accuSet.insert(0);
+                int curSum = 0, curMax = INT_MIN;
+                for (int sum : sums) {
+                    curSum += sum;
+                    set<int>::iterator it = accuSet.lower_bound(curSum - k);
+                    if (it != accuSet.end()) curMax = std::max(curMax, curSum - *it);
+                    accuSet.insert(curSum);
+                }
+                res = std::max(res, curMax);
+            }
+        }
+        return res;
+    }
+
+  [1]: https://www.youtube.com/watch?v=yCQN096CwWM
+  [2]: https://www.quora.com/Given-an-array-of-integers-A-and-an-integer-k-find-a-subarray-that-contains-the-largest-sum-subject-to-a-constraint-that-the-sum-is-less-than-k
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Binary Search solution time complexity min(m,n)^2*max(m,n)*log(max(m,n))
+
+    /* first  consider the situation matrix is 1D
+        we can save every sum of 0~i(0<=i<len) and binary search previous sum to find 
+        possible result for every index, time complexity is O(NlogN).
+        so in 2D matrix, we can sum up all values from row i to row j and create a 1D array 
+        to use 1D array solution.
+        If col number is less than row number, we can sum up all values from col i to col j 
+        then use 1D array solution.
+    */
+    public int maxSumSubmatrix(int[][] matrix, int target) {
+        int row = matrix.length;
+        if(row==0)return 0;
+        int col = matrix[0].length;
+        int m = Math.min(row,col);
+        int n = Math.max(row,col);
+        //indicating sum up in every row or every column
+        boolean colIsBig = col>row;
+        int res = Integer.MIN_VALUE;
+        for(int i = 0;i<m;i++){
+            int[] array = new int[n];
+            // sum from row j to row i
+            for(int j = i;j>=0;j--){
+                int val = 0;
+                TreeSet<Integer> set = new TreeSet<Integer>();
+                set.add(0);
+                //traverse every column/row and sum up
+                for(int k = 0;k<n;k++){
+                    array[k]=array[k]+(colIsBig?matrix[j][k]:matrix[k][j]);
+                    val = val + array[k];
+                    //use  TreeMap to binary search previous sum to get possible result 
+                    Integer subres = set.ceiling(val-target);
+                    if(null!=subres){
+                        res=Math.max(res,val-subres);
+                    }
+                    set.add(val);
+                }
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+2 Accepted Java Solution
+Decide to post because I was actually asked this question during my interview!
+There is a simple version of O(n^4).
+The idea is to calculate every rectangle [[r1,c1], [r2,c2]], and simply pick the max area <= k.
+An improved version takes O(n^3logn). It borrows the idea to find max subarray with sum <= k in 1D array, and apply here: we find all rectangles bounded between r1 & r2, with columns from 0 to end. Pick a pair from tree.
+I remember the interviewer said there could be an even better solution, but I haven't figured that out...
+
+Solution I, O(n^4):
+
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0)
+            return 0;
+        int rows = matrix.length, cols = matrix[0].length;
+        int[][] areas = new int[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                int area = matrix[r][c];
+                if (r-1 >= 0)
+                    area += areas[r-1][c];
+                if (c-1 >= 0)
+                    area += areas[r][c-1];
+                if (r-1 >= 0 && c-1 >= 0)
+                    area -= areas[r-1][c-1];
+                areas[r][c] = area;
+            }
+        }
+        int max = Integer.MIN_VALUE;
+        for (int r1 = 0; r1 < rows; r1++) {
+            for (int c1 = 0; c1 < cols; c1++) {
+                for (int r2 = r1; r2 < rows; r2++) {
+                    for (int c2 = c1; c2 < cols; c2++) {
+                        int area = areas[r2][c2];
+                        if (r1-1 >= 0)
+                            area -= areas[r1-1][c2];
+                        if (c1-1 >= 0)
+                            area -= areas[r2][c1-1];
+                        if (r1-1 >= 0 && c1 -1 >= 0)
+                            area += areas[r1-1][c1-1];
+                        if (area <= k)
+                            max = Math.max(max, area);
+                    }
+                }
+            }
+        }
+        return max;
+    }
+
+Solution II (O(n^3logn)
+
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0)
+            return 0;
+        int rows = matrix.length, cols = matrix[0].length;
+        int[][] areas = new int[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                int area = matrix[r][c];
+                if (r-1 >= 0)
+                    area += areas[r-1][c];
+                if (c-1 >= 0)
+                    area += areas[r][c-1];
+                if (r-1 >= 0 && c-1 >= 0)
+                    area -= areas[r-1][c-1];
+                areas[r][c] = area;
+            }
+        }
+        int max = Integer.MIN_VALUE;
+        for (int r1 = 0; r1 < rows; r1++) {
+            for (int r2 = r1; r2 < rows; r2++) {
+                TreeSet<Integer> tree = new TreeSet<>();
+                tree.add(0);    // padding
+                for (int c = 0; c < cols; c++) {
+                    int area = areas[r2][c];
+                    if (r1-1 >= 0)
+                        area -= areas[r1-1][c];
+                    Integer ceiling = tree.ceiling(area - k);
+                    if (ceiling != null)
+                        max = Math.max(max, area - ceiling);
+                    tree.add(area);
+                }
+            }
+        }
+        return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA 117ms, beat 99.81%, merge sort
+/*
+ * If # of columns is smaller, process one set of columns [i..j) at a time, for each different i<j.
+ * For one set of colums [i..j), do it like "Count of Range Sum".
+ * O(n) = n^2 * mlogm.
+ * Assume we have such result.
+ */
+public class Solution {
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        int m = matrix.length, n = matrix[0].length, ans = Integer.MIN_VALUE;
+        long[] sum = new long[m+1]; // stores sum of rect[0..p][i..j]
+        for (int i = 0; i < n; ++i) {
+            long[] sumInRow = new long[m];
+            for (int j = i; j < n; ++j) { // for each rect[*][i..j]
+                for (int p = 0; p < m; ++p) {
+                    sumInRow[p] += matrix[p][j];
+                    sum[p+1] = sum[p] + sumInRow[p];
+                }
+                ans = Math.max(ans, mergeSort(sum, 0, m+1, k));
+                if (ans == k) return k;
+            }
+        }
+        return ans;
+    }
+    int mergeSort(long[] sum, int start, int end, int k) {
+        if (end == start+1) return Integer.MIN_VALUE; // need at least 2 to proceed
+        int mid = start + (end - start)/2, cnt = 0;
+        int ans = mergeSort(sum, start, mid, k);
+        if (ans == k) return k;
+        ans = Math.max(ans, mergeSort(sum, mid, end, k));
+        if (ans == k) return k;
+        long[] cache = new long[end-start];
+        for (int i = start, j = mid, p = mid; i < mid; ++i) {
+            while (j < end && sum[j] - sum[i] <= k) ++j;
+            if (j-1 >= mid) {
+                ans = Math.max(ans, (int)(sum[j-1] - sum[i]));
+                if (ans == k) return k;
+            }
+            while (p < end && sum[p] < sum[i]) cache[cnt++] = sum[p++];
+            cache[cnt++] = sum[i];
+        }
+        System.arraycopy(cache, 0, sum, start, cnt);
+        return ans;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Any Accepted Python Solution?
+I got a TLE for the Python code below, because the time cost of bisect.insort is O(n) for a built-in list.
+
+The code was rejudged as accepted just now, but very slow... 1800ms+
+
+    class Solution(object):
+        def maxSumSubmatrix(self, matrix, k):
+            """
+            :type matrix: List[List[int]]
+            :type k: int
+            :rtype: int
+            """
+            m = len(matrix)
+            n = len(matrix[0]) if m else 0
+            
+            M = max(m, n)
+            N = min(m, n)
+            ans = None
+            for x in range(N):
+                sums = [0] * M
+                for y in range(x, N):
+                    slist, num = [], 0
+                    for z in range(M):
+                        sums[z] += matrix[z][y] if m > n else matrix[y][z]
+                        num += sums[z]
+                        if num <= k: ans = max(ans, num)
+                        i = bisect.bisect_left(slist, num - k)
+                        if i != len(slist): ans = max(ans, num - slist[i])
+                        bisect.insort(slist, num)
+            return ans or 0
+
+Could anybody share a more efficient Python solution? Thank you :D
+
+----------------------------------------------------------------------------------------------------
+No real DP technique actually used C++, critically commented
+The last section of the solution can be tricky, but read it carefully and I believe you can get it done! 
+
+**Good luck!**
+
+    class Solution {
+    public:
+        int maxSumSubmatrix(vector<vector<int>>& matrix, int k) 
+        {
+            if(matrix.empty()) return 0;
+            int rowSize = matrix.size(), colSize = matrix[0].size();
+            int ret = INT_MIN;
+            for(int l = 0; l < colSize; ++l) //starting leftmost column;
+            {
+                vector sums = vector<int>(rowSize, 0); //store the row pre-sums;
+                for(int c = l; c < colSize; ++c) //try different ending columns;
+                {
+                    for(int r = 0; r < rowSize; ++r) //sum them up in rows;
+                        sums[r] += matrix[r][c];
+                    set<int> sums_set; //store the sums from the starting top-left;
+                    sums_set.insert(0); //as a sentinel;
+                    int maxSum = INT_MIN, sum = 0;
+                    for(int i = 0; i < rowSize; ++i)
+                    {
+                        sum += sums[i]; //the sum from the starting top-left to current position;
+                        auto iter = sums_set.lower_bound(sum-k); //check the possible sum candidates;
+                        if(iter != sums_set.end()) maxSum = max(maxSum, sum-*iter); //found one, check it;
+                        sums_set.insert(sum);
+                    }
+                    ret = max(ret, maxSum);
+                }
+            }
+            return ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ 46ms solution,beats 99.78%
+int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+    int m=matrix.size();
+    if(m==0) return 0;
+    int n=matrix[0].size();
+    int res=INT_MIN;
+    for(int i=0;i<n;i++) {  // the number of columns is smaller
+        vector<int> sums(m,0);
+        for(int j=i;j<n;j++) {
+            for(int row=0;row<m;row++) {
+                sums[row]+=matrix[row][j];
+            }
+            int ms = maxSumArray(sums, k);
+            if (ms == k) return ms;
+            if (ms < k && ms > res) res = ms;
+      
+        }
+    }
+    return res;
+}
+ 
+int maxSumArray(vector<int> & arr, int k) {
+    int sum = 0, maxS = INT_MIN;
+    for (int i = 0; i < arr.size(); i++) {  //it's a trick. Maybe O(n) to solve this problem
+        sum += arr[i];
+        maxS = max(sum, maxS);
+        if (sum == k ) return sum;
+        if (sum < 0) sum = 0;
+    }
+    if (maxS <= k) return maxS;
+    maxS= INT_MIN;
+    set<int>sums;
+    sum = 0;
+    sums.insert(0);
+    for (int i = 0; i < arr.size(); i++) {
+        sum += arr[i];
+        auto it = sums.lower_bound(sum - k);
+        if (it != sums.end()) maxS = max(sum - *it, maxS);
+        sums.insert(sum);
+    }
+    return maxS;
+}  
+
+
+----------------------------------------------------------------------------------------------------
+Naive but accepted java solution.
+Well, I think that this is the most direct solution for this problem. We just add the numbers in every rectangle and find the sum closest but not larger than k. Since the array is 2-d, we have 4 points to decide the rectangle, the algorithm will be O(n^2).
+
+    public class Solution {
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        
+        if (matrix == null || matrix.length == 0 || matrix[0].length == 0) {
+            return 0;
+        }
+        
+        int[][] sums = new int[matrix.length][matrix[0].length];
+        
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (j == 0) {
+                    sums[i][j] = matrix[i][j];
+                } else {
+                    sums[i][j] = sums[i][j - 1] + matrix[i][j];
+                }
+            }
+        }
+        
+        /* O(n^4) loop */
+        int max = 0;
+        boolean firstMax = false;
+        int tmpSum = 0;
+        for (int i = 0; i < matrix[0].length; i++) {
+            for (int j = i; j < matrix[0].length; j++) {
+                for (int m = 0; m < matrix.length; m++) {
+                    tmpSum = 0;
+                    for (int n = m; n < matrix.length; n++) {
+                        if (i == 0) {
+                            tmpSum += sums[n][j];
+                        } else {
+                            tmpSum += sums[n][j] - sums[n][i - 1];
+                        }
+                        if (tmpSum > k) {
+                            continue;
+                        } else {
+                            if (firstMax == false) {
+                                max = tmpSum;
+                                firstMax = true;
+                            } else if ((k - tmpSum) < (k - max)) {
+                                max = tmpSum;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return max;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+using cumulative sum and TreeSet
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        int result = Integer.MIN_VALUE;
+        for (int begin = 0; begin < n; begin++) {
+            for (int end = begin + 1; end <= n; end++) {
+                int[] arr = new int[m];
+                for (int i = 0; i < m; i++) {
+                    for (int j = begin; j < end; j++) {
+                        arr[i] += matrix[i][j];
+                    }
+                }
+                TreeSet<Integer> treeSet = new TreeSet<>();
+                treeSet.add(0);
+                int cumulative = 0;
+                for (int i : arr) {
+                    cumulative += i;
+                    Integer ceiling = treeSet.ceiling(cumulative - k);
+                    if (ceiling != null) {
+                        result = Math.max(result, cumulative - ceiling);
+                    }
+                    treeSet.add(cumulative);
+                }
+            }
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted Java Solution
+
+public class Solution {
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        int row = matrix.length;
+        int col = matrix[0].length;
+        int max = Integer.MIN_VALUE;
+        for (int i = 0; i < row; i ++) {
+            int[] colSum = new int[col];
+            for (int j = i; j < row; j ++) {
+                for (int c = 0; c < col; c ++) {
+                    colSum[c] += matrix[j][c];
+                }
+                max = Math.max(max, findMax(colSum, k));
+            }
+        }
+        return max;
+    }
+    
+    private int findMax(int[] nums, int k) {
+        int max = Integer.MIN_VALUE;
+        int sum = 0;
+        TreeSet<Integer> s = new TreeSet();
+        s.add(0);
+    
+        for(int i = 0;i < nums.length; i ++){
+            int t = sum + nums[i];
+            sum = t;
+            Integer gap = s.ceiling(sum - k);
+            if(gap != null) max = Math.max(max, sum - gap);
+            s.add(t);
+        }
+    
+        return max;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+C++, 1024ms solution.
+First, calculate matrix sums, where sums[i][j] is the area of the square begin from (0,0) to (i,j).
+
+Then, in each loop iteration, consider all the squares with column boundary cl and cr. (If the column size is greater, we will consider all the square with the same row boundaries)
+
+
+    int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+        if (matrix.empty()||matrix[0].empty()) return 0;
+        int rsz=matrix.size(),csz=matrix[0].size();
+        if (matrix[0][0]==k) return k;
+        vector<vector<int>> sums=matrix;
+        int maxSum=INT_MIN;
+        int temp;
+        for (int i=1;i<rsz;i++){
+            sums[i][0]+=sums[i-1][0];
+        }
+        for (int j=1;j<csz;j++){
+            sums[0][j]+=sums[0][j-1];
+        }
+        for (int i=1;i<rsz;i++)
+        for (int j=1;j<csz;j++){
+            sums[i][j]+=sums[i-1][j]+sums[i][j-1]-sums[i-1][j-1];
+        }
+        
+        for (int cl=0;cl<csz;cl++){
+            for (int cr=cl;cr<csz;cr++){
+                set<int> area;
+                set<int>::iterator iter;
+                int curArea;
+                area.insert(0);
+                for (int rd=0;rd<rsz;rd++){
+                    curArea=sums[rd][cr]-(cl==0?0:sums[rd][cl-1]);
+                    iter=area.lower_bound(curArea-k);
+                    if (iter!=area.end()){
+                        maxSum = max(maxSum,curArea-(*iter));
+                        if (maxSum==k) return k;
+                    }
+                    area.insert(curArea);
+                }
+            }
+        }
+        return maxSum;  
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; 244ms Applying
+Refer to [This solution][1]
+
+
+    public class Solution {
+    public int maxSumSubmatrix(int[][] matrix, int k) {
+        //Assuming that rows is larger than the number of cols
+
+        int row=matrix.length, col=matrix[0].length;
+        int minDf=Integer.MAX_VALUE;
+        for(int left=0;left<col;left++){
+            int[] tmp=new int[row];
+            for(int right=left;right<col;right++){
+                TreeSet<Integer> set=new TreeSet<>();
+                int cursum=0;
+                for(int i=0;i<row;i++){
+                    tmp[i]+=matrix[i][right];
+                    cursum+=tmp[i];
+                    if(cursum==k) return k;
+                    if(cursum<k) minDf=Math.min(minDf,k-cursum);
+                    Integer x=set.ceiling(cursum-k);
+                    if(x!=null && cursum-x<=k) minDf=Math.min(minDf,k-cursum+x);
+                    if(minDf==0) return k;
+                    set.add(cursum);
+                }
+            }
+        }
+        return k-minDf;
+    }
+}
+
+
+  [1]: https://leetcode.com/discuss/109749/accepted-c-codes-with-explanation-and-references
+
+----------------------------------------------------------------------------------------------------
+Python O(n^4) solution
+Convert the problem to 1-D and them find max subarray no larger than K.
+
+    class Solution(object):
+        def maxSumSubmatrix(self, matrix, k):
+            maxSum = -9999999
+            horizontalSum = [[0 for j in xrange(0, len(matrix[0]) + 1)] for i in xrange(0, len(matrix))]
+            for i in xrange(0, len(matrix)):
+                for j in xrange(0, len(matrix[0])):
+                    horizontalSum[i][j] = horizontalSum[i][j - 1] + matrix[i][j]
+            for cola in xrange(0, len(matrix[0])):
+                for colb in xrange(cola, len(matrix[0])):
+                    bilist, vsum = [0], 0
+                    for i in xrange(0, len(matrix)):
+                        vsumj = horizontalSum[i][colb] - horizontalSum[i][cola - 1]
+                        vsum += vsumj
+                        i = bisect.bisect_left(bilist, vsum - k)
+                        if i < len(bilist):
+                            maxSum = max(maxSum, vsum - bilist[i])
+                        bisect.insort(bilist, vsum)
+            return maxSum
+
+----------------------------------------------------------------------------------------------------
+Accepted Python solution with best timing (1232ms) up to 7&#x2F;17&#x2F;2016, using bisect.
+def maxSumSubmatrix(self, matrix, k):
+
+    import bisect
+
+    h = len(matrix)
+    w = len(matrix[0])
+
+    A = [[0] * w for _ in range(h)]
+
+    rst = float('-inf')
+
+    for i in range(h):
+        A[i][0] = matrix[i][0]
+        for j in range(1, w):
+            A[i][j] = A[i][j - 1] + matrix[i][j]
+
+    for j in range(w):
+        for s in range(j, w):
+
+            x = [0]
+            t = 0
+
+            for r in range(h):
+                if j == 0:
+                    t += A[r][s]
+                else:
+                    t += A[r][s] - A[r][j - 1]
+
+                # using sorted fact.
+                u = bisect.bisect_left(x, t - k)
+                if u <= r:
+                    if rst < t - x[u]:
+                        rst = t - x[u]
+                        if rst == k:
+                            return k
+
+                bisect.insort(x, t)
+    return rst
+
+----------------------------------------------------------------------------------------------------
+Beats 99% CPP soultion with explanation
+class Solution {
+    int maxSumArray(vector<int> & arr, int k) {
+        int sum = 0, maxS = INT_MIN;
+        for (int i = 0; i < arr.size(); i++) {
+            sum += arr[i];
+            maxS = max(sum, maxS);
+            if (maxS == k ) return maxS;
+            if (sum < 0) sum = 0;
+        }
+        if (maxS <= k) return maxS;
+        maxS = INT_MIN;
+        for (int i = 0; i < arr.size(); i++) {
+            sum = 0;
+            for (int j = i; j < arr.size(); j++) {
+                sum += arr[j];
+                if (sum == k) return sum;
+                if (sum < k && sum > maxS) maxS = sum;
+            }
+        }
+        return maxS;
+    }
+public:
+    int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+        if (matrix.empty()) return 0;
+        int maxS = INT_MIN;
+        for (int r1 = 0; r1 < matrix.size(); r1 ++) {
+            vector<int> arr(matrix[r1].size(), 0);
+            for (int r2 = r1; r2 < matrix.size(); r2 ++) {
+                for (int c = 0; c < matrix[r1].size(); c++) {
+                    arr[c] += matrix[r2][c];
+                }
+                int ms = maxSumArray(arr, k);
+                if (ms == k) return ms;
+                if (ms < k && ms > maxS) maxS = ms;
+        }
+        }
+        return maxS;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Native C++ solution, accepted!
+code 3:
+
+for (register int jj = ii - 1; jj > 0; jj--){
+    	sum += col_sums[jj]; 
+    	if (sum == k){
+    		return k;
+    	}
+    	else if (sum < k && ret < sum){
+    		ret = sum;
+    	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+Shed some light on this typical solution in C++
+practical
+
+----------------------------------------------------------------------------------------------------
+Java Solution Easy Understand
+public int maxSumSubmatrix(int[][] matrix, int k) {
+
+    int m = matrix.length;
+    int n = matrix[0].length;
+
+    int[] a = new int[n];
+    int max = Integer.MIN_VALUE;
+
+    for(int l=0;l<m;l++){
+        for(int i=0;i<n;i++) a[i] = 0;
+
+        for(int r=l;r<m;r++){
+            for(int i=0;i<n;i++) a[i] += matrix[r][i];
+            int t = maxSumSubArray(a, k);
+            max = Math.max(t, max);
+        }
+    }
+
+    return max;
+}
+
+private int maxSumSubArray(int[] a , int k){
+
+    int max = Integer.MIN_VALUE;
+    int sumj = 0;
+    TreeSet<Integer> s = new TreeSet();
+    s.add(0);
+
+    for(int i=0;i<a.length;i++){
+        int t = sumj + a[i];
+        sumj = t;
+        Integer gap = s.ceiling(sumj - k);
+        if(gap != null) max = Math.max(max, sumj - gap);
+        s.add(t);
+    }
+
+    return max;
+}
+
+----------------------------------------------------------------------------------------------------
+The judge of this problem is very bad !!
+<p>I solved this problem  in C++ just like most other people solved it here, except I started iterating over the rows and performing a one-dimensional binary search on sum of columns. I got a TLE. When I switched between the rows and columns the solution was accepted. This should not be the case. Either the algorithm enforces this on both the rows and columns or it doesnt enforce it at all.</p>
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution with prefix-sum n&#x27; binary-search, 373ms
+class Solution {
+public:
+    int lowerbound(vector<int>&vec, int val) {
+        int l = 0, r = (int)vec.size();
+        while (l < r) {
+            int m = l + (r-l)/2;
+            if (vec[m] < val) l = m+1;
+            else r = m;
+        }
+        return l;
+    }
+    int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+        int h = matrix.size(), w = h ? matrix[0].size():0;
+        if (!w) return 0;
+        
+        vector<vector<int>> csum(h+1, vector<int>(w+1,0));
+        for (int i = 1; i <= h; ++i) {
+            for (int j = 1; j <= w; ++j) {
+                csum[i][j] = csum[i][j-1]+csum[i-1][j]+matrix[i-1][j-1]-csum[i-1][j-1];
+            }
+        }
+        int rst = INT_MIN;
+        for (int i = 0; i < w; ++i) {
+            for (int j = i; j < w; ++j) {
+                vector<int> rsum{0};
+                for (int l = 1; l <= h; ++l) {
+                    int cur = csum[l][j+1]-csum[l][i]; // rect(0,i,l-1,j)
+                    // find max(sum[m]-sum[n] <= k); i.e., find n s.t. sum[m]-k<=sum[n]
+                    int indx = lowerbound(rsum, cur-k); // if n exist
+                    if (indx < rsum.size()) rst = max(rst, cur-rsum[indx]); // get max sum[m]-sum[n]
+                    indx = lowerbound(rsum, cur); // push sum[m]
+                    rsum.insert(rsum.begin()+indx, cur);
+                }
+            }
+        }
+        return rst;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

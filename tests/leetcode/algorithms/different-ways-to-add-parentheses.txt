@@ -1,0 +1,394 @@
+&#91;Accepted&#93;My recursive solution in Java
+The basic idea is to subtract the value of current node from sum until it reaches a leaf node and the subtraction equals 0, then we know that we got a hit. Otherwise the subtraction at the end could not be 0.
+
+    public class Solution {
+        public boolean hasPathSum(TreeNode root, int sum) {
+            if(root == null) return false;
+        
+            if(root.left == null && root.right == null && sum - root.val == 0) return true;
+        
+            return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+3 lines of  c++ solution
+    bool hasPathSum(TreeNode *root, int sum) {
+            if (root == NULL) return false;
+            if (root->val == sum && root->left ==  NULL && root->right == NULL) return true;
+            return hasPathSum(root->left, sum-root->val) || hasPathSum(root->right, sum-root->val);
+        }
+
+----------------------------------------------------------------------------------------------------
+&#91;Accepted&#93; By using postorder traversal
+In the postorder traversal, the node will be removed from the stack only when the right sub-tree has been visited.so the path will be stored in the stack. we can keep check the SUM, the length from root to leaf node.
+at leaf node, if SUM == sum, OK, return true. After postorder traversal, return false.
+
+I have compared this solution with recursion solutions. In the leetcode OJ, the run time of two solutions is very near.
+
+below is my iterator code.
+
+
+    class Solution {
+    public:
+        bool hasPathSum(TreeNode *root, int sum) {
+            stack<TreeNode *> s;
+            TreeNode *pre = NULL, *cur = root;
+            int SUM = 0;
+            while (cur || !s.empty()) {
+                while (cur) {
+                    s.push(cur);
+                    SUM += cur->val;
+                    cur = cur->left;
+                }
+                cur = s.top();
+                if (cur->left == NULL && cur->right == NULL && SUM == sum) {
+                    return true;
+                }
+                if (cur->right && pre != cur->right) {
+                    cur = cur->right;
+                } else {
+                    pre = cur;
+                    s.pop();
+                    SUM -= cur->val;
+                    cur = NULL;
+                }
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short Python recursive solution - O(n)
+    # Definition for a  binary tree node
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+    
+    class Solution:
+        # @param root, a tree node
+        # @param sum, an integer
+        # @return a boolean
+        # 1:27
+        def hasPathSum(self, root, sum):
+            if not root:
+                return False
+    
+            if not root.left and not root.right and root.val == sum:
+                return True
+            
+            sum -= root.val
+    
+            return self.hasPathSum(root.left, sum) or self.hasPathSum(root.right, sum)
+
+----------------------------------------------------------------------------------------------------
+A Java Concise solution
+    public boolean hasPathSum(TreeNode root, int sum) {
+       if(root == null){
+	     return false;
+	   }
+       if(root.left == null && root.right == null){
+	      return (root.val == sum);
+	   }
+	   return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+       	   
+    }
+
+----------------------------------------------------------------------------------------------------
+My java no-recursive method
+the idea is preorder traverse , instead of using recursive call, I am using a stack.
+the only problem is that I changed TreeNode value
+
+    public boolean hasPathSum(TreeNode root, int sum) {
+    	    Stack <TreeNode> stack = new Stack<> ();	    
+    	    stack.push(root) ;	    
+    	    while (!stack.isEmpty() && root != null){
+    	    	TreeNode cur = stack.pop() ;	
+    	    	if (cur.left == null && cur.right == null){	    		
+    	    		if (cur.val == sum ) return true ;
+    	    	}
+    	    	if (cur.right != null) {
+    	    		cur.right.val = cur.val + cur.right.val ;
+    	    		stack.push(cur.right) ;
+    	    	}
+    	    	if (cur.left != null) {
+    	    		cur.left.val = cur.val + cur.left.val;
+    	    		stack.push(cur.left);
+    	    	}
+    	    }	    
+    	    return false ;
+    	 }
+
+
+
+----------------------------------------------------------------------------------------------------
+Easy, 5 Lines and Clean Java Solution
+   You simply check if current node (starting with root) is a leaf node and sum is equal its value. If not, you just check left or right with the decremented sum. If one of them returns true, it has a path.
+
+    public boolean hasPathSum(TreeNode root, int sum) {    
+      if (root == null)
+         return false;
+            
+      if (root.left == null && root.right == null && root.val == sum) // Leaf check
+         return true;
+            
+      return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (DFS recursively, DFS+stack, BFS+queue)
+    # DFS Recursively 
+    def hasPathSum1(self, root, sum):
+        res = []
+        self.dfs(root, sum, res)
+        return any(res)
+        
+    def dfs(self, root, target, res):
+        if root:
+            if not root.left and not root.right:
+                if root.val == target:
+                    res.append(True)
+            if root.left:
+                self.dfs(root.left, target-root.val, res)
+            if root.right:
+                self.dfs(root.right, target-root.val, res)
+    
+    # DFS with stack
+    def hasPathSum2(self, root, sum):
+        if not root:
+            return False
+        stack = [(root, root.val)]
+        while stack:
+            curr, val = stack.pop()
+            if not curr.left and not curr.right:
+                if val == sum:
+                    return True
+            if curr.right:
+                stack.append((curr.right, val+curr.right.val))
+            if curr.left:
+                stack.append((curr.left, val+curr.left.val))
+        return False
+        
+    # BFS with queue
+    def hasPathSum(self, root, sum):
+        if not root:
+            return False
+        queue = [(root, sum-root.val)]
+        while queue:
+            curr, val = queue.pop(0)
+            if not curr.left and not curr.right:
+                if val == 0:
+                    return True
+            if curr.left:
+                queue.append((curr.left, val-curr.left.val))
+            if curr.right:
+                queue.append((curr.right, val-curr.right.val))
+        return False
+
+----------------------------------------------------------------------------------------------------
+Why is the output of &quot;{1, 2}, 1&quot; is false?
+       1
+2            *
+
+The struct is like above, and the sum of  right path is 1. Why the output is false?
+
+Additional:
+
+Find another problem: the output of "{1}, 1" is true......
+
+why..... 
+
+----------------------------------------------------------------------------------------------------
+Java solution, both recursion and iteration
+  
+    public boolean hasPathSum(TreeNode root, int sum) {
+        // iteration method
+        if (root == null) {return false;}
+        Stack<TreeNode> path = new Stack<>();
+        Stack<Integer> sub = new Stack<>();
+        path.push(root);
+        sub.push(root.val);
+        while (!path.isEmpty()) {
+            TreeNode temp = path.pop();
+            int tempVal = sub.pop();
+            if (temp.left == null && temp.right == null) {if (tempVal == sum) return true;}
+            else {
+                if (temp.left != null) {
+                    path.push(temp.left);
+                    sub.push(temp.left.val + tempVal);
+                }
+                if (temp.right != null) {
+                    path.push(temp.right);
+                    sub.push(temp.right.val + tempVal);
+                }
+            }
+        }
+        return false;
+    }
+
+
+----------
+
+    public boolean hasPathSum(TreeNode root, int sum) {
+        // recursion method
+        if (root == null) return false;
+        if (root.left == null && root.right == null && root.val == sum) return true;
+        return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my 3 lines c++ solution
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        bool hasPathSum(TreeNode* root, int sum) {
+            if(!root) return false;
+            if((root -> val == sum) && ((!root -> left) && (!root -> right))) return true;
+            return hasPathSum(root -> left, sum - root -> val) || hasPathSum(root -> right, sum - root -> val);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+3-line Java Solution
+
+    public boolean hasPathSum(TreeNode root, int sum) {
+        if (root == null) return false;
+        if (root.left == null && root.right == null && root.val == sum) return true;
+        return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, shortest!!!
+    public boolean hasPathSum(TreeNode root, int sum) {
+        if (root == null) {
+            return false;
+        }
+
+        if (sum - root.val == 0 && root.left == null && root.right == null) {
+            return true;
+        }
+
+        return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+    }
+
+----------------------------------------------------------------------------------------------------
+12ms C++ solution
+    class Solution {
+    public:
+        bool hasPathSum(TreeNode* root, int sum) {
+            if(root == NULL) return false;
+            sum -= root->val;
+            return sum == 0 && root->left == NULL && root->right == NULL ? true : hasPathSum(root->left, sum) | hasPathSum(root->right, sum);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my easy and clean recursion Java solution with explanation
+    public class Solution {
+        public boolean hasPathSum(TreeNode root, int sum) {
+            
+            // check if root is null
+            if(root == null) return false;
+            
+            // if the current node is not a leaf node, do recursion.
+            if(root.left != null || root.right != null) 
+                return hasPathSum(root.left, sum - root.val) || 
+                    hasPathSum(root.right, sum - root.val);
+            
+            // now the current node is a leaf node
+            return sum - root.val == 0;
+        }
+    }
+ 
+
+----------------------------------------------------------------------------------------------------
+My Java solution using Recursive
+    
+    public boolean hasPathSum(TreeNode root, int sum) {
+        if (root == null) {
+            return false;
+        } else {
+            if (root.left == null && root.right == null) {
+                return sum == root.val;
+            } else {
+                int subSum = sum - root.val;
+                return hasPathSum(root.left, subSum) || hasPathSum(root.right, subSum);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution in C++
+    /**
+     * Definition for binary tree
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        bool hasPathSum(TreeNode *root, int sum) {
+            if(!root) return false;
+            if(!root->left && !root->right)
+                return root->val == sum;
+            return hasPathSum(root->left,sum-root->val) || hasPathSum(root->right,sum-root->val);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My Java Solution
+    public class Solution {
+        public boolean hasPathSum(TreeNode root, int sum) {
+            if (root == null)
+                return false;
+            if (root.left == null && root.right == null)
+                return sum == root.val;
+            return hasPathSum(root.left,sum-root.val) || hasPathSum(root.right,sum-root.val);
+        }   
+    }
+
+----------------------------------------------------------------------------------------------------
+4 ms C Solution ( Recursion )
+    bool hasPathSum(struct TreeNode* root, int sum) {
+        if (!root) 
+            return false;
+        if (!root->right && !root->left) 
+            return sum==root->val;
+        return hasPathSum(root->left, sum-root->val)||hasPathSum(root->right, sum-root->val);
+    }
+
+----------------------------------------------------------------------------------------------------
+My Python iterative DFS solution
+    
+    def hasPathSum(self, root, sum):
+        if root is None:
+            return False
+        stack = [(root, sum)]
+        while stack:
+            node, _sum = stack.pop()
+            if node.left is node.right is None and node.val == _sum:
+                return True
+            if node.left:
+                stack.append((node.left, _sum - node.val))
+            if node.right:
+                stack.append((node.right, _sum - node.val))
+        return False
+
+
+Current node and the sum until current node as a tuple is pushed onto the stack to keep track of the sum.
+
+----------------------------------------------------------------------------------------------------

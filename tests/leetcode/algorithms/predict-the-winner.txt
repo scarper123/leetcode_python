@@ -1,0 +1,429 @@
+Detailed explanation for Java O(n^2) solution
+(A[j], A[i])
+
+----------------------------------------------------------------------------------------------------
+JAVA 15 lines solution
+    public int numberOfArithmeticSlices(int[] A) {
+        int re = 0;
+        HashMap<Integer, Integer>[] maps = new HashMap[A.length];
+        for(int i=0; i<A.length; i++) {
+            maps[i] = new HashMap<>();
+            int num = A[i];
+            for(int j=0; j<i; j++) {
+                if((long)num-A[j]>Integer.MAX_VALUE) continue;
+                if((long)num-A[j]<Integer.MIN_VALUE) continue;
+                int diff = num - A[j];
+                int count = maps[j].getOrDefault(diff, 0);
+                maps[i].put(diff, maps[i].getOrDefault(diff,0)+count+1);
+                re += count;
+            }
+        }
+        return re;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(N^2) MLE&#x2F;TLE in C++? Try this one, Concise and Fast.
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& A) {
+        if (A.empty()) return 0;
+        int n = A.size();
+        vector<unordered_map<long long, int >> dp(n);
+        unordered_set<int> s(A.begin(), A.end());
+        int res = 0;
+        for (int i = 1; i < n; ++i) {
+            for (int j = i-1; j >= 0; --j) {
+                long long d = (long long)A[i] - (long long)A[j];
+                int tmp = dp[j].count(d) ? dp[j][d] : 0;
+                if (tmp) res += tmp;
+                if (s.count(A[i]+d)) dp[i][d] += 1 + tmp;
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++_DP_Accepted
+class Solution {
+public:
+int numberOfArithmeticSlices(vector<int>& A) {
+    if(A.empty()) return 0;
+    vector<unordered_map<int,int>> dp(A.size());//[index, [difference, count]]
+    
+    int res = 0;
+    for(int i = 0; i < A.size(); ++i){
+        for(int j = 0; j < i; ++j){
+            if((long)A[i] - (long)A[j] > INT_MAX || (long)A[i] - (long)A[j] < INT_MIN) continue;// do not ignore this step, it will help you save time & space to pass OJ.
+            int dif = A[i] - A[j];
+            dp[i][dif] += 1;
+            if(dp[j].find(dif) != dp[j].end()){
+                dp[i][dif] += dp[j][dif];
+                res += dp[j][dif];
+            }
+        }
+    }
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+11 line Python O(n^2) solution
+i
+
+----------------------------------------------------------------------------------------------------
+Share my JAVA AC solution and my thoughts
+public int numberOfArithmeticSlices(int[] A) {
+        if(A==null||A.length<3) return 0;
+        List<Map<Integer,Integer>> list=new ArrayList<Map<Integer,Integer>>();
+        int res=0;
+        for(int i=1;i<A.length;i++){
+            Map<Integer,Integer> map=new HashMap<Integer,Integer>();
+            for(int j=0;j<i;j++){
+                if((long)A[i]-(long)A[j]>Integer.MAX_VALUE) continue;
+                if((long)A[i]-(long)A[j]<Integer.MIN_VALUE) continue;
+                int dif=A[i]-A[j];
+                if(j==0){
+                    map.put(dif,1);
+                    continue;
+                }
+                Map<Integer,Integer> temp=list.get(j-1);
+                int sum=0;
+                if(temp.containsKey(dif)){
+                    sum=temp.get(dif);
+                }
+                if(map.containsKey(dif)){
+                    map.put(dif,map.get(dif)+sum+1);
+                }else{
+                    map.put(dif,sum+1);
+                }
+                res+=sum;
+            }
+            list.add(map);
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+200ms C++ DP solution
+counts[j][k] = sum{counts[i][j] + 1 | A[i] - A[j] == A[j] - A[k] and i < j}
+
+----------------------------------------------------------------------------------------------------
+Python Solution from the Author
+class Solution(object):
+    def numberOfArithmeticSlices(self, A):
+        """
+        :type A: List[int]
+        :rtype: int
+        """
+
+        lookup = {}
+
+        for i, a in enumerate(A):
+            if a in lookup:
+                lookup[a].append(i)
+            else:
+                lookup[a] = [i]
+
+        dp = []
+        for _ in range(len(A)):
+            dp.append({})
+
+        for k, num in enumerate(A):
+            for i in range(0, k):
+                diff = A[k] - A[i]
+                X = A[i] - diff
+                if X in lookup:
+                    for index in lookup[X]:
+                        if index < i:
+                            dp[k][diff] = dp[k].get(diff, 0) + 1
+
+                if diff in dp[i]:
+                    dp[k][diff] = dp[k].get(diff, 0) + dp[i][diff]
+
+        res = 0
+        for x in dp:
+            for k in x:
+                res += x[k]
+
+        return res
+
+----------------------------------------------------------------------------------------------------
+Dynamic Programming, Java Solution with detailed explanation!
+public class Solution {
+    public int numberOfArithmeticSlices(int[] A) {
+        if (A == null || A.length == 0) return 0;
+        
+        Map<Integer, Integer>[] map = new Map[A.length];         // dynamic 2-d array
+        // <d, #>
+        int res = 0;
+        
+        for (int i = 0; i < A.length; i++) {
+            map[i] = new HashMap<>();
+            for (int j = 0; j < i; j++) {
+                long diff = (long)A[i] - A[j];
+                if (diff > Integer.MAX_VALUE || diff < Integer.MIN_VALUE) continue;
+                int d = (int) diff;
+                int T_jd = map[j].getOrDefault(d, 0);
+                int increase = T_jd + 1;            // the amount of increase for each time
+                
+                /* This statement is used to adjust the acceptable subsequnce based on the requirement of problem
+                   If the minimum length of subsequence should be 3, then res += increase > 1? (increase-1) : 0; Or simply res += increase-1;
+                   If the minimum length of subsequence should be 4, then res += increase > 2? (increase-2) : 0;
+                   If the minimum length of subsequence should be 5, then res += increase > 3? (increase-3) : 0;
+                   ...
+                   ...
+                   ...
+                 */
+                res += increase > 1? (increase-1) : 0;  //filter
+                map[i].put(d, map[i].getOrDefault(d, 0) + increase);
+            }
+        }
+        return res;
+        
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Can anyone explain the algorithm in words?
+<p>I couldn&#39;t understand the algorithm reading the codes. Can anyone explain the algorithm?</p>
+
+
+----------------------------------------------------------------------------------------------------
+WTF LC? The test in my computer is totally right. PLS
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& A) {
+        int res = 0;
+        if (A.empty()) return 0;
+        unordered_map<long, unordered_map<long, unordered_map<int, int>>> cache;
+        for (int i = 1; i < A.size(); i++) {
+            for (auto& p : cache) {
+                if (p.second.count((long)A[i] - p.first)) {
+                    for (auto& q : p.second[(long)A[i] - p.first]) 
+                        res += q.second;
+                    for (auto& q : p.second[(long)A[i] - p.first]) 
+                        cache[p.first][A[i]][q.first + 1] += q.second;
+                }
+            }
+            for (int j = 0; j < i; j++) 
+                cache[(long)A[i] - A[j]][A[i]][2]++;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP Solution with O(n^2) Time Complexity
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& A) {
+        int ans = 0;
+        if(A.size() == 0)
+            return ans;
+        vector<unordered_map<long long,int>> dp(A.size());
+        long long dif = 0;
+        for(int i = 1; i < A.size(); ++ i){
+            for(int j = i - 1; j >= 0; -- j){
+                dif = (long long)A[i] - (long long)A[j];
+                if(dp[j].count(dif) > 0){
+                    ans += dp[j][dif];
+                    dp[i][dif] += dp[j][dif];
+                }
+                ++ dp[i][dif];
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python DP solution beats 95%
+import collections
+class Solution(object):
+    def numberOfArithmeticSlices(self, A):
+        """
+        :type A: List[int]
+        :rtype: int
+        """
+        n = len(A)
+        dp, locs, res = [[0]*n for _ in xrange(n)], collections.defaultdict(list), 0
+        for i, num in enumerate(A):
+            locs[num] += i,
+        for j in xrange(n-2,0,-1):
+            for i in xrange(j-1,-1,-1):
+                target = 2*A[j] - A[i]
+                for k in locs.get(target, []):
+                    if k > j:
+                        dp[i][j] += dp[j][k] + 1
+                res += dp[i][j]
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+c++ (n^3) solution. It is accepted even slow but simple.
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& A) {
+        int i, j, k, n = A.size(), ans = 0;
+        vector<vector<int>> d(n, vector<int>(n, 0));
+        for (i = 0; i < n - 2; i++) {
+            for (j = i + 1; j < n - 1; j++) {
+                for (k = j + 1; k < n; k++) {
+                    if ((long long)A[i] - A[j] == (long long)A[j] - A[k]) {
+                        d[j][k] = d[j][k] + d[i][j] + 1;
+                    }
+                }
+            }
+        }
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < n; j++) {
+                ans += d[i][j];
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution beats 98.18%
+public class Solution {
+    public int numberOfArithmeticSlices(int[] A) {
+        int res = 0;
+        
+        Map<Integer, List<Integer>> m = new HashMap<>();
+        for (int i = 0; i < A.length; i++) {
+            m.putIfAbsent(A[i], new ArrayList<>());
+            m.get(A[i]).add(i);
+        }
+        for (Map.Entry<Integer, List<Integer>> e : m.entrySet()) {
+            if (e.getValue().size() > 2) {
+                int n = e.getValue().size();
+                res += (1 << n) - 1 - n - n * (n - 1) / 2;
+            }
+        }
+        
+        for (int i = 0; i < A.length; i++) {
+            for (int j = i + 1; j < A.length; j++) {
+                if (A[j] == A[i] || (long) A[j] - A[i] > Integer.MAX_VALUE || (long) A[j] - A[i] < Integer.MIN_VALUE) {
+                    continue; 
+                }
+                
+                res += helper(A, A[j], A[j] - A[i], j, m);
+            }
+        }
+        
+        return res;
+    }
+    
+    private int helper(int[] A, int curr, int d, int idx, Map<Integer, List<Integer>> m) {
+        if ((long) curr + d > Integer.MAX_VALUE || (long) curr + d < Integer.MIN_VALUE || !m.containsKey(curr + d)) {
+            return 0;
+        }
+        
+        int res = 0;
+        curr += d;
+        List<Integer> list = m.get(curr);
+        for (int i : list) {
+            if (i > idx) {
+                res += helper(A, curr, d, i, m) + 1;
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Javascript time limit exceeded error.
+var numberOfArithmeticSlices = function(A) {
+    var dp = [];
+    var res = 0;
+    for ( var i=0;i<A.length;++i ) {
+        dp.push({});
+        for ( var j=0;j<i;++j ) {
+            var diff = A[i] - A[j];
+            var dj = dp[j][diff] || 0;
+            dp[i][diff] = dp[i][diff] + dj + 1 || dj + 1;
+            res += dj;
+        }
+    }
+    return res;
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(n^2) Time limit exceed
+<p>The last question:<br/>
+N&lt;=1000;<br/>
+Why O(n^2) get TLE</p>
+
+
+----------------------------------------------------------------------------------------------------
+Can someone take a look at my solution and explain why it is incorrect?
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& A) {
+        sort(A.begin(),A.end());
+        int count = 0;
+        vector<int> cache;
+        helper(A,0,-1,-1,count,1,cache);
+        return count;
+    }
+    void helper(const vector<int>& A, const int index, const int last, const int diff, int& count, const int depth, vector<int>& cache){
+        if( depth > A.size() ){
+            return;
+        }
+        for( int i = index; i < A.size(); ++i ){
+            //picking first number
+            if( depth == 1 ){
+                cache.push_back(A[i]);
+                helper(A,i+1,A[i],-1,count,depth+1,cache);
+                cache.pop_back();
+                //avoid duplicates
+                while( i+1 < A.size() && A[i+1] == A[i] ){
+                    ++i;
+                }
+                continue;
+            }
+            //establishing difference
+            if( depth == 2 ){
+                cache.push_back(A[i]);
+                helper(A,i+1,A[i],A[i]-last,count,depth+1,cache);
+                cache.pop_back();
+                //avoid duplicates
+                while( i+1 < A.size() && A[i+1] == A[i] ){
+                    ++i;
+                }
+                continue;
+            }
+            //depth >=3
+            //check diff
+            if( A[i] - last == diff ){
+                count++;
+                cache.push_back(A[i]);
+                helper(A,i+1,A[i],diff,count,depth+1,cache);
+                cache.pop_back();
+                //avoid duplicates
+                while( i+1 < A.size() && A[i+1] == A[i] ){
+                    ++i;
+                }
+                //return;
+            }
+            else if( (A[i] - last) > diff ){
+                break;
+            }
+        }
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+why i cannot pass this test cases

@@ -1,0 +1,620 @@
+JAVA----------Easy Version To Understand!!!!!!!!!!!!!!!!!
+    	public static int maxProduct(String[] words) {
+		if (words == null || words.length == 0)
+			return 0;
+		int len = words.length;
+		int[] value = new int[len];
+		for (int i = 0; i < len; i++) {
+			String tmp = words[i];
+			value[i] = 0;
+			for (int j = 0; j < tmp.length(); j++) {
+				value[i] |= 1 << (tmp.charAt(j) - 'a');
+			}
+		}
+		int maxProduct = 0;
+		for (int i = 0; i < len; i++)
+			for (int j = i + 1; j < len; j++) {
+				if ((value[i] & value[j]) == 0 && (words[i].length() * words[j].length() > maxProduct))
+					maxProduct = words[i].length() * words[j].length();
+			}
+		return maxProduct;
+	}
+
+----------------------------------------------------------------------------------------------------
+32ms Java AC solution
+    public class Solution {
+        public int maxProduct(String[] words) {
+            int max = 0;
+
+            Arrays.sort(words, new Comparator<String>(){
+                public int compare(String a, String b){
+                    return b.length() - a.length();
+                }
+            });
+    
+            int[] masks = new int[words.length]; // alphabet masks
+
+            for(int i = 0; i < masks.length; i++){
+                for(char c: words[i].toCharArray()){
+                    masks[i] |= 1 << (c - 'a');
+                }
+            }
+        
+            for(int i = 0; i < masks.length; i++){
+                if(words[i].length() * words[i].length() <= max) break; //prunning
+                for(int j = i + 1; j < masks.length; j++){
+                    if((masks[i] & masks[j]) == 0){
+                        max = Math.max(max, words[i].length() * words[j].length());
+                        break; //prunning
+                    }
+                }
+            }
+
+            return max;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Bit shorter C++
+Same algorithm as most, just written a bit shorter.
+
+    int maxProduct(vector<string>& words) {
+        vector<int> mask(words.size());
+        int result = 0;
+        for (int i=0; i<words.size(); ++i) {
+            for (char c : words[i])
+                mask[i] |= 1 << (c - 'a');
+            for (int j=0; j<i; ++j)
+                if (!(mask[i] & mask[j]))
+                    result = max(result, int(words[i].size() * words[j].size()));
+        }
+        return result;
+    }
+
+**Update:** Here's an O(n+N) variation, where N is the total number of characters in all words. Thanks to junhuangli for the suggestion.
+
+    int maxProduct(vector<string>& words) {
+        unordered_map<int,int> maxlen;
+        for (string word : words) {
+            int mask = 0;
+            for (char c : word)
+                mask |= 1 << (c - 'a');
+            maxlen[mask] = max(maxlen[mask], (int) word.size());
+        }
+        int result = 0;
+        for (auto a : maxlen)
+            for (auto b : maxlen)
+                if (!(a.first & b.first))
+                    result = max(result, a.second * b.second);
+        return result;
+    }
+
+**Or:** (thanks to junhuangli's further comment)
+
+    int maxProduct(vector<string>& words) {
+        unordered_map<int,int> maxlen;
+        int result = 0;
+        for (string word : words) {
+            int mask = 0;
+            for (char c : word)
+                mask |= 1 << (c - 'a');
+            maxlen[mask] = max(maxlen[mask], (int) word.size());
+            for (auto maskAndLen : maxlen)
+                if (!(mask & maskAndLen.first))
+                    result = max(result, (int) word.size() * maskAndLen.second);
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python solution, beats 99.67%
+    class Solution(object):
+        def maxProduct(self, words):
+            d = {}
+            for w in words:
+                mask = 0
+                for c in set(w):
+                    mask |= (1 << (ord(c) - 97))
+                d[mask] = max(d.get(mask, 0), len(w))
+            return max([d[x] * d[y] for x in d for y in d if not x & y] or [0])
+
+----------------------------------------------------------------------------------------------------
+Bit manipulation Java O(n^2)
+    public class Solution {
+    public int maxProduct(String[] words) {
+        int max = 0;
+        int[] bytes = new int[words.length];
+        for(int i=0;i<words.length;i++){
+            int val = 0;
+            for(int j=0;j<words[i].length();j++){
+                val |= 1<<(words[i].charAt(j)-'a');
+            }
+            bytes[i] = val;
+        }
+        for(int i=0; i<bytes.length; i++){
+            for(int j=i+1; j<bytes.length; j++){
+                if((bytes[i] & bytes[j])==0)max = Math.max(max,words[i].length()*words[j].length());
+            }
+        }
+        return max;
+    }
+}
+
+
+Pre-process the word, use bit to represent the words. We  can do this because we only need to compare if two words contains the same characters.  
+
+----------------------------------------------------------------------------------------------------
+Java Solution with comments
+    public class Solution {
+    	/**
+    	 * @param words
+    	 * @return
+    	 * 
+    	 * 		The soultion is calcuated by doing a product of the length of
+    	 *         each string to every other string. Anyhow the constraint given is
+    	 *         that the two strings should not have any common character. This
+    	 *         is taken care by creating a unique number for every string. Image
+    	 *         a an 32 bit integer where 0 bit corresponds to 'a', 1st bit
+    	 *         corresponds to 'b' and so on.
+    	 * 
+    	 *         Thus if two strings contain the same character when we do and
+    	 *         "AND" the result will not be zero and we can ignore that case.
+    	 */
+    	public int maxProduct(String[] words) {
+    		int[] checker = new int[words.length];
+    		int max = 0;
+    		// populating the checker array with their respective numbers
+    		for (int i = 0; i < checker.length; i++) {
+    			int num = 0;
+    			for (int j = 0; j < words[i].length(); j++) {
+    				num |= 1 << (words[i].charAt(j) - 'a');
+    			}
+    			checker[i] = num;
+    		}
+    
+    		for (int i = 0; i < words.length; i++) {
+    			for (int j = i + 1; j < words.length; j++) {
+    				if ((checker[i] & checker[j]) == 0) //checking if the two strings have common character
+    					max = Math.max(max, words[i].length() * words[j].length());
+    			}
+    		}
+    		return max;
+    	}
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+116ms c++ solution use early pruning (faster than most O(N^2))
+Sort the vector first according to the length of string. Then use some early pruning to fasten the process.
+
+The worst cases would still be O(N^2). It's faster than most O(N^2) solutions. I don't know whether we can do better. (Binary Search Seems Not work here) Any comments is welcomed.
+
+Update: We can use counting sort to improve the time complexity of sorting to O(N).
+
+    class Solution {
+    public:
+        int maxProduct(vector<string>& words) {
+            int s=words.size();
+            if(s==0) return 0;
+            vector<int> bit(s,0);
+            sort(words.begin(), words.end(), compare);  //sort the vector from longest to shortest
+            for(int i=0; i<s; i++){ //bit manipulation
+                for(int j=0; j<words[i].size(); j++) bit[i] |=(1<<(words[i][j]-'a')); 
+            }
+            int maxlength=0;
+            for(int i=0; i<s-1; i++){
+                int si=words[i].size();
+                if(si*si<=maxlength) break; //early pruning
+                for(int j=i+1; j<s; j++){
+                    int sj=words[j].size();
+                    if(si*sj<=maxlength) break;  //early pruning
+                    if((bit[i]&bit[j])==0) maxlength=si*sj;
+                }
+            }
+            return maxlength;
+        }
+        static bool compare(string a, string b){
+            return a.size()>b.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution (12ms) O(n*n)
+    public class Solution {
+    public int maxProduct(String[] words) {
+        int len = words.length;
+        int[] mark = new int[len];
+        int[] leng = new int[len];
+        for (int i = 0;i<len;i++) {
+            int k = words[i].length();
+            leng[i] = k;
+            for (int j=0;j<k;j++) {
+                int p = (int)(words[i].charAt(j)-'a');
+                p = 1 << p;
+                mark[i] = mark[i] | p;
+            }
+        }
+        int ans = 0;
+        for (int i = 0;i<len;i++)
+         for (int j = i+1;j<len;j++) 
+         if ((mark[i]&mark[j])==0) 
+          if (ans<leng[i]*leng[j])
+             ans=leng[i]*leng[j];
+        return ans;
+        }
+    }
+
+
+The array store the length is necessary. If we calculate the length every time we need it, it will be very slow.
+
+----------------------------------------------------------------------------------------------------
+C++, 25 lines, 96ms, straight-forward solution
+      
+    class Solution {
+     public:
+       int set_bit(string& str){
+         int mybits = 0;
+         for (char c : str){
+           mybits |= (1 << (c-'a'));
+           if ((mybits == 0x3FFFFFF)) break;
+         }
+         return mybits;
+       }
+    
+       int maxProduct(vector<string>& words) {
+         int m_val = 0, w_size = words.size();
+         int m[w_size], m_w_size[w_size];
+        
+         for(int i = 0; i < w_size; i++) {
+           m[i] = set_bit(words[i]);
+           m_w_size[i] = words[i].size();
+         }
+    
+         for (int i = 0; i < w_size; i++) 
+             for (int j = i+1; j < w_size; j++) 
+                if ((m[i] & m[j])==0) 
+                    m_val = max((int)(m_w_size[i] * m_w_size[j]), m_val);
+    
+        return m_val;
+      }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ 92ms Bit manipulation
+    #include <iostream>
+    #include <algorithm> //sort
+    #include <vector>
+    using namespace std;
+
+    class Solution {
+    static bool sortFunction(string s1, string s2){return s1.length() < s2.length();}
+    int strToBinary(string s);
+    int solution2(vector<string> &v, const int sz);
+    public:
+    int maxProduct(vector<string>& words) {
+        //return solution1(words);
+        return solution2(words, words.size());
+    }
+    };
+
+    int Solution::strToBinary(string s){
+    int res(0);
+    for(int i = 0; i < s.length(); i++)
+        res |= 1 << (s[i] - 97);
+    return res;
+    }
+
+    int Solution::solution2(vector<string> &v, const int sz){
+    sort(v.begin(), v.end(), sortFunction);
+    int res(0), a[sz] = {};
+    for(int i = 0; i < sz; i++)     //convert string to int, each bit is a char
+        a[i] = strToBinary(v[i]);
+    for(int l = 0, r = sz - 1; l < r; r--){ 
+        int nl(-1);
+        for(int i = l; i < r; i++)
+            if(!(a[i] & a[r])) nl = i;
+        if(nl != -1){    //each found will narrow next search range
+            res = max(res, int(v[r].length()) * int(v[nl].length()));
+            l = nl + 1;
+        }
+    }
+    return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution using bit manipulation
+    public class Solution {
+        public int maxProduct(String[] words) {
+            int[] mask = new int[words.length];
+            for(int i = 0; i < words.length; i++) {
+                for(int j = 0; j < words[i].length(); j++) {
+                    mask[i] |= 1 << (words[i].charAt(j) - 'a');
+                }
+            }
+            int max = 0;
+            for(int i = 0; i < words.length; i++) {
+                for(int j = i + 1; j < words.length; j++) {
+                    if((mask[i] & mask[j]) == 0) {
+                        max = Math.max(words[i].length() * words[j].length(), max);
+                    }
+                }
+            }
+            return max;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+88ms c++ solution with pruning
+    bool cmp_str(const string &s1, const string &s2) {
+        return s1.length() < s2.length();
+    }
+    
+    class Solution {
+    public:
+        int maxProduct(vector<string>& words) {
+            if (words.empty()) return 0;
+            
+            sort(words.begin(), words.end(), cmp_str);
+            int size = words.size();
+            int word_int[size];
+            memset(word_int, 0, sizeof(word_int));
+           
+            size_t max_product = 0;
+            for (int i=0; i<size; i++) {
+                for (auto &c : words[i]) word_int[i] |= (1<<(c-'a'));
+                
+                for (int j=i-1; j>=0; j--) {
+                    if (!(word_int[j] & word_int[i])) {
+                        max_product = max(max_product, words[i].length()*words[j].length());
+                        break; // pruning
+                    }
+                }
+            }
+           
+            return max_product;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ Solution using Bit Manipulation with Time Complexity O(max(O(nm), O(n^2))) where m is the average length of strings
+    class Solution {
+    public:
+        int maxProduct(vector<string>& words) {
+            int ans = 0;
+            if(words.size() < 2)
+                return ans;
+            int n = words.size();
+            vector<int> val(n);
+            for(int i = 0; i < n; ++ i){
+                for(int j = 0; j < words[i].size(); ++ j){
+                    int k = words[i][j] - 'a';
+                    val[i] |= (1<<k);
+                }
+            }
+            for(int i = 0; i < n - 1; ++ i){
+                for(int j = i + 1; j < n; ++ j){
+                    if((val[i]&val[j]) == 0){
+                        ans = max(ans, (int)((int)words[i].size()*(int)words[j].size()));
+                    }
+                }
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clear and easily understanding
+    int maxProduct(vector<string>& words) 
+    {
+        vector<int> keys(words.size(), 0);
+        
+        for(int i=0; i<words.size(); i++)
+        {
+            for(auto &c: words[i])
+            {
+                keys[i] |= 1<<(c-'a');
+            }
+        }
+        
+        int res = 0;
+        
+        for(int i=0; i<words.size(); i++)
+        {
+            for(int j=i+1; j<words.size(); j++)
+            {
+                if((keys[i] & keys[j]) == 0 && words[i].size()*words[j].size() > res)
+                {
+                    res = words[i].size()*words[j].size();
+                }
+            }
+        }
+        
+        return res;
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+A two-line Python solution, 176 ms
+Since we only deal with 26 lower case letters, a mask can be used to check whether two words share common letters or not. Use a dictionary to record the max word length of each mask. 348 ms, beats 99.76% of Python submissions. 
+
+    class Solution(object):
+        def maxProduct(self, words):
+            """
+            :type words: List[str]
+            :rtype: int
+            """
+            maskLen = {reduce(lambda x, y: x | y, [1 << (ord(c) - 97) for c in word], 0): len(word) 
+                for word in sorted(words, key = lambda x: len(x))}.items()
+            return max([x[1] * y[1] for i, x in enumerate(maskLen) for y in maskLen[:i] if not (x[0] & y[0])] or [0])
+
+----------------------------------------------------------------------------------------------------
+My Easy Understanding Java Solution with Explaination
+    public int maxProduct(String[] words) {
+        int[] bitMap = new int[words.length];
+        for(int i=0; i<words.length; i++) {
+            for(int j=0; j<words[i].length(); j++) {
+                bitMap[i] |= 1 << (words[i].charAt(j) - 'a');
+            }
+        }
+        
+        int result = 0;
+        for(int i=0; i<bitMap.length; i++) {
+            for(int j=i+1; j<bitMap.length; j++) {
+                if((bitMap[i] & bitMap[j]) == 0) {
+                    result = Math.max(words[i].length() * words[j].length(), result);
+                }
+            }
+        }
+        return result;
+    }
+
+Main Idea:
+1. use 1bit to represent each letter, and use 32bit(Int variable, bitMap[i]) to represent the set of each word
+2. if the ANDing of two bitmap element equals to 0, these two words do not have same letter, then calculate the product of their lengths
+
+
+----------------------------------------------------------------------------------------------------
+C++ manipulation solution
+    class Solution {
+    public:
+        int maxProduct(vector<string>& words) {
+            if(words.size() < 2)
+            {
+                return 0;
+            }
+            vector<int> bits(words.size(), 0);
+            int result = INT_MIN;
+            for(unsigned int i = 0; i < words.size(); i++)
+            {
+                for(unsigned int j = 0; j < words[i].length(); j++)
+                {  
+                    bits[i] |= 1 << (words[i][j] - 'a');
+                }
+            }
+            for(unsigned int i = 0; i < bits.size(); i++)
+            {
+                for(unsigned int j = i + 1; j < bits.size(); j++)
+                {
+                    if(!(bits[i] & bits[j]))
+                    {
+                        int len = words[i].length() * words[j].length();
+                        result = result >= len ? result : len;
+                    }
+                }
+            }
+            if(result == INT_MIN)
+            {
+                return 0;
+            }
+            else
+            {
+                return result;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution without bit manipulation
+        public class Solution {
+            public int maxProduct(String[] words) {
+                if(words==null || words.length<2)return 0;
+                Word[] wordAry = new Word[words.length];
+                int max =0;
+                for(int i=0; i<words.length; i++){
+                    wordAry[i] = new Word(words[i]);
+                }
+                for(int i=0; i<wordAry.length-1; i++){
+                    for(int j=i+1; j<wordAry.length; j++){
+                        if(wordAry[i].shareCommon(wordAry[j]))max = Math.max(max, wordAry[i].length*wordAry[j].length);
+                    }
+                }
+                return max;
+            }
+        }
+        
+        class Word{
+            boolean[] letters = new boolean[26];
+            int length;
+            Word(String s){
+                for(int i=0; i<s.length(); i++){
+                    letters[s.charAt(i)-'a']=true;
+                }
+                length = s.length();
+            }
+            
+            boolean shareCommon(Word w){
+                for(int i=0; i<26; i++){
+                    if(letters[i]&&w.letters[i])return false;
+                }
+                return true;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Python accepted solution
+Not very efficient though
+
+    class Solution(object):
+        def maxProduct(self, words):
+            """
+            :type words: List[str]
+            :rtype: int
+            """
+            if not words:
+                return 0
+            curr_max = 0
+            while words:
+                curr_word = set(words[0])
+                curr_len = len(words[0])
+                words = words[1:]
+                for word in words:
+                    for char in curr_word:
+                        if char in word:
+                            break
+                    else:
+                        curr_max = max(curr_max, curr_len*len(word))
+            return curr_max
+
+----------------------------------------------------------------------------------------------------
+Easiest and simplest solution accepted with 40ms in C, well-explained
+Since we are going to use the length of the word very frequently and we are going to compare the letters of two different word checking whether they have some letters in common:
+
+- using an array of int to pre-store the length of each word reducing the frequently *measuring* process; 
+- since int is 4 bytes and 32-bit type and there are only 26 different letters, so we can just use the bit to present the existence of the letter in a word; so intuitive and simple, right?
+
+Bang! End of Story!
+
+- space cost O(n).
+- time cost O(n^2) -> comparing each pair of them from the beginning to the end.
+
+
+----------
+
+    //AC - 40ms;
+    int maxProduct(char** words, int wSize)
+    {
+        int space = sizeof(int)*wSize; //since we are going to use this value several times, store it;
+        int *lens = (int*)malloc(space);
+        for(int i = 0; i < wSize; i++) //pre-store the lengths for all words;
+            lens[i] = strlen(words[i]);
+        int *flags = (int*)malloc(space);
+        memset(flags, 0, space);
+        for(int i = 0; i < wSize; i++) //retrieve the bit-flag from word;
+            for(int j = 0; words[i][j]; j++)
+                flags[i] |= 1<<(words[i][j]-'a');
+        int max = 0;
+        for(int i = 0; i < wSize; i++) //traversing each pair of two different words;
+            for(int j = i+1; j < wSize; j++)
+                if(!(flags[i] & flags[j]))
+                {
+                    int t = lens[i]*lens[j];
+                    if(t > max)
+                        max = t;
+                }
+        return max;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------

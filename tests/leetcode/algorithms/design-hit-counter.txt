@@ -1,0 +1,729 @@
+Concise Java Solution
+    class PeekingIterator implements Iterator<Integer> {  
+        private Integer next = null;
+        private Iterator<Integer> iter;
+
+        public PeekingIterator(Iterator<Integer> iterator) {
+            // initialize any member here.
+            iter = iterator;
+            if (iter.hasNext())
+                next = iter.next();
+        }
+        
+        // Returns the next element in the iteration without advancing the iterator. 
+        public Integer peek() {
+            return next; 
+        }
+    
+        // hasNext() and next() should behave the same as in the Iterator interface.
+        // Override them if needed.
+        @Override
+        public Integer next() {
+            Integer res = next;
+            next = iter.hasNext() ? iter.next() : null;
+            return res; 
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+    }
+
+cache the next element. If next is null, there is no more elements in iterator. 
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution (1 line per method) without extra member variables
+Since `Iterator` has a copy constructor, we can just use it:
+
+    class PeekingIterator : public Iterator
+    {
+    public:
+    	PeekingIterator(const vector<int> &nums) : Iterator(nums)
+    	{
+    	}
+    
+    	int peek()
+    	{
+            return Iterator(*this).next();
+    	}
+    
+    	int next()
+    	{
+    	    return Iterator::next();
+    	}
+    
+    	bool hasNext() const
+    	{
+    	    return Iterator::hasNext();
+    	}
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution
+Store the next value outside the iterator.  When next is called return the stored value and populate with next value from iterator.
+
+    class PeekingIterator(object):
+        def __init__(self, iterator):
+            self.iter = iterator
+            self.temp = self.iter.next() if self.iter.hasNext() else None
+    
+        def peek(self):
+            return self.temp
+    
+        def next(self):
+            ret = self.temp
+            self.temp = self.iter.next() if self.iter.hasNext() else None
+            return ret
+    
+        def hasNext(self):
+            return self.temp is not None
+
+----------------------------------------------------------------------------------------------------
+Another C++ solution with one line in peek() and hasNext(), AC
+    class PeekingIterator : public Iterator {
+    private:
+        int m_next;
+        bool m_hasnext;
+    public:
+    	PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+    	    m_hasnext = Iterator::hasNext();
+    	    if (m_hasnext) m_next = Iterator::next();
+    	}
+    
+    	int peek() {
+            return m_next;
+    	}
+    
+    	int next() {
+    	    int t = m_next;
+    	    m_hasnext = Iterator::hasNext();
+    	    if (m_hasnext) m_next = Iterator::next();
+    	    return t;
+    	}
+    
+    	bool hasNext() const {
+    	    return m_hasnext;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+My 4ms  c++ supper easy solution
+    class PeekingIterator : public Iterator {
+     public:
+     PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+        // Initialize any member here.
+        // **DO NOT** save a copy of nums and manipulate it directly.
+        // You should only use the Iterator interface methods.
+
+    }
+
+    // Returns the next element in the iteration without advancing the iterator.
+    int peek() {
+        if(hasNext()){
+            Iterator it(*this);
+            return it.next();
+        }
+    }
+
+    // hasNext() and next() should behave the same as in the Iterator interface.
+    // Override them if needed.
+    int next() {
+        Iterator::next();
+    }
+
+    bool hasNext() const {
+        Iterator::hasNext();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution by caching next element
+quite straight forward solution by caching the next element and handling hasNext() and next() by using cached entry.
+
+
+    class PeekingIterator implements Iterator<Integer> {
+        Integer cache = null;
+        Iterator<Integer> it;
+        
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    // initialize any member here.
+    	    this.it = iterator;
+    	    cache = it.next();
+    	}
+    
+        // Returns the next element in the iteration without advancing the iterator.
+    	public Integer peek() {
+            return cache;
+    	}
+    
+    	// hasNext() and next() should behave the same as in the Iterator interface.
+    	// Override them if needed.
+    	@Override
+    	public Integer next() {
+    	    int ret = cache;
+    	    if(it.hasNext()){
+    	        cache = it.next();
+    	    }
+    	    else{
+    	        cache = null;
+    	    }
+    	    return ret;
+    	}
+    
+    	@Override
+    	public boolean hasNext() {
+    	    return (cache != null);
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+10-line C++ and 14-line Java Implementation
+    class PeekingIterator : public Iterator {
+        bool hasPeeked;
+        int peekedElem;
+    public:
+    	PeekingIterator(const vector<int>& num) : Iterator(num) {
+            hasPeeked = false;
+    	}
+    
+    	int peek() {
+            peekedElem = hasPeeked?peekedElem:Iterator::next();
+            hasPeeked = true;
+            return peekedElem;
+    	}
+    
+    	int next() {
+    	    int nextElem = hasPeeked?peekedElem:Iterator::next();
+    	    hasPeeked = false;
+    	    return nextElem;
+    	}
+    
+    	bool hasNext() const {
+    	    return hasPeeked||Iterator::hasNext();
+    	}
+    };  
+
+Java implementation, inspired by Google's guava library source code.
+
+    class PeekingIterator implements Iterator<Integer> {
+        private final Iterator<Integer> iterator;
+        private boolean hasPeeked;
+        private Integer peekedElement;
+        
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    if(iterator==null)
+    	        throw new NullPointerException();
+    	    else
+    	        this.iterator = iterator;
+    	}
+    
+    	public Integer peek() {
+            peekedElement = hasPeeked?peekedElement:iterator.next();
+            hasPeeked = true;
+            return peekedElement;
+    	}
+    
+    	@Override
+    	public Integer next() {
+    	    int nextElem = hasPeeked?peekedElement:iterator.next();
+            hasPeeked = false;
+            return nextElem;
+    	}
+    
+    	@Override
+    	public boolean hasNext() {
+    	    return hasPeeked || iterator.hasNext();
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+My Java solution
+    class PeekingIterator implements Iterator<Integer> {
+        Integer n = null;
+        private Iterator<Integer> iterator = null;
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    this.iterator = iterator;
+    	}
+    
+        public Integer peek() {
+            if (n == null && iterator.hasNext()){
+                n = iterator.next();
+            }
+            return n;
+    	}
+    	public Integer next() {
+    	    if (n!=null){
+    	        int temp = n;
+    	        n = null;
+    	        return temp;
+    	    }
+    	    return iterator.next();
+    	}
+    	public boolean hasNext() {
+    	    if (n!=null){
+    	        return true;
+    	    }
+    	    return iterator.hasNext();
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise Java solution beats 99.52%, 95ms by caching next element
+    class PeekingIterator implements Iterator<Integer> {
+    
+        Integer peek;  // use to visit and store the next element
+        Iterator<Integer> it;
+        
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    it = iterator;
+            peek = it.hasNext()?it.next():null;
+    	}
+    
+    	public Integer peek() {
+            return peek;        
+    	}
+    
+    	@Override
+    	public Integer next() {
+            if (peek==null) throw new java.util.NoSuchElementException();
+    	    Integer ret = peek;
+            peek = it.hasNext()?it.next():null;
+            return ret;
+    	}
+    
+    	@Override
+    	public boolean hasNext() {
+    	    return peek!=null;
+    	}
+    	
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+A simple C++ solution
+    // Below is the interface for Iterator, which is already defined for you.
+    // **DO NOT** modify the interface for Iterator.
+    class Iterator {
+        struct Data;
+    	Data* data;
+    public:
+    	Iterator(const vector<int>& nums);
+    	Iterator(const Iterator& iter);
+    	virtual ~Iterator();
+    	// Returns the next element in the iteration.
+    	int next();
+    	// Returns true if the iteration has more elements.
+    	bool hasNext() const;
+    };
+    
+    
+    class PeekingIterator : public Iterator {
+    public:
+        bool peaked;
+        int peakedElement;
+    	PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+    	    // Initialize any member here.
+    	    // **DO NOT** save a copy of nums and manipulate it directly.
+    	    // You should only use the Iterator interface methods.
+    	    peaked = false;
+    	}
+    
+        // Returns the next element in the iteration without advancing the iterator.
+    	int peek() 
+    	{
+            if(!peaked && Iterator::hasNext())
+            {
+                peaked = true;
+                peakedElement = Iterator::next();
+                return peakedElement;
+            }
+            else if(peaked)
+            {
+                return peakedElement;
+            }
+    	}
+    
+    	// hasNext() and next() should behave the same as in the Iterator interface.
+    	// Override them if needed.
+    	int next() 
+    	{
+    	    if(peaked)
+    	    {
+    	        peaked = false;
+    	        return peakedElement;
+    	    }
+    	    if(Iterator::hasNext())
+    	        return Iterator::next();
+    	}
+    
+    	bool hasNext() const 
+    	{
+    	    if(peaked)
+    	        return true;
+    	   return Iterator::hasNext();
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy C++ solution, using 4ms
+    // Below is the interface for Iterator, which is already defined for you.
+    // **DO NOT** modify the interface for Iterator.
+    class Iterator {
+        struct Data;
+    	Data* data;
+    public:
+    	Iterator(const vector<int>& nums);
+    	Iterator(const Iterator& iter);
+    	virtual ~Iterator();
+    	// Returns the next element in the iteration.
+    	int next();
+    	// Returns true if the iteration has more elements.
+    	bool hasNext() const;
+    };
+    
+    
+    class PeekingIterator : public Iterator {
+    public:
+        bool isSaved;
+        int savedValue ; 
+    	PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+    	    // Initialize any member here.
+    	    // **DO NOT** save a copy of nums and manipulate it directly.
+    	    // You should only use the Iterator interface methods.
+    	    isSaved = false;
+    	    
+    	}
+    
+        // Returns the next element in the iteration without advancing the iterator.
+    	int peek() {
+            if(isSaved)
+                return savedValue;
+            else{
+                
+                savedValue = next();
+                isSaved = true;
+                return savedValue;
+            }
+    	}
+    
+    	// hasNext() and next() should behave the same as in the Iterator interface.
+    	// Override them if needed.
+    	int next() {
+    	    
+    	    if(isSaved){
+    	        isSaved = false; 
+    	        return savedValue;
+    	    }
+    	    isSaved = false; 
+    	    return Iterator::next();
+    	}
+    
+    	bool hasNext() const {
+    	    return isSaved || Iterator::hasNext();
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java Solution Peeking Iterator
+
+class PeekingIterator implements Iterator<Integer> {
+    
+    private Iterator<Integer> iter;
+    private Integer v;
+
+	public PeekingIterator(Iterator<Integer> iterator) {
+	    this.iter = iterator;
+	    v = null;
+	    
+	}
+
+    
+	public Integer peek() {
+        if(v == null){
+            v = iter.next();
+        }
+        return v;
+	}
+
+	
+	@Override
+	public Integer next() {
+	    Integer tmp = null;
+	    if(v == null){
+	        v = iter.next();
+	        tmp = v;
+	        v = null;
+	        return tmp;
+	    }
+	    tmp = v;
+	    v = null;
+	    return tmp;
+	    
+	}
+
+	@Override
+	public boolean hasNext() {
+	   if(v != null){
+	       return true;
+	   } 
+	   return iter.hasNext();
+	}
+}
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution using Cached Value 107ms
+    class PeekingIterator implements Iterator<Integer> {
+    
+        private Integer nextCachedVal = null;
+        private Iterator<Integer> iterator;
+    
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    // initialize any member here.
+    	    this.iterator = iterator;
+    	    next(); // cache the next value if any
+    	}
+    
+        // Returns the next element in the iteration without advancing the iterator.
+    	public Integer peek() {
+            return nextCachedVal;
+    	}
+    
+    	// hasNext() and next() should behave the same as in the Iterator interface.
+    	// Override them if needed.
+    	@Override
+    	public Integer next() {
+    	    Integer retVal = nextCachedVal;
+    	    nextCachedVal = iterator.hasNext() ? iterator.next() : null;
+    	    return retVal;
+    	}
+    
+    	@Override
+    	public boolean hasNext() {
+    	    return (nextCachedVal != null);
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ 1 line
+class PeekingIterator : public Iterator
+{
+public:
+	PeekingIterator(const vector<int>& nums) : Iterator(nums) {}
+
+	int peek()
+	{
+	    return Iterator{*this}.next();
+	}
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ code of this problem
+    class PeekingIterator : public Iterator {
+        
+        int peekele;
+        bool peeked;
+        
+    public:
+    	PeekingIterator(const vector<int>& num) : Iterator(num) {
+    	    // Initialize any member here.
+    	    peeked = false;
+    	}
+    
+        // Returns the next element in the iteration without advancing the iterator.
+    	int peek() {
+            if(!peeked) {
+                peekele = Iterator::next();
+                peeked = true;
+            }
+            return peekele;
+    	}
+    
+    	// hasNext() and next() should behave the same as in the Iterator interface.
+    	// Override them if needed.
+    	int next() {
+    	    if(!peeked) return Iterator::next();
+            peeked = false;
+            return peekele;
+    	}
+    
+    	bool hasNext() const {
+    	    if(peeked) return true;
+    	    if(Iterator::hasNext()) return true;
+    	    return false;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution which could work with any types and work when there is null element in collection.
+When you need to work with other type, just replace Integer with your type.
+
+    class PeekingIterator implements Iterator<Integer> {
+    
+        private Integer peekElement = null;
+        private Iterator<Integer> iter = null;
+        private boolean hasNext = true;
+        
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    iter = iterator;
+            if(iterator.hasNext()) {    	        
+    	        peekElement = iter.next();
+    	    }
+    	    else hasNext = false;
+    	}
+    
+    	public Integer peek() {
+            return peekElement;
+    	}
+    
+    	public Integer next() {
+            if(!this.hasNext()) return null; //without this line still got AC, I just think it's a proper way.
+    	    Integer tmp = peekElement;
+    	    if(!iter.hasNext()) {
+    	        peekElement = null;
+    	        hasNext = false;
+    	    }
+    	    else peekElement = iter.next();
+    	    return tmp;
+    	}
+    
+    	public boolean hasNext() {
+    	    return hasNext;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Next&#x2F;hasNext use peek
+Just a variation where `next` and `hasNext` use `peek`.
+
+    class PeekingIterator implements Iterator<Integer> {
+    
+    	public PeekingIterator(Iterator<Integer> iterator) {
+    	    this.iterator = iterator;
+    	}
+    
+    	public Integer peek() {
+    	    if (cache == null && iterator.hasNext())
+    	        cache = iterator.next();
+            return cache;
+    	}
+    
+    	public Integer next() {
+    	    Integer tmp = peek();
+    	    cache = null;
+    	    return tmp;
+    	}
+    
+    	public boolean hasNext() {
+    	    return peek() != null;
+    	}
+    	
+    	private Iterator<Integer> iterator;
+    	private Integer cache;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution using a stack
+      class PeekingIterator : public Iterator {
+        public:
+        	PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+        	    it = this;
+        	}
+        
+            // Returns the next element in the iteration without advancing the iterator.
+        	int peek() {
+                if (pk.empty()) {
+                    pk.push(next());
+                }
+                
+                return pk.top();
+        	}
+        
+        	// hasNext() and next() should behave the same as in the Iterator interface.
+        	// Override them if needed.
+        	int next() {
+        	    int val;
+        	    if (!pk.empty()) {
+        	        val = pk.top();
+        	        pk.pop();
+        	    } else {
+        	        val = it->next();
+        	    }
+        	    
+        	    return val;
+        	}
+        
+        	bool hasNext() const {
+        	    return !pk.empty() || it->hasNext();
+        	}
+        	
+        private:
+            Iterator *it;
+            stack<int> pk;
+        };
+
+----------------------------------------------------------------------------------------------------
+Using one variable to cache the next
+    class PeekingIterator : public Iterator {
+    private:
+        int peekElement = -1;
+
+    public:
+	PeekingIterator(const vector<int>& nums) : Iterator(nums) {
+	    // Initialize any member here.
+	    // **DO NOT** save a copy of nums and manipulate it directly.
+	    // You should only use the Iterator interface methods.
+	}
+
+    // Returns the next element in the iteration without advancing the iterator.
+	int peek() {
+	    if (peekElement == -1 && hasNext()) peekElement = Iterator::next();
+        return peekElement;
+	}
+
+	// hasNext() and next() should behave the same as in the Iterator interface.
+	// Override them if needed.
+	int next() {
+	    if (peekElement == -1 && hasNext()) peekElement = Iterator::next();
+	    int old = peekElement;
+	    peekElement = -1;
+	    return old;
+	}
+
+	bool hasNext() const {
+	    return peekElement != -1 || Iterator::hasNext();
+	}
+};
+
+----------------------------------------------------------------------------------------------------
+Share useful concept in C++ OOP
+
+
+       Just comment out the last two function means that you do not want to override it, so it uses parent class implementation.  
+
+	int peek() {
+        if(hasNext()){
+            Iterator it(*this);
+            return it.next();
+        }
+	}
+
+	// hasNext() and next() should behave the same as in the Iterator interface.
+	// Override them if needed.
+	/*int next() {
+	    
+	}
+
+	bool hasNext() const {
+	    
+	}*/
+};
+
+----------------------------------------------------------------------------------------------------

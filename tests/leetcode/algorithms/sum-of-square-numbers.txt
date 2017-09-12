@@ -1,0 +1,611 @@
+C++ clean solution, answers to follow up
+vector<vector<string>> findDuplicate(vector<string>& paths) {
+    unordered_map<string, vector<string>> files;
+    vector<vector<string>> result;
+
+    for (auto path : paths) {
+	    stringstream ss(path);
+	    string root;
+	    string s;
+	    getline(ss, root, ' ');
+	    while (getline(ss, s, ' ')) {
+		    string fileName = root + '/' + s.substr(0, s.find('('));
+		    string fileContent = s.substr(s.find('(') + 1, s.find(')') - s.find('(') - 1);
+		    files[fileContent].push_back(fileName);
+	    }
+    }
+
+    for (auto file : files) {
+	    if (file.second.size() > 1)
+		    result.push_back(file.second);
+    }
+
+    return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straight forward solution with a tiny bit of Java8
+public static List<List<String>> findDuplicate(String[] paths) {
+        Map<String, List<String>> map = new HashMap<>();
+        for(String path : paths) {
+            String[] tokens = path.split(" ");
+            for(int i = 1; i < tokens.length; i++) {
+                String file = tokens[i].substring(0, tokens[i].indexOf('('));
+                String content = tokens[i].substring(tokens[i].indexOf('(') + 1, tokens[i].indexOf(')'));
+                map.putIfAbsent(content, new ArrayList<>());
+                map.get(content).add(tokens[0] + "/" + file);
+            }
+        }
+        return map.values().stream().filter(e -> e.size() > 1).collect(Collectors.toList());
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, HashMap
+public class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        List<List<String>> result = new ArrayList<List<String>>();
+        int n = paths.length;
+        if (n == 0) return result;
+        
+        Map<String, Set<String>> map = new HashMap<>();
+        for (String path : paths) {
+            String[] strs = path.split("\\s+");
+            for (int i = 1; i < strs.length; i++) {
+                int idx = strs[i].indexOf("(");
+                String content = strs[i].substring(idx);
+                String filename = strs[0] + "/" + strs[i].substring(0, idx);
+                Set<String> filenames = map.getOrDefault(content, new HashSet<String>());
+                filenames.add(filename);
+                map.put(content, filenames);
+            }
+        }
+        
+        for (String key : map.keySet()) {
+            if (map.get(key).size() > 1) {
+                result.add(new ArrayList<String>(map.get(key)));
+            }
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def findDuplicate(self, paths):
+    M = collections.defaultdict(list)
+    for line in paths:
+        data = line.split()
+        root = data[0]
+        for file in data[1:]:
+            name, _, content = file.partition('(')
+            M[content[:-1]].append(root + '/' + name)
+            
+    return [x for x in M.values() if len(x) > 1]
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code
+class Solution {
+public:
+    vector<vector<string>> findDuplicate(vector<string>& paths) {
+        vector<vector<string>> res;
+        map<string, vector<string>> files;
+        for (string s : paths) {
+            std::istringstream ss(s);
+            vector<string> toks{ istream_iterator<string>{ss}, istream_iterator<string>{} };
+            string path = toks[0];
+            for (int i = 1; i < toks.size(); i++) {
+                int pos = toks[i].find('(');
+                string file = toks[i].substr(0, pos);
+                string content = toks[i].substr(pos + 1, toks[i].size() - 2 - pos);
+                files[content].push_back(path + "/" + file);
+            }
+        }
+
+        for (auto p : files) {
+            if (p.second.size() > 1) {
+                res.push_back(p.second);
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Hashing Solution
+public List<List<String>> findDuplicate(String[] paths) {
+    List<List<String>> res = new LinkedList<>();
+    Map<String, List<String>> map = new HashMap<>();
+    for (String path : paths) {
+        String[] split = path.split(" ");
+        for (int i=1;i<split.length;i++) {
+            String file = split[i].substring(0, split[i].indexOf("("));
+            String content = split[i].substring(split[i].indexOf("(")+1, split[i].length()-1);
+            map.putIfAbsent(content, new LinkedList<String>());
+            map.get(content).add(split[0] + "/" + file);
+        }
+    }
+    for (List<String> list : map.values()) 
+        if (list.size() > 1) res.add(list);
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java - O(n) solution Content-&gt;paths Hashmap
+public class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        Map<String, List<String>> contentToFilePathsMap = new HashMap<>();
+        for(String path : paths) {
+            String[] components = path.split("\\s+");
+            String dir = components[0];
+            for(int i = 1; i < components.length; i++) {
+                int indexFirstPar = components[i].indexOf("(");
+                String fileName = components[i].substring(0, indexFirstPar);
+                String contents = components[i].substring(indexFirstPar + 1, components[i].length() - 1);
+                List<String> filePaths = contentToFilePathsMap.get(contents);
+                if(filePaths == null) {
+                    filePaths = new ArrayList<>();
+                    contentToFilePathsMap.put(contents, filePaths);
+                }
+                filePaths.add(dir + '/' + fileName);
+            }
+        }
+        
+        
+        List<List<String>> result = new ArrayList<>();
+        for(String content : contentToFilePathsMap.keySet()) {
+            List<String> filePaths = contentToFilePathsMap.get(content);
+            if(filePaths.size() >= 2) {
+                result.add(filePaths);    
+            }
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Hashmap Solution
+    def findDuplicate(self, paths):
+        """
+        :type paths: List[str]
+        :rtype: List[List[str]]
+        """
+        mp={}
+        res=[]
+        for s in paths:
+           tags=s.split(" ")
+           for i in xrange(1,len(tags)):
+               idx1=tags[i].find("(")
+               idx2=tags[i].find(")")
+               content=tags[i][idx1+1:idx2]
+               if mp.has_key(content):
+                   mp[content].append((tags[0],tags[i][:idx1]))
+               else:
+                   mp[content]=[ (tags[0],tags[i][:idx1])]
+
+        for key in mp:
+            if len(mp[key])>1:
+                group=[]
+                for x in mp[key]:
+                    s=x[0]+"/"+x[1]
+                    group.append(s)
+                res.append(group)
+        return res  
+
+
+----------------------------------------------------------------------------------------------------
+C# solution with Dictionary
+public class Solution {
+    public IList<IList<string>> FindDuplicate(string[] paths) {
+        var dict = new Dictionary<string, IList<string>>();
+        
+        foreach(var dfs in paths){
+            var df = dfs.Split(new char[]{' '}, StringSplitOptions.RemoveEmptyEntries);
+            if(df.Length<=1) continue;
+            
+            var dir = df[0];
+            for(var i=1;i<df.Length;++i){
+                var f = df[i];
+                var index = f.IndexOf('('); //e.g.  "a(1)"; index = 1;
+                var filename = f.Substring(0, index);
+                var content = f.Substring(index+1, f.Length-1 - index-1);
+                if(!dict.ContainsKey(content)) dict[content] = new List<string>();
+                var fullname = dir+"/"+filename;
+                dict[content].Add(fullname);
+            }
+        }
+        
+        
+        IList<IList<string>> res = new List<IList<string>>();
+        foreach(var kv in dict){
+            if(kv.Value.Count>1){
+                res.Add(kv.Value);
+            }
+        }
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution using HashMap
+    HashMap<String,List<String>> map = new HashMap<>();
+    
+    int l = paths.length;
+    
+    for(int i=0;i<l;i++){
+        String s = paths[i];
+        StringBuilder sb = new StringBuilder("");
+        char[] stc = s.toCharArray();
+        int m = s.length();
+        int j = 0;
+        while(stc[j] != ' '){
+            sb.append(stc[j++]);
+        }
+        String path = sb.toString();
+        sb.setLength(0);
+        j++;
+        String res = "";
+        String name = "";
+        while(j < m){
+            if(stc[j] == ' '){
+                res = "";
+                name = "";
+            }else if(stc[j] == '('){
+                name = path + '/' + res;
+                res = "";
+            }else if(stc[j] == ')'){
+                if(map.containsKey(res)){
+                    List<String> slist = map.get(res);
+                    slist.add(name);
+                    map.put(res,slist);
+                }else{
+                    List<String> slist = new ArrayList<String>();
+                    slist.add(name);
+                    map.put(res,slist);
+                }
+            }else{
+                res += stc[j];
+            }
+            j++;
+        }
+    }
+    for(String s : map.keySet()){
+        List<String> slist = map.get(s);
+        if(slist.size() > 1){
+            list.add(slist);
+        }
+    }
+    
+    return list;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python
+class Solution(object):
+    def findDuplicate(self, paths):
+        """
+        :type paths: List[str]
+        :rtype: List[List[str]]
+        """
+        dic = collections.defaultdict(list)
+        for path in paths:
+            p = path.split()
+            root = p[0]
+            for file in p[1:]:
+                idx = file.find("(")
+                fn, content = file[:idx], file[idx:]
+                dic[content].append(root + "/" + fn)
+        return [dic[key] for key in dic if len(dic[key]) > 1]
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution - HashTable
+class Solution {
+    func findDuplicate(_ paths: [String]) -> [[String]] {
+        if paths.count == 0 {
+            return []
+        }
+        
+        let fileMap = constructFileMap(paths)
+        let result = duplicateFilePath(fileMap)
+        
+        return result
+    }
+    
+    private func constructFileMap(_ paths: [String]) -> [String: Set<String>] {
+        var fileMap = [String: Set<String>]()
+        
+        for path in paths {
+            let items = path.components(separatedBy: " ")
+            let directory = items[0]
+            for i in 1..<items.count {
+                let item = items[i]
+                if let range1 = item.range(of: "("),
+                    let range2 = item.range(of: ")") {
+                    let fileName = item.substring(to: range1.lowerBound)
+                    let content = item.substring(with: range1.upperBound..<range2.lowerBound)
+                    let fullFileName = directory + "/" + fileName
+                    if fileMap[content] == nil {
+                        fileMap[content] = Set<String>()
+                    }
+                    fileMap[content]?.insert(fullFileName)
+                }
+            }
+        }
+        
+        return fileMap
+    }
+    
+    private func duplicateFilePath(_ fileMap: [String: Set<String>]) -> [[String]] {
+        var duplicates = [[String]]()
+        
+        for value in fileMap.values {
+            if value.count >= 2 {
+                duplicates.append(Array(value))
+            }
+        }
+
+        return duplicates
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python regexp + dict
+class Solution(object):
+    def findDuplicate(self, paths):
+        """
+        :type paths: List[str]
+        :rtype: List[List[str]]
+        """
+        hash = collections.defaultdict(list)
+        match = re.compile('(.*)\((.*)\)')
+        for p in paths:
+            strlist = p.split()
+            for i in range(1, len(strlist)):
+                m = match.search(strlist[i])
+                hash[m.group(2)].append(strlist[0] + '/' + m.group(1))
+        return [l for l in hash.values() if len(l) > 1]
+
+
+----------------------------------------------------------------------------------------------------
+Follow up questions discussion
+<ol>
+<li>Imagine you are given a real file system, how will you search files? DFS or BFS ?</li>
+</ol>
+<p>The answer depends on the tree structure. If the branching factor (n) and depth (d) are high, then BFS will take up a lot of memory O(d^n). For DFS, the space complexity is generally the height of the tree - O(d).</p>
+<ol start="2">
+<li>If the file content is very large (GB level), how will you modify your solution?</li>
+<li>If you can only read the file by 1kb each time, how will you modify your solution?</li>
+<li>What is the time complexity of your modified solution? What is the most time consuming part and memory consuming part of it? How to optimize?</li>
+<li>How to make sure the duplicated files you find are not false positive?</li>
+</ol>
+<p>Can&#39;t answer follow up questions. I would love to know your answers.</p>
+
+
+----------------------------------------------------------------------------------------------------
+8-line Python beats 100%
+class Solution(object):
+    def findDuplicate(self, paths):
+        """
+        :type paths: List[str]
+        :rtype: List[List[str]]
+        """
+        d = collections.defaultdict(list)
+        for path in paths:
+            raw = path.split(" ")
+            dirPath = raw[0]
+            for data in raw[1:]:
+                name, sign = data.split("(")
+                d[sign].append(dirPath + "/" + name)
+        return filter(lambda x: len(x) > 1, d.values())
+
+
+----------------------------------------------------------------------------------------------------
+Pure Java 8 solution with stream and lambda expression
+public List<List<String>> findDuplicate(String[] paths) {
+        List<File> files = new LinkedList<>();
+        for( int i = 0 ; i < paths.length ; i++){
+            String str = paths[i];
+            String[] strs = str.split(" ");
+            for( int j = 1 ; j < strs.length ; j++){
+                files.add(new File(strs[0],strs[j]));
+            }
+        }
+        Map<String,List<File>> group = files.stream().collect(Collectors.groupingByConcurrent(file->file.content));
+        List<List<File>> duplicateFiles = group.values().stream().filter(list->list.size()>1).collect(Collectors.toList());
+        return duplicateFiles.stream().map(files1 -> files1.stream().map(
+            file -> file.directory+"/"+file.fileName).collect(Collectors.toList())).collect(Collectors.toList());
+
+
+
+    }
+
+
+    public static class File{
+
+        String directory;
+
+        String fileName;
+
+        String content;
+
+        public File(String directory, String fileAndContent){
+            this.directory = directory;
+            parse(fileAndContent);
+        }
+
+        private void parse(String fileAndContent){
+            int index = fileAndContent.indexOf("(");
+            this.fileName = fileAndContent.substring(0,index);
+            this.content = fileAndContent.substring(index+1,fileAndContent.length() - 1);
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution using 2 maps without final iteration
+    Map<String, List<String>> map = new HashMap<>();
+    Map<String, Integer> indexMap = new HashMap<>();
+    
+    int n = paths.length;
+    
+    for (int i = 0; i < n; i++) {
+        String split[] = paths[i].split(" ");
+        
+        String dir = split[0];
+        
+        for (int j = 1; j < split.length; j++) {
+            int index = split[j].indexOf("(");
+            
+            String fileName = dir + "/" + split[j].substring(0, index);
+            String content = split[j].substring(index);
+            
+            List<String> list;
+            
+            if (map.containsKey(content)) {
+                if (indexMap.containsKey(content)) {
+                    lists.get(indexMap.get(content)).add(fileName);
+                } else {
+                    list = map.get(content);
+                    list.add(fileName);
+                    
+                    lists.add(list);
+                    
+                    indexMap.put(content, lists.size() - 1);
+                }
+            } else { 
+                list = new ArrayList<String>();
+                list.add(fileName);
+                
+                map.put(content, list);
+            }  
+        }
+    }
+    
+    return lists;
+}
+
+----------------------------------------------------------------------------------------------------
+C++ unordered_map, parse with stringstream
+class Solution {
+public:
+    vector<vector<string>> findDuplicate(vector<string>& paths) {
+        unordered_map<string, vector<string>>data;
+        for(auto e : paths)
+        {
+            stringstream ss(e);
+            string path, buff;
+            vector<string>contents;
+            ss >> path;
+            while(ss >> buff) contents.push_back(buff);
+            for(auto f : contents)
+            {
+                f.pop_back();
+                int idx = 0;
+                while(f[idx] != '(') idx++;
+                data[f.substr(idx+1)].push_back(path + "/" +f.substr(0,idx));
+            }
+        }
+        
+        vector<vector<string>>ans;
+        for(auto e : data)
+            if(e.second.size() > 1)
+                ans.push_back(e.second);
+        return ans;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+&#91;609. Find Duplicate File in System&#93; C++_AC_unordered_map
+class Solution {
+public:
+vector<vector<string>> findDuplicate(vector<string>& paths) {
+    vector<vector<string> > res;
+    if(paths.empty()) return res;
+    unordered_map<string, vector<string> > mp;
+    for(int i = 0; i < paths.size(); ++i){
+        string pathname = "";
+        int j = 0;
+        while(j < paths[i].size() && paths[i][j] != ' '){
+            pathname += paths[i][j];
+            j++;
+        }
+        j++;
+        while(j < paths[i].size()){
+            string filename = "";
+            string content = "";
+            while(j < paths[i].size() && paths[i][j] != '('){
+                filename += paths[i][j];
+                j++;
+            }
+            while(j < paths[i].size() && paths[i][j] != ')'){
+                content += paths[i][j];
+                j++;
+            }
+            mp[content].push_back(pathname +'/'+filename);
+            while(j < paths[i].size() && (paths[i][j] == ')' || paths[i][j] == ' ')) j++;
+        }
+    }
+    for(auto m : mp){
+        if(m.second.size() > 1){
+            res.push_back(m.second);
+        }
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Pattern &amp; HashMap
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+public class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        Pattern p = Pattern.compile("(.*\\.txt)\\((.*)\\)");
+        Map<String,List<String>> map = new HashMap<>();
+        for(String str:paths){
+            String[] strings = str.split(" ");
+            for(int i=0;i<strings.length;i++){
+                if(i == 0){
+                    continue;
+                }else {
+                    Matcher m = p.matcher(strings[i]);
+                    while (m.find()){
+                        String fileName = m.group(1);
+                        String content = m.group(2);
+                        List<String> list = null;
+                        if(map.containsKey(content)){
+                            list = map.get(content);
+                        }else {
+                            list = new ArrayList<>();
+                        }
+                        list.add(strings[0]+"/"+fileName);
+                        map.put(content,list);
+                    }
+                }
+            }
+        }
+
+        List<List<String>> resultList = new ArrayList<>();
+        for(String key:map.keySet()){
+            if(map.get(key).size()>1){
+                resultList.add(map.get(key));
+            }
+        }
+        return resultList;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

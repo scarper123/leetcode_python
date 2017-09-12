@@ -1,0 +1,102 @@
+My simple solution (one line with pipe)
+```
+cat words.txt | tr -s ' ' '\n' | sort | uniq -c | sort -r | awk '{ print $2, $1 }'
+```
+
+**tr -s**: truncate the string with target string, but only remaining one instance (e.g. multiple whitespaces)
+
+**sort**: To make the same string successive so that `uniq` could count the same string fully and correctly.
+
+**uniq -c**: uniq is used to filter out the repeated lines which are successive, -c means counting
+
+**sort -r**: -r means sorting in descending order
+
+**awk '{ print $2, $1 }'**: To format the output, see [here][1].
+
+
+  [1]: http://linux.cn/article-3945-1.html
+
+----------------------------------------------------------------------------------------------------
+Solution using awk and pipes with explaination
+
+1. I should count the words. So I chose the `awk` command.
+  - I use a dictionary in `awk`. For every line I count every word in the dictionary.
+  - After deal with all lines. At the `END`, use `for (item in Dict) { #do someting# } ` to print every words and its frequency.
+2. Now the printed words are unsorted. Then I use a `|` pipes and sort it by `sort`
+  - `sort -n` means "compare according to string numerical value".
+  - `sort -r` means "reverse the result of comparisons".
+  - `sort -k 2` means "sort by the second word"
+
+---
+
+
+    awk '\
+    { for (i=1; i<=NF; i++) { ++D[$i]; } }\
+    END { for (i in D) { print i, D[i] } }\
+    ' words.txt | sort -nr -k 2
+
+---
+
+Are there any other solutions without `awk`?  
+Such as using `sed` or `grep`.
+
+
+----------------------------------------------------------------------------------------------------
+My accepted answer using tr, sort, uniq and awk
+    tr -s ' ' '\n' < words.txt|sort|uniq -c|sort -nr|awk '{print $2, $1}'
+
+
+----------------------------------------------------------------------------------------------------
+Share my accepted solution, using awk and sort!
+    cat words.txt | awk '{for(i=1;i<=NF;++i){count[$i]++}} END{for(i in count) {print i,count[i]}}' | sort -k2nr
+
+----------------------------------------------------------------------------------------------------
+My 1 line solution using awk, sort and pipe
+
+First, use awk to count the number for each word.
+Then sort to sort the result by decreasing order.
+
+    awk '{for(i=1;i<=NF;i++) a[$i]++} END {for(k in a) print k,a[k]}' words.txt | sort -k2 -nr
+
+----------------------------------------------------------------------------------------------------
+My 16ms unix-pipe cat+tr+awk+sort+(hash) solution
+    # Read from the file words.txt and output the word frequency list to stdout.
+    
+    # use cat+tr+awk+sort
+    # use hashtables
+    # use Unix pipes
+    
+    cat words.txt | \
+    tr -s ' ' '\n' | \
+    awk '{nums[$1]++}END{for(word in nums) print word, nums[word]}' | \
+    sort -rn -k2
+
+----------------------------------------------------------------------------------------------------
+1 Line Solution using Pipes
+    cat words.txt | tr '\n' ' ' | sed "s/\s\s*/ /g" | awk -v RS=' ' '{print $0}' | sort | uniq -c | sort -nr -k1 | awk '{print $2" "$1}'
+
+**cat word.txt** :
+output the text in the file
+
+**tr '\n' ' '** :
+substitute endlines with single space
+
+**sed "s/\s\s*/ /g"** :
+substitute multiple spaces with single space
+
+**awk -v RS=' ' '{print $0}'** :
+output one word per line by changing Record Separator in AWK to single space. $0 is the entire record (1 word).
+
+**sort** :
+sort alphabetically the list of words (with repetitions) to prepare it for uniq command.
+
+**uniq -c** :
+print the list of unique words with their count. Before uniq you need to sort the list of words.
+
+**sort -nr -k1** :
+sort the list of unique words by their count  (-nr numerical reverse sorting) (-k1 sort by the first field that is the count of repetitions for the current word)
+
+**awk '{print $2" "$1}'** :
+for each line print before the second field $2, that is the word, and then the first field that is the count of repetitions for the word.
+
+----------------------------------------------------------------------------------------------------

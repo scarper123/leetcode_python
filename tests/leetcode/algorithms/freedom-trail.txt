@@ -1,0 +1,662 @@
+c++ DP solution with comments
+int findMaxForm(vector<string>& strs, int m, int n) {
+  vector<vector<int>> memo(m+1, vector<int>(n+1, 0));
+  int numZeroes, numOnes;
+
+  for (auto &s : strs) {
+    numZeroes = numOnes = 0;
+    // count number of zeroes and ones in current string
+    for (auto c : s) {
+      if (c == '0')
+	numZeroes++;
+      else if (c == '1')
+	numOnes++;
+    }
+
+    // memo[i][j] = the max number of strings that can be formed with i 0's and j 1's
+    // from the first few strings up to the current string s
+    // Catch: have to go from bottom right to top left
+    // Why? If a cell in the memo is updated(because s is selected),
+    // we should be adding 1 to memo[i][j] from the previous iteration (when we were not considering s)
+    // If we go from top left to bottom right, we would be using results from this iteration => overcounting
+    for (int i = m; i >= numZeroes; i--) {
+	for (int j = n; j >= numOnes; j--) {
+          memo[i][j] = max(memo[i][j], memo[i - numZeroes][j - numOnes] + 1);
+	}
+    }
+  }
+  return memo[m][n];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Iterative DP Solution - O(mn) Space
+public int findMaxForm(String[] strs, int m, int n) {
+    int[][] dp = new int[m+1][n+1];
+    for (String s : strs) {
+        int[] count = count(s);
+        for (int i=m;i>=count[0];i--) 
+            for (int j=n;j>=count[1];j--) 
+                dp[i][j] = Math.max(1 + dp[i-count[0]][j-count[1]], dp[i][j]);
+    }
+    return dp[m][n];
+}
+    
+public int[] count(String str) {
+    int[] res = new int[2];
+    for (int i=0;i<str.length();i++)
+        res[str.charAt(i) - '0']++;
+    return res;
+ }
+
+
+----------------------------------------------------------------------------------------------------
+0-1 knapsack detailed explanation.
+public int findMaxForm(String[] strs, int m, int n) {
+    int l = strs.length;
+    int[][] dp = new int[m+1][n+1];
+    
+    for (int i = 0; i < m+1; i++) {
+        Arrays.fill(dp[i], 0);
+    }
+    
+    int[] nums = new int[]{0,0};
+    for (String str : strs) {
+        nums = calculate(str);
+        for (int j = m; j >= nums[0]; j--) {
+            for (int k = n; k >= nums[1]; k--) {
+                if (j>=nums[0] && k>=nums[1]) {
+                    dp[j][k] = Math.max(dp[j][k], dp[j-nums[0]][k-nums[1]]+1);
+                } else {
+                    dp[j][k] = dp[j][k];
+                }
+            }
+        }
+    }
+    
+    return dp[m][n];
+}
+
+private int[] calculate(String str) {
+    int[] res = new int[2];
+    Arrays.fill(res, 0);
+    
+    for (char ch : str.toCharArray()) {
+        if (ch == '0') {
+            res[0]++;
+        } else if (ch == '1') {
+            res[1]++;
+        }
+    }
+    
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+0-1 knapsack in python
+class Solution(object):
+    def findMaxForm(self, strs, m, n):
+        
+        dp = [[0] * (n+1) for _ in range(m+1)]
+        
+        def count(s):
+            return sum(1 for c in s if c == '0'), sum(1 for c in s if c == '1')
+        
+        for z, o in [count(s) for s in strs]:
+            for x in range(m, -1, -1):
+                for y in range(n, -1, -1):
+                    if x >= z and y >= o:
+                        dp[x][y] = max(1 + dp[x-z][y-o], dp[x][y])
+                        
+        return dp[m][n]
+
+
+----------------------------------------------------------------------------------------------------
+Have you graduated from primary school?
+<p>Based on the description...</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java DP solution with explanation
+public int findMaxForm(String[] strs, int m, int n) {
+    int[][] max = new int[m + 1][n + 1];
+    for (int i = 0; i < strs.length; i++) {
+        String str = strs[i];
+        
+        int neededZero = 0;
+        int neededOne = 0;
+        for (int j = 0; j < str.length(); j++) {
+            if (str.charAt(j) == '0') {
+                neededZero++;
+            } else {
+                neededOne++;
+            }
+        }
+        
+        int[][] newMax = new int[m + 1][n + 1];
+        
+        for (int zero = 0; zero <= m; zero++) {
+            for (int one = 0; one <= n; one++) {
+                if (zero >= neededZero && one >= neededOne) {
+                    int zeroLeft = zero - neededZero;
+                    int oneLeft = one - neededOne;
+                    newMax[zero][one] = Math.max(1 + max[zeroLeft][oneLeft], max[zero][one]);
+                } else {
+                    newMax[zero][one] = max[zero][one];
+                }
+            }
+        }
+        
+        max = newMax;
+    }
+    return max[m][n];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java memoization and accepted DP solutions with explanations
+O(n*m*pairs.length)
+
+----------------------------------------------------------------------------------------------------
+Accepted greedy algorithm.
+public class Solution {
+    public int findMaxForm(String[] strs, int m, int n) {
+        int result = 0;
+        if(strs.length == 0) return 0;
+        PriorityQueue<Element> oneQueue = new PriorityQueue<Element>(new oneComparator());
+        PriorityQueue<Element> zeroQueue = new PriorityQueue<Element>(new zeroComparator());
+        
+        for(String s : strs){
+            int ones = 0;
+            int zeros = 0;
+            for(char c : s.toCharArray()){
+                if(c == '0') {
+                    zeros++;
+                }else{
+                    ones++;
+                }
+            }
+            Element e = new Element(ones, zeros);
+            oneQueue.offer(e);
+            zeroQueue.offer(e);
+        }
+        int numZero = m;
+        int numOne = n;
+        /*sort the string based on # of 0 each string has and try to consume as many string as possible*/
+        while(!zeroQueue.isEmpty()){
+            if(numZero >= zeroQueue.peek().zero && numOne >= zeroQueue.peek().one){
+                result++;
+                numZero -= zeroQueue.peek().zero;
+                numOne -= zeroQueue.peek().one;
+            }
+
+            zeroQueue.poll();
+        }
+        int secondResult = 0;
+        numZero = m;
+        numOne = n;
+        /*sort the string based on # of 1 each string has and try to consume as many string as possible*/
+        while(!oneQueue.isEmpty()){
+            if(numOne >= oneQueue.peek().one && numZero >= oneQueue.peek().zero){
+                secondResult++;
+                numZero -= oneQueue.peek().zero;
+                numOne -= oneQueue.peek().one;
+            }
+
+            oneQueue.poll();
+            
+        }        
+        return Math.max(result, secondResult);
+        
+    }
+    
+    class oneComparator implements Comparator<Element>{
+        public int compare(Element e1, Element e2){
+            if(e1.one == e2.one) return e1.zero - e2.zero;
+            return e1.one - e2.one;
+        }
+    }
+    
+    class zeroComparator implements Comparator<Element>{
+        public int compare(Element e1, Element e2){
+            if(e1.zero == e2.zero) return e1.one - e2.one;
+            return e1.zero - e2.zero;
+        }
+    }
+    
+    class Element{
+        public int one;
+        public int zero;
+
+        public Element(int one, int zero){
+            this.one = one;
+            this.zero = zero;
+        }
+        
+    }
+}```
+
+----------------------------------------------------------------------------------------------------
+4 Python solution with detailed explanation
+class Solution(object):
+    def findMaxForm(self, strs, m, n):
+        """
+        :type strs: List[str]
+        :type m: int
+        :type n: int
+        :rtype: int
+        """
+        prev, curr = [[0]*(n+1) for _ in range(m+1)], [[0]*(n+1) for _ in range(m+1)]
+        for i in range(1, len(strs)+1):
+            zeroes, ones = strs[i-1].count('0'), strs[i-1].count('1')
+            for j in range(m+1):
+                for k in range(n+1):
+                    curr[j][k] = 0
+                    if j >= zeroes and k >= ones:
+                        curr[j][k] = max(prev[j][k], 1+prev[j-zeroes][k-ones])
+                    else:
+                        curr[j][k] = prev[j][k]
+            prev, curr = curr, prev
+        return prev[m][n]
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Recursive Solutions in Java with Explanation
+  private int findMaxFormStartingWith(String[] strs, int m, int n, int begin) {
+    if ((begin==strs.length) || (m+n==0)) {
+      return 0;
+    }
+    // return the result if we have solved for these parameters before
+    if (dpTable[m][n][begin] > 0) {
+      return dpTable[m][n][begin];
+    }
+    int countByAddingString = 0;
+    String current = strs[begin];
+    int zeroes = countZeroesIn(current);
+    int ones = current.length()-zeroes;
+    if (m>=zeroes && n>=ones) {
+      countByAddingString = findMaxFormStartingWith(strs, m-zeroes, n-ones, begin+1)+1;
+    }
+    int countBySkippingString = findMaxFormStartingWith(strs, m, n, begin+1);
+    // store the result for further access
+    if (countByAddingString > countBySkippingString) {
+      dpTable[m][n][begin] = countByAddingString;
+    } else {
+      dpTable[m][n][begin] = countBySkippingString;
+    }
+    return dpTable[m][n][begin];
+  }
+
+
+----------------------------------------------------------------------------------------------------
+Java 28ms Solution
+public class Solution {
+    public int findMaxForm(String[] strs, int m, int n) {
+        int[][] dp = new int[m+1][n+1];
+        for (int s = strs.length-1; s>=0;s--) 
+        {
+            int[] count = count(strs[s]);
+            for (int i=m;i>=count[0];i--) 
+                for (int j=n;j>=count[1];j--) 
+                    dp[i][j] = Math.max(1 + dp[i-count[0]][j-count[1]], dp[i][j]);
+                       
+        }
+        return dp[m][n];
+    }
+    public int[] count(String str) {
+        int[] res = new int[]{0,0};
+        for (int i=0;i<str.length();i++){
+            if(str.charAt(i)=='0') res[0]++;
+            else res[1]++;
+        }
+        return res;
+     }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ BFS with unordered_map, 29ms
+class Solution {
+public:
+    int findMaxForm(vector<string>& strs, int m, int n) {
+        uint max = 0;
+        unordered_map<short, uint> cand, pool, tmp; // Put {zeros, ones} into one short
+        pool.reserve(m * n);
+        tmp.reserve(m * n);
+        for (auto& s : strs) { // Combine similar candidates since only the counts of 0/1 matter
+            short zero = 0, one = 0;
+            for (auto& c : s) {
+                if (c == '0') zero++;
+                else one++;
+            }
+            if (zero <= m && one <= n) cand[zero << 8 | one]++;
+        }
+        pool.emplace(m << 8 | n, 0);
+        for (auto& c : cand) { // BFS, try to add each candidate into already built results
+            short zero = c.first >> 8, one = c.first & 0xFF;
+            tmp = pool;
+            for (auto& p : pool) {
+                short zero_left = p.first >> 8, one_left = p.first & 0xFF;
+                for (uint i = 1, ii = c.second; i <= ii; i++) { // Each candidate represents several similar strings
+                    if ((zero_left -= zero) >= 0 && (one_left -= one) >= 0) {
+                        auto it = tmp.find(zero_left << 8 | one_left);
+                        if (it == tmp.end()) tmp[zero_left << 8 | one_left] = p.second + i;
+                        else if (p.second + i > it->second) it->second = p.second + i;
+                    } else break;
+                }
+            }
+            pool.clear();
+            pool.swap(tmp);
+        }
+        for (auto& p : pool) {
+            if (p.second > max) max = p.second;
+        }
+        return max;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+TLE for C++ recursive solution with memoization
+class Solution {
+public:
+    int findMaxForm(vector<string>& strs, int m, int n) {
+        if(m == 0 && n == 0) return 0;
+        if(strs.size() == 0) return 0;
+        unordered_map<string, pair<int, int>> numZeroesOnesInStr;
+        unordered_map<unsigned int, int> cache;
+        int maxNum = 0;
+        computeNumZeroesOnesInStrs(strs, numZeroesOnesInStr);
+        maxNum = findMaxFormUtil(0, strs, m, n, numZeroesOnesInStr, cache);
+        return(maxNum);
+    }
+    
+    void computeNumZeroesOnesInStrs(vector<string>& strs, unordered_map<string, pair<int, int>> &numZeroesOnesInStr) {
+        for(int i=0; i<strs.size(); i++) {
+            int zeroes = 0;
+            int ones = 0;
+            for(int j=0; j<strs[i].length(); j++) {
+                if(strs[i][j] == '0') {
+                    zeroes++;
+                    continue;
+                }
+                ones++;
+            }
+            numZeroesOnesInStr[strs[i]] = make_pair(zeroes, ones);
+        }
+    }
+    
+    int findMaxFormUtil(int pos, vector<string>& strs, int m, int n, unordered_map<string, pair<int, int>> &numZeroesOnesInStr, unordered_map<unsigned int, int> &cache) {
+        if(pos >= strs.size()) {
+            return 0;
+        }
+        unsigned int key = composeHashFunc(pos, m, n);
+        if(cache.find(key) != cache.end()) {
+            return(cache[key]);
+        }
+        int maxNum = 0;
+        pair<int, int> numZeroesOnes = numZeroesOnesInStr[strs[pos]];
+        if(m >= numZeroesOnes.first && n >= numZeroesOnes.second) {
+            maxNum = 1 + findMaxFormUtil(pos+1, strs, m-numZeroesOnes.first, n-numZeroesOnes.second, numZeroesOnesInStr, cache);
+        } 
+        maxNum = max(maxNum, findMaxFormUtil(pos+1, strs, m, n, numZeroesOnesInStr, cache));
+        cache[key] = maxNum;
+        return(maxNum);
+    }
+    
+    unsigned int composeHashFunc(int x, int y, int z) {
+        unsigned int hashVal = x | (y << 16) | (z << 24);
+        return(hashVal);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+java DP solution, 0-1Knapsack problem.
+public class Solution {
+    public class Cost {
+        int cost0;
+        int cost1;
+        public Cost(int cost0, int cost1) {
+            this.cost0 = cost0;
+            this.cost1 = cost1;
+        }
+    }
+    public int findMaxForm(String[] strs, int m, int n) {
+        if(strs == null || strs.length == 0) {
+            return 0;
+        }
+        int[][] dp = new int[m+1][n+1];
+        for(int i = 0; i < strs.length; i++) {
+            Cost c = findcost(strs[i]);
+            for(int j = m; j >= c.cost0; j--) {
+                for(int k = n; k >= c.cost1; k--) {
+                    dp[j][k] = Math.max(dp[j][k], dp[j-c.cost0][k-c.cost1] + 1);
+                }
+            }
+        }
+        return dp[m][n];
+    }
+    
+    protected Cost findcost(String str) {
+        int count0 = 0;
+        int count1 = 0;
+        for(int i = 0; i < str.length(); i++) {
+            if(str.charAt(i) == '0') {
+                count0++;
+            }else {
+                count1++;
+            }
+        }
+        return new Cost(count0, count1);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution using DP
+    public int findMaxForm(String[] strs, int m, int n) {
+        // adding one more as m and n are one based.
+        // represents a grid of 0's in col and 1's in rows
+        int[][] grid = new int[m+1][n+1];
+        
+        for(String str : strs){
+            // # of 0's and 1's in each string
+            int ones = 0, zeroes = 0;
+            for(char ch : str.toCharArray()){
+                if(ch == '0'){
+                    zeroes++;
+                }
+                else{
+                    ones++;
+                }
+            }
+            
+            for(int i=m; i>=zeroes; i--){
+                for(int j=n; j>=ones; j--){
+                    int maxStringWithCurrentString = grid[i-zeroes][j-ones] + 1;
+                    int maxStringWithoutCurrentString = grid[i][j];
+                    
+                    grid[i][j] = Math.max(maxStringWithCurrentString , maxStringWithoutCurrentString);
+                }
+            }
+        }
+        
+        return grid[m][n];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Ones and Zeroes Python O(m*n*len(strs)) TLE
+class Solution(object):
+    def findMaxForm(self, strs, m, n):
+        """
+        :type strs: List[str]
+        :type m: int
+        :type n: int
+        :rtype: int
+        """
+        k = len(strs)
+        if k ==  0: return 0
+        
+        a = [0]*(k+1)
+        b = [0]*(k+1)
+        
+        for i in range(k):
+            a[i+1] = strs[i].count('0')
+            b[i+1] = strs[i].count('1')
+            
+        f = [[0]*(n+1) for i in range(m+1)]
+        
+        for t in range(1, k+1):
+            for i in range(m, -1, -1):
+                for j in range(n, -1, -1):
+                    if i >= a[t] and j >= b[t] and f[i][j] < f[i-a[t]][j-b[t]] + 1:
+                        f[i][j] = f[i-a[t]][j-b[t]] + 1
+            
+        return f[m][n]
+
+
+----------------------------------------------------------------------------------------------------
+Java 19ms beats 100% no DP but Greedy !
+public int findMaxForm(String[] strs, int m, int n) {
+        Arrays.sort(strs, new Comparator<String>(){
+            public int compare(String s1, String s2) {
+                int val = s1.length() - s2.length();
+                if(val != 0)
+                    return val;
+                return s1.compareTo(s2);
+            }
+        });
+        int result = 0;
+        for(int i = 0; i < strs.length; i++)
+            result = Math.max(result, dfs(strs, m, n, i));
+        return result;
+    }
+    public int dfs(String[] strs, int m, int n, int start) {
+        boolean flag;
+        int result = 0, mm, nn;
+        for(; start < strs.length; start++) {
+            char[] c = strs[start].toCharArray();
+            flag = true;
+            if(c.length > m + n)
+                break;
+            mm = m;
+            nn = n;
+            for(int i = 0; i < c.length; i++) {
+                if(c[i] == '0' && m > 0)
+                    m--;
+                else if(c[i] == '1' && n > 0)
+                    n--;
+                else {
+                    flag = false;
+                    break;
+                }
+            }
+            if(flag)
+                result++;
+            else {
+                m = mm;
+                n = nn;
+            }
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Anybody can help me ? Run Custom case is good but submit will get Runtime Error
+["11","11","0","0","10","1","1","0","11","1","0","111","11111000","0","11","000","1","1","0","00","1","101","001","000","0","00","0011","0","10000"]
+90
+66
+
+
+----------------------------------------------------------------------------------------------------
+Java 0&#x2F;1 knapsack solution practice
+public class Solution {
+    public int findMaxForm(String[] strs, int m, int n) {
+        if (strs == null || strs.length == 0) {
+            return 0;
+        }
+        Record[] records = new Record[strs.length];
+        for (int i = 0; i < strs.length; i++) {
+            records[i] = getRecord(strs[i]);
+        }
+        Integer[][][] dp = new Integer[strs.length][m + 1][n + 1];
+        return get(dp, strs.length - 1, m, n, records);
+    }
+
+    private int get(Integer[][][] dp, int i, int j, int k, Record[] records) {
+        if (dp[i][j][k] != null) {
+            return dp[i][j][k];
+        }
+        int candidate1 = i >= 1 ? get(dp, i - 1, j, k, records) : 0;
+        int candidate2 = (records[i].zeros <= j && records[i].ones <= k) ?
+                (1 + (i >= 1 ? get(dp, i - 1, j - records[i].zeros, k - records[i].ones, records) : 0)) : 0;
+        return dp[i][j][k] = Math.max(candidate1, candidate2);
+    }
+
+    private Record getRecord(String str) {
+        if (str == null || str.length() == 0) {
+            return new Record(0, 0);
+        }
+        int zeros = 0;
+        int ones = 0;
+        for (int i = 0; i < str.length(); i++) {
+            zeros += str.charAt(i) == '0' ? 1 : 0;
+            ones += str.charAt(i) == '1' ? 1 : 0;
+        }
+        return new Record(zeros, ones);
+    }
+
+    private static class Record {
+        int zeros;
+        int ones;
+
+        Record(int zeros, int ones) {
+            this.zeros = zeros;
+            this.ones = ones;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ DFS solution (13ms) beats 99.41%
+class Solution {
+public:
+    struct Cmp {
+        bool operator()(string& s1, string& s2) {
+            return s1.length() != s2.length() ? s1.length() < s2.length() : s1 < s2;
+        }
+    };
+    
+    int findMaxForm(vector<string>& strs, int m, int n) {
+        sort(strs.begin(), strs.end(), Cmp());
+        vector<int> numOfZero;
+        for(string s : strs) {
+            numOfZero.push_back(count(s.begin(), s.end(), '0'));
+        }
+        int maxLen = 0;
+        dfs(strs, numOfZero, m, n, 0, 0, maxLen);
+        return maxLen;
+    }
+    
+    void dfs(vector<string>& strs, vector<int>& numOfZero, int m, int n, int k, int formLen, int& maxLen) {
+        if(maxLen >= formLen + strs.size() - k) {
+            return;
+        }
+        maxLen = max(maxLen, formLen);
+        for(int i = k; i < strs.size(); i++) {
+            if(i == k || strs[i] != strs[i-1]) {
+                int zeros = numOfZero[i], ones = strs[i].length() - zeros;
+                if(m - zeros >= 0 && n - ones >= 0) {
+                    dfs(strs, numOfZero, m - zeros, n - ones, i + 1, formLen + 1, maxLen);
+                }
+            }
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

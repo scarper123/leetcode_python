@@ -1,0 +1,278 @@
+Java (15 ms) C++ (3 ms) O(ns) iterative DP solution using subset sum with explanation
+class Solution {
+public:
+    int findTargetSumWays(vector<int>& nums, int s) {
+        int sum = accumulate(nums.begin(), nums.end(), 0);
+        return sum < s || (s + sum) & 1 ? 0 : subsetSum(nums, (s + sum) >> 1); 
+    }   
+
+    int subsetSum(vector<int>& nums, int s) {
+        int dp[s + 1] = { 0 };
+        dp[0] = 1;
+        for (int n : nums)
+            for (int i = s; i >= n; i--)
+                dp[i] += dp[i - n];
+        return dp[s];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short Java DP Solution with Explanation
+public class Solution {
+    public int findTargetSumWays(int[] nums, int s) {
+        int sum = 0; 
+        for(int i: nums) sum+=i;
+        if(s>sum || s<-sum) return 0;
+        int[] dp = new int[2*sum+1];
+        dp[0+sum] = 1;
+        for(int i = 0; i<nums.length; i++){
+            int[] next = new int[2*sum+1];
+            for(int k = 0; k<2*sum+1; k++){
+                if(dp[k]!=0){
+                    next[k + nums[i]] += dp[k];
+                    next[k - nums[i]] += dp[k];
+                }
+            }
+            dp = next;
+        }
+        return dp[sum+s];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java simple DFS with memorization
+public class Solution {
+    public int findTargetSumWays(int[] nums, int S) {
+        if (nums == null || nums.length == 0){
+            return 0;
+        }
+        return helper(nums, 0, 0, S, new HashMap<>());
+    }
+    private int helper(int[] nums, int index, int sum, int S, Map<String, Integer> map){
+        String encodeString = index + "->" + sum;
+        if (map.containsKey(encodeString)){
+            return map.get(encodeString);
+        }
+        if (index == nums.length){
+            if (sum == S){
+                return 1;
+            }else {
+                return 0;
+            }
+        }
+        int curNum = nums[index];
+        int add = helper(nums, index + 1, sum - curNum, S, map);
+        int minus = helper(nums, index + 1, sum + curNum, S, map);
+        map.put(encodeString, add + minus);
+        return add + minus;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python DP
+class Solution(object):
+    def findTargetSumWays(self, nums, S):
+        if not nums:
+            return 0
+        dic = {nums[0]: 1, -nums[0]: 1} if nums[0] != 0 else {0: 2}
+        for i in range(1, len(nums)):
+            tdic = {}
+            for d in dic:
+                tdic[d + nums[i]] = tdic.get(d + nums[i], 0) + dic.get(d, 0)
+                tdic[d - nums[i]] = tdic.get(d - nums[i], 0) + dic.get(d, 0)
+            dic = tdic
+        return dic.get(S, 0)
+
+
+----------------------------------------------------------------------------------------------------
+Java Short DFS Solution
+public class Solution {
+    int result = 0;
+	
+    public int findTargetSumWays(int[] nums, int S) {
+        if(nums == null || nums.length == 0) return result;
+        
+        int n = nums.length;
+        int[] sums = new int[n];
+        sums[n - 1] = nums[n - 1];
+        for (int i = n - 2; i >= 0; i--)
+            sums[i] = sums[i + 1] + nums[i];
+        
+        helper(nums, sums, S, 0);
+        return result;
+    }
+    public void helper(int[] nums, int[] sums, int target, int pos){
+        if(pos == nums.length){
+            if(target == 0) result++;
+            return;
+        }
+        
+        if (sums[pos] < Math.abs(target)) return;
+        
+        helper(nums, sums, target + nums[pos], pos + 1);
+        helper(nums, sums, target - nums[pos], pos + 1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to dp
+    int findTargetSumWays(vector<int>& nums, int S) {
+        int sum = accumulate(nums.begin(),nums.end(),0);
+        if(S>sum || S<-sum) return 0;
+        vector<int> cur(2*sum+1), nxt(2*sum+1), *p_cur = &cur, *p_nxt = &nxt;
+        cur[sum] = 1;
+        for(int i=0;i<nums.size();i++) {
+            for(int j=0;j<=2*sum;j++) 
+                if(p_cur->at(j)) {
+                    p_nxt->at(j+nums[i]) += p_cur->at(j);
+                    p_nxt->at(j-nums[i]) += p_cur->at(j);
+                }
+            swap(p_cur,p_nxt);
+            p_nxt->assign(2*sum+1,0);
+        }
+        return p_cur->at(S+sum);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ iterative with unordered_map
+// OJ: https://leetcode.com/problems/target-sum
+// Author: github.com/lzl124631x
+// Time: O(NS)
+// Space: O(S)
+// Ref: https://discuss.leetcode.com/topic/76243/java-15-ms-c-3-ms-o-ns-iterative-dp-solution-using-subset-sum-with-explanation
+class Solution {
+private:
+  int subsetSum(vector<int> &nums, int S) {
+    vector<int> dp(S + 1, 0);
+    dp[0] = 1;
+    for (int n : nums)
+      for (int i = S; i >= n; --i) dp[i] += dp[i - n];
+    return dp[S];
+  }
+public:
+  int findTargetSumWays(vector<int>& nums, int S) {
+    int sum = accumulate(nums.begin(), nums.end(), 0);
+    return sum < S || (sum + S) % 2 ? 0 : subsetSum(nums, (sum + S) / 2);
+  }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python intuitive DFS solution with memorization
+class Solution(object):
+    def findTargetSumWays(self, nums, S):
+        """
+        :type nums: List[int]
+        :type S: int
+        :rtype: int
+        """
+        def findTarget(i, s):
+            if (i, s) not in cache:
+                r = 0
+                if i == len(nums):
+                    if s == 0:
+                        r = 1
+                else:
+                    r = findTarget(i+1, s-nums[i]) + findTarget(i+1, s+nums[i])
+                cache[(i, s)] = r
+            return cache[(i, s)]
+        
+        cache = {}
+        return findTarget(0, S)
+
+
+----------------------------------------------------------------------------------------------------
+Easily understood solution in 8 lines
+def findTargetSumWays(self, nums, S):
+    count = {0: 1}
+    for x in nums:
+      count2 = {}
+      for tmpSum in count:
+        count2[tmpSum + x] = count2.get(tmpSum + x, 0) + count[tmpSum]
+        count2[tmpSum - x] = count2.get(tmpSum - x, 0) + count[tmpSum]
+      count = count2
+    return count.get(S, 0)
+
+
+----------------------------------------------------------------------------------------------------
+Python time limit exceed
+def findTargetSumWays(self, nums, S):
+    if not nums:
+        return 0
+    return helper(nums,0,0,S,len(nums))
+
+def helper(nums,now,p,t,l):
+    print(now,t)
+    if p == l:
+        if now == t:
+            return 1
+        return 0
+
+    return helper(nums,now + int(nums[p]),p+1,t,l) + helper(nums,now - int(nums[p]),p+1,t,l)
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution
+    public int findTargetSumWays(int[] nums, int S) {
+        if (nums == null || nums.length == 0){
+            return 0;
+        }
+        return helper(nums, S, 0, 0, 0);
+    }
+    
+    public int helper(int[] nums, int S, int sum, int index, int count){
+        if (index == nums.length){
+            if (sum == S){
+                count ++;
+            }
+            return count;
+        }
+        return helper(nums, S, sum + nums[index], index + 1, count) + helper(nums, S, sum - nums[index], index + 1, count);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ short dp solution
+int findTargetSumWays(vector<int>& nums, int S) {
+    int sum = 0;
+    for (auto n : nums) sum += n;
+    if ((sum + S) % 2 == 1 || S > sum || S < -sum) return 0;
+    int newS = (sum + S) / 2;
+    vector<int> dp(newS + 1, 0);
+    dp[0] = 1;
+    for (int i = 0; i < nums.size(); ++i) {
+        for (int j = newS; j >= nums[i]; --j) {
+            dp[j] += dp[j - nums[i]];
+        }
+    }
+    return dp[newS];
+}
+
+----------------------------------------------------------------------------------------------------
+Clean Java backtracking solution
+public class Solution {
+    int count = 0;
+    
+    public int findTargetSumWays(int[] nums, int S) {
+        helper(nums, S, 0);
+        return count;
+    }
+    
+    public void helper(int[] nums, int S, int start) {
+        if(start == nums.length) {
+            if(S == 0) count ++;
+            return;
+        }
+        helper(nums, S - nums[start], start + 1);
+        helper(nums, S + nums[start], start + 1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Backtracking solution java easy

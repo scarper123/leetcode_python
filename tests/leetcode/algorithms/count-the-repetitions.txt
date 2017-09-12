@@ -1,0 +1,411 @@
+Straightforward Java 8 main lines 25ms
+public class Solution {
+    public String addStrings(String num1, String num2) {
+        StringBuilder sb = new StringBuilder();
+        int carry = 0;
+        for(int i = num1.length() - 1, j = num2.length() - 1; i >= 0 || j >= 0 || carry == 1; i--, j--){
+            int x = i < 0 ? 0 : num1.charAt(i) - '0';
+            int y = j < 0 ? 0 : num2.charAt(j) - '0';
+            sb.append((x + y + carry) % 10);
+            carry = (x + y + carry) / 10;
+        }
+        return sb.reverse().toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++_Accepted_13ms
+class Solution {
+public:
+string addStrings(string num1, string num2) {
+    int i = num1.size() - 1;
+    int j = num2.size() - 1;
+    int carry = 0;
+    string res = "";
+    while(i>=0 || j>=0 || carry){
+        long sum = 0;
+        if(i >= 0){sum += (num1[i] - '0');i--;}
+        if(j >= 0){sum += (num2[j] - '0');j--;}
+        sum += carry; 
+        carry = sum / 10;
+        sum = sum % 10;
+        res =  res + to_string(sum);
+    }
+    reverse(res.begin(), res.end());
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+Python: 7-line &amp; 52ms (+ 1-liner for fun)
+def addStrings(self, num1, num2):
+     return str(
+              reduce(lambda a, b: 10*a + b, 
+                 map(lambda x: ord(x[0])+ord(x[1])-2*ord('0'),
+                   list(itertools.izip_longest(num1[::-1], num2[::-1], fillvalue='0'))[::-1]
+                 ) 
+              )
+            )
+
+
+----------------------------------------------------------------------------------------------------
+3ms 5 lines Concise C++ Solution without extra space. The loop should stop early!
+class Solution {
+public:
+    string addStrings(string num1, string num2) {
+        if (num1.size() < num2.size()) return addStrings(num2, num1);
+        int carry = 0, i = num1.size() - 1, j = num2.size() - 1;
+        for (; i >= 0 && (carry || j >= 0); i--, j--, carry /= 10) 
+            num1[i] = (carry += num1[i] - '0' + (j >= 0 ? num2[j] - '0' : 0)) % 10 + '0';
+        return (carry ? "1" : "") + num1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+&#91;JAVA&#93; Simple and Clean with Explanations &#91;29 ms&#93;
+String
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Java Solution
+public String addStrings(String num1, String num2) {
+        int len1=num1.length()-1;
+        int len2=num2.length()-1;
+        
+        StringBuilder sb=new StringBuilder();
+        int sum=0,carry=0;
+        while(len1>=0 || len2>=0) {
+            int first=len1>=0?num1.charAt(len1)-'0':0;
+            int second=len2>=0?num2.charAt(len2)-'0':0;
+            sum=carry+first+second;
+            if(sum<=9){
+                sb.insert(0,sum);
+                sum=0;
+                carry=0;
+            } else {
+                sb.insert(0,sum%10);
+                sum=0;
+                carry=1;
+            }
+            len1--;
+            len2--;
+        }
+    if(carry==1)sb.insert(0,"1");
+    return sb.toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+straightforward python solution
+class Solution(object):
+    def addStrings(self, num1, num2):
+        """
+        :type num1: str
+        :type num2: str
+        :rtype: str
+        """
+        num1, num2 = list(num1), list(num2)
+        carry, res = 0, []
+        while len(num2) > 0 or len(num1) > 0:
+            n1 = ord(num1.pop())-ord('0') if len(num1) > 0 else 0
+            n2 = ord(num2.pop())-ord('0') if len(num2) > 0 else 0
+            
+            temp = n1 + n2 + carry 
+            res.append(temp % 10)
+            carry = temp // 10
+        if carry: res.append(carry)
+        return ''.join([str(i) for i in res])[::-1]
+
+
+----------------------------------------------------------------------------------------------------
+Java, clean code.
+public class Solution {
+    public String addStrings(String num1, String num2) {
+        if(num1 == null || num2 == null) return null;
+        StringBuilder sb = new StringBuilder();
+        int carry = 0;
+        int l1 = num1.length()-1;
+        int l2 = num2.length()-1;
+        
+        while(l1>=0 || l2>=0){
+            int n1 = l1>=0 ? num1.charAt(l1)-'0' : 0;
+            int n2 = l2>=0 ? num2.charAt(l2)-'0' : 0;
+            int sum = n1 + n2 + carry;
+            carry = sum > 9 ? 1 : 0;
+            sb.insert(0, sum%10);
+            l1--;
+            l2--;
+        }
+        
+        if(carry == 1) sb.insert(0, 1);
+        
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very easy to understand Python solution
+class Solution(object):
+    def addStrings(self, num1, num2):
+        def additionStrings(num1, num2, carry):
+            if not num1 and not num2: 
+                if carry: res.append(carry)
+                return
+            a, b = num1.pop() if num1 else 0, num2.pop() if num2 else 0
+            carry, digit = divmod(a + b + carry, 10)
+            res.append(digit)
+            additionStrings(num1, num2, carry)
+        
+        res = []
+        additionStrings([int(c) for c in num1], 
+                        [int(c) for c in num2],
+                        0)
+        
+        return "".join([str(num) for num in res[::-1]])
+
+
+----------------------------------------------------------------------------------------------------
+Python solution using zip_longest()
+from itertools import izip_longest
+class Solution(object):
+    def addStrings(self, num1, num2):
+        res, c = "", 0
+        for (x, y) in izip_longest(num1[::-1], num2[::-1], fillvalue='0'):
+            s = (int(x) + int(y) + c)
+            d, c = s % 10, int(s / 10)
+            res = str(d) + res
+        
+        if c > 0: res = str(c) + res
+
+        return res
+
+----------------------------------------------------------------------------------------------------
+Javascript Solution
+var addStrings = function(num1, num2) {
+    let num1Len = num1.length;
+    let num2Len = num2.length;
+    let maxLen = num1.length > num2.length ? num1.length : num2.length;
+    maxLen++;
+    let carry = 0;
+    let total = '';
+    for (let i = 0; i< maxLen; i++) {
+        if (i === (maxLen-1) && carry === 0) {
+            continue;
+        }
+        let pos = num1Len-i-1;
+        let a = pos < 0? 0: (num1.charCodeAt(pos) - 48);
+        pos = num2Len-i-1;
+        let b = pos < 0? 0: (num2.charCodeAt(pos) - 48);
+        let t =  a + b + carry;
+        carry = Math.floor(t/10);
+        total =  (t % 10) + total;
+    }
+    return total;
+};
+
+----------------------------------------------------------------------------------------------------
+My easy c++ solution
+string addStrings(string num1, string num2) {
+    int sum = 0, i = num1.length() - 1, j = num2.length() - 1;
+    string str;
+    while (i >= 0 || j >= 0 || sum > 0) {
+        if (i >= 0) sum += (num1[i--] - '0');
+        if (j >= 0) sum += (num2[j--] - '0');
+        str.insert(0, 1, (sum % 10) + '0');
+        sum /= 10;
+    }
+    return str;
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ solution with string reversal
+string addStrings(string num1, string num2) {
+    if (num1.size() > num2.size())
+	return addStrings(num2, num1);
+    // num1.size() <= num2.size()
+    reverse(num1.begin(), num1.end());
+    reverse(num2.begin(), num2.end());
+    string sum;
+    int carry = 0, i = 0;
+
+    for (; i < num1.size(); i++) {
+    	int curDigit = (num1[i] - '0' + num2[i] - '0' + carry) % 10;
+    	carry = (num1[i] - '0' + num2[i] - '0' + carry) / 10;
+    	sum += to_string(curDigit);
+    }
+    for (; i < num2.size(); i++) {
+    	int curDigit = (num2[i] - '0' + carry) % 10;
+    	carry = (num2[i] - '0' + carry) / 10;
+    	sum += to_string(curDigit);
+    }
+    if (carry == 1)
+    	sum += "1";
+    reverse(sum.begin(), sum.end());
+    return sum;
+}
+
+
+----------------------------------------------------------------------------------------------------
+my C++ solution.How to improve it?
+class Solution {
+public:
+    string addStrings(string num1, string num2) {
+        int i=num1.size()-1,j=num2.size()-1,carry=0;
+        string res="";
+        while(i>=0||j>=0)
+        {
+            if(i>=0) carry+=num1[i--]-'0';
+            if(j>=0) carry+=num2[j--]-'0';
+            res=to_string(carry%10)+res;
+            carry/=10;
+        }
+        return carry?"1"+res:res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java 19ms &quot;in-place&quot; without StringBuilder
+public String addStrings(String num1, String num2) {
+    // suppose num1 is shorter
+    if(num1.length()>num2.length()) return addStrings(num2, num1);
+    char[] arr1 = num1.toCharArray(), arr2 = num2.toCharArray();
+    int len1 = arr1.length, len2 = arr2.length, carry = 0;
+    for(int i=0; i<len2; ++i){
+        int idx1 = len1-i-1, idx2 = len2-i-1;
+
+        if(idx1>=0) arr2[idx2] += (arr1[idx1] - '0' +carry);
+        else if(carry==0) break;
+        else arr2[idx2] += carry;
+
+        if(arr2[idx2]>'9'){
+            carry = 1;
+            arr2[idx2] -= 10;
+        } else carry = 0;
+    }
+    return carry==1 ? "1".concat(String.valueOf(arr2)) : String.valueOf(arr2);
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++ &#x2F; O(1) space &#x2F; O(n) time&#93; Concise Short solution
+class Solution {
+public:
+    void add (char &a, char b, bool &adv) {
+        int val = (a - '0') + (b - '0') + (adv ? 1 : 0);
+        if (val < 10) {
+            a = '0' + val;
+            adv = false;
+        } else {
+            a = '0' + (val - 10);
+            adv = true;
+        }
+    }
+
+    string addStrings(string num1, string num2) {
+        string *base = &num1, *adde = &num2;
+        if (num2.size() > num1.size()) swap(base, adde);
+        
+        bool advance = false;
+        int i = base->size() - 1, j = adde->size() - 1;
+        
+        while (j >= 0) add(base->at(i--), adde->at(j--), advance);
+        while (i >= 0) add(base->at(i--), '0', advance);
+        if (advance) base->insert(base->begin(), '1');
+        
+        return *base;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Clean C++ with comments. One pass without reversing string.
+string addStrings(string num1, string num2) {
+        if (num1.length() < num2.length()) {                                // use num1 for result variable
+            return addStrings(num2, num1);                                  // make sure num1 is no shorter than num2
+        }
+        
+        int carry = 0;                                                      // carry on value
+        for (int i1 = num1.length() - 1, i2 = num2.length() - 1; i2 >= 0 || (carry && i1 >= 0); i1--, i2--) {
+            carry += (num1[i1] - '0') + (i2 >= 0 ? num2[i2] - '0' : 0);     // need to check i2 because num2 may be exhausted
+            num1[i1] = (carry % 10) + '0';                                  // update result
+            carry /= 10;                                                    // update carry on value
+        }
+        
+        return carry ? '1' + num1 : num1;                                   // don't forget the last carry on value
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy and fast C 3ms solution
+#define pointAt(a,b,c) (a+b-1-c)
+#define getDigAt(a,b,c) (((c)<(b))?(*((a)+(b)-1-(c))-'0'):0)
+char* addStrings(char* num1, char* num2) {
+    int len1 = strlen(num1);
+    int len2 = strlen(num2);
+    char* res = malloc(5101*sizeof(char));
+    *(res+5100) = 0;
+    int i=0;
+    int adding = 0;
+    int tmp;
+    while(i<len1 || i<len2){
+        tmp = getDigAt(num1, len1, i) + getDigAt(num2, len2, i) + adding;
+        adding = tmp/10;
+        *pointAt(res, 5100, i) = tmp%10 + '0';
+        i++;
+    }
+    if(adding!=0){
+        *pointAt(res, 5100, i)=adding + '0';
+        return pointAt(res, 5100, i);
+    }else{
+        return pointAt(res, 5100, i+1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean Java Code
+public String addStrings(String num1, String num2) {
+    	int len1 = num1.length() - 1;
+	    int len2 = num2.length() - 1;
+	    StringBuilder s=new StringBuilder();
+	    int sum=0,carry=0;
+	    
+	    while(len1>=0 || len2>=0) {
+	        int first = len1>=0 ? num1.charAt(len1)-'0' : 0;
+	        int second = len2>=0 ? num2.charAt(len2)-'0' : 0;
+	        sum = carry+first+second;
+	        s.insert(0,sum%10);
+	        carry = sum/10;
+	        len1--;len2--;
+	    }
+	    
+		if(carry>0)
+		    s.insert(0,carry);
+		    
+		return s.toString();
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Best Java Solution (24ms)
+public String addStrings(String num1, String num2) {
+        StringBuilder result = new StringBuilder();
+        int maxLength = Math.max(num1.length(), num2.length());
+        int carry = 0;
+        for(int i=1; i<=maxLength; i++){
+            int val = carry;
+            if(i<=num1.length()) val += num1.charAt(num1.length()-i)-'0';
+            if(i<=num2.length()) val += num2.charAt(num2.length()-i)-'0';
+            result.append(val%10);
+            carry = val/10;
+        }
+        if(carry>0)
+            result.append(carry);
+        return result.reverse().toString();
+    }
+
+
+----------------------------------------------------------------------------------------------------

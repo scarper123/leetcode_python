@@ -1,0 +1,436 @@
+Short code by c++
+    class Solution
+    {
+    public:
+        string addBinary(string a, string b)
+        {
+            string s = "";
+            
+            int c = 0, i = a.size() - 1, j = b.size() - 1;
+            while(i >= 0 || j >= 0 || c == 1)
+            {
+                c += i >= 0 ? a[i --] - '0' : 0;
+                c += j >= 0 ? b[j --] - '0' : 0;
+                s = char(c % 2 + '0') + s;
+                c /= 2;
+            }
+            
+            return s;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short AC solution in Java with explanation
+    public class Solution {
+        public String addBinary(String a, String b) {
+            StringBuilder sb = new StringBuilder();
+            int i = a.length() - 1, j = b.length() -1, carry = 0;
+            while (i >= 0 || j >= 0) {
+                int sum = carry;
+                if (j >= 0) sum += b.charAt(j--) - '0';
+                if (i >= 0) sum += a.charAt(i--) - '0';
+                sb.append(sum % 2);
+                carry = sum / 2;
+            }
+            if (carry != 0) sb.append(carry);
+            return sb.reverse().toString();
+        }
+    }
+
+Computation from string usually can be simplified by using a carry as such.
+
+----------------------------------------------------------------------------------------------------
+Simple accepted java solution
+    public class Solution {
+        public String addBinary(String a, String b) {
+            if(a == null || a.isEmpty()) {
+                return b;
+            }
+            if(b == null || b.isEmpty()) {
+                return a;
+            }
+            char[] aArray = a.toCharArray();
+            char[] bArray = b.toCharArray();
+            StringBuilder stb = new StringBuilder();
+    
+            int i = aArray.length - 1;
+            int j = bArray.length - 1;
+            int aByte;
+            int bByte;
+            int carry = 0;
+            int result;
+    
+            while(i > -1 || j > -1 || carry == 1) {
+                aByte = (i > -1) ? Character.getNumericValue(aArray[i--]) : 0;
+                bByte = (j > -1) ? Character.getNumericValue(bArray[j--]) : 0;
+                result = aByte ^ bByte ^ carry;
+                carry = ((aByte + bByte + carry) >= 2) ? 1 : 0;
+                stb.append(result);
+            }
+            return stb.reverse().toString();
+        }
+    }
+
+Addition bits are calculated by xor. Carry bit is calculated as simple integer addition.  
+
+----------------------------------------------------------------------------------------------------
+Very concise C++ solution without calculating longest string
+I am not sure if this can be made even more concise (possibly yes), but I believe this is sufficiently concise without sacrificing readability.
+
+    string addBinary(string a, string b) 
+    {
+        string result = "";
+        int apos = a.size() - 1;
+        int bpos = b.size() - 1;
+        int adigit, bdigit, carry = 0;
+        
+        while (apos >= 0 || bpos >= 0 || carry == 1)
+        {
+            adigit = bdigit = 0;
+            
+            if (apos >= 0) adigit = a[apos--] == '1';
+            if (bpos >= 0) bdigit = b[bpos--] == '1';
+            
+            // Another way: the digit is 1 if adigit + bdigit + carry == 1 or == 3, but I noticed that
+            // XOR is more concise:
+            result = static_cast<char>(adigit ^ bdigit ^ carry + '0') + result; 
+            carry = adigit + bdigit + carry >= 2;
+        }
+        
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+An accepted concise Python recursive solution 10 lines
+    #add two binary from back to front, I think it is very self explained, when 1+1 we need a carry.
+       class Solution:
+            def addBinary(self, a, b):
+                if len(a)==0: return b
+                if len(b)==0: return a
+                if a[-1] == '1' and b[-1] == '1':
+                    return self.addBinary(self.addBinary(a[0:-1],b[0:-1]),'1')+'0'
+                if a[-1] == '0' and b[-1] == '0':
+                    return self.addBinary(a[0:-1],b[0:-1])+'0'
+                else:
+                    return self.addBinary(a[0:-1],b[0:-1])+'1'
+
+
+
+----------------------------------------------------------------------------------------------------
+Tiny clean C++ solution, quite readable
+    class Solution {
+    public:
+            string addBinary(string a, string b) {
+                    string ret = "";
+                    int carry = 0;
+                    for (int i = a.size() - 1, j = b.size() - 1; i >= 0 || j >= 0; i--, j--) {
+                            int m = (i >= 0 && a[i] == '1');
+                            int n = (j >= 0 && b[j] == '1');
+                            ret = to_string((m + n + carry) & 0x1) + ret;
+                            carry = (m + n + carry) >> 1;
+                    }
+                    return carry ? '1' + ret : ret;
+            }
+    };
+
+----------------------------------------------------------------------------------------------------
+13 Lines Easy JAVA Solution, Simple and Elegant
+    public String addBinary(String a, String b) {
+        int lena = a.length();
+        int lenb = b.length();
+        int i =0, carry = 0;
+        String res = "";
+        while(i<lena || i<lenb || carry!=0){
+            int x = (i<lena) ? Character.getNumericValue(a.charAt(lena - 1 - i)) : 0;
+            int y = (i<lenb) ? Character.getNumericValue(b.charAt(lenb - 1 - i)) : 0;
+            res = (x + y + carry)%2 + res;
+            carry = (x + y + carry)/2;
+            i++;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+One line Python solution.
+    class Solution:
+        def addBinary(self, a, b):
+            return bin(eval('0b' + a) + eval('0b' + b))[2:]
+
+----------------------------------------------------------------------------------------------------
+My simple 4ms JAVA Solution. Clean and consice.
+      public String addBinary(String a, String b) {
+        int aLength = a.length();
+        int bLength = b.length();
+        StringBuilder sb = new StringBuilder();
+        int carry = 0;
+        while(Math.max(aLength, bLength) > 0) {
+          int aNum = aLength > 0 ? (a.charAt(aLength---1) - '0') : 0;
+          int bNum = bLength > 0 ? (b.charAt(bLength---1) - '0') : 0;
+          int cNum = aNum + bNum + carry;
+          sb.append(cNum%2);
+          carry = cNum / 2;
+        }
+        return (carry == 1)?sb.append(1).reverse().toString():sb.reverse().toString();
+      }
+
+----------------------------------------------------------------------------------------------------
+Another simple java.
+    public String addBinary(String a, String b) {
+        if(a == null || b ==null)
+            return a == null? b: a;
+            
+        int carry =0;
+        StringBuilder sb = new StringBuilder();        
+        
+        for(int i = a.length()-1, j = b.length() -1;  i >=0 || j >=0 || carry >0 ; i --, j --){
+            int sum = 0;
+            sum += (i >=0) ? a.charAt(i) - '0' : 0;
+            sum += (j >=0) ? b.charAt(j) - '0' : 0;
+            sum += carry;
+            
+            carry = sum /2;
+            sum %=2;
+            sb.append(sum);
+        }
+        
+        return sb.reverse().toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+7 line 7ms c++ code, probably shortest
+it's important to write concise code
+
+    class Solution {
+    public:
+        string addBinary(string a, string b) {
+            string res;
+            int i = a.size(), j = b.size(), cur = 0;
+            while(i || j || cur) {
+                cur += (i ? a[(i--)-1] -'0' : 0) + (j ? b[(j--)-1] -'0' : 0);
+                res = char(cur%2 + '0') + res;
+                cur /= 2;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Super short Java code
+    public class Solution {
+        public String addBinary(String a, String b) {
+            StringBuilder sum = new StringBuilder();
+            int i = a.length() - 1;
+            int j = b.length() - 1;
+            int carry = 0;
+            while (i >= 0 || j >= 0 || carry == 1) {
+                int digitA = i < 0 ? 0 : a.charAt(i--) - '0';
+                int digitB = j < 0 ? 0 : b.charAt(j--) - '0';
+                sum.insert(0, (digitA + digitB + carry) % 2);
+                carry = (digitA + digitB + carry) / 2;
+            }
+            return sum.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A straightforward C++ solution
+  
+
+      string addBinary(string a, string b) {
+            string result = "";
+            int ia = a.size() - 1;
+            int ib = b.size() - 1;
+            int sum = 0;
+            while (ia >= 0 || ib >= 0) {
+                int va = 0, vb = 0;
+                if (ia >= 0) {
+                    va = a[ia] - '0'; ia --;
+                }
+                if (ib >= 0) {
+                    vb = b[ib] - '0'; ib --;
+                }
+                sum = sum + va + vb;
+                // possible values of sum: 0 ~ 3
+                result = (sum % 2 == 0 ? "0" : "1") + result;
+                sum = sum / 2;
+            }
+            if (sum == 1) result = "1" + result;
+            return result;
+        }
+
+----------------------------------------------------------------------------------------------------
+Python one-liner solution
+    class Solution:
+        # @param {string} a
+        # @param {string} b
+        # @return {string}
+        def addBinary(self, a, b):
+            return bin(int(a,2) + int(b,2))[2:]
+
+----------------------------------------------------------------------------------------------------
+Short 4ms C++ Solution
+    class Solution {
+    public:
+        string addBinary(string a, string b) {
+            bool carry = false;
+            int i = a.length() - 1, j = b.length()-1;
+            string res(max(i,j)+1, '0');
+            while(i >= 0 || j >= 0) {
+                int cur = (i >= 0? a[i--]-'0' : 0) + (j >= 0 ? b[j--]-'0' : 0 ) + carry;
+                res[max(i,j)+1] = (cur % 2) + '0';
+                carry = (cur > 1);
+            }
+            if (carry) 
+                res = "1" + res;
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short O(n) time, O(1) space C++ solution
+I just write the sum into the longer one of the inputs. Don't worry about modifying them, as getting `string` means we're getting copies. The "O(1) space" of course refers to the space I use in addition to input and output. If the output doesn't need to be longer than the longer input, I even only use O(1) space in addition to only the input.
+
+    struct Solution {
+        string addBinary(string a, string b) {
+            if (a.size() < b.size())
+                swap(a, b);
+            int i = a.size(), j = b.size();
+            while (i--) {
+                if (j) a[i] += b[--j] & 1;
+                if (a[i] > '1') {
+                    a[i] -= 2;
+                    if (i) a[i-1]++; else a = '1' + a;
+                }
+            }
+            return a;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution.
+        
+    string addBinary(string a, string b) {
+        int i = a.size()-1, j = b.size()-1;
+        int carry = 0;
+        string ret = "";
+        while (i >= 0 || j >= 0 || carry!=0) {
+            if (i >= 0) {
+                carry += a[i]=='0'?0:1;
+                i--;
+            }
+            if (j >= 0) {
+                carry += b[j]=='0'?0:1;
+                j--;
+            }
+            ret = ((carry%2)==0?"0":"1") + ret;
+            carry /= 2;
+        }
+        return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+213ms java solution. use two pointer to calculate. O(n) times
+    public class Solution {
+        public String addBinary(String a, String b) {
+            StringBuilder str = new StringBuilder();
+            int aPtr = a.length() - 1;
+            int bPtr = b.length() - 1;
+            int carry = 0;
+            int count = 0;
+            while(aPtr >= 0 || bPtr >= 0) {
+                if(aPtr >= 0) {
+                    if(a.charAt(aPtr) == '1') {
+                        count ++;
+                    }
+                }
+                if(bPtr >= 0) {
+                    if(b.charAt(bPtr) == '1') {
+                        count ++;
+                    }
+                }
+                if(carry == 1) {
+                    count++;
+                }
+                carry = (count > 1 ? 1 : 0);
+                str.insert(0, ((count == 0 || count == 2)? '0' : '1'));
+                count = 0;
+                aPtr--;
+                bPtr--;
+            }
+            if(carry == 1) {
+                str.insert(0, '1');
+            }
+            return str.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution 76ms
+I assume using `int` and `str` is okay, I think this is easy to understand.
+
+    def addBinary(self, a, b):
+        result = ''
+        index = 0
+        
+        carry = '0'
+        while index < max(len(a), len(b)) or carry == '1':
+            num_a = a[-1 - index] if index < len(a) else '0'
+            num_b = b[-1 - index] if index < len(b) else '0'
+            
+            val = int(num_a) + int(num_b) + int(carry)
+            result = str(val % 2) + result
+            
+            carry = '1' if val > 1 else '0'
+            index += 1
+
+        return result
+
+================== update ===============
+
+No `int` and `str` version.
+
+    class Solution:
+    # @param a, a string
+    # @param b, a string
+    # @return a string
+    # 75ms
+    def addBinary(self, a, b):
+        result = ''
+        index = 0
+        
+        carry = '0'
+        while index < max(len(a), len(b)) or carry == '1':
+            num_a = a[-1 - index] if index < len(a) else '0'
+            num_b = b[-1 - index] if index < len(b) else '0'
+            
+            val = self.to_int(num_a) + self.to_int(num_b) + self.to_int(carry)
+            result = "%s%s" % (val % 2, result)
+            
+            carry = '1' if val > 1 else '0'
+            index += 1
+
+        return result
+    
+    def to_int(self, c):
+        if c == '1':
+            return 1
+        elif c == '0':
+            return 0
+
+----------------------------------------------------------------------------------------------------
+Consise Java solution. 11 lines
+    public String addBinary(String a, String b) {
+        StringBuilder sb = new StringBuilder();
+        int carry = 0;
+        for(int i=a.length()-1,j=b.length()-1;i>=0 || j>=0;i--,j--){
+            int v1 = (i<0)?0:a.charAt(i)-'0';
+            int v2 = (j<0)?0:b.charAt(j)-'0';
+            int val = (v1+v2+carry)%2;
+            carry = (v1+v2+carry)/2;
+            sb.insert(0,(char)(val+'0'));
+        }
+        if(carry == 1) sb.insert(0,'1');
+        return sb.toString();
+    }
+
+----------------------------------------------------------------------------------------------------

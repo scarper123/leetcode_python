@@ -1,0 +1,820 @@
+Concise&#x2F;Easy-to-understand Java 5ms solution with Explaination
+public int findKthNumber(int n, int k) {
+    int curr = 1;
+    k = k - 1;
+    while (k > 0) {
+        int steps = calSteps(n, curr, curr + 1);
+        if (steps <= k) {
+            curr += 1;
+            k -= steps;
+        } else {
+            curr *= 10;
+            k -= 1;
+        }
+    }
+    return curr;
+}
+//use long in case of overflow
+public int calSteps(int n, long n1, long n2) {
+    int steps = 0;
+    while (n1 <= n) {
+        steps += Math.min(n + 1, n2) - n1;
+        n1 *= 10;
+        n2 *= 10;
+    }
+    return steps;
+}
+
+----------------------------------------------------------------------------------------------------
+C++&#x2F;Python 0ms O((log n)^2)-time O(1)-space super easy solution with detailed explanations
+result
+
+----------------------------------------------------------------------------------------------------
+Java 7ms denary(trie?) tree solution with detailed explanation
+public class Solution {
+    int countNum(int n){
+        int i=0;
+        while(n>0){
+            n/=10;
+            i++;
+        }
+        return i;
+    }
+    int getFullTreeNum(int depth){
+        int sum=0, children=1;
+        while(depth>0){
+            sum+=children;
+            children*=10;
+            depth--;
+        }
+        return sum;
+    }
+    int getMax(int prefix, int depth){
+        while(depth>0){
+            prefix*=10;
+            prefix+=9;
+            depth--;
+        }
+        return prefix;
+    }
+    int getMin(int prefix, int depth){
+        while(depth>0){
+            prefix*=10;
+            depth--;
+        }
+        return prefix;
+    }
+    int helper(int n, int k, int prefix, int depth){
+        int lowNum=getFullTreeNum(depth), highNum=getFullTreeNum(depth-1);
+        for(int i=(prefix==0?1:0);i<=9;i++){
+            int nodeNum=0;
+            if(getMax(prefix*10+i, depth-1)<=n){
+                nodeNum=lowNum;
+            }
+            else if(getMin(prefix*10+i, depth-1)>n){
+                nodeNum=highNum;
+            }
+            else{
+                nodeNum=highNum+((n-getMin(prefix*10+i, depth-1))+1);
+            }
+            k-=nodeNum;
+            if(k<=0){
+                k+=nodeNum;
+                if(k==1){
+                    return prefix*10+i;
+                }
+                else {
+                    return helper(n, k-1, prefix*10+i, depth-1);
+                }
+            }
+        }
+        return 0;
+    }
+    
+    public int findKthNumber(int n, int k) {
+        int depth=countNum(n);
+        int index=0;
+        return helper(n, k, 0, depth);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+It&#x27;s a denary tree
+public class Solution {
+    int index = 0;
+    int ans = 0;
+    public int findKthNumber(int n, int k) {
+        for(int i=1;i<=9;i++) {
+            int c = count(n, i, "");
+            if(k>c+index) {
+                index+=c;
+                continue;
+            }
+            if(helper(n, k, ""+i)) break;
+        }
+        return ans;
+    }
+    public boolean helper(int n, int k, String cur) {
+        index++;
+        if(index==k) {
+            ans = Integer.valueOf(cur);
+            return true;
+        }
+        for(int i=0; i<=9; i++) {
+            int c = count(n, i, cur);
+            if(k>c+index) {
+                index+=c;
+                continue;
+            }
+            if(Integer.valueOf(cur+i)<=n) if(helper(n, k, cur+i)) return true;
+        }
+        return false;
+    }
+    public int count(int n, int i, String prefix) {
+        long cur = Long.valueOf(prefix+i);
+        int ans = 0;
+        int number = 1;
+        while(cur<=n) {
+            ans += number;
+            cur *= 10;
+            number *= 10;
+        }
+        if(n<(cur/10+number/10-1)) ans -= cur/10+number/10-1-n;
+        return ans;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand JS solution
+// Calculates the amount of
+// numbers <= n that starts with prefix.
+
+function countForPrefix (n, prefix) {
+    let a = parseInt(prefix);
+    let b = a + 1;
+    if (a > n || a === 0)
+        return 0;
+
+    let res = 1;
+    a *= 10; b *= 10;
+    while (a <= n) {
+        res += Math.min(n + 1, b) - a;
+        a *= 10; b *= 10;
+    }
+
+    return res;
+}
+
+// Constructs resulting number digit by digit
+// starting with the most significant.
+
+function findKthNumber (n, k) {
+    let i, prefix = '';
+    while (k !== 0) {
+        for (i = 0; i <= 9; i++) {
+            const count = countForPrefix(n, prefix + i);
+            if (count < k)
+                k -= count;
+            else
+                break;
+        }
+        prefix = prefix + i;
+        k--; // number equal to prefix
+    }
+
+    return parseInt(prefix, 10);
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 0ms solution, digit by digit
+class Solution {
+public:
+    int findKthNumber(int n, int k, int start = 0) {
+        if(k > 0) {
+            for(int i = (start==0)?1:0; i <= 9; i++) { // append 0-9 to the prefix
+                int count = numbersBeginWith(n, 10*start+i);
+                if(k <= count) // if k <= count, the answer is begin with the prefix
+                    return findKthNumber(n, k-1, 10*start+i);
+                k -= count; // if the answer does not begin with the prefix, remove all the numbers begin with this prefix
+            }
+        }
+        return start;
+    }
+    
+    // return how many numbers are begin with the prefix and in the range of N
+    int numbersBeginWith(int n, long long prefix) 
+    {
+        long long fac = 1;
+        int count = 0;
+        for(int digit = 1; digit <= 9; digit++) {
+            long long min = prefix*fac;
+            long long max = prefix*fac+fac-1;
+            if(n < min)
+                break;
+            else if(min <= n && n <= max) {
+                count += (n-min+1);
+                break;
+            }
+            else
+                count += fac;
+            fac *= 10;
+        }
+        return count;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python &#x27;&#x27;binary search&#x27;&#x27; solution
+def samelength(m):
+    # find the number of positive integer i <= m in lexicographical order with len(str(i)) == len(str(m)).
+    if not m:
+        return 0
+    if len(m) == 1:
+        return int(m)
+    res = (int(m[0]) - 1)*10**(len(m)-1)
+    return res + int(m[1:]) + 1
+    
+
+def order(m, n):
+    # find the rank of m among positive integers no greater then n in lexicographical order.
+    # here we assume m <= n.
+    res = 0
+    for i in range(1, len(m)+1):
+        res += samelength(m[:i])
+    if len(n) > len(m) and sum(int(ch) for ch in m)>1:
+        num = int(n)
+        mum = int(m)
+        d = len(n)-len(m)
+        for i in range(1, d):
+            m = str(mum*10**i - 1)
+            res += samelength(m)
+        m = str(mum*10**d - 1)
+        res += samelength(min(m, n))
+    return res
+
+digits = '0123456789'
+
+class Solution(object):
+    def findKthNumber(self, n, k):
+        n_str = str(n)
+        res = ''
+        while len(res) < len(n_str):
+            index = order(res + '9', n_str)
+            if index == k:
+                return int(res + '9')
+            elif index < k:
+                res += '9'
+                continue
+            else:
+                lo, hi = 0, 9            
+                while lo + 1 < hi:
+                    mid = (lo + hi)//2
+                    index = order(res + digits[mid], n_str)
+                    if index <= k:
+                        lo = mid
+                    else:
+                        hi = mid
+                res += digits[lo]
+                if order(res, n_str) == k:
+                    return int(res)
+
+
+----------------------------------------------------------------------------------------------------
+3ms C++ solution
+class Solution {
+public:
+
+    int bnums[11] = {0, 1, 11, 111, 1111, 11111, 111111, 1111111, 11111111, 111111111, 1111111111};
+    int dnums[11] = {0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    int findKthNumber(int n, int k) {
+        string res;
+        find(n, to_string(n), k, res, 1);
+        return atoi(res.c_str());
+    }
+
+    void find(int n, const string &nstr, int k, string &res, int be) {
+        int nn = nstr.size();
+        vector<int> cnts(10, 0);
+
+        int c1 = bnums[nn];
+        int c2 = bnums[nn-1] + (n % dnums[nn]) + 1;
+        int c3 = bnums[nn-1];
+
+        int hdi = nstr[0] - '0';
+        for (int i = be; i < hdi; i++) cnts[i] = c1;
+        cnts[hdi] = c2;
+        for (int i = hdi + 1; i <= 9; i++) cnts[i] = c3;
+
+        int cnt = 0;
+        for (int i = 0; i <= 9; i++) {
+            cnt += cnts[i];
+            if (cnt >= k) {
+                res.push_back(i + '0');
+                k -= (cnt - cnts[i]);
+                if (k <= 1) return;
+                if (i < hdi) {
+                    find(dnums[nn]- 1, to_string(dnums[nn]- 1), k - 1, res, 0);
+                }
+                else if (i == hdi) {
+                    string new_nstr = to_string(n % dnums[nn]);
+                    int gg = (nn - 1) - new_nstr.size();
+                    new_nstr.insert(0, gg, '0');
+                    find(n % dnums[nn], new_nstr, k - 1, res, 0);
+                }
+                else {
+                    find(dnums[nn-1] - 1, to_string(dnums[nn-1] - 1), k - 1, res, 0);
+                }
+                break;
+            }
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DFS Solution
+public int findKthNumber(int n, int k) {
+	Deque<Integer> stack = new ArrayDeque<>();
+	int count=0;
+	for(int i=1;i<10;i++) {
+		stack.push(i);
+		while(!stack.isEmpty()) {
+			int current = stack.pop();
+			if(k==++count) return current;
+			int countInSubtree = count(n,current);
+			if(countInSubtree+count<k) {
+				count=countInSubtree+count-1;
+			} else {
+				for(int j=9;j>=0;j--) {
+					int nextVal = Integer.parseInt(""+current+j);
+					if(nextVal<=n) {
+						stack.push(nextVal);
+					}
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+public int count(int n, long val) {
+	int ans = 0;
+	int number = 1;
+	while(val<=n) {
+		ans += number;
+		val *= 10;
+		number *= 10;
+	}
+	if(n<(val/10+number/10-1)) ans -= val/10+number/10-1-n;
+	return ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Understanding Python 49ms Solution
+class Solution(object):
+    def findKthNumber(self, n, k):
+        if n <= 9 or k == 1: return k
+        init, res, sumOfBkts, bktID = 1, 0, [n], 0
+
+        while k > 0:
+            k = k-1
+            sumOfBkts = self.getBucket(sumOfBkts[bktID], init)
+            bktID, k = self.findDigit(sumOfBkts, k)
+            res = res*10+(bktID+init) if bktID != 10 else res+1
+            init = 0
+        return res
+
+    def getBucket(self, togo, init=False):                  # generate buckets
+        if not init: togo -= 1
+        L = 9 if init else 10
+        newBkt, num, b = [0 for _ in xrange(L)], 1, 0      # num: numbers in this layer  
+        while togo > 0:
+            add = num if togo-num > 0 else togo             # add the rest numbers into buckets
+            newBkt[b], togo, b = newBkt[b]+add, togo-num, b+1
+            if b == L: num, b = num*10, 0
+        return newBkt
+
+    def findDigit(self, sumBkt, k, bktId=0):                # find out which bucket.
+        while k-sumBkt[bktId] >= 0: k, bktId = k-sumBkt[bktId], bktId+1      # go next bucket
+        return bktId, k
+
+
+----------------------------------------------------------------------------------------------------
+C# Commented 46ms
+   public class Solution
+    {
+        public int FindKthNumber(int n, int k)
+        {
+            if (n < 10) return k;
+            
+            int ret = 0;
+             //10 buckets, 9 buckets are used on the first pass as there is no "0" bucket initially.
+            int[] buckets = new int[10]; /
+            bool isFirst = true;
+
+            while (k > 0)
+            {
+                //obtain the count of digits in each bucket.
+                GenerateBuckets(n, buckets, isFirst);
+
+                //determine which bucket k lies in, this index is the next digit of the return value.
+                int bucketIndex = FindIndex(k, buckets);
+                ret = ret * 10 + bucketIndex + (isFirst ? 1 : 0); //add the next digit
+                
+                //k and n need to be modified for the next round.
+                k -= (ElementsBefore(bucketIndex, buckets) + 1);
+                n = buckets[bucketIndex] - 1;
+                isFirst = false;
+            }
+            return ret;
+        }
+
+        private static void GenerateBuckets(int n, int[] buckets, bool isFirst)
+        {
+            int iterations = isFirst ? 9 : 10;
+
+            int maxValue = ObtainMaxBucketSize(n); //the max value in a bucket is a repetition of 1's (for example, 111)
+            int minValue = maxValue - (int)Math.Pow(10, (int)Math.Log10(n)); //the min value of a bucket is the maxValue with 1 less 1 (example: 11).
+            //Note: the minValue may be 0.
+
+            for (int i = 0; i < iterations; i++)
+                buckets[i] = minValue;
+            
+            int remaining = n - minValue * iterations; //we have handled minValue * iterations elements, determine how many are left.
+            int maxAddition = maxValue - minValue; //A power of 10, the most we can add to a single bucket.
+
+            for (int i = 0; i < iterations; i++)
+            {
+                buckets[i] += Math.Max(0, Math.Min(remaining, maxAddition));
+                remaining -= maxAddition;
+                if (remaining <= 0) break;
+            }
+        }
+
+        /// <summary>The number of elements before the given bucket index.</summary>
+        private int ElementsBefore(int index, int[] buckets) 
+            => (from i in Enumerable.Range(0, index) select buckets[i]).Sum();
+        
+
+        /// <summary>Determines the index of the bucket in which k lies.</summary>
+        private int FindIndex(int k, int[] buckets)
+        {
+            int high = 0;
+            for(int i = 0; i < buckets.Length; i++)
+            {
+                high += buckets[i];
+                if (k <= high) return i;
+            }
+            throw new InvalidOperationException();
+        }
+
+        private static int ObtainMaxBucketSize(int n)
+            => obtainOnes(numberOfOnes: (int)Math.Log10(n) + 1);
+
+        /// <summary>Recurrence returning an integer containing "n+1" ones: 1, 11, 111</summary>
+        private static int obtainOnes(int numberOfOnes)
+        {
+            if (numberOfOnes == 1) return 1;
+
+            int pow10 = (int)Math.Pow(10, numberOfOnes - 1);
+
+            return pow10 + obtainOnes(numberOfOnes-1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Hint - size of subtree
+k
+
+----------------------------------------------------------------------------------------------------
+C++ 3ms solution using stack
+class Solution {
+public:
+    int findKthNumber(int n, int k) {
+        stack<int> stk;
+        stk.push(1);
+        
+        while(k){
+            if(k == 1) return stk.top();
+            long long top = stk.top(), x = top;
+            stk.pop();
+            long long sum = 0, mask = 1;
+            
+            while(top <= n){
+                if(top + mask - 1 <= n) sum += mask;
+                else sum += n - top + 1;
+                top *= 10;
+                mask *= 10;
+            }
+            
+            if(k > sum){
+                k -= sum;
+                stk.push(x+1);
+            }else{
+                k --;
+                stk.push(x*10);
+            }
+        }
+        return stk.top();
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java 6ms solution, determine digit by digit of the kth number
+public class Solution {
+    private int k;
+    private int n;
+    private final static int[] lengths2counts = new int[]{0, 1, 11, 111, 1111, 11111, 111111, 1111111, 11111111, 111111111, 1111111111};
+
+    private void findKth(int ind, int k, int[] pre){
+        if(pre[0] == 0){
+            pre[0]= (k - 1)/ lengths2counts[ind] + 1;
+            findKth(ind - 1, k - (pre[0] - 1) * lengths2counts[ind], pre);
+        }else if(k > 1){
+            int curdigit = (k - 2)/ lengths2counts[ind];
+            pre[0] = 10 * pre[0] + curdigit;
+            findKth(ind - 1, k - 1 - curdigit * lengths2counts[ind], pre);
+        }
+    }
+
+    public int findKthNumber(int n, int k) {
+
+        int curdigit = n;
+        List<Integer> list = new ArrayList<>();
+        while(curdigit != 0){
+            list.add(curdigit % 10);
+            curdigit /= 10;
+        }
+
+        int[] res = new int[]{0};
+        for(int ind = list.size() - 1; ind >= 0; ind --) {
+            curdigit = list.get(ind);
+            int lb = (ind == list.size() - 1) ? (lengths2counts[ind + 1] * (curdigit - 1)) : (lengths2counts[ind + 1] * curdigit  + 1) ;//lower bound
+            int ub = n - (9 - curdigit) * lengths2counts[ind]; //upper bound
+            if (k > ub) {
+                int temp = (k - ub - 1)/ lengths2counts[ind];
+                res[0] = 10 * res[0] + curdigit + temp + 1;
+                findKth(ind - 1, k - ub - temp * lengths2counts[ind], res);
+                break;
+            } else if (k <= lb) {
+                findKth(ind + 1, k, res);
+                break;
+            }
+            res[0] = 10 * res[0] + curdigit;
+            n = ub - lb;
+            k -= lb;
+        }
+        return res[0];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Digit by digit java solution
+public int findKthNumber(int n, int k) {
+    int res = 0;
+    
+    do {
+    	res *= 10;
+    	int i = (res == 0 ? 1 : 0);
+    	
+    	for (int count; i < 10; i++) {
+            long base = 1, max = (res + i + 1) * base - 1;
+            for (count = 0; max <= n; base *= 10, max = (res + i + 1) * base - 1) count += base;
+            if (n >= (res + i) * base) count += (n - (res + i) * base + 1);
+            if (k <= count) break;
+            k -= count;
+        }
+    		
+    	res += i;
+    		
+    } while (k-- > 1);
+    	
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 6ms solution, easy understanding
+public class Solution {
+    public int findKthNumber(int n, int k) {
+        int m = 1, tmp=n/10;
+        while (tmp>0) {
+            tmp /= 10;
+            m *= 10;
+        }
+
+        int firstPartNumber = count(m,n,m);
+
+        if (k<=firstPartNumber) return findKthNumber(m,n,m,k);
+        if (k<=n) return findKthNumber(n/10+1,m-1,m/10,k-firstPartNumber);
+        
+        return 0;
+    }
+    
+    public int count(int start, int end, int flag) {
+        // assume start and end has same amount of digits, flag represents the smallest number with the same length of digits, such as 10,100,1000,...
+        int result = 0;
+        while (flag>0) {
+            result += (end/flag-start/flag+((start%flag==0)?1:0));
+            flag /= 10;
+        }
+        return result;
+    }
+    
+    public int findKthNumber(int start, int end, int flag, int k) {
+        int left = start, right = end;
+        // b-search
+        while (left<=right) {
+            int mid = (left+right)/2;
+            int x = count(start,mid,flag);
+            if (x==k) return mid;
+            if (x<k)
+                left=mid+1;
+            else
+                right=mid-1;
+        }
+        int t = right+1;
+        int zeroToBedeleted = count(start,t,flag)-k;
+        for (int i=0; i<zeroToBedeleted; i++)
+            t /= 10;
+        
+        return t;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution : deduce digit one by one (log(n)), 0~3ms)
+class Solution {
+public:
+
+    int findKthNumber(int n, int k) {
+        string strN = to_string(n);
+        bool isPrefix = true; // initially empty string is a prefix in any case
+        int i,j;
+        for(i=0, j = strN.size()-1, out=0;i<strN.size() && k;++i,--j) {
+            --k; //current prefix occupied a position, too
+            if(isPrefix) {
+                char startDigit = '0' + max(0,1-i);
+                int under, exact, over;
+                under = (strN[i] - startDigit) * pow10Sum(j);
+                if(under > k) {
+                    strN[i] = startDigit + k/pow10Sum(j);
+                    k   %= pow10Sum(j);
+                    isPrefix = false;
+                } else {
+                    k -= under;
+                    exact = pow10Sum(j-1) + n % pow10(j) +1;
+                    if(exact > k) {
+                        strN[i] = strN[i];
+                    } else {
+                        --j;
+                        k -= exact;
+                        strN[i] = strN[i]+1 + k/pow10Sum(j);
+                        k   %= pow10Sum(j);
+                        isPrefix = false;
+                    }
+                }
+            } else {
+                strN[i] = '0' + k/pow10Sum(j);
+                k   %= pow10Sum(j); 
+            }
+        }
+        strN.resize(i);
+        return atoi(strN.data());
+    }
+    // return 10 ^ exp
+    int pow10(int exp) {
+        const static int arr[] {
+            1,
+            10,
+            100,
+            1000,
+            10000,
+            100000,
+            1000000,
+            10000000,
+            100000000,
+            1000000000,
+        };
+        return arr[exp];
+    }
+    // return pow10(0) + pow10(1) + ....pow10(exp)
+    int pow10Sum(int exp) {
+        const static int arr[] {
+            1,
+            11,
+            111,
+            1111,
+            11111,
+            111111,
+            1111111,
+            11111111,
+            111111111,
+            1111111111,
+        };
+        return arr[exp];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Concise nonrecursive c++ 0ms solution
+// The basic idea is to put numbers in 3 categories: before, after, or equal.
+// The category checking  can be optimized as only "equal" can change to "before" or "after".  
+// Once is in "before" or "after", it will stay in that category.
+class Solution {
+public:
+    int findKthNumber(int n, int k) {
+        
+        string res;
+    	string nstr = to_string(n);
+    	
+    	int dCounter = 0;
+    	for (int i = 0; i<nstr.length(); i++)
+    		dCounter += pow(10,i);
+    
+    	int pos = 0;
+    	int hist[57+1] = {};
+    
+    	while (k>0)
+    	{
+    		k--; //tricky, skip the current number 
+    
+    		if ( res==nstr.substr(0,pos) )
+    		{
+    			int sum = 0;
+    			hist[nstr[pos]] = 0;
+    			for (char d = res.empty()?'1':'0'; d <= '9'; d++)
+    			{
+    				if (d< nstr[pos]) hist[d] = dCounter;
+    				else if ( d>nstr[pos] )  hist[d] = dCounter / 10;
+    				sum += hist[d];
+    			}
+    			n -= sum;
+    			hist[nstr[pos]] =n;
+    			n--; //exclude the current number
+    		}
+    		else if ( res<nstr.substr(0, pos) )
+    		{
+    			for (char d = '0'; d <= '9'; d++)
+    				hist[d] = dCounter;
+    		}
+    		else
+    		{
+    			for (char d = '0'; d <= '9'; d++)
+    				hist[d] = dCounter/10;
+    		}
+    
+    		char d = '0';
+    		while (k>=hist[d]) k -= hist[d++];
+    
+    		res.append(1, d);
+    
+    		pos++;
+    		dCounter /= 10;
+    
+    	}
+    
+    	return atoi(res.c_str());
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+why TLE on submission, but correct result run code?
+public class Solution {
+    public int findKthNumber(int n, int k) {
+        long cur = 1;
+        if (k == 1) {
+            return 1;
+        }
+        k--;
+        for (int i = 1; i <= n; i++) {
+            if (cur * 10 <= n) {
+                cur = cur * 10;
+            } else if (cur % 10 != 9 && cur + 1 <= n) {
+                cur++;
+            } else {
+                while ((cur / 10) % 10 == 9) {
+                    cur = cur / 10;
+                }
+                cur = cur / 10 + 1;
+            }
+            if (--k == 0) {
+                return (int)cur;
+            }
+        }
+        return (int)cur;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

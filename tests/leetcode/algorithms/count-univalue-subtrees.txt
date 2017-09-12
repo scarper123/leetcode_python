@@ -1,0 +1,398 @@
+Kadane&#x27;s Algorithm - Since no one has mentioned about this so far :) (In case if interviewer twists the input)
+The logic to solve this problem is same as "max subarray problem" using `Kadane's Algorithm`. Since no body has mentioned this so far, I thought it's a good thing for everybody to know. 
+
+All the straight forward solution should work, but if the interviewer twists the question slightly by giving the ***difference array of prices***, Ex: for `{1, 7, 4, 11}`, if he gives `{0, 6, -3, 7}`, you might end up being confused. 
+
+Here, the logic is to calculate the difference (`maxCur += prices[i] - prices[i-1]`) of the original array, and find a contiguous subarray giving maximum profit. If the difference falls below 0, reset it to zero.
+
+
+        public int maxProfit(int[] prices) {
+            int maxCur = 0, maxSoFar = 0;
+            for(int i = 1; i < prices.length; i++) {
+                maxCur = Math.max(0, maxCur += prices[i] - prices[i-1]);
+                maxSoFar = Math.max(maxCur, maxSoFar);
+            }
+            return maxSoFar;
+        }
+
+*`maxCur = current maximum value`
+
+*`maxSoFar = maximum value found so far`
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple and clear C++ solution
+    int maxProfit(vector<int> &prices) {
+        int maxPro = 0;
+        int minPrice = INT_MAX;
+        for(int i = 0; i < prices.size(); i++){
+            minPrice = min(minPrice, prices[i]);
+            maxPro = max(maxPro, prices[i] - minPrice);
+        }
+        return maxPro;
+    }
+
+minPrice is the minimum price from day 0 to day i. And maxPro is the maximum profit we can get from day 0 to day i. 
+
+How to get maxPro? Just get the larger one between current maxPro and prices[i] - minPrice.
+
+----------------------------------------------------------------------------------------------------
+Please explain the problem more clearly!!!
+"If you were only permitted to complete at most one transaction (ie, buy one and sell one share of the stock), design an algorithm to find the maximum profit."
+
+I misunderstood the above sentence as at most either buy or sell one share of stock on a single day. In that case, I buy at a local minimum price and sell it at a local maximum to reach a maximum total profit.
+
+Please consider changing it to something like the following:
+
+`If you were only permitted to complete at most one buy and at most one sell during the whole period of days, design an algorithm such that your profit, i.e., sell price minus buy price, is maximized. Note that you can only not sell a stock before you buy one.`
+
+`For example:`
+
+`[1,2,3,4] ==> returns 3 (buy at 1 and sell at 4)`
+
+`[4,3,2,1] ==> returns 0 (don't buy)`
+
+`[4,10,25,2,10] ==> returns 21 (buy at 4 and sell at 25)`
+
+
+
+----------------------------------------------------------------------------------------------------
+A O(1*n)  solution
+1.for prices[0] .... prices[n], prices[n+1].....
+if (prices[n] < prices[0]) then, the max profit is in prices[0]...prices[n], or begin from prices[n+1],
+otherwise, suppose prices[n+1] > prices[0], and max profit is happened between prices[n+1] , and 
+prices[n+k](k>1), then if we buy at day 0, and sell at day n+k, we get a bigger profit.
+
+Base on logic above, we can have a O(1*n) solution:
+
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            
+            if (prices.length == 0)
+            {
+                return 0;
+            }
+            
+            int max = 0, min = prices[0];
+            int profit = 0;
+            
+            for (int i = 1; i < prices.length; i++)
+            {
+                if (prices[i] < min)
+                {
+                    
+                    min = prices[i];
+                }
+                else
+                {
+                    if (prices[i] - min > profit)
+                    {
+                        profit = prices[i] - min;
+                    }
+                    
+                }
+            }
+         
+       
+         
+         return profit;
+         
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My jave accepted solution with O(N) time and O(1) space
+The idea is to find so far min price.
+
+     public int maxProfit(int[] prices) {
+    		 if (prices.length == 0) {
+    			 return 0 ;
+    		 }		
+    		 int max = 0 ;
+    		 int sofarMin = prices[0] ;
+    	     for (int i = 0 ; i < prices.length ; ++i) {
+    	    	 if (prices[i] > sofarMin) {
+    	    		 max = Math.max(max, prices[i] - sofarMin) ;
+    	    	 } else{
+    	    		sofarMin = prices[i];  
+    	    	 }
+    	     }	     
+    	    return  max ;
+    	 }
+
+----------------------------------------------------------------------------------------------------
+Very Simple Java Solution with detail explanation (1ms, beats 96%)
+We take prices array as [5, 6, 2, 4, 8, 9, 5, 1, 5]
+In the given problem, we assume the first element as the stock with lowest price. 
+Now we will traverse the array from left to right. So in the given array 5 is the stock we bought. So next element is 6. If we sell the stock at that price we will earn profit of $1. 
+
+    Prices:      [5, 6, 2, 4, 8, 9, 5, 1, 5]
+
+    Profit:       Bought:5     Sell:6               Profit:$1             max profit=$1
+
+Now the next element is 2 which have lower price than the stock we bought previously which was 5. So if we buy this stock at price $2 and sells it in future then we will surely earn more profit than the stock we bought at price 5. So we bought  stock at $2. 
+
+    Profit:      Bought:2     Sell:-              Profit:-                  max profit=$1
+
+Next element is 4 which has higher price than the stock we bought. So if we sell the stock at this price.
+
+    Profit:      Bought:2     Sell:4              Profit:$2               max profit=$2
+
+Moving further, now the next stockprice is $8. We still have $2 stock we bought previously. If instead of selling it at price $4, if we sell it for $8 then the profit would be $6.
+
+    Profit:      Bought:2     Sell:8              Profit:$6                max profit=$6
+
+Now next stock is of $9 which is also higher than the price we bought at ($2). 
+
+    Profit:      Bought:2     Sell:9              Profit:$7                max profit=$7
+
+Now the next stock is $5. If we sell at this price then we will earn profit of $3, but we already have a max profit of $7 because of our previous transaction.  
+
+    Profit:      Bought:2     Sell:5              Profit:$3                max profit=$7
+
+Now next stock price is $1 which is less than the stock we bought of $2. And if we buy this stock and sell it in future then obviously we will gain more profit. So the value of bought will become $1.
+
+    Profit:      Bought:1     Sell:-              Profit:-                   max profit=$7
+
+Now next stock is of $5. So this price is higher than the stock we bought. 
+
+    Profit:      Bought:1     Sell:5              Profit:$4                max profit=$7
+
+But our maximum profit will be $7.
+
+
+    public int maxProfit(int[] prices) {
+                int ans=0;
+                if(prices.length==0)
+                {
+                    return ans;
+                }
+                int bought=prices[0];                                
+                for(int i=1;i<prices.length;i++)
+                {
+                    if(prices[i]>bought)
+                    {
+                        if(ans<(prices[i]-bought))
+                        {
+                            ans=prices[i]-bought;
+                        }
+                    }
+                    else
+                    {
+                        bought=prices[i];
+                    }
+                }
+         return ans;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+5 line CPP solution
+
+    int maxProfit(vector<int>& prices) {
+        int maxPro = 0, minPrice = INT_MAX;
+        for(int i = 0; i < prices.size(); i++) {
+            minPrice = min(minPrice, prices[i]);
+            maxPro = max(prices[i] - minPrice, maxPro);
+        }
+        return maxPro;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 6 lines, 4 lines, 2 lines solutions
+I only count the new lines of code that I've written, i.e. everything except for the method definition and the method closing bracket.
+
+Proper Java - 6 lines:
+
+    public int maxProfit(int[] prices) {
+         int min = Integer.MAX_VALUE, max = 0;
+         for (int i = 0; i < prices.length; i++) {
+             min = Math.min(min, prices[i]);
+             max = Math.max(max, prices[i] - min);
+         }
+         return max;
+     }  
+
+Proper Java with shortcuts - 4 lines:
+  
+    public int maxProfit(int[] prices) {
+        int min = Integer.MAX_VALUE, max = 0;
+        for (int i = 0; i < prices.length; i++)
+            max = Math.max(max, prices[i] - (min = Math.min(min, prices[i])));
+        return max;
+    }
+
+Java 8 streams - 2 lines:
+
+    int min = Integer.MAX_VALUE;
+    public int maxProfit(int[] prices) {
+        return Arrays.stream(prices).map(i -> i - (min = Math.min(min, i))).max().orElse(0);
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy O(n) Python solution
+    def maxProfit(prices):
+        max_profit, min_price = 0, float('inf')
+        for price in prices:
+            min_price = min(min_price, price)
+            profit = price - min_price
+            max_profit = max(max_profit, profit)
+        return max_profit
+
+----------------------------------------------------------------------------------------------------
+Java simple solution
+  public int maxProfit(int[] prices) {
+    
+        int le = prices.length, maxD = 0, min = Integer.MAX_VALUE;
+    
+        for (int i = 0; i < le; i++){ 
+            min = Math.min(min, prices[i]);
+            maxD = Math.max(maxD, prices[i] - min);
+        }
+
+        return maxD;       
+}
+
+----------------------------------------------------------------------------------------------------
+C++ Simple Solution
+    int maxProfit(vector<int>& prices) {
+        int ret = 0, max = 0;
+        for(int i = 1; i < prices.size(); i++)
+        {
+            ret += prices[i] - prices[i-1];
+            if(ret < 0) ret = 0;
+            if(ret > max) max = ret;
+         }
+         return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Why is this problem tagged with &quot;Dynamic programming&quot;?
+Why is this problem tagged with "Dynamic programming"?
+
+
+----------------------------------------------------------------------------------------------------
+C++, o(n) solution, kind of greedy.
+    int maxProfit(vector<int>& prices) {
+        int size=prices.size();
+        int profit=0;
+        int max=0;
+        for(int i=1;i<size;++i){
+            profit+=(prices[i]-prices[i-1]);
+            if(profit>max)
+               max=profit;
+            if(profit<0)
+               profit=0;
+        }
+        return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Concise solution O(n)
+1 to record the changes from yesterday 
+2 find the max sum of consecutive subarray(if sum<0 sum==0)
+
+
+    class Solution {
+    public:
+        int maxProfit(vector<int> &prices) {
+            
+            int max=0;
+            int current=0;
+            for(int i=1;i<prices.size();i++){
+                current+=prices[i]-prices[i-1];
+                if(current<0) current=0;
+                else if(current>max) max=current;
+            }
+        return max;
+    }  
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Easy solution in C, O(n) time complexity and O(1) space complexity
+    int maxProfit(int price[], int n)
+    {
+        int ret = 0, past = 0;
+        for(int i = 1; i < n; i++)
+        {
+    	    ret += price[i] - price[i-1];
+    	    if(ret < 0) ret = 0;
+    	    if(ret > past) past = ret;
+        }
+        return past;
+    }
+
+----------------------------------------------------------------------------------------------------
+Need more explanation about the problem
+How to get max profit 4 from input [3,2,6,5,0,3]?
+
+
+----------------------------------------------------------------------------------------------------
+Simplest DP solution in Java
+public class Solution {
+
+    public int maxProfit(int[] prices) {
+
+        int min = Integer.MAX_VALUE;
+        int max = 0;
+
+        for(int p:prices) {
+            min = Math.min(min, p);
+            max = Math.max(p-min, max);
+        }
+
+        return max;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Javascript solution, if anyone is interested
+    var maxProfit = function(prices) {
+        var min = Number.MAX_SAFE_INTEGER; 
+        var max = 0;
+        for (var i = 0; i < prices.length; i++) {
+            min = Math.min(min, prices[i]);
+            max = Math.max(max, prices[i] - min);
+        }
+        return max;
+    };
+
+----------------------------------------------------------------------------------------------------
+Short python solution, O(n) runtime, O(1) space
+The question is simple. You want to find the difference of the maximum and the minimum. The only trick is that the bigger number should come after the smaller number.
+
+So, here is how I tackled it. Instead of going forward, I scanned through the list of prices backward to store the current maximum number. Update the biggest difference along the way.
+
+
+    class Solution:
+        # @param prices, a list of integer
+        # @return an integer
+        def maxProfit(self, prices):
+            length = len(prices)
+            if length==0:
+                return 0
+            temp = prices[length-1]
+            res = 0
+            for i in range(length-1,-1,-1):
+                temp = max(temp,prices[i])
+                if temp - prices[i] > res:
+                    res = temp - prices[i]
+            return res
+
+----------------------------------------------------------------------------------------------------
+Java Simple DP Solutions-3ms
+    public int maxProfit(int[] prices) {
+        if(prices.length<=1) return 0;
+        int buy=Integer.MAX_VALUE;
+        int sell=0;
+        
+        for(int i=0;i<prices.length;i++){
+            sell=Math.max(sell,prices[i]-buy);
+            buy=Math.min(buy,prices[i]);
+        }
+        return sell;
+    }
+
+----------------------------------------------------------------------------------------------------

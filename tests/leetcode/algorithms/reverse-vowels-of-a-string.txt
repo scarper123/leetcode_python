@@ -1,0 +1,787 @@
+Java O(n) solution using deque with explanation
+We scan the array from 0 to n-1, keep "promising" elements in the deque. The algorithm is amortized O(n) as each element is put and polled once.
+
+At each i, we keep "promising" elements, which are potentially max number in window [i-(k-1),i] or any subsequent window. This means
+
+1. If an element in the deque and it is out of i-(k-1), we discard them. We just need to poll from the head, as we are using a deque and elements are ordered as the sequence in the array
+
+2. Now only those elements within [i-(k-1),i]  are in the deque. We then discard elements smaller than a[i] from the tail. This is because if a[x] <a[i] and x<i, then a[x] has no chance to be the "max" in [i-(k-1),i], or any other subsequent window: a[i] would always be a better candidate. 
+
+3. As a result elements in the deque are ordered in both sequence in array and their value. At each step the head of the deque is the max element in [i-(k-1),i]
+
+
+-----------------------------------
+    public int[] maxSlidingWindow(int[] a, int k) {		
+    		if (a == null || k <= 0) {
+    			return new int[0];
+    		}
+    		int n = a.length;
+    		int[] r = new int[n-k+1];
+    		int ri = 0;
+    		// store index
+    		Deque<Integer> q = new ArrayDeque<>();
+    		for (int i = 0; i < a.length; i++) {
+    			// remove numbers out of range k
+    			while (!q.isEmpty() && q.peek() < i - k + 1) {
+    				q.poll();
+    			}
+    			// remove smaller numbers in k range as they are useless
+    			while (!q.isEmpty() && a[q.peekLast()] < a[i]) {
+    				q.pollLast();
+    			}
+    			// q contains index... r contains content
+    			q.offer(i);
+    			if (i >= k - 1) {
+    				r[ri++] = a[q.peek()];
+    			}
+    		}
+    		return r;
+    	}
+
+----------------------------------------------------------------------------------------------------
+O(n) solution in Java with two simple pass in the array
+
+For Example: A = [2,1,3,4,6,3,8,9,10,12,56],  w=4
+
+1. partition the array in blocks of size w=4. The last block may have less then w.
+2, 1, 3, 4 | 6, 3, 8, 9 | 10, 12, 56|
+
+2. Traverse the list from start to end and calculate max_so_far. Reset max after each block boundary (of w elements).
+left_max[] = 2, 2, 3, 4 | 6, 6, 8, 9 | 10, 12, 56
+
+3. Similarly calculate max in future by traversing from end to start.
+right_max[] = 4, 4, 4, 4 | 9, 9, 9, 9 | 56, 56, 56
+
+4. now, sliding max at each position i in current window, sliding-max(i) = max{right_max(i), left_max(i+w-1)}
+sliding_max = 4, 6, 6, 8, 9, 10, 12, 56
+
+code:
+   
+
+     public static int[] slidingWindowMax(final int[] in, final int w) {
+        final int[] max_left = new int[in.length];
+        final int[] max_right = new int[in.length];
+    
+        max_left[0] = in[0];
+        max_right[in.length - 1] = in[in.length - 1];
+    
+        for (int i = 1; i < in.length; i++) {
+            max_left[i] = (i % w == 0) ? in[i] : Math.max(max_left[i - 1], in[i]);
+    
+            final int j = in.length - i - 1;
+            max_right[j] = (j % w == 0) ? in[j] : Math.max(max_right[j + 1], in[j]);
+        }
+    
+        final int[] sliding_max = new int[in.length - w + 1];
+        for (int i = 0, j = 0; i + w <= in.length; i++) {
+            sliding_max[j++] = Math.max(max_right[i], max_left[i + w - 1]);
+        }
+    
+        return sliding_max;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean C++ O(n) solution using a deque
+The data structure used is know as Monotonic Queue. Click [here](http://abitofcs.blogspot.com/2014/11/data-structure-sliding-window-minimum.html) for more information.
+
+You can also view more solution on [Github](https://github.com/flexwang/CodeTest)
+
+    class Solution {
+    public:
+        vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+            deque<int> dq;
+            vector<int> ans;
+            for (int i=0; i<nums.size(); i++) {
+                if (!dq.empty() && dq.front() == i-k) dq.pop_front();
+                while (!dq.empty() && nums[dq.back()] < nums[i])
+                    dq.pop_back();
+                dq.push_back(i);
+                if (i>=k-1) ans.push_back(nums[dq.front()]);
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+This is a typical monotonic queue problem
+Sliding window minimum/maximum = monotonic queue. I smelled the solution just when I read the title.
+This is essentially same idea as others' deque solution, but this is much more standardized and modulized. If you ever need to use it in your real product, this code is definitely more preferable. 
+
+What does Monoqueue do here:
+
+It has three basic options:
+
+push: push an element into the queue;  O (1) (amortized)
+
+pop: pop an element out of the queue; O(1) (pop = remove, it can't report this element)
+
+max: report the max element in queue;O(1)
+
+It takes only O(n) time to process a N-size sliding window minimum/maximum problem.
+
+Note: different from a priority queue (which takes O(nlogk) to solve this problem),  it doesn't pop the max element: It pops the first element (in original order) in queue.
+
+    class Monoqueue
+    {
+        deque<pair<int, int>> m_deque; //pair.first: the actual value, 
+                                       //pair.second: how many elements were deleted between it and the one before it.
+        public:
+            void push(int val)
+            {
+                int count = 0;
+                while(!m_deque.empty() && m_deque.back().first < val)
+                {
+                    count += m_deque.back().second + 1;
+                    m_deque.pop_back();
+                }
+                m_deque.emplace_back(val, count);
+            };
+            int max()
+            {
+                return m_deque.front().first;
+            }
+            void pop ()
+            {
+                if (m_deque.front().second > 0)
+                {
+                    m_deque.front().second --;
+                    return;
+                }
+                m_deque.pop_front();
+            }
+    };
+    struct Solution {
+        vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+            vector<int> results;
+            Monoqueue mq;
+            k = min(k, (int)nums.size());
+            int i = 0;
+            for (;i < k - 1; ++i) //push first k - 1 numbers;
+            {
+                mq.push(nums[i]);
+            }
+            for (; i < nums.size(); ++i)
+            {
+                mq.push(nums[i]);            // push a new element to queue;
+                results.push_back(mq.max()); // report the current max in queue;
+                mq.pop();                    // pop first element in queue;
+            }
+            return results;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My C++ O(n) deque based solution with explanation
+The basic idea is to use a deque (buffer) to save all currently potential "maximum" elements (i.e. the element in the current k-element window [i-k+1, i], and it is larger than the elements after  itself). So for each i, we first pop up the elements  that are no larger than nums[i] from buffer until we find one that is larger than nums[i] or the buffer is empty since those elements will be covered by nums[i] and can not be a maximum of any k-element window. Then we put nums[i] in the buffer. If i>=k-1, we need to ouput the maximum for window [i-k+1, i], which is the front element of buffer. At last, we will check if the front element is nums[i-k+1], if so, we have to pop it up since it will be out of the window [i-k+2, i+1] in the next iteration. Since all the elements will be pushed into/ popped out of the buffer only once, so the time complexity is O(N).
+
+
+    class Solution {
+    public:
+        vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+            deque<int> buffer;
+            vector<int> res;
+    
+            for(auto i=0; i<nums.size();++i)
+            {
+                while(!buffer.empty() && nums[i]>=nums[buffer.back()]) buffer.pop_back();
+                buffer.push_back(i);
+    
+                if(i>=k-1) res.push_back(nums[buffer.front()]);
+                if(buffer.front()<= i-k + 1) buffer.pop_front();
+            }
+            return res;
+        }
+
+
+
+----------------------------------------------------------------------------------------------------
+A clear solution using deque (C++)
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+      
+        deque<int> q;
+        vector<int> maxs;
+        if(nums.empty()||k<=0) return maxs;
+
+        for(int i=0;i<nums.size();i++){
+            while(!q.empty()&&nums[q.back()]<=nums[i]) 
+                q.pop_back();
+            q.push_back(i);
+            if(q.front()<=i-k) q.pop_front();
+            
+            if(i>=k-1) maxs.push_back(nums[q.front()]);
+        }
+        return maxs;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+9 lines Ruby, 11 lines Python, O(n)
+Keep indexes of good candidates in deque `d`. The indexes in `d` are from the current window, they're increasing, and their corresponding `nums` are decreasing. Then the first deque element is the index of the largest window value.
+
+For each index `i`:
+
+1. Pop (from the end) indexes of smaller elements (they'll be useless).
+2. Append the current index.
+3. Pop (from the front) the index `i - k`, if it's still in the deque (it falls out of the window).
+4. If our window has reached size `k`, append the current window maximum to the output.
+
+---
+
+**Ruby**
+
+Apparently Ruby doesn't have a deque, so I simulate one with an array, where `s` tells the start index of the queue in the array.
+
+    def max_sliding_window(nums, k)
+        d, s = [], 0
+        out = []
+        nums.each_index{ |i|
+            d.pop while d[s] && nums[d[-1]] < nums[i]
+            d << i
+            s += 1 if d[s] == i - k
+            out << nums[d[s]] if i >= k - 1
+        }
+        out
+    end
+
+---
+
+**Python**
+
+    def maxSlidingWindow(self, nums, k):
+        d = collections.deque()
+        out = []
+        for i, n in enumerate(nums):
+            while d and nums[d[-1]] < n:
+                d.pop()
+            d += i,
+            if d[0] == i - k:
+                d.popleft()
+            if i >= k - 1:
+                out += nums[d[0]],
+        return out
+
+Last three lines could be this, but for relatively large k it would waste space:
+
+            out += nums[d[0]],
+        return out[k-1:]
+
+----------------------------------------------------------------------------------------------------
+3 C++ Solutions
+    1. O(NlogK)
+    
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        vector<int> result;
+        if (k == 0) return result;
+        multiset<int> w;
+        for (int i = 0, n = (int)nums.size(); i < n; i++) {
+            if (i >= k)
+                w.erase(w.find(nums[i-k]));
+            w.insert(nums[i]);
+            if (i >= k-1)
+                result.push_back(*w.rbegin());
+        }
+        return result;
+    }
+    
+    2. O(NlogN)
+    
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        vector<int> result;
+        if (k == 0) return result;
+        priority_queue<pair<int, int>> w;
+        for (int i = 0, n = (int)nums.size(); i < n; i++) {
+            while (!w.empty() && w.top().second <= i-k)
+                w.pop();
+            w.push(make_pair(nums[i],i));
+            if (i >= k-1)
+                result.push_back(w.top().first);
+        }
+        return result;
+    }
+    
+    3. O(N)
+    
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        vector<int> result;
+        if (k == 0) return result;
+        deque<int> w;
+        for (int i = 0, n = (int)nums.size(); i < n; i++) {
+            while (!w.empty() && w.front() <= i-k)
+                w.pop_front();
+            while (!w.empty() && nums[w.back()] <= nums[i])
+                w.pop_back();
+            w.push_back(i);
+            if (i >= k-1)
+                result.push_back(nums[w.front()]);
+        }
+        return result;
+    }
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+A concise solution using deque
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        if (k <= 0) return {};
+        
+        vector<int> ans(nums.size() - k + 1);
+        deque<int> dq;
+        for (int i = 0; i < nums.size(); ++i) {
+            // delete those nodes whose value less than the current value
+            while (!dq.empty() && nums[i] > nums[dq.back()]) dq.pop_back();
+            dq.push_back(i);
+            // delete the node pass the start of the window
+            if (i - dq.front() + 1 > k) dq.pop_front();
+            // assign result value
+            if (i >= k - 1) ans[i - k + 1] = nums[dq.front()];
+        }
+        
+        return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+Accepted 104ms c++ solution with MaxQueue.
+Do you remember the [Min Stack][1] problem? In this problem, a similar `Max Queue` is needed!
+
+Here is my 104ms c++ solution.
+
+    class Solution {
+    public:
+    	std::vector<int> maxSlidingWindow(std::vector<int>& nums, int k) {
+    		std::vector<int> res;
+    		if (k < 1)
+    			return res;
+    		MaxQueue mq;
+    		for (int i = 0; i != k; ++i)
+    			mq.push(nums[i]);
+    		res.push_back(mq.getMax());
+    		for (int i = k; i != nums.size(); ++i) {
+    			mq.pop();
+    			mq.push(nums[i]);
+    			res.push_back(mq.getMax());
+    		}
+    		return res;
+    	}
+    private:
+    	class MaxQueue {
+    	public:
+    		void push(int x) {
+    			nums.push(x);
+    			while (!maxs.empty() && maxs.back() < x)
+    				maxs.pop_back();
+    			maxs.push_back(x);
+    		}
+    		void pop() {
+    			if (nums.front() == maxs.front())
+    				maxs.pop_front();
+    			nums.pop();
+    		}
+    		int getMax() {
+    			return maxs.front();
+    		}
+    	private:
+    		std::queue<int> nums;
+    		std::deque<int> maxs;
+    	};
+    };
+
+
+
+  [1]: https://leetcode.com/problems/min-stack/
+
+----------------------------------------------------------------------------------------------------
+My Java Solution Using PriorityQueue
+Not a linear solution, instead, it is of O(nlogk) complexity, since add, pop and remove operation of PriorityQueue cost O(logk) time.
+
+What we need to do is just maintain a heap, that heap top gets the maximal value of the k elements.
+Since we know which element is removed and which is added to the queue, the solution seems easy to understand.
+
+    public class Solution {
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        int len = nums.length;
+        int[] result = new int[len - k + 1];
+        if(nums.length == 0) return new int[0];
+        Queue<Integer> queue = new PriorityQueue<Integer>(new Comparator<Integer>(){
+            @Override
+            public int compare(Integer i1, Integer i2){
+                return Integer.compare(i2, i1);
+            }
+        });
+        
+        for(int i = 0; i < k; i ++){
+            queue.add(nums[i]);
+        }
+        result[0] = queue.peek();
+        for(int i = k; i < len; i ++){
+            queue.remove(nums[i - k]);
+            queue.add(nums[i]);
+            result[i - k + 1] = queue.peek();
+        }
+       
+        return result;
+    }
+
+
+Could somebody suggest some linear solutions? The hint of using deque seems not that reasonable. We still need to maintain the k elements in the window in order.
+
+Thank you,
+
+----------------------------------------------------------------------------------------------------
+Concise JAVA solution based on Deque
+**Explanation**
+
+The basic idea is referred from [here][1]: use two-ends deque to make the first element in the deque is the largest number in the window, and keep the above steps recursively.
+
+**Time complexity is O(n)**, as each number in the array is only offered or polled once.
+
+Code is as the following:
+
+    public int[] maxSlidingWindow(int[] a, int k) {
+    	 if (a == null || k <= 0) return new int[0];		 
+    	 int[] res = new int[a.length - k + 1];
+    	 ArrayDeque<Integer> deque = new ArrayDeque<Integer>(); 
+    	 
+    	 int index  = 0;
+    	 for (int i = 0; i < a.length; i++) { 
+    		 while (!deque.isEmpty() && deque.peek() < i - k + 1) // Ensure deque's size doesn't exceed k
+    			 deque.poll();
+    		 
+    		// Remove numbers smaller than a[i] from right(a[i-1]) to left, to make the first number in the deque the largest one in the window		 
+    		 while (!deque.isEmpty() && a[deque.peekLast()] < a[i]) 
+    			 deque.pollLast();
+    		 
+    		 deque.offer(i);// Offer the current index to the deque's tail
+    		 
+    		 if (i >= k - 1)// Starts recording when i is big enough to make the window has k elements 
+    			 res[index++] = a[deque.peek()];
+    	 }		 
+    	 return res;
+     }
+
+
+  [1]: https://leetcode.com/discuss/46578/java-o-n-solution-using-deque-with-explanation
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution with two stacks.
+The idea of the solution is to maintain two stacks: s1 and s2.   We hope s1's peek  is always to keep the largest value in the current k numbers. So we use s1 to store the numbers whose index is in increasing order and values is in decreasing order. For example give k=4 numbers  1, 3 ,9, 6.  s1 only need to store 9 and 6 with 9 is on the peek of the stack. 
+
+When we slide the window, we need to keep dumping the numbers at the left end of the window and adding new numbers on the right end of the window. When we have a new number in the window, we push just the new number in stack s2. Also, we keep record the largest value in s2. If the peek of s1 is smaller than the largest value in s2, it means the largest value in the current k numbers is in s2. Thus, we need to empty s1 and move the elements stored in s2 to s1. Note that we do not need to move all the elements in s2 to s1. Only the numbers whose index is in increasing order and values is in decreasing order are pushed into s1. 
+
+For example,
+1,3,9,6,7,1, 2 , 5      given k=4
+
+step 1:  window  1,3,9,6          s1:  9, 6     s2:empty    maxInStack2=Integer.MIN_VALUE;
+
+step 2:  window  3,9,6,7          s1:  9,6      s2:7         maxInStack2=7
+
+step3:   window  9,6,7,1          s1: 9, 6      s2:7,1      maxInStack2=7
+
+step4:   window  6,7,1, 2    note 9 is removed from window, so  s1: 6   s2: 7, 1 ,2   maxInStack2=7
+            Then we find that maxInStack2> s1.peek().  update s1.
+            After updating s1, we have    s1: 7, 2     s2: empty maxInStack2=Integer.MIN_VALUE;
+
+step5:   window 7,1,2,5   s1:7,2  s2:5,   maxInStack2=5;
+In worst case, every number in the array is visited twice. Thus the complexity is O(n)
+
+    public class Solution {
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        if(nums==null||nums.length==0) return nums;
+        int [] result= new int[nums.length-k+1];
+        int maxInStack2=Integer.MIN_VALUE;
+        Stack<Integer> s1 =new Stack<Integer>();
+        Stack<Integer> s2 =new Stack<Integer>();
+        for(int i=k-1;i>=0;i--){
+            if(s1.isEmpty()){
+                s1.push(nums[i]);
+            }else if(nums[i]>=s1.peek()){
+                s1.push(nums[i]);
+            }
+        }
+        result[0]=s1.peek();
+        for(int i=1;i<result.length;i++){
+            int newItem=nums[i+k-1];
+            int removeItem=nums[i-1];
+            if(removeItem==s1.peek()){
+                s1.pop();
+            }
+            if(newItem>maxInStack2){
+                maxInStack2=newItem;
+            }
+            s2.push(newItem);
+            if(s1.isEmpty()||maxInStack2>s1.peek()){
+                while(s1.isEmpty()==false){
+                    s1.pop();
+                }
+                while(s2.isEmpty()==false){
+                    int temp=s2.pop();
+                    if(s1.isEmpty()||temp>=s1.peek()){
+                        s1.push(temp);
+                    }
+                }
+                result[i]=maxInStack2;
+                maxInStack2=Integer.MIN_VALUE;
+            }else{
+                result[i]=s1.peek();
+            }
+        }
+        return result;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python simple solution
+    def maxSlidingWindow(self, nums, k):
+        ans = []
+        queue = []
+        for i, v in enumerate(nums):
+            if queue and queue[0] <= i - k:
+                queue = queue[1:]
+            while queue and nums[queue[-1]] < v:
+                queue.pop()
+            queue.append(i)
+            if i + 1 >= k:
+                ans.append(nums[queue[0]])
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n), with comments using Deque
+        public int[] maxSlidingWindow(int[] nums, int k) {
+       
+        if(nums == null || nums.length <= 0 )
+            return new int[0];
+        if(k>nums.length)
+            return new int[0];
+        
+        // store results 
+        int result[] = new int[nums.length-k+1];
+        
+        Deque<Integer> q = new LinkedList<Integer>();
+        
+        // First of all we will enqueue k elements result in deque.
+        int index = 0;
+        for(index=0;index<k;index++)
+        {
+            // For every element, the previous smaller elements are useless so
+            // remove them from queue.
+            
+            while(!q.isEmpty() && nums[q.getLast()] <= nums[index])
+                q.removeLast();
+                
+            // now push them in queue.
+            q.addLast(index);
+        }
+        
+        
+        int n = nums.length;
+        // now start from k+1 to length n.
+        for(;index<n;index++)
+        {
+            // The element at the front of the queue is the largest element of
+            // previous window, so save in results.
+            result[index-k] = nums[q.getFirst()];
+            
+            // need to remove unnecessary elements, which are now not part of sliding window.
+             
+            while(!q.isEmpty() && q.getFirst() <= (index-k))
+                q.removeFirst();
+            
+            // calculate and insert again for current item as like above we did in for loop.
+            // Remove all elements smaller than the currently
+            // being added element (remove useless elements)   
+            while(!q.isEmpty() && nums[q.getLast()] <= nums[index])
+                q.removeLast();
+                
+            // Add current element at last of queue.
+            q.addLast(index);
+        }
+        
+        // store last window result.
+        result[index-k] = nums[q.getFirst()];
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+Priority-queue based solution
+
+    class Solution {
+    public:
+        vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+            vector<int> result;
+            /*** use the multiset to get the max-value ***/
+            multiset<int> w;
+            for(int i=0; i<nums.size(); i++){
+                /*** erase the previous top element ***/
+                if(i>=k)  w.erase(w.find(nums[i-k]));
+                w.insert(nums[i]);
+                /*** insert the max-value of the window ***/
+                if(i>=k-1) result.push_back(*w.rbegin());
+            }
+            return result;
+        }
+    };
+
+O(N)   deque-monotical-queue-solution
+
+    class Solution {
+    public:
+        vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+            vector<int> result;
+            deque<int> q;
+            for(int i=0; i<nums.size(); i++){
+                /*** remove the top element **/
+                if(!q.empty() && q.front()==i-k)  q.pop_front();
+                /*** keep the element in the queue is monotically-decreasing ***/
+                while(!q.empty() && nums[q.back()] < nums[i])  q.pop_back();
+                q.push_back(i);
+                if(i>=k-1)  result.push_back(nums[q.front()]);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+TreeMap Solution O(nlogk) and Deque Solution O(n)
+TreeMap Solution
+
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        if(nums.length == 0)
+            return nums;
+        int[] res = new int[nums.length - k + 1];
+        TreeMap<Integer, Set<Integer>> memo = new TreeMap<>();
+        for(int i = 0 ; i < k ; i++){
+            if(memo.containsKey(nums[i])){
+                memo.get(nums[i]).add(i);
+            }else{
+                Set<Integer> temp = new HashSet<>();
+                temp.add(i);
+                memo.put(nums[i], temp);
+            }
+        }
+        res[0] = memo.lastKey();
+        for(int i = k ; i < nums.length ; i++){
+            if(memo.get(nums[i - k]).size() == 1){
+                memo.remove(nums[i - k]);
+            }else{
+                memo.get(nums[i - k]).remove(i - k);
+            }
+            if(memo.containsKey(nums[i]))
+                memo.get(nums[i]).add(i);
+            else{
+                Set<Integer> temp = new HashSet<>();
+                temp.add(i);
+                memo.put(nums[i], temp);
+            }
+            res[i - k + 1] = memo.lastKey();
+        }
+        return res;
+    }
+
+Deque Solution
+
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        if(nums.length == 0)
+            return nums;
+        int[] res = new int[nums.length - k + 1];
+        Deque<Integer> memo = new ArrayDeque<>();
+        for(int i = 0  ; i < nums.length ; i++){
+            while(memo.size() > 0 && memo.getLast() < nums[i])
+                memo.removeLast();
+            memo.add(nums[i]);
+            if(i < k - 1)
+                continue;
+            res[i - k + 1] = memo.peek();
+            if(nums[i - k + 1] == res[i - k + 1])
+                memo.removeFirst();
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java8 functional  style solution
+public int[] maxSlidingWindow(int[] nums, int k) {
+
+        if(nums.length == 0) return nums;
+
+        int[] arr = IntStream.range(0, nums.length - k + 1).map(i ->
+            Arrays.stream(Arrays.copyOfRange(nums, i, i + k)).reduce(Integer.MIN_VALUE, Math::max)
+        ).toArray();
+
+        return arr;
+}
+
+----------------------------------------------------------------------------------------------------
+Short java O(n) solution just using LinkedList
+The idea is that we only maintain a **descending list** for window. Each time we add a element, we remove all the elements smaller that it since they would never influence the MAX. So the 1st element in the arraylist is always the maximum. When we move window one step right, if the left most element is not the MAX, do nothing, otherwise delete the 1st element in the descending list. In total the descending list would add and delete elements for N times, so this algorithm is **amortized linear.**
+
+//for function addDescList(). since we need to add element before delete it, in total we could only add and
+//delete for nums.length times at most. So it's linear time.
+
+    public class Solution {
+        public int[] maxSlidingWindow(int[] nums, int k) {
+            if(nums.length==0) return new int[0];
+            LinkedList<Integer> descList = new LinkedList<Integer>();
+            int[] res = new int[nums.length+1-k];
+            for(int i=0;i<k-1;i++) addDescList(descList,nums[i]);
+            for(int i=0;i<res.length;i++){
+                addDescList(descList,nums[i+k-1]);
+                res[i] = descList.getFirst();
+                if(nums[i]==descList.getFirst()) descList.removeFirst(); //to delete the left most.
+            }
+            return res;   
+        }
+        public void addDescList(List<Integer> descList, int num){
+            while(!descList.isEmpty()&&num>descList.getLast()) descList.removeLast();
+            descList.add(num);
+        }  
+    }
+
+----------------------------------------------------------------------------------------------------
+Important to talk about the solution (Brute Force vs Deque Method) in Java
+Perhaps most of the people here are practicing coding skills to land a job. It is fairly important to talk about your process of thought to the interviewer. You can't just jump in and give the best and most optimal solution though , because that seems like you have already seen the problems and memorized it thoroughly. Best approach is to give a brute force solution first, if interviewer asks for further optimization, then only you talk about using deque and other better solution. 
+
+Always start with brute-force method has a good advantage. Most of the time, in a 45 mins technical interview, the interviewer only prepares 1 - 2 coding questions and if you finish too early, they will probably start asking about other trivia questions or knowledge-based questions, which will put you in a disadvantageous position if you are a person who is not very good at talking. So starting with brute force (even though the question is listed as hard problem, but it isn't that hard to solve after all) , then get to optimal part, and bam! You nail a 45 mins technical interview with flying colors !
+
+Anyway, here is the brute force approach:
+
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        if(nums == null || k <= 0) return new int [0];
+        int [] arr = new int[nums.length - k + 1];
+        for(int i = 0; i < nums.length - k + 1; i++){
+            int max = Integer.MIN_VALUE;
+            for(int j = i; j < i + k; j++)
+               max = Math.max(max, nums[j]);
+            arr[i] = max;
+        }
+        return arr;
+    }
+
+Using deque :
+
+The idea is to use deque to hold the index of maximum element and restrict deque size to k. In first while loop, we make sure that we remove the elements which are not longer in the sliding k range. In second loop is we make sure that the elements in the deque is not smaller than the current element. Then we add the element to the deque. 
+
+The `if(i >= k - 1)` is just to skip the first few elements that is less than k. For example, if `k = 3`, then we don't want the first two elements added to the array. Also notice that our array is `arr = new int[nums.length - k + 1]` , as for the fact that when we have k as the size of sliding windows, then the end result of sliding windows array will be `nums.length - k + 1`.
+
+
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        if(nums == null || k <= 0) return new int [0];
+        int [] arr = new int[nums.length - k + 1];
+        int in = 0;
+        Deque<Integer> dq = new ArrayDeque<>();
+        for(int i = 0; i < nums.length; i++){
+            while(!dq.isEmpty() && dq.peek() < i - k + 1) dq.poll();
+            while(!dq.isEmpty() && nums[dq.peekLast()] < nums[i]) dq.pollLast();
+            dq.offer(i);
+            if(i >= k - 1) arr[in++] = nums[dq.peek()];
+        }
+        return arr;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------

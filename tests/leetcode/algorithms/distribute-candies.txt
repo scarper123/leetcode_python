@@ -1,0 +1,624 @@
+Java top-down and bottom-up DP solutions
+k
+
+----------------------------------------------------------------------------------------------------
+Memoization DFS C++
+class Solution {
+public:
+    int removeBoxes(vector<int>& boxes) {
+        int n=boxes.size();
+        int memo[100][100][100] = {0};
+        return dfs(boxes,memo,0,n-1,0);
+    }
+    
+    int dfs(vector<int>& boxes,int memo[100][100][100], int l,int r,int k){
+        if (l>r) return 0;
+        if (memo[l][r][k]!=0) return memo[l][r][k];
+
+        while (r>l && boxes[r]==boxes[r-1]) {r--;k++;}
+        memo[l][r][k] = dfs(boxes,memo,l,r-1,0) + (k+1)*(k+1);
+        for (int i=l; i<r; i++){
+            if (boxes[i]==boxes[r]){
+                memo[l][r][k] = max(memo[l][r][k], dfs(boxes,memo,l,i,k+1) + dfs(boxes,memo,i+1,r-1,0));
+            }
+        }
+        return memo[l][r][k];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java DP + Memorization 60ms
+  public int removeBoxes(int[] boxes) {
+        if (boxes == null || boxes.length == 0) {
+            return 0;
+        }
+
+        int size = boxes.length;
+        int[][][] dp = new int[size][size][size];
+
+        return get(dp, boxes, 0, size-1, 1);
+    }
+
+    private int get(int[][][] dp, int[] boxes, int i, int j, int k) {
+        if (i > j) {
+            return 0;
+        } else if (i == j) {
+            return k * k;
+        } else if (dp[i][j][k] != 0) {
+            return dp[i][j][k];
+        } else {
+            int temp = get(dp, boxes, i + 1, j, 1) + k * k;
+
+            for (int m = i + 1; m <= j; m++) {
+                if (boxes[i] == boxes[m]) {
+                    temp = Math.max(temp, get(dp, boxes, i + 1, m - 1, 1) + get(dp, boxes, m, j, k + 1));
+                }
+            }
+
+            dp[i][j][k] = temp;
+            return temp;
+        }
+
+
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python, Fast DP with Explanation
+def removeBoxes(self, A):
+    N = len(A)
+    memo = [[[0]*N for _ in xrange(N) ] for _ in xrange(N) ]
+    
+    def dp(i, j, k):
+        if i > j: return 0
+        if not memo[i][j][k]:
+            m = i
+            while m+1 <= j and A[m+1] == A[i]:
+                m += 1
+            i, k = m, k + m - i
+            ans = dp(i+1, j, 0) + (k+1) ** 2
+            for m in xrange(i+1, j+1):
+                if A[i] == A[m]:
+                    ans = max(ans, dp(i+1, m-1, 0) + dp(m, j, k+1))
+            memo[i][j][k] = ans
+        return memo[i][j][k]
+    
+    return dp(0, N-1, 0)
+
+
+----------------------------------------------------------------------------------------------------
+I found the problem in other OnlineJudge
+<p><a href="http://poj.org/problem?id=1390" rel="nofollow">http://poj.org/problem?id=1390</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+10-line Memorization DFS C++ with explanation
+class Solution {
+public:
+    int mem[100][100][100]; // initialized to 0, mem[left][right][k] means value from boxes[left]~boxes[right] followed by 
+    // k same color boxes. Follow does not mean strictly consecutive boxes, for example, [1, 3, 2, 3, 4], 3 can be 
+    // followed by the other 3 because we can remove 2 first
+    
+    int removeBoxes(vector<int>& boxes) {
+        return DFS(boxes,0,boxes.size()-1,0);
+    }
+    
+    int DFS(vector<int>& boxes, int l,int r,int k){
+        if (l>r) return 0; 
+        if (mem[l][r][k]) return mem[l][r][k]; // if we have calculated this DFS result, return it
+        
+        mem[l][r][k] = DFS(boxes,l,r-1,0) + (k+1)*(k+1); // box[l][r] result is box[l][r-1]+(k+1)^2
+        for (int i=l; i<r; i++) // go through each box from left
+            if (boxes[i]==boxes[r]) // check for same color box as boxes[r]
+                mem[l][r][k] = max(mem[l][r][k], DFS(boxes,l,i,k+1) + DFS(boxes,i+1,r-1,0)); // if we found same color box,
+                // then we have a chance to get a higher value by group boxes[l]~boxes[i] and boxes[r] together, plus the 
+                // value from boxes[i+1]~boxes[r-1]
+        return mem[l][r][k];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ 29ms dp solution!
+const int maxn = 105;
+int d[maxn][maxn][maxn];
+
+class Solution {
+private:
+    int c[maxn], len[maxn];
+public:
+    int dfs(int i, int j, int k) {
+        if (d[i][j][k] != -1) return d[i][j][k];
+        if (i > j) return 0;
+        d[i][j][k] = dfs(i, j - 1, 0) + (len[j] + k) * (len[j] + k);
+        for (int pos = i; pos < j; pos++) {
+            if (c[pos] == c[j]) d[i][j][k] = max(d[i][j][k], dfs(i, pos, len[j] + k) + dfs(pos + 1, j - 1, 0));
+        }
+        return d[i][j][k];
+    }
+
+    int removeBoxes(vector<int>& boxes) {
+        int n = 0;
+        memset(c, 0, sizeof(c));
+        memset(len, 0, sizeof(len));
+        memset(d, -1, sizeof(d));
+        for (int i = 0; i < boxes.size(); i++) {
+            if (i == 0 || boxes[i] != boxes[i - 1]) c[++n] = boxes[i], len[n] = 1;
+            else len[n]++;
+        }
+        return dfs(1, n, 0);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward &#91;but slow&#93; with Explanation
+def removeBoxes(self, A):
+    def outside_ranges(ranges, i, j):
+        prev = i
+        for r1, r2 in ranges:
+            yield prev, r1 - 1
+            prev = r2 + 1
+        yield prev, j
+        
+    memo = {}
+    def dp(i, j):
+        if i >= j: return +(i==j)
+        if (i,j) not in memo:
+            good = []
+            for k, v in itertools.groupby(range(i, j+1),
+                    key = lambda x: A[x] == A[i]):
+                if k:
+                    w = list(v)
+                    good.append((w[0], w[-1]))
+            
+            ans = 0
+            for size in xrange(1, len(good) + 1):
+                for subset in itertools.combinations(good, size):
+                    cand = sum( g[-1] - g[0] + 1 for g in subset ) ** 2
+                    cand += sum( dp(L, R) for L, R in outside_ranges(subset, i, j) )
+                    ans = max(ans, cand)
+            
+            memo[i, j] = ans
+        return memo[i, j]
+    return dp(0, len(A)-1)
+
+
+----------------------------------------------------------------------------------------------------
+Java Preprocessing DFS + Memoization, less space needed
+public class Solution {
+    public int removeBoxes(int[] boxes) {
+        List<Integer> colors = new ArrayList<>();
+        List<Integer> lens = new ArrayList<>();
+        // preprocessing
+        // [1,1,1,3,3,2,3,3,3,1,1] would become
+        // colors : [1,3,2,3,1]
+        // lens :   [3,2,1,3,2]
+        for (int box : boxes) {
+            if (!colors.isEmpty() && colors.get(colors.size() - 1) == box) {
+                // continuous, increase length count by 1
+                lens.set(lens.size() - 1, lens.get(lens.size() - 1) + 1);
+            } else {
+                // new color
+                colors.add(box);
+                lens.add(1);
+            }
+        }
+        int N = boxes.length;
+        int M = colors.size();
+        // dp[i][j][k] means the maximal score for colors[i:j] with k boxes of same color merged after j
+        // i and j are inclusive, so dp[0][M - 1][0] will be the final answer
+        int[][][] dp = new int[M][M][N];
+        return dfs(colors, lens, 0, M - 1, 0, dp);
+    }
+    
+    // top-down dfs search with memoization
+    private int dfs(List<Integer> colors, List<Integer> lens, int l, int r, int k, int[][][] dp) {
+        if (l > r) return 0;
+        if (dp[l][r][k] > 0) return dp[l][r][k];
+        // merging boxes with colors[r]
+        int score = dfs(colors, lens, l, r - 1, 0, dp) + (lens.get(r) + k) * (lens.get(r) + k);
+        // merge boxes with colors[l:i] and colors[l + 1:r - 1] where i from l to r - 1
+        for (int i = l; i < r; i++) {
+            if (colors.get(i) == colors.get(r)) {
+                // notice here : since we use top-down approach, colors[i + 1:r - 1] has already been merged, so k = 0;
+                // so color[i] is adjacent to color[r] now
+                score = Math.max(score, 
+                    dfs(colors, lens, l, i, lens.get(r) + k, dp) + dfs(colors, lens, i + 1, r - 1, 0, dp));
+            }
+        }
+        dp[l][r][k] = score;
+        return score;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ DFS Solution  with Explanation.
+
+#define MAXN 101
+
+class Solution {
+    int number[MAXN], len[MAXN];
+public:
+    int removeBoxes(vector<int> &boxes) {
+        memset(number,0, sizeof(number));
+        memset(len,0, sizeof(len));
+        int n = int(boxes.size());
+        int dp[100][100][100] = {0};
+        int colcnt = 0, calc = 1;
+        for (int i = 0; i < boxes.size(); i++) {
+            if (boxes[i] == boxes[i + 1])
+                calc += 1;
+            else {
+                number[colcnt] = boxes[i];
+                len[colcnt] = calc;
+                calc = 1;
+                colcnt += 1;
+            }
+        }
+        return dfs(boxes, dp, 0, colcnt-1, 0);
+    }
+    int dfs(vector<int>& boxes,int dp[100][100][100], int l,int r,int k){
+        if (l>r) return 0;
+        if (dp[l][r][k]!=0) return dp[l][r][k];
+        if (l == r) return (len[r]+k)*(len[r]+k);
+        dp[l][r][k] = dfs(boxes,dp,l,r-1,0) + (len[r]+k)*(len[r]+k);
+        for (int i=l; i<r; i++){
+            if (number[i]==number[r]){
+                dp[l][r][k] = max(dp[l][r][k], dfs(boxes,dp,l,i,len[r]+k) + dfs(boxes,dp,i+1,r-1,0));
+            }
+        }
+        return dp[l][r][k];
+    }
+};
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Well...Got TLE...Using memorization in Java.
+int maxScore;
+Map<String,Integer> removedMap;
+public int removeBoxes(int[] boxes) {
+    maxScore = 0;
+    removedMap = new HashMap<>();
+    StringBuffer check = new StringBuffer();
+    for(int i = 0;i<boxes.length;i++){
+        check.append(1);
+    }
+    remove(boxes,check,0,0);
+    return maxScore;
+}
+
+private void remove(int[] boxes,StringBuffer removed,int score,int removeCount){
+    if(removeCount==boxes.length){
+        maxScore = maxScore>score?maxScore:score;
+        return;
+    }
+    if(removedMap.containsKey(removed.toString())&&removedMap.get(removed.toString())>=score) return;
+    removedMap.put(removed.toString(),score);
+    StringBuffer toRemove = new StringBuffer(removed);
+    int num = -1;
+    int count = 0;
+    for(int i = 0;i<boxes.length;i++){
+        if(toRemove.charAt(i)=='0') continue;//already removed
+        if(num==-1){
+            num = boxes[i];
+            toRemove.setCharAt(i,'0');
+            count++;
+        }
+        else{
+            if(boxes[i]==num){
+                toRemove.setCharAt(i,'0');
+                count++;
+            }
+            else{
+                remove(boxes,toRemove,score+count*count,removeCount + count);
+                toRemove = new StringBuffer(removed);
+                count = 1;
+                num = boxes[i];
+                toRemove.setCharAt(i,'0');
+            }
+        }
+    }
+    if(count>0){
+        remove(boxes,toRemove,score+count*count,removeCount + count);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+MLE is so annoying...
+<p>I have tried:<br/>
+vector&lt;vector&lt;vector&lt;int&gt;&gt;&gt; dp;    --&gt; MLE<br/>
+int dp&#91;105&#93;&#91;105&#93;&#91;105&#93;;    --&gt; run time error. (cannot allocate so huge memory)<br/>
+int dp&#91;100&#93;&#91;101&#93;&#91;101&#93;;   --&gt;  Accepted.</p>
+<p>If I can, I prefer to use vector because elements are allocated to the heap (meaning that we can use more memory than C array whose elements are allocated to the stack).</p>
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP unordered_map 12ms
+class Solution {
+public:
+    int removeBoxes(vector<int>& boxes) {
+        int n = boxes.size();
+        unordered_map<int, int> dp;
+        return box_helper(boxes, dp, 0, n-1, 0);
+    }
+private:
+    int box_helper(vector<int>& boxes, unordered_map<int, int>& dp, int l, int r, int k){
+        if (l > r) return 0;
+        while (l < r && boxes[r] == boxes[r-1]) { 
+           r--; 
+           k++;
+        }
+        int key = (l*100+r)*100+k;
+        if (dp.count(key)) return dp[key];
+        int ans = box_helper(boxes, dp, l, r-1, 0) + (k+1)*(k+1);
+        for (int i = l; i < r; i++){
+            if (boxes[i] == boxes[r]) {
+               while (boxes[i+1] == boxes[r]) 
+                   i++;
+               ans = max(ans, box_helper(boxes, dp, l, i, k+1) + box_helper(boxes, dp, i+1, r-1, 0));
+            }
+        }
+        dp[key] = ans;
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+python DP with memoization and optimization
+
+class Solution(object):
+    def removeBoxes(self, boxes):
+        """
+        :type boxes: List[int]
+        :rtype: int
+        """
+        self.boxes = boxes
+        n = len(boxes)
+        self._cache = [[[None]*n for _ in range(n)] for _ in range(n)]
+        return self.dp(0, n-1, 0)
+
+
+    def dp(self, i, j, k):
+        """
+        Let, `F(i,j,k)` be the sub-problem which assigns Maximum points by removing `boxes[i..j]` and `k` is the number of `boxes[i]` to the left of `i`.
+
+        Original Problem:  
+        `F(0,n-1,0)` since no boxes attached to left of input.  
+
+        Termination conditions:  
+        `F(i, i-1, k) = 0` Value of `k` does not matter.  
+        `F(i, i, k) = (k+1)*(k+1)` `k boxes[i]` before i and `boxes[i]` can be combined and removed.  
+
+        Recurrance:  
+        1. removing `boxes[i]` would result in: `F(i,j,k) = F(i+1,j,0) + (k+1)*(k+1)`
+        2. folding `boxes[m]` into `k` would result in: `F(i,j,k) = F(i+1, m-1, 0) + F(m, j, k+1)`
+        3. generalizing 2, `F(i,j,k) = max(F(i+1, m-1, 0) + F(m,j,k+1)) where i<m<=j && boxes[i]==boxes[m]` 
+        """
+        if j < i: return 0
+        if j == i: return (k+1)*(k+1)
+        if self._cache[i][j][k]: return self._cache[i][j][k]
+        
+        # optimize repeated values at the begining
+        _m = i
+        while(_m<j and self.boxes[_m+1] == self.boxes[i]): _m+=1
+        k += _m-i
+        i = _m
+
+        rv = max([self.dp(i+1, m-1, 0) + self.dp(m,j,k+1) for m in xrange(i+1, j+1) if self.boxes[i]==self.boxes[m]] + [(k+1)*(k+1)+self.dp(i+1, j, 0)])
+        self._cache[i][j][k] = rv
+        return self._cache[i][j][k]
+
+
+
+----------------------------------------------------------------------------------------------------
+Why not 13?
+    int nbox = boxesSize;
+    char a; int i = 0, rn = 0, ans = 0, j;
+    while(i < nbox )
+    {
+        if((*(boxes+i)) != -1)
+        {a = (*(boxes+i));
+        (*(boxes+i)) = -1;
+        rn = 1;
+        for(j = 0; j< nbox;j++ )
+        {
+            if(a == (*(boxes+j)) && (*(boxes+j)) != -1 )
+            {rn++; (*(boxes+j)) = -1;}
+        }
+        ans = ans +( rn * rn);
+        rn = 0;}
+        i++;
+    }
+    
+    return ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+last minute still TLE, should be OK, pity....
+class Solution {
+public:
+    int removeBoxes(const vector<int>& boxes) {
+        vector<int> used(boxes.size(), 1);
+        return helper(boxes, used);
+    }
+
+    int helper(const vector<int>& b, vector<int>& u) {
+        int result = 0;
+        int p = cont(b, 0, u).first;
+        while (p < (int)b.size()) {
+            auto c = cont(b, p, u);
+            int v = 0;
+            for (int i = c.first; i < c.second; ++i) {
+                if (u[i] > 0) v++;
+                --u[i];
+            };
+            result = max(result, v * v + helper(b, u));
+            for (int i = c.first; i < c.second; ++i) ++u[i];
+            p = c.second;
+        }
+        return result;
+    }
+
+    pair<int, int> cont(const vector<int>& b, int s, vector<int>& u) {
+        while (s < (int)b.size() && u[s] < 1) ++s;
+        pair<int, int> ret {s, s};
+        while (ret.second < (int)b.size() && (u[ret.second] < 1 || b[ret.second] == b[ret.first])) ++ret.second;
+        return ret;
+    }
+
+};
+
+----------------------------------------------------------------------------------------------------
+TLE for Memoization in C++
+class Solution {
+public:
+    int removeBoxes(vector<int>& boxes) {
+        if(boxes.size() <= 0) return 0;
+        string strBoxes = convertBoxesToStr(boxes);
+        unordered_map<string, int> cache;
+        int maxPoints = 0;
+        maxPoints = removeBoxesUtil(strBoxes, cache);
+        return maxPoints;
+    }
+    
+    string convertBoxesToStr(vector<int>& boxes) {
+        string str = "";
+        for(int i=0; i<boxes.size(); i++) {
+            char c = boxes[i] + '0';
+            str.push_back(c);
+        }
+        return str;
+    }
+    
+    int removeBoxesUtil(string strBoxes, unordered_map<string, int> &cache) {
+        if(strBoxes.length() <= 0) {
+            return 0;
+        }
+        if(cache.find(strBoxes) != cache.end()) {
+            return cache[strBoxes];
+        }
+        char c = strBoxes[0];
+        int start = 0;
+        int points = 0;
+        int maxPoints = 0;
+        string str = "";
+        int index = 1;
+        for(index=1; index<strBoxes.length(); index++) {
+            if(strBoxes[index] == c) {
+                continue;
+            }
+            str = strBoxes.substr(0,start) + strBoxes.substr(index,strBoxes.length() - index);
+            points = ((index-start) * (index-start)) + removeBoxesUtil(str, cache);
+            maxPoints = max(maxPoints, points);
+            start = index;
+            c = strBoxes[index];
+        }
+        str = strBoxes.substr(0,start);
+        points = ((index-start) * (index-start)) + removeBoxesUtil(str, cache);
+        maxPoints = max(maxPoints, points);
+        cache[strBoxes] = maxPoints;
+        return maxPoints;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^4) slow and complicated solution with memoization
+public class Solution {
+    int[][][] memo = null;
+    int[][] memo2 = null;
+    int[] b = null;
+    int n = 0;
+    int[][] repeat = null;
+    public int removeBoxes(int[] boxes) {
+        b = boxes;
+        n = b.length;
+        memo = new int [n][n][n+1];
+        memo2 = new int [n][n];
+        repeat = new int [n][n];
+        for (int i = 0; i < n; i++) repeat[i][i] = 1;
+        for (int i = 0; i < n; i++) {
+            for (int j = i+1; j < n; j++) {
+                if (b[i] != b[j]) continue;
+                for (int k = j-1; k >= i; k--) {
+                    if (b[k] == b[j]) {
+                        repeat[i][j] = repeat[i][k]+1;
+                        break;
+                    }
+                }
+            }
+        }
+        return reward(0, n-1);
+    }
+    int reward(int s, int e) {
+        if (s > e) return 0;
+        if (s == e) return 1;
+        if (memo2[s][e] > 0) return memo2[s][e];
+        if (b[s] != b[e]) {
+            int max = 0;
+            for (int i = s; i < e; i++) {
+                if (b[i] == b[s]) {
+                    max = Math.max(max, reward(s, i) + reward(i+1, e));
+                }
+            }
+            memo2[s][e] = max;
+            return max;
+        }
+        // b[s] == b[e]
+        int max = 0;
+        for (int i = s; i < e; i++) {
+            for (int k = 2; k <= repeat[s][e]; k++) {
+                max = Math.max(max, reward(s, e, k));
+            }
+        }
+        memo2[s][e] = max;
+        return max;
+    }
+    int reward(int s, int e, int k) {
+        if (memo[s][e][k] > 0) return memo[s][e][k];
+        if (k == 2) {
+            memo[s][e][k] = 4 + reward(s+1, e-1);
+            return memo[s][e][k];
+        }
+        // k >= 3
+        int max = 0;
+        for (int j = e-1; j > s; j--) {
+            if (b[j] == b[s] && repeat[s][j] >= k-1) {
+                max = Math.max(max, reward(s, j, k-1) - (k-1)*(k-1) + k*k + reward(j+1, e-1));
+            }
+        }
+        memo[s][e][k] = max;
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java version of Memo + DFS
+    int[][][] memo; 
+    public int removeBoxes(int[] boxes) {
+        int size = boxes.length;
+        memo = new int[size][size][size];
+        return dfs(boxes, 0, size - 1, 0); 
+    }
+    
+    int dfs(int[] boxes, int l, int r, int k) {
+        if (l > r) return 0; 
+        if (memo[l][r][k] != 0) return memo[l][r][k]; 
+        memo[l][r][k] = dfs(boxes, l + 1 , r, 0) + (k + 1) * (k + 1); 
+        for (int i = l + 1; i <= r; i++) {
+            if (boxes[l] == boxes[i]) {
+                memo[l][r][k] = Math.max(memo[l][r][k], dfs(boxes, l + 1, i - 1, 0) + dfs(boxes, i, r, k + 1)); 
+            }
+        }
+        return memo[l][r][k]; 
+    }
+
+----------------------------------------------------------------------------------------------------

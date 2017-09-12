@@ -1,0 +1,522 @@
+My solution in C( O(1) space and no magic math property involved )
+I see the majority of those posts use hashset to record values. Actually, we can simply adapt the Floyd Cycle detection algorithm. I believe that many people have seen this in the Linked List Cycle detection problem. The following is my code:
+
+    int digitSquareSum(int n) {
+        int sum = 0, tmp;
+        while (n) {
+            tmp = n % 10;
+            sum += tmp * tmp;
+            n /= 10;
+        }
+        return sum;
+    }
+    
+    bool isHappy(int n) {
+        int slow, fast;
+        slow = fast = n;
+        do {
+            slow = digitSquareSum(slow);
+            fast = digitSquareSum(fast);
+            fast = digitSquareSum(fast);
+        } while(slow != fast);
+        if (slow == 1) return 1;
+        else return 0;
+    }
+
+----------------------------------------------------------------------------------------------------
+Beat 90% Fast Easy Understand Java Solution with Brief Explanation
+The idea is to use one hash set to record sum of every digit square of every number occurred. Once the current sum cannot be added to set, return false; once the current sum equals 1, return true;
+
+    public boolean isHappy(int n) {
+        Set<Integer> inLoop = new HashSet<Integer>();
+        int squareSum,remain;
+		while (inLoop.add(n)) {
+			squareSum = 0;
+			while (n > 0) {
+			    remain = n%10;
+				squareSum += remain*remain;
+				n /= 10;
+			}
+			if (squareSum == 1)
+				return true;
+			else
+				n = squareSum;
+
+		}
+		return false;
+
+    }
+
+ 
+
+----------------------------------------------------------------------------------------------------
+Explanation of why those posted algorithms are mathematically valid
+Earlier posts gave the algorithm but did not explain why it is valid mathematically, and this is what this post is about: present a "short" mathematical proof.
+
+First of all, it is easy to argue that starting from a number `I`, if some value - say `a` - appears again during the process after `k` steps, the initial number `I` cannot be a happy number. Because `a` will continuously become `a` after every `k` steps.
+
+Therefore, as long as we can show that there is a loop after running the process continuously, the number is not a happy number.
+
+There is another detail not clarified yet: For any non-happy number, will it definitely end up with a loop during the process? This is important, because it is possible for a non-happy number to follow the process endlessly while having no loop.
+
+To show that a non-happy number will definitely generate a loop, we only need to show that `for any non-happy number, all outcomes during the process are bounded by some large but finite integer N`. If all outcomes can only be in a finite set `(2,N]`, and since there are infinitely many outcomes for a non-happy number, there has to be at least one duplicate, meaning a loop!
+
+Suppose after a couple of processes, we end up with a large outcome `O1` with `D` digits where `D` is kind of large, say `D>=4`, i.e., `O1 > 999` (If we cannot even reach such a large outcome, it means all outcomes are bounded by `999` ==> loop exists). We can easily see that after processing `O1`, the new outcome `O2` can be at most `9^2*D < 100D`, meaning that `O2` can have at most `2+d(D)` digits, where `d(D)` is the number of digits `D` have. It is obvious that `2+d(D) < D`. We can further argue that `O1` is the maximum (or boundary) of all outcomes afterwards. This can be shown by contradictory: Suppose after some steps, we reach another large number `O3 > O1`. This means we process on some number `W <= 999` that yields `O3`. However, this cannot happen because the outcome of `W` can be at most `9^2*3 < 300 < O1`.
+
+Done.
+
+Please leave your comment if any question or suggestion.
+
+----------------------------------------------------------------------------------------------------
+O(1) space Java solution
+    public class Solution {
+        public boolean isHappy(int n) {
+            int x = n;
+            int y = n;
+            while(x>1){
+                x = cal(x) ;
+                if(x==1) return true ;
+                y = cal(cal(y));
+                if(y==1) return true ;
+    
+                if(x==y) return false;
+            }
+            return true ;
+        }
+        public int cal(int n){
+            int x = n;
+            int s = 0;
+            while(x>0){
+                s = s+(x%10)*(x%10);
+                x = x/10;
+            }
+            return s ;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms, 5 line C code
+Using fact all numbers in [2, 6] are not happy (and all not happy numbers end on a cycle that hits this interval):
+
+    bool isHappy(int n) {
+        while(n>6){
+            int next = 0;
+            while(n){next+=(n%10)*(n%10); n/=10;}
+            n = next;
+        }
+        return n==1;
+    }
+
+----------------------------------------------------------------------------------------------------
+My Python Solution
+    def isHappy(self, n):
+        mem = set()
+        while n != 1:
+            n = sum([int(i) ** 2 for i in str(n)])
+            if n in mem:
+                return False
+            else:
+                mem.add(n)
+        else:
+            return True
+
+----------------------------------------------------------------------------------------------------
+Share my accepted Java solution!
+    public class Solution {
+        public boolean isHappy(int n) {
+            HashSet<Integer> set = new HashSet<Integer>();
+            set.add(n);
+            while (n != 1) {
+                int result = 0;
+                while (n != 0) {
+                    result += Math.pow(n % 10, 2);
+                    n /= 10;
+                }
+                if (set.contains(result)) {
+                    return false;
+                }
+                set.add(result);
+                n = result;
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+All you need to know about testing happy number!
+for those who are less patient, here is some findings,
+> (1) for a positive integer n, n is either a happy number or unhappy with
+> cycle length 7.
+> 
+> (2) digitSquareSum(n) < n for all n>99
+> 
+> (3) there are 19 happy numbers and 80 unhappy numbers in [1,99]
+> 
+> (4) happyNumLess100 = [1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70,
+> 79, 82, 86, 91, 94, 97]
+> 
+> (5) for these numbers the corresponding update count to become 1 is  stepcnt = [0, 5,
+> 1, 2, 4, 3, 3, 2, 3, 4, 4, 2, 5, 3, 3, 2, 4, 4, 3]
+
+[GWTW][1] has explained why a loop must exist if not happy, I will show something more.
+
+let g(n) denote digitSquareSum function, eg. g(4) = g(16), g(19) = 82 etc
+------------------------------------------------------------------------
+
+ - for nin [1,10), g(n)>=n, since g(n)=n*n>=nwith equality hold only
+   for n=1
+ - for other n with only highest digit nonzero (eg. 10, 90, 500, 4000,
+   20000, etc), g(n)<n
+ - and we can factor n into sum of numbers with only highest digit
+   nonzero, eg. 12045 = 10000 + 2000 + 40 + 5
+
+in this way, we can show for any n>=100, g(n) < n
+
+by calculate all cases in [1,200], 
+
+    L1 = [digitSquareSum(n) - n for n in range(1,200)]
+    L2 = list(filter(lambda x: x>0, L1))
+    L3 = list(filter(lambda x: x>0, L1[99:]))
+    len(L1), len(L2), len(L3)
+    >>> (199, 50, 0)
+    max(L2), L1.count(max(L2)), 1 + L1.index(max(L2))
+    >>> (72, 1, 9)
+    min(L2), L1.count(min(L2)), 1 + L1.index(min(L2))
+    >>> (2, 1, 2)
+
+the test shows that
+-------------------
+
+> (1) for all n>=100, g(n) < n.  
+> 
+> (2) there are only 50 number such that g(n) < n, among them for g(n)-n
+>
+> (3) the unique largest is 9 (g(9)-9 = 72), the unique smallest is 2 
+> (g(2) - 2 = 2).
+
+    def isHappy(n):
+        ''' rtype: int
+            return 0 if n is happy otherwise return the smallet cycle length
+        '''
+        # implementation ....
+
+
+    cycleLength = [isHappy(n) for n in range(1,10000)]
+    max(cycleLength)
+    >>> 7
+    cycleLength.count(7) + cycleLength.count(0) == len(cycleLength)
+    >>> True
+
+which shows a surprising result, there is only two cases for any positive integer n
+------------------------------------------------------------------------
+
+> (1) n is a happy number
+> 
+> (2) n is not happy and have cycle length 7 (we will further verify
+> about the cycle length soon)
+
+this can be verified like below. the algorithm is basically
+
+    Algorithm 1
+    input: n (positive integer)
+    func g = digitSquareSum
+    while n!=1 and n's current value not appeared in this calculation process
+        n= g(n)
+    output: True if n==1, false otherwise
+
+but we have showed,
+-------------------
+
+> (1) for all n>=100, the update step (n= g(n)) reduce the value of n
+> 
+> (2) a loop exist if and only if update have both decreasing and
+> increasing effect in the whole process (the only case of equality is
+> 1, which is excluded at first)
+> 
+> (3) increasing update can only happen for 50 numbers, all of them less
+> than 100
+
+so if we have a True table for all numbers less than 100 indicating happiness, denote it as HappyTable, then algorithm could be changed to
+
+    Algorithm 2
+    input: n (positive integer)
+    func g = digitSquareSum
+    while n>99
+        n = g(n)
+    output: HappyTable(n)
+
+if we use function isHappy previously showed (return 0 if n is happy otherwise return the smallet cycle length)
+
+    mylist = [isHappy(n) for n in range(1,100)]
+    happyList = [i+1 for i, val in enumerate(mylist) if val==0]
+    unhappyList = [i+1 for i, val in enumerate(mylist) if val!=0] # or equivalently if val==7
+    len(mylist), len(happyList), len(unhappyList)
+    >>> (99, 19, 80)
+    happyList
+    >>> [1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70, 79, 82, 86, 91, 94, 97]
+
+so it seems that the HappyTable can be easily achieved by a set
+---------------------------------------------------------------
+
+    Algorithm 3 (in python)
+    def isHappy(n):
+        """
+        :type n: int
+        :rtype: bool
+        """
+        happySet = set([1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70, 79, 82, 86, 91, 94, 97])
+        while n>99:
+            n = digitSquareSum(n)
+        return n in happySet
+
+    # another version
+    def isHappy(self, n):
+        while n>99:
+            n = self.digitSquareSum(n)
+        for i in range(5): // for why 5, see below about 'stepcnt'
+            if n==1: break
+            n = self.digitSquareSum(n)
+        return n==1
+    # another version worked for current test case, but may fail
+    def isHappy(self, n):
+        cnt = 6
+        while n>1 and cnt:
+            cnt -= 1
+            tmp, n = n, 0
+            while tmp:
+                n += (tmp%10)*(tmp%10)
+                tmp = int(tmp/10)
+        return n==1
+
+    # some test about how many update step needed for happy number less than 100
+    def beHappy(n):
+        """
+        n should be in range(1,100), 
+        return step number to become 1 for happy number, 
+        7 otherwise
+        """
+        cnt = 0
+        while n>1 and cnt<7:
+            cnt += 1
+            n = digitSquareSum(n)
+        return cnt if n==1 else 7
+    
+    
+    K = [beHappy(n) for n in range(1,100)]
+    
+    K.count(7)
+    >>> 80
+    stepcnt = [n for n in K if n<7]
+    stepcnt
+    >>> [0, 5, 1, 2, 4, 3, 3, 2, 3, 4, 4, 2, 5, 3, 3, 2, 4, 4, 3]
+
+
+**Eureka!!**
+
+
+  [1]: https://leetcode.com/discuss/71625/explanation-those-posted-algorithms-mathematically-valid
+
+----------------------------------------------------------------------------------------------------
+My Java solution: find 1 or 7 when happy sum is a single digit
+In order to find a rule to break out the loop, I start calculating 2 and find a loop at 4, then 3,5,6,9 will all go into that loop. So in 1-9, only 1 and 7 are happy numbers. Also I find all numbers' calculation will goes into a single digit at some time. So what I did is just calculate happy sum and when it is a single digit, check if it is 1 or 7 ^.^
+
+    public boolean isHappy(int n) {
+            if(n<=0) return false;
+            while(true){
+                int sum=0;
+                while(n!=0){
+                  sum+=(n%10)*(n%10);
+                  n=n/10;
+                }
+                if(sum/10==0){
+                   if(sum==1||sum==7) return true;
+                   else return false;
+                }
+                n=sum;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+5ms c++ solution using hashtable
+The common choice is to use map or set to check if there is a loop. since the maximum sum is no greater than 2x2 + 9x9x9 (2,999,999,999), we can use a 1000 lengh hashtable . It's not O(1) space but it's faster than the fast-slow pointer solution.
+
+    class Solution {
+    public:
+        int tran(int n){
+            int ans = 0;
+            while(n){
+                ans += pow(n%10, 2);
+    			n/=10;
+            }
+            return ans;
+        }
+        bool isHappy(int n) {
+            bool rep[1000];
+            memset(rep, 0, sizeof(rep));
+    		n = tran(n);
+            while(!rep[n]){
+    			rep[n] = true;
+                if(n == 1)
+                    return true;   
+    			n = tran(n);
+            }
+            return false;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+No hashset, O(1) time check whether is in the loop with mathematical proof
+class Solution {
+public:
+    int loop[8] = {4,16,37,58,89,145,42,20};
+    
+    bool inLoop(int n){
+        for(auto x: loop){
+            if(x == n) return true;
+        }
+        return false;
+    }
+    
+    bool isHappy(int n) {
+        if(n == 1) return true;
+        if(inLoop(n)) return false;
+        int next = 0;
+        while(n){
+            next += (n%10)*(n%10);
+            n /= 10;
+        }
+        return isHappy(next);
+    }
+};
+
+proof:
+
+1.loop number is less than 162.
+
+Assume f(x) is the sum of the squares of x's digits. let's say  0 < x <= 9,999,999,999 which is larger than the range of an int. f(x) <= 9^2 * 10 = 810. So no mater how big x is, after one step of f(x), it will be less than 810.The most large f(x) value (x < 810) is f(799) = 211. And do this several times: f(211) < f(199) = 163.  f(163) < f(99) = 162. So no mater which x you choose after several times of f(x),it finally fall in the range of [1,162] and can never get out.
+
+2.I check every unhappy number in range of [1,162] , they all fall in loop {4,16,37,58,89,145,42,20} ,which means every unhappy number fall in this loop.
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Use the same way as checking cycles in a linked list
+    class Solution {
+    public:
+        bool isHappy(int n) {
+            int A = nxt(n), B = nxt(nxt(n));
+            while (A != 1 && A != B) {
+                A = nxt(A);
+                B = nxt(B);
+                B = nxt(B);
+            }
+            return A == 1;
+        }
+    private:
+        int nxt(int num) {
+            int res = 0;
+            while (num) {
+                res += (num % 10) * (num % 10);
+                num /= 10;
+            }
+            return res;
+        }
+    };
+
+Think the process as a linked list, then the code is easy to understand.
+
+----------------------------------------------------------------------------------------------------
+0ms c++ solution, beats 97.4%.Perhaps the most easy one to understand
+I use three solutions: 1. hash table(8ms)  2. List circle detect method(4ms) 3.circle 1 and circle 4.
+Here is the url:https://en.wikipedia.org/wiki/Happy_number Based on the fact that circle of 1 is happy, circle of 4 is unhappy.
+
+Solution3:
+
+        bool isHappy(int n) {
+                int num=0;
+                while(n!=1&&n!=4)
+                {
+                    while(n)
+                    {
+                        num += (n%10) * (n%10);
+                        n/=10;
+                    }
+                    n=num;num=0;
+                }
+                return 1==n;
+            }
+
+Solution1:
+
+    class Solution {
+    public:
+        bool isHappy(int n) {
+            int num=0;
+            unordered_map<int,bool> table;
+            table[n]=1;
+            while(n!=1)
+            {
+                while(n)
+                {
+                    num += (n%10) * (n%10);
+                    n/=10;
+                }
+                if(table[num]) break;
+                else table[num]=1;
+                n=num;num=0;
+            }
+            return 1==n;
+        }
+    };
+
+Solution2:
+
+    class Solution {
+    public:
+        bool isHappy(int n) {
+            int slow,fast;
+            slow=fast=n;
+            do{
+                slow = compute(slow);
+                fast=compute(fast);
+                fast=compute(fast);
+            }while(slow!=fast);
+            return 1==slow;
+        }
+    private:
+        int compute(int n)
+        {
+            int num=0;
+            while(n)
+            {
+                num += (n%10) * (n%10);
+                n/=10;
+            }
+            return num;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My easy understanding solution in Java
+    public class Solution {
+    public boolean isHappy(int n) {
+        if (n <= 0) return false;
+        
+        while (n >= 10) {
+            int sum = 0;
+            while (n != 0) {
+                sum += (n%10)*(n%10);
+                n /= 10;
+            }
+            n = sum;
+        }
+        return n == 1 || n == 7;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+4 C++ Solutions with Explanations

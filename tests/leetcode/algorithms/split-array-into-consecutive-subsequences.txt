@@ -1,0 +1,795 @@
+Java Recursive Solution
+public List<List<String>> printTree(TreeNode root) {
+    List<List<String>> res = new LinkedList<>();
+    int height = root == null ? 1 : getHeight(root);
+    int rows = height, columns = (int) (Math.pow(2, height) - 1);
+    List<String> row = new ArrayList<>();
+    for(int i = 0; i < columns; i++)  row.add("");
+    for(int i = 0; i < rows; i++)  res.add(new ArrayList<>(row));
+    populateRes(root, res, 0, rows, 0, columns - 1);
+    return res;
+}
+
+public void populateRes(TreeNode root, List<List<String>> res, int row, int totalRows, int i, int j) {
+    if (row == totalRows || root == null) return;
+    res.get(row).set((i+j)/2, Integer.toString(root.val));
+    populateRes(root.left, res, row+1, totalRows, i, (i+j)/2 - 1);
+    populateRes(root.right, res, row+1, totalRows, (i+j)/2+1, j);
+}
+
+public int getHeight(TreeNode root) {
+     if (root == null) return 0;
+     return 1 + Math.max(getHeight(root.left), getHeight(root.right));
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++, O(N), DFS&#x2F;preorder traversal
+class Solution {
+public:
+    vector<vector<string>> printTree(TreeNode* root) {
+        int h = get_height(root), w = get_width(root);
+        vector<vector<string>> ans(h, vector<string>(w, ""));
+        helper(ans, root, 0, 0, w-1);
+        return ans;
+    }
+private:
+    int get_height(TreeNode* p) {
+        if (!p) return 0;
+        int left = get_height(p->left), right = get_height(p->right);
+        return max(left, right)+1;
+    }
+    // width is the max(left, right)*2+1
+    int get_width(TreeNode* p) {
+        if (!p) return 0;
+        int left = get_width(p->left), right = get_width(p->right);
+        return max(left, right)*2+1;
+    }
+    // always put the value in the middle of the range.
+    void helper(vector<vector<string>>& ans, TreeNode* p, int level, int l, int r) {
+        if (!p) return;
+        int mid = l+(r-l)/2;
+        ans[level][mid] = to_string(p->val);
+        helper(ans, p->left, level+1, l, mid-1);
+        helper(ans, p->right, level+1, mid+1, r);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python Straight Forward Solution
+def printTree(self, root):
+        if not root: return [""]
+
+        def depth(root):
+            if not root: return 0
+            return max(depth(root.left), depth(root.right)) + 1
+
+        d = depth(root)
+        self.res = [[""] * (2**d - 1) for _ in xrange(d)]
+
+        def helper(node, d, pos):
+            self.res[-d - 1][pos] = str(node.val)
+            if node.left: helper(node.left, d - 1, pos - 2**(d - 1))
+            if node.right: helper(node.right, d - 1, pos + 2**(d - 1))
+
+        helper(root, d - 1, 2**(d - 1) - 1)
+        return self.res
+
+----------------------------------------------------------------------------------------------------
+Java solution, two times traversal
+public class Solution {
+    int height = 0, width = 0;
+    Map<String, String> map = new HashMap<>();
+    
+    public List<List<String>> printTree(TreeNode root) {
+        List<List<String>> res = new ArrayList<List<String>>();
+        if (root == null) return res;
+        
+        measure(root, 0);
+        mark(root, 0, 0, width - 1);
+        
+        for (int i = 0; i < height; i++) {
+            List<String> row = new ArrayList<>();
+            for (int j = 0; j < width; j++) {
+                if (map.containsKey(i + "," + j)) {
+                    row.add(map.get(i + "," + j));
+                }
+                else {
+                    row.add("");
+                }
+            }
+            res.add(row);
+        }
+        
+        return res;
+    }
+    
+    private int measure(TreeNode root, int h) {
+        if (root == null) return 0;
+        
+        height = Math.max(height, h + 1);
+        
+        int w = Math.max(measure(root.left, h + 1), measure(root.right, h + 1)) * 2 + 1;
+        width = Math.max(width, w);
+        
+        return w;
+    }
+    
+    private void mark(TreeNode root, int y, int l, int r) {
+        if (root == null) return;
+        
+        int x = (r + l) / 2;
+        map.put(y + "," + x, root.val + "");
+        
+        mark(root.left, y + 1, l, x - 1);
+        mark(root.right, y + 1, x + 1, r);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Iterative Level Order Traversal with Queue
+public class Solution {
+    public List<List<String>> printTree(TreeNode root) {
+        List<List<String>> res = new ArrayList<>();
+        if (root == null) {
+            return res;
+        }
+        
+        int rows = getHeight(root);
+        int cols = (int)Math.pow(2, rows) - 1;
+        for (int i = 0; i < rows; i++) {
+            List<String> row = new ArrayList<>();
+            for (int j = 0; j < cols; j++) {
+                row.add("");
+            }
+            res.add(row);
+        }
+        
+        Queue<TreeNode> queue = new LinkedList<>();
+        Queue<int[]> indexQ = new LinkedList<>();
+        queue.offer(root);
+        indexQ.offer(new int[] { 0, cols - 1 });
+        int row = -1;
+        while (!queue.isEmpty()) {
+            row++;
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                TreeNode cur = queue.poll();
+                int[] indices = indexQ.poll();
+                
+                if (cur == null) {
+                    continue;
+                }
+                
+                int left = indices[0];
+                int right = indices[1];
+                int mid = left + (right - left) / 2;
+                res.get(row).set(mid, String.valueOf(cur.val));
+                
+                queue.offer(cur.left);
+                queue.offer(cur.right);
+                indexQ.offer(new int[] { left, mid - 1 });
+                indexQ.offer(new int[] { mid + 1, right });
+            }
+        }
+        
+        return res;
+    }
+    
+    private int getHeight(TreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        return Math.max(getHeight(root.left), getHeight(root.right)) + 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Simple DFS
+def printTree(self, root):
+    self.h = 0
+    k = 0
+    def findHeight(root, k):
+        if root:
+            k += 1
+            self.h = max(self.h, k)
+            findHeight(root.left, k)
+            findHeight(root.right, k) 
+    findHeight(root, k)
+    
+    e = 2 ** self.h - 1
+    self.res = [[''] * e for i in range(self.h)]
+    print(self.res)
+    
+    k = 0
+    def dfs(root, k, low, hi):
+        if root:
+            self.res[k][(hi+low)/2-1] = str(root.val)
+            k += 1
+            dfs(root.left, k, low, (hi+low)/2)
+            dfs(root.right, k, (hi+low)/2, hi) 
+    dfs(root, k, 1, e+1)
+    return self.res
+
+----------------------------------------------------------------------------------------------------
+Java BFS Solution
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public List<List<String>> printTree(TreeNode root) {
+        List<List<String>> res = new ArrayList<>();
+        if(root==null) {
+            return res;
+        }
+        
+        int depth = maxDepth(root);
+        System.out.println(depth);
+        
+        Queue<TreeNode> nodeQ = new LinkedList<>();
+        nodeQ.offer(root);
+        Queue<Integer> levelQ = new LinkedList<>();
+        levelQ.offer(0);
+        List<String> t = new ArrayList<>();
+        t.add(String.valueOf(root.val));
+        res.add(t);
+        int lev = 0;
+        
+        
+        while(!nodeQ.isEmpty()) {
+            System.out.println(res);
+            int size = nodeQ.size();
+            int pos = 0;
+            System.out.println("size: "+size);
+            if(lev+1 != depth) {
+                List<String> temp = new ArrayList<>();
+                for(int i=0; i<res.get(lev).size(); i++) {
+                    temp.add("");
+                }
+                res.add(temp);
+            }
+            for(int i=0;i<size;i++) {
+                int level = levelQ.poll();
+                TreeNode node = nodeQ.poll();
+                lev = level+1;
+                
+                if(node==null) {
+                    if(lev != depth) {
+                        nodeQ.offer(null);
+                        levelQ.offer(lev);
+                        for(int j=0;j<res.size();j++) {
+                            res.get(j).add(pos, "");
+                        }
+                        pos += 2;
+                        nodeQ.offer(null);
+                        levelQ.offer(lev);
+                        for(int j=0;j<res.size();j++) {
+                            res.get(j).add(pos, "");
+                        }
+                        pos += 2;
+                    }
+                    continue;
+                }
+                
+                if(node.left!=null && lev!=depth) {
+                    nodeQ.offer(node.left);
+                    levelQ.offer(lev);
+                    
+                    for(int j=0;j<res.size();j++) {
+                        if(j==lev) {
+                            res.get(j).add(pos, String.valueOf(node.left.val));
+                        }
+                        else {
+                            res.get(j).add(pos, "");
+                        }
+                    }
+                    pos += 2;
+                }
+                
+                if(node.left==null && lev!=depth) {
+                    nodeQ.offer(node.left);
+                    levelQ.offer(lev);
+                    for(int j=0;j<res.size();j++) {
+                        res.get(j).add(pos, "");
+                    }
+                    pos += 2;
+                }
+                
+                if(node.right!=null && lev!=depth) {
+                    nodeQ.offer(node.right);
+                    levelQ.offer(level + 1);
+                    
+                    for(int j=0;j<res.size();j++) {
+                        if(j==level+1) {
+                            res.get(j).add(pos, String.valueOf(node.right.val));
+                        }
+                        else {
+                            res.get(j).add(pos, "");
+                        }
+                    }
+                    pos += 2;
+                }
+                
+                if(node.right==null && lev!=depth) {
+                    nodeQ.offer(node.right);
+                    levelQ.offer(lev);
+                    for(int j=0;j<res.size();j++) {
+                        res.get(j).add(pos, "");
+                    }
+                    pos += 2;
+                }
+            }
+            System.out.println(res);
+        }
+        return res;
+    }
+    
+    private int maxDepth(TreeNode root) {
+        if(root==null) {
+            return 0;
+        }
+        
+        return Math.max(maxDepth(root.left), maxDepth(root.right)) + 1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 8 lines O(n)
+int depth(TreeNode* r, int d) { return r == nullptr ? d : max(depth(r->left, d + 1), depth(r->right, d + 1)); }    
+void printTree(TreeNode* r, int st, int end, int d, vector<vector<string>>& v) {
+    v[d][st + (end - st) / 2] = to_string(r->val);
+    if (r->left != nullptr) printTree(r->left, st, st + (end - st) / 2, d + 1, v);
+    if (r->right != nullptr) printTree(r->right, st + (end - st) / 2 + 1, end, d + 1, v);
+}
+vector<vector<string>> printTree(TreeNode* root) {
+    auto d = depth(root, 0);
+    vector<vector<string>> v(d, vector<string>((1 << d) - 1, ""));
+    printTree(root, 0, v[0].size() - 1, 0, v);
+    return v;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python with thorough explanation
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def printTree(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[str]]
+        """
+        def get_height(node):
+            if not node:
+                return 0
+            return 1 + max(get_height(node.left), get_height(node.right))
+
+        rows = get_height(root)
+        cols = 2 ** rows - 1
+        res = [['' for _ in range(cols)] for _ in range(rows)]
+
+        def traverse(node, level, pos):
+            if not node:
+                return
+            left_padding, spacing = 2 ** (rows - level - 1) - 1, 2 ** (rows - level) - 1
+            index = left_padding + pos * (spacing + 1)
+            print(level, index, node.val)
+            res[level][index] = str(node.val)
+            traverse(node.left, level + 1, pos << 1)
+            traverse(node.right, level + 1, (pos << 1) + 1)
+        traverse(root, 0, 0)
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution (Easy for sure)
+   
+   public List<List<String>> printTree(TreeNode root) {
+        int height = height(root);
+        int wide = wide(root);
+        List<List<String>> result = new ArrayList<>();
+        for (int i = 0; i < height; i++) {
+            List<String> list = new ArrayList<>();
+            for (int j = 0; j < wide; j++) {
+                list.add("");
+            }
+            result.add(list);
+        }
+        print(result, root, 0, 0, wide - 1);
+        return result;
+    }
+
+    private void print(List<List<String>> result, TreeNode root, int row, int left, int right) {
+        if (root == null) return;
+        int center = (left + right) / 2;
+        result.get(row).set(center, String.valueOf(root.val));
+        print(result, root.left, row + 1, left,center);
+        print(result, root.right, row + 1, center + 1, right);
+    }
+
+    private int height(TreeNode node) {
+        if (node == null) return 0;
+        return 1 + Math.max(height(node.left), height(node.right));
+    }
+
+    private int wide(TreeNode node) {
+        if (node == null) return 0;
+        return 1 + 2 * Math.max(wide(node.left), wide(node.right));
+    }
+
+``
+
+----------------------------------------------------------------------------------------------------
+A bit of Java 8 solution
+public static List<List<String>> printTree(TreeNode root) {
+        int rows = numLevels(root);
+        int cols = (int)Math.pow(2, rows) - 1 ;
+        String[][] resMatrix = new String[rows][cols];
+        IntStream.range(0, rows).forEach(i -> IntStream.range(0 , cols).forEach(j -> resMatrix[i][j] = ""));
+        populateNode(root, 0, 1, resMatrix);
+        List<List<String>> res = new ArrayList<>();
+        Arrays.stream(resMatrix).forEach(arr -> res.add(Arrays.asList(arr)));
+        return res;
+    }
+
+    private static void populateNode(TreeNode node, int level, int num, String[][] res) {
+        if(node == null) return;
+        int nodesInLevel = (int)Math.pow(2, level);
+        int widthOfNodeInLevel = res[0].length/nodesInLevel;
+        int myPosInLevel = level == 0 ? num : num - (nodesInLevel - 1);
+        int myPosInResultArray = (widthOfNodeInLevel + 1)  * (myPosInLevel - 1) + (widthOfNodeInLevel / 2);
+        res[level][myPosInResultArray] = ""+node.val;
+        populateNode(node.left, level + 1, num * 2, res);
+        populateNode(node.right, level + 1, num * 2 + 1, res);
+    }
+
+    private static int numLevels(TreeNode root) {
+        return root == null ? 0 : 1 + Math.max(numLevels(root.left), numLevels(root.right));
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; &#91;Java&#93; Clean Code
+public class Solution {
+    public List<List<String>> printTree(TreeNode root) {
+        List<List<String>> grid = new ArrayList<List<String>>();
+        if (root == null) return grid;
+
+        int h = height(root);
+        int w = 0;
+        for (int i = 0; i < h; i++) {
+            w = w + 1 + w;
+        }
+        for (int i = 0; i < h; i++) {
+            grid.add(new ArrayList<String>(w));
+            for (int j = 0; j < w; j++) {
+                grid.get(i).add("");
+            }
+        }
+        print(root, 0, 0, w - 1, grid);
+
+        return grid;        
+    }
+
+    private int height(TreeNode node) {
+        return node == null ? 0 : 1 + Math.max(height(node.left), height(node.right));
+    }
+
+    private void print(TreeNode node, int d, int l, int r, List<List<String>> grid) {
+        if (node == null) return;
+        int m = (l + r) / 2;
+        grid.get(d).set(m, Integer.toString(node.val));
+        print(node.left, d + 1, l, m - 1, grid);
+        print(node.right, d + 1, m + 1, r, grid);
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution
+    def printTree(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[str]]
+        """
+        def getH(root,depth):
+            if root==None:
+                return depth
+            l=getH(root.left,depth+1)
+            r=getH(root.right,depth+1)
+            return max(l,r)
+
+        def printNode(root, h):
+            cols=2**h-1
+
+            left=["" for i in xrange(cols/2)]
+            right=["" for i in xrange(cols/2)]
+            this = str(root.val) if root else ""
+            res=(left+[this]+right)
+            return res
+
+        def printT(root,Height,level, start_idx,res):
+            cols=2**(Height-level)-1
+            if level==Height: return
+            row=printNode(root,Height-level)
+            for i in xrange(len(row)):
+                res[level][start_idx+i]=row[i]
+            mid=start_idx+cols/2
+            if root:
+                printT(root.left,Height,level+1, start_idx,res)
+                printT(root.right,Height,level+1, mid+1,res)
+
+        
+        h=getH(root,0)
+        res=[["" for i in xrange(2**h-1)] for j in xrange(h)]
+        printT(root,h,0,0, res)
+        return res
+``
+
+----------------------------------------------------------------------------------------------------
+Swift 3 BFS Level Order Solution
+    // level order: find the node index in each level and change string from "" to "val"
+
+func printTree(_ root: TreeNode?) -> [[String]] {
+    
+    var ans = [[String]]()
+    guard let root = root else { return ans }
+    
+    let maxHeight = find(root)
+    let n = Int(pow(2.0, Double(maxHeight))) - 1
+    
+    var queue = [(TreeNode, Int)]()
+    queue.append((root, n/2))
+    var pre = n / 2
+    
+    while !queue.isEmpty {
+        var arr = [String](repeating: "", count: n)
+        let size = queue.count
+        let diff = pre - pre / 2
+        pre = pre / 2
+        for _ in 0..<size {
+            let temp = queue.removeFirst()
+            let index = temp.1
+            arr[index] = String(temp.0.val)
+            
+            if let left = temp.0.left {
+                queue.append((left, index - diff))
+            }
+            if let right = temp.0.right {
+                queue.append((right, index + diff))
+            }
+        }
+        ans.append(arr)
+    }
+    return ans
+}
+
+func find(_ root: TreeNode?) -> Int {
+    guard let root = root else { return 0 }
+    let left = find(root.left)
+    let right = find(root.right)
+    return 1 + max(left, right)
+}
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Python - BFS - with some mathematics - O(m*n)
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def printTree(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[str]]
+        """
+        def height(root):
+            if root:
+                return 1 + max(height(root.left), height(root.right))
+            return 0
+        
+        ans = []
+        if root:
+            m = height(root) 
+            n = 2**(m) - 1
+            ans = [ [ "" for j in range(n) ] for i in range(m) ]
+            q   = []
+            i = 0
+            q.append( (root,i,n//2) )
+            while q:
+                node,i,j = q.pop(0)
+                ans[i][j] = str(node.val)
+                x = 2**(m-i-2)
+                if node.left:
+                    q.append( ( node.left,i+1,j-x) )
+                if node.right:
+                    q.append( (node.right,i+1,j+x))
+                    
+        return ans
+
+----------------------------------------------------------------------------------------------------
+Easy to understand, recursive solution, clean code by separating methods
+public IList<IList<string>> PrintTree(TreeNode root)
+{
+    int m = Height(root);
+    int n = (m == 1) ? 1 : (int)Math.Pow(2, m) - 1;
+
+    IList<IList<string>> lists = CreateLists(m, n);
+
+    FillLists(root, 0, 0, n - 1, lists);
+
+    return lists;
+}
+
+private int Height(TreeNode root)
+{
+    if (root == null) return 0;
+    return 1 + Math.Max(Height(root.left), Height(root.right));
+}
+
+private IList<IList<string>> CreateLists(int m, int n)
+{
+    IList<IList<string>> lists = new List<IList<string>>();
+
+    for (int i = 0; i < m; i++)
+    {
+        lists.Add(new List<string>());
+        for (int j = 0; j < n; j++)
+        {
+            lists[i].Add("");
+        }
+    }
+    return lists;
+}
+
+private void FillLists(TreeNode root, int index, int start, int end, IList<IList<string>> lists)
+{
+    if (root == null) return;
+
+    int mid = (start + end) / 2;
+
+    lists[index][mid] = root.val.ToString();
+
+    if (root.left != null)
+        FillLists(root.left, index + 1, start, mid - 1, lists);
+    if (root.right != null)
+        FillLists(root.right, index + 1, mid + 1, end, lists);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Javascript DFS solution
+/**
+ * Definition for a binary tree node.
+ * function TreeNode(val) {
+ *     this.val = val;
+ *     this.left = this.right = null;
+ * }
+ */
+
+function getheight(root) {
+    if(!root) return 0;
+    
+    return 1 + Math.max(getheight(root.left), getheight(root.right));
+}
+
+function fill(node, result, level, left, right) {
+    if(!node) return;
+    
+    var mid = Math.floor((right + left)/2);
+    result[level-1][mid] = node.val.toString();
+    
+    fill(node.left, result, level+1, left, mid-1);
+    fill(node.right, result, level+1, mid+1, right);
+}
+
+/**
+ * @param {TreeNode} root
+ * @return {string[][]}
+ */
+var printTree = function(root) {
+    var height = getheight(root);
+    var width = Math.pow(2, height) - 1;
+    var result = [];
+    
+    for (var i=0; i< height; i++) {
+        result.push(new Array(width).fill(""));
+    }
+    
+    // fill the result with level = 1, left = 0 and right = width-1 
+    fill(root, result, 1, 0, width-1);
+    return result;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java Clean and optimised Recursive solution
+private int findHeight(TreeNode root) {
+        if (root == null) return 0;
+        return 1 + Math.max(findHeight(root.left), findHeight(root.right));
+    }
+
+    public List<List<String>> printTree(TreeNode root) {
+        int height = findHeight(root);
+        int n = (int) Math.pow(2, height) - 1;
+        List<List<String>> list = new ArrayList<>();
+        List<String> nums = new ArrayList<>();
+        for (int i = 0; i < n; i++)
+            nums.add("");
+        for (int i = 0; i < height; i++)
+            list.add(new ArrayList(nums));
+        ptUtil(root, list, height, 0, n, 0);
+        return list;
+    }
+
+    private void ptUtil(TreeNode root, List<List<String>> list, int height, int widthStart, int widthEnd, int currHeight) {
+        if (root == null) return;
+        List<String> nums = list.get(currHeight);
+        int mid = widthStart + (widthEnd - widthStart) / 2;
+        nums.set(mid, String.valueOf(root.val));
+        ptUtil(root.left, list, height, widthStart, mid - 1, currHeight + 1);
+        ptUtil(root.right, list, height, mid + 1, widthEnd, currHeight + 1);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ 3ms solution and easy understand
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<string>> printTree(TreeNode* root) {
+        int row = depth(root),col = width(root);
+        vector<vector<string>> res = vector<vector<string>> (row,vector<string>(col,""));
+        helper(root,res,0,col,0);
+        return res;
+    }
+    void helper(TreeNode* root,vector<vector<string>>& res,int begin,int end,int row){
+        if(root == nullptr) return;
+        if(begin > end) return;
+        int mid = (begin + end)/2;
+        res[row][mid] = to_string(root->val);
+        helper(root->left,res,begin,mid-1,row+1);
+        helper(root->right,res,mid+1,end,row+1);
+    }
+    int depth(TreeNode* root){
+        if(root == nullptr) return 0;
+        int left = depth(root->left);
+        int right = depth(root->right);
+        return max(left,right) + 1;
+    }
+    int width(TreeNode* root){
+        if(root == nullptr) return 0;
+        if(root->left == nullptr && root->right == nullptr) return 1;
+        return max(width(root->left),width(root->right)) * 2 + 1; 
+    }
+};
+
+----------------------------------------------------------------------------------------------------

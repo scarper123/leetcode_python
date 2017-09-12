@@ -1,0 +1,823 @@
+Java Simple&#x2F;Classical Trie question&#x2F;solution (Beat 96%)
+public String replaceWords(List<String> dict, String sentence) {
+        String[] tokens = sentence.split(" ");
+        TrieNode trie = buildTrie(dict);
+        return replaceWords(tokens, trie);
+    }
+
+    private String replaceWords(String[] tokens, TrieNode root) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String token : tokens) {
+            stringBuilder.append(getShortestReplacement(token, root));
+            stringBuilder.append(" ");
+        }
+        return stringBuilder.substring(0, stringBuilder.length()-1);
+    }
+
+    private String getShortestReplacement(String token, final TrieNode root) {
+        TrieNode temp = root;
+        StringBuilder stringBuilder = new StringBuilder();
+        for (char c : token.toCharArray()) {
+            stringBuilder.append(c);
+            if (temp.children[c - 'a'] != null) {
+                if (temp.children[c - 'a'].isWord) {
+                    return stringBuilder.toString();
+                }
+                temp = temp.children[c - 'a'];
+            } else {
+                return token;
+            }
+        }
+        return token;
+    }
+
+    private TrieNode buildTrie(List<String> dict) {
+        TrieNode root = new TrieNode(' ');
+        for (String word : dict) {
+            TrieNode temp = root;
+            for (char c : word.toCharArray()) {
+                if (temp.children[c - 'a'] == null) {
+                    temp.children[c - 'a'] = new TrieNode(c);
+                }
+                temp = temp.children[c - 'a'];
+            }
+            temp.isWord = true;
+        }
+        return root;
+    }
+
+    public class TrieNode {
+        char val;
+        TrieNode[] children;
+        boolean isWord;
+
+        public TrieNode(char val) {
+            this.val = val;
+            this.children = new TrieNode[26];
+            this.isWord = false;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java 8 and Trie based solution
+public String replaceWords(List<String> dict, String sentence) {
+    Trie trie = new Trie(256);
+    dict.forEach(s -> trie.insert(s));
+    List<String> res = new ArrayList<>();
+    Arrays.stream(sentence.split(" ")).forEach(str -> res.add(trie.getShortestPrefix(str)));
+    return res.stream().collect(Collectors.joining(" "));
+}
+
+
+class Trie {
+    private int R;
+    private TrieNode root;
+
+    public Trie(int R) {
+        this.R = R;
+        root = new TrieNode();
+    }
+
+    // Returns the shortest prefix of the word that is there in the trie
+    // If no such prefix exists, return the original word
+    public String getShortestPrefix(String word) {
+        int len =  getShortestPrefix(root, word, -1);
+        return (len < 1) ? word : word.substring(0, len);
+    }
+
+    private int getShortestPrefix(TrieNode root, String word, int res) {
+        if(root == null || word.isEmpty()) return 0;
+        if(root.isWord) return res + 1;
+        return getShortestPrefix(root.next[word.charAt(0)], word.substring(1), res+1);
+    }
+
+    // Inserts a word into the trie.
+    public void insert(String word) {
+        insert(root, word);
+    }
+
+    private void insert(TrieNode root, String word) {
+        if (word.isEmpty()) { root.isWord = true; return; }
+        if (root.next[word.charAt(0)] == null) root.next[word.charAt(0)] = new TrieNode();
+        insert(root.next[word.charAt(0)], word.substring(1));
+    }
+
+    private class TrieNode {
+        private TrieNode[] next = new TrieNode[R];
+        private boolean isWord;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation (Prefix hash, Trie solutions)
+def replaceWords(self, roots, sentence):
+    _trie = lambda: collections.defaultdict(_trie)
+    trie = _trie()
+    END = True
+    for root in roots:
+        cur = trie
+        for letter in root:
+            cur = cur[letter]
+        cur[END] = root
+
+    def replace(word):
+        cur = trie
+        for letter in word:
+            if letter not in cur: break
+            cur = cur[letter]
+            if END in cur:
+                return cur[END]
+        return word
+
+    return " ".join(map(replace, sentence.split()))
+
+
+----------------------------------------------------------------------------------------------------
+Java solution, 12 lines, HashSet
+public class Solution {
+    public String replaceWords(List<String> dict, String sentence) {
+        if (dict == null || dict.size() == 0) return sentence;
+        
+        Set<String> set = new HashSet<>();
+        for (String s : dict) set.add(s);
+        
+        StringBuilder sb = new StringBuilder();
+        String[] words = sentence.split("\\s+");
+        
+        for (String word : words) {
+            String prefix = "";
+            for (int i = 1; i <= word.length(); i++) {
+                prefix = word.substring(0, i);
+                if (set.contains(prefix)) break;
+            }
+            sb.append(" " + prefix);
+        }
+        
+        return sb.deleteCharAt(0).toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ trie with optimizations (50 ms)
+class trie {
+    bool isRoot = false;
+    trie* l[26] = {};
+public:
+    void insert(string& word, int ch, int sz) {
+        isRoot |= ch == sz;
+        if (!isRoot) { // stop at the shortest root.
+            if (l[word[ch] - 'a'] == nullptr) l[word[ch] - 'a'] = new trie();
+            l[word[ch] - 'a']->insert(word, ch + 1, sz);
+        }
+    }
+    int root(string& word, int st, int ch, int sz) {
+        if (st + ch == sz || word[st + ch] == ' ' || this->isRoot) return ch;
+        if (l[word[st + ch] - 'a'] == nullptr) { // root was not found
+            while (st + ch < sz && word[st + ch] != ' ') ++ch; // skipping the entire word
+            return ch;
+        }
+        return l[word[st + ch] - 'a']->root(word, st, ch + 1, sz);
+    }
+};
+string replaceWords(vector<string>& dict, string snt) {
+    trie t;
+    string res;
+    for (auto s : dict) t.insert(s, 0, s.size());
+    for (int i = 0; i < snt.size(); ) {
+        if (snt[i] == ' ') res += snt[i++];
+        auto chars = t.root(snt, i, 0, snt.size());
+        res += snt.substr(i, chars);
+        for (i += chars; i < snt.size() && snt[i] != ' '; ++i);
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Trie Tree concise Java solution, easy to understand
+public class Solution {
+    TrieNode root = new TrieNode();
+    
+    public String replaceWords(List<String> dict, String sentence) {
+        StringBuilder sb = new StringBuilder();
+        String[] words = sentence.split(" ");
+        for (String word : dict) {
+            build(word);
+        }
+        for (String word : words) {
+            if (sb.length() > 0) {
+                sb.append(" ");
+            }
+            sb.append(next(word));
+        }
+        return sb.toString();
+    }
+    
+    public void build(String word) {
+        TrieNode curRoot = root;
+        for (int i = 0; i < word.length(); i++) {
+            char c = word.charAt(i);
+            if (curRoot.children[c - 'a'] == null) {
+                curRoot.children[c - 'a'] = new TrieNode();
+            }
+            curRoot = curRoot.children[c - 'a'];
+        }
+        curRoot.isTail = true;
+    }
+    
+    public String next(String word) {
+        TrieNode curRoot = root;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < word.length(); i++) {
+            char c = word.charAt(i);
+            if (curRoot.children[c - 'a'] == null) {
+                break;
+            }
+            sb.append(c);
+            curRoot = curRoot.children[c - 'a'];
+            if (curRoot.isTail) return sb.toString();
+        }
+        return word;
+    }
+}
+
+class TrieNode {
+    TrieNode[] children;
+    boolean isTail = false;
+    public TrieNode() {
+        children = new TrieNode[26];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+JavaScript 3-liner using Trie
+const TERMINATING_CHAR = '$$TrieTerminatingCharacter';
+
+class Trie {
+    constructor() {
+        this._tree = {};
+        this.size = 0; // Number of different strings in the Trie. It is not the summation of count.
+    }
+
+    /**
+     * Inserts a string into the Trie, optionally specifying its count.
+     * The string's new count will be returned.
+     * 0 is returned if the insertion was unsuccessful.
+     * @param {string} string
+     * @param {number} [count=1]
+     * @return {count}
+     */
+    insert(string, count = 1) {
+        if (!string || count < 1) {
+            return 0;
+        }
+        let curr = this._tree;
+        for (let i = 0; i < string.length; i++) {
+            const char = string[i];
+            if (!curr.hasOwnProperty(char)) {
+                curr[char] = {};
+            }
+            curr = curr[char];
+        }
+        if (!curr.hasOwnProperty(TERMINATING_CHAR)) {
+            this.size++;
+            curr[TERMINATING_CHAR] = 0;
+        }
+        curr[TERMINATING_CHAR] += count;
+        return curr[TERMINATING_CHAR];
+    }
+    
+    /**
+     * Finds the shortest prefix of a string from words within the Trie.
+     * Returns null if there is no prefix of the string within the Trie.
+     * @param {string} string
+     * @return {string}
+     */
+    shortestPrefix(string) {
+        let curr = this._tree;
+        const prefixChars = [];
+        
+        for (let i = 0; i < string.length; i++) {
+            const char = string[i];
+            if (curr.hasOwnProperty(TERMINATING_CHAR)) {
+                return prefixChars.join('');
+            }
+            if (curr.hasOwnProperty(char)) {
+                prefixChars.push(char);
+                curr = curr[char];
+                continue;
+            }
+            break;
+        }
+        // If the whole string is a prefix.
+        if (curr.hasOwnProperty(TERMINATING_CHAR)) {
+            return prefixChars.join('');
+        }
+        return null;
+    }
+}
+
+
+/**
+ * @param {string[]} dict
+ * @param {string} sentence
+ * @return {string}
+ */
+var replaceWords = function(dict, sentence) {
+    const trie = new Trie();
+    dict.forEach(word => trie.insert(word));
+    return sentence.split(' ').map(word => trie.shortestPrefix(word) || word).join(' ');
+};
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Sort Solution
+public String replaceWords(List<String> dict, String sentence) {
+    Collections.sort(dict, Comparator.comparingInt(a -> a.length()));
+    String[] words = sentence.split("\\s");
+    StringBuilder sb = new StringBuilder();
+    
+    for(String word : words) {
+        for(String match : dict) {
+            if(word.startsWith(match)) {
+                word = match;
+                break;
+            }
+        }
+        sb.append(word + " ");
+    }
+    sb.replace(sb.length()-1, sb.length(), "");
+    return sb.toString();
+}
+
+----------------------------------------------------------------------------------------------------
+Scala code time constraints?
+object Solution {
+    def replaceWords(dict: List[String], sentence: String): String = {
+        val sorted = dict.toArray.sortBy(_.length)
+        sentence.split(" ").map { str =>
+            sorted.dropWhile(word => !str.startsWith(word)).headOption match {
+                case None => str
+                case Some(v) => v
+            }
+        }.reduce(_ + " " + _)
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy Python Solution, 6 Lines
+class Solution(object):
+    def replaceWords(self, dict, sentence):
+        """
+        :type dict: List[str]
+        :type sentence: str
+        :rtype: str
+        """
+        setenceAsList = sentence.split(" ")
+        for i in range(len(setenceAsList)):
+            for j in dict:
+                if setenceAsList[i].startswith(j):
+                    setenceAsList[i] = j
+        return " ".join(setenceAsList)
+
+
+----------------------------------------------------------------------------------------------------
+C++ trietree solution easy to read and understand
+class Solution {
+public:
+    string replaceWords(vector<string>& dict, string sentence) {
+        stringstream sen(sentence);
+        string res="";
+        string token;
+        TrieTree tree;
+        tree.buildTree(dict);
+         while(getline(sen,token,' ')){
+             res+=tree.replace(token);
+             res+=" ";
+         }
+        return res.substr(0,res.size()-1);  //ignore last space
+    }
+    
+class TrieNode{
+public:
+    bool end;
+    string str;
+    TrieNode* children[26];
+    TrieNode(bool flag, string s){
+        end=flag;
+        str=s;
+        memset(children, 0, sizeof(children));;
+        }
+    };
+class TrieTree{
+public:
+        TrieNode* root;
+        TrieTree(){
+            root= new TrieNode(false,"");
+        }
+    
+       void buildTree(vector<string>& dict){
+            for(string s:dict){
+                TrieNode* cur =root;
+                for(char c:s){
+                    if(cur->children[c-'a'] == NULL){
+                        cur->children[c-'a'] = new TrieNode(false,"");
+                        cur = cur->children[c-'a'];
+                    }
+                    else if(cur->children[c-'a']->end==true){   //if a shorter root exists, we just stop build
+                        cur=NULL;
+                        break;
+                    }
+                    else cur=cur->children[c-'a'];
+                }
+                if(cur!=NULL){    //mark the string and flag
+                    cur->end=true;
+                    cur->str=s;
+                }
+            }
+           return ;
+        }
+        string replace(string s){
+            TrieNode* cur =root;
+            string res="";
+            for(char c:s){
+                cur=cur->children[c-'a'];
+                if(cur==NULL) break;
+                if(cur->end==true){
+                    res=cur->str;
+                    break;
+                }
+            }
+            if(res!="") return res;
+            return s;
+        }
+    };
+
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution with comments
+public class Solution {
+    public String replaceWords(List < String > dict, String sentence) {
+        int l = dict.size(), m = sentence.length();
+        HashSet < String > hs = new HashSet < > ();
+
+        for (int i = 0; i < l; i++) {
+            String str = dict.get(i);
+            if (!hs.contains(str)) {
+                hs.add(str);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("");
+
+        char[] stc = sentence.toCharArray();
+        //Loop over all the words in the given sentence word by word
+        //loop over the current word char by char, by storing the resulting string in temp
+        //checking if the substring is present in dictionary using HashSet
+        //if its present add it to the answer and skip rest of the chars in the current word
+        for (int i = 0; i < m; i++) {
+            char c = stc[i];
+            if (c == ' ') {
+                sb.append(c);
+            } else {
+                String temp = "";
+                int j = i + 1, k = j;
+                boolean flag = false;
+                for (j = i; j < m && stc[j] != ' '; j++) {
+                    char d = stc[j];
+                    temp += d;
+                    // Found the shortest root
+                    //add the root in stringbuilder sb and skip the rest of the chars in the word
+                    if (hs.contains(temp)) {
+                        sb.append(temp);
+                        flag = true;
+                        k = j + 1;
+                        //to skip the rest of the chars in the current word
+                        for (k = j + 1; k < m; k++) {
+                            if (stc[k] == ' ') {
+                                break;
+                            }
+                        }
+                        i = k - 1;
+                        break;
+                    }
+                }
+                //if we did not find the current word in the dictionary
+                // add the complete word to the stringbuilder sb
+                if (!flag) {
+                    //j is the next posion of ' '
+                    i = j - 1;
+                    sb.append(temp);
+
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Help! can anyone save my MLE solution?
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+Using trie - python
+class Solution(object):
+    def replaceWords(self, roots, sentence):
+        """
+        :type dict: List[str]
+        :type sentence: str
+        :rtype: str
+        """
+
+        class TrieNode(object):
+            def __init__(self):
+                self.word = False
+                self.children = dict()
+
+        class Trie(object):
+            def __init__(self):
+                self.root = TrieNode()
+
+            def addWord(self, word):
+                if word:
+                    cur = self.root
+                    for c in word:
+                        if c not in cur.children:
+                            cur.children[c] = TrieNode()
+                        cur = cur.children[c]
+                    cur.word = True
+
+            def getRoot(self, word):
+                ans = ""
+                cur = self.root
+                for c in word:
+                    if c in cur.children:
+                        ans += c
+                        cur = cur.children[c]
+                        if cur.word == True:  # found smallest root!
+                            return ans
+                    else:
+                        break
+                return word
+
+        trie = Trie()
+        for word in roots:
+            trie.addWord(word)
+
+        ans = []
+        for word in sentence.split():
+            ans.append(trie.getRoot(word))
+        return ' '.join(ans)
+
+----------------------------------------------------------------------------------------------------
+Java | solution using Trie Data Structure
+public class Solution {
+    
+    public String replaceWords(List<String> dict, String sentence) {
+        
+        Trie trie = new Trie();
+        
+        for (String s : dict) {
+            trie.insert(s);
+        }
+        
+        String[] sen = sentence.split(" +");
+        
+        for (int i = 0; i < sen.length; i++) {
+            String root = trie.findRoot(sen[i]);
+            if (!root.equals("")) {
+                sen[i] = root;
+            }
+        }
+        
+        StringBuilder result = new StringBuilder();
+        
+        for (String s : sen) {
+            result.append(s + " ");
+        }
+
+        return result.substring(0, result.length() - 1).toString();
+        
+    }
+}
+
+class Trie {
+    
+    Map<Character, Trie> children;
+    boolean endOfWord;
+    
+    // Will always store the root of the tree
+    Trie root;
+
+    public Trie() {
+        this.children = new HashMap<Character, Trie>();
+    }
+    
+    /** Inserts a word into the trie. */
+    public void insert(String word) {
+        
+        if (root == null) {
+            root = new Trie();
+        }
+        
+        Trie node = root;
+        
+        for (char c : word.toCharArray()) {
+            
+            if (node.children.containsKey(c)) {
+                node = node.children.get(c);               
+            } else {
+                // Create a new Trie Node
+                Trie newNode = new Trie();
+                
+                // Add the character at this node
+                node.children.put(c, newNode);
+                node = newNode;
+            }
+        }
+        
+        node.endOfWord = true;
+    }
+    
+    public String findRoot(String word) {
+        
+        Trie node = root;
+        
+        StringBuilder rootWord = new StringBuilder("");
+        
+        for (char c : word.toCharArray()) {            
+            node = node.children.get(c);
+            if (node != null) {
+                rootWord.append(String.valueOf(c));
+                if (node.endOfWord) 
+                    return rootWord.toString();
+            } else if (node == null) {
+                break;
+            }
+        }
+        
+        return "";
+    }    
+}
+
+
+----------------------------------------------------------------------------------------------------
+share Java Solution using TrieTree
+public class Solution {
+    class TrieNode{
+        TrieNode[] children;
+        String word;
+        TrieNode(){
+            children=new TrieNode[26];
+        }
+        
+    }
+    
+    public String replaceWords(List<String> dict, String sentence) {
+           TrieNode root=new TrieNode();
+           for(String ele:dict){
+                constructTree(root,ele);  
+           } 
+          StringBuilder sb=new StringBuilder();
+          for(int i=0;i<sentence.length();i++){
+              if(sentence.charAt(i)==' '){
+                  sb.append(" ");
+                  continue;
+              }
+              
+              int j=i;
+              while(j+1<sentence.length()&&sentence.charAt(j+1)>='a'&&sentence.charAt(j+1)<='z'){
+                    j++;
+              }
+              
+              String temp=sentence.substring(i,j+1);
+              String find=findminstr(root,temp);
+              sb.append(find);
+              i=j;
+          }
+        
+         return sb.toString();
+    }
+    
+    public String findminstr(TrieNode root,String str){
+        char[] array=str.toCharArray();
+        TrieNode current=root;
+        
+        for(int i=0;i<array.length;i++){
+            char c=array[i];
+            if(current.children[c-'a']==null){
+                return str;
+            }
+            current=current.children[c-'a'];
+            if(current.word!=null){
+                return current.word;
+            }
+        }
+        return str;
+    }
+    
+    public void constructTree(TrieNode root,String str){
+        char[] array=str.toCharArray();
+        TrieNode current=root;
+        for(int i=0;i<array.length;i++){
+               if(current.children[array[i]-'a']==null){
+                   current.children[array[i]-'a']=new TrieNode();
+               }
+               current=current.children[array[i]-'a'];
+        }
+        current.word=str;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java HashMap Solution, Some Explanation
+public String replaceWords(List<String> dict, String sentence) {
+    StringBuilder res = new StringBuilder(); 
+    String[] sentences = sentence.split(" ");
+    Set<String> roots = new HashSet<>();
+    Map<String, String> memo = new HashMap<>();
+    for (String r: dict) {
+        roots.add(r);
+    }
+    for(int i = 0; i < sentences.length; i++) {
+        if (memo.containsKey(sentences[i])) {
+            res.append(memo.get(sentences[i]));
+        }
+        else {
+            boolean found = false;
+            for (int j = 0; j <= sentences[i].length(); j++) {
+                if (roots.contains(sentences[i].substring(0,j))) {
+                    memo.put(sentences[i], sentences[i].substring(0,j));
+                    res.append(sentences[i].substring(0,j));
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                res.append(sentences[i]);
+            }
+        }
+        if (i < sentences.length - 1) {
+            res.append(' ');
+        }
+    }
+    return res.toString();
+}
+
+----------------------------------------------------------------------------------------------------
+Simple Python Soln. in 6 lines
+
+
+class Solution(object):
+    def replaceWords(self, dict, sentence):
+        sentlist = sentence.split(" ")
+        for i in dict:
+            for m, j in enumerate(sentlist):
+                if i == j[:len(i)]:
+                    sentlist[m] = i
+        return " ".join(sentlist)
+
+
+
+----------------------------------------------------------------------------------------------------
+Greedy Java Solution - 99ms
+public class Solution {
+    public String replaceWords(List<String> dict, String sentence) {
+        String[] dicts=new String[dict.size()];
+        dict.toArray(dicts);
+        
+        Arrays.sort(dicts, (a,b)->a.length()-b.length());
+        
+        StringBuilder newSentence=new StringBuilder();
+        String[] words=sentence.split(" ");
+        newSentence.append(this.transform(dicts,words[0]));
+        for(int i=1;i<words.length;i++){
+        	newSentence.append(" "+this.transform(dicts, words[i]));
+        }
+        return newSentence.toString();
+    }
+    
+    private String transform(String[] dicts, String word){
+    	for(String root:dicts){
+    		if(word.startsWith(root)){
+    			return root;
+    		}
+    	}
+    	return word;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

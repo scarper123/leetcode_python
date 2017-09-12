@@ -1,0 +1,735 @@
+O(1) space O(n) complexity Iterative Solution
+Just share my iterative solution with O(1) space and O(n) Time complexity
+
+    public class Solution {
+        
+        //based on level order traversal
+        public void connect(TreeLinkNode root) {
+    
+            TreeLinkNode head = null; //head of the next level
+            TreeLinkNode prev = null; //the leading node on the next level
+            TreeLinkNode cur = root;  //current node of current level
+    
+            while (cur != null) {
+                
+                while (cur != null) { //iterate on the current level
+                    //left child
+                    if (cur.left != null) {
+                        if (prev != null) {
+                            prev.next = cur.left;
+                        } else {
+                            head = cur.left;
+                        }
+                        prev = cur.left;
+                    }
+                    //right child
+                    if (cur.right != null) {
+                        if (prev != null) {
+                            prev.next = cur.right;
+                        } else {
+                            head = cur.right;
+                        }
+                        prev = cur.right;
+                    }
+                    //move to next node
+                    cur = cur.next;
+                }
+                
+                //move to next level
+                cur = head;
+                head = null;
+                prev = null;
+            }
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple solution using constant space
+The idea is simple: level-order traversal.
+You can see the following code:
+
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            
+            while(root != null){
+                TreeLinkNode tempChild = new TreeLinkNode(0);
+                TreeLinkNode currentChild = tempChild;
+                while(root!=null){
+                    if(root.left != null) { currentChild.next = root.left; currentChild = currentChild.next;}
+                    if(root.right != null) { currentChild.next = root.right; currentChild = currentChild.next;}
+                    root = root.next;
+                }
+                root = tempChild.next;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution with constant space
+    public void connect(TreeLinkNode root) {
+	    TreeLinkNode dummyHead = new TreeLinkNode(0);
+	    TreeLinkNode pre = dummyHead;
+	    while (root != null) {
+		    if (root.left != null) {
+			    pre.next = root.left;
+			    pre = pre.next;
+		    }
+		    if (root.right != null) {
+			    pre.next = root.right;
+			    pre = pre.next;
+		    }
+		    root = root.next;
+		    if (root == null) {
+			    pre = dummyHead;
+			    root = dummyHead.next;
+			    dummyHead.next = null;
+		    }
+	    }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple 40ms c++ o(n) ,o(1) solution with only one while loop
+Thanks for liji94188 for adding the explanation:
+
+It's a BFS traversal. now pointer is the current level traveler and head is the left most element at next level and the tail is the right most element at next level till now. We move now pointer at current level and populate the the next-link at its children level. (Here the gist is we can move now to its next because this relationship was already populated in the previous round).
+
+    void connect(TreeLinkNode *root) {
+        TreeLinkNode *now, *tail, *head;
+        
+        now = root;
+        head = tail = NULL;
+        while(now)
+        {
+            if (now->left)
+                if (tail) tail = tail->next =now->left;
+                else head = tail = now->left;
+            if (now->right)
+                if (tail) tail = tail->next =now->right;
+                else head = tail = now->right;
+            if(!(now = now->next))
+            {
+                now = head;
+                head = tail=NULL;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+AC Python O(1) space solution 12 lines and easy to understand
+The algorithm is a BFS or level order traversal. We go through the tree level by level. node is the pointer in the parent level, tail is the tail pointer in the child level.
+The parent level can be view as a singly linked list or queue, which we can traversal easily with a pointer.
+Connect the tail with every one of the possible nodes in child level, update it only if the connected node is not nil.
+Do this one level by one level. The whole thing is quite straightforward.
+
+**Python**
+
+    def connect(self, node):
+        tail = dummy = TreeLinkNode(0)
+        while node:
+            tail.next = node.left
+            if tail.next:
+                tail = tail.next
+            tail.next = node.right
+            if tail.next:
+                tail = tail.next
+            node = node.next
+            if not node:
+                tail = dummy
+                node = dummy.next
+
+
+    # 61 / 61 test cases passed.
+    # Status: Accepted
+    # Runtime: 100 ms
+    # 95.26%
+
+
+
+
+----------------------------------------------------------------------------------------------------
+O(1). Concise. Fast. What&#x27;s so hard?
+This is definitely medium, not hard. Took me about 5 minutes, and some medium problems took me a few hours! Since you have to walk the tree in BFS order and you're given extra references to help you do just that, it's intuitive, it's simple and it's fast. The first level (root) is connected already, so you connect the next level and then you just walk through the linked list you've just created and so on.
+
+    public void connect(TreeLinkNode root) {
+        for (TreeLinkNode head = root; head != null; ) {
+            TreeLinkNode nextHead = new TreeLinkNode(0), nextTail = nextHead;
+            for (TreeLinkNode node = head; node != null; node = node.next) {
+                if (node.left != null) {
+                    nextTail.next = node.left;
+                    nextTail = node.left;
+                }
+                if (node.right != null) {
+                    nextTail.next = node.right;
+                    nextTail = node.right;
+                }
+            }
+            head = nextHead.next;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Just convert common BFS solution to O(1)  space, a simple python code
+common BFS
+
+    class Solution:
+    # @param root, a tree link node
+    # @return nothing
+    def connect(self, root):
+        if not root:
+            return
+        queue, level = collections.deque([root]), collections.deque()
+        while queue:
+            node = queue.popleft()
+            if node.left:
+                level.append(node.left)
+            if node.right:
+                level.append(node.right)
+            node.next = queue[0] if queue else None
+            if not queue and level:
+                queue, level = level, queue
+
+O(1) space
+
+    class Solution:
+    # @param root, a tree link node
+    # @return nothing
+    def connect(self, root):
+        queue, level, curr = root, None, None
+        while queue:
+            if queue.left:
+                if not level:
+                    level = curr = queue.left
+                else:
+                    curr.next = queue.left
+                    curr = curr.next
+            if queue.right:
+                if not level:
+                    level = curr = queue.right
+                else:
+                    curr.next = queue.right
+                    curr = curr.next
+            queue = queue.next
+            if not queue and level:
+                queue, level, curr = level, None, None
+
+Use a fake head can save a few lines
+
+----------------------------------------------------------------------------------------------------
+O(1) space O(n) time Java solution
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            if(root == null) return;
+            
+            TreeLinkNode cur = root;
+            while(cur != null){
+                if(cur.left != null){
+                    cur.left.next = (cur.right != null) ? cur.right : getNext(cur);
+                }
+                
+                if(cur.right != null){
+                    cur.right.next = getNext(cur);
+                }
+                
+                cur = cur.next;
+            }
+            
+            connect(root.left);
+            connect(root.right);
+        }
+        
+        private TreeLinkNode getNext(TreeLinkNode root){
+            TreeLinkNode temp = root.next;
+            
+            while(temp != null){
+                if(temp.left != null) return temp.left;
+                if(temp.right != null) return temp.right;
+                
+                temp = temp.next;
+            }
+            
+            return null;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ recursive solution, easy understanding
+     void connect(TreeLinkNode *root) {
+       if (!root) return;
+        TreeLinkNode dummy(INT_MIN);
+        for (TreeLinkNode *cur = root, *pre = &dummy; cur; cur = cur->next) {
+            if (cur->left) {
+                pre->next = cur->left;
+                pre = pre->next;
+            }
+            if (cur->right) {
+                pre->next = cur->right;
+                pre = pre->next;
+            }
+        }
+        connect(dummy.next);
+    }
+
+----------------------------------------------------------------------------------------------------
+A simple and clear BFS solution in 20 lines
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+             if( root == NULL )
+                 return;
+             root->next = NULL;
+             TreeLinkNode *pre = root;
+             TreeLinkNode *tmphead = new TreeLinkNode(0);
+             TreeLinkNode *p = NULL;
+             while(pre != NULL){
+                 p = tmphead;
+                 while( pre != NULL ){
+                     if(pre->left != NULL) p = p->next = pre->left;
+                     if(pre->right != NULL) p = p->next = pre->right;
+                     pre = pre->next;
+                 }
+                 p->next = NULL;
+                 pre = tmphead->next;
+             }
+             tmphead->next = NULL;
+             delete tmphead;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy understand and precise Java code
+   Use dummy node to avoid unneccesary if sentense:
+
+     public void connect(TreeLinkNode root) {
+            while(root != null){
+                TreeLinkNode firstNode = new TreeLinkNode(0); //Dummy head
+                TreeLinkNode pre = firstNode;
+                for(TreeLinkNode cur = root; cur != null; cur = cur.next){
+                    if(cur.left != null){
+                        pre.next = cur.left;
+                        pre = cur.left;
+                    }
+                    if(cur.right != null){
+                        pre.next = cur.right;
+                        pre = cur.right;
+                    }
+                }
+                root = firstNode.next;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Short Java BFS Solution
+    public void connect(TreeLinkNode root) {
+        TreeLinkNode queue = root;
+        while (queue != null) {
+            TreeLinkNode level = new TreeLinkNode(0);
+            TreeLinkNode current = level;
+            while (queue != null) {
+                if (queue.left != null) {
+                    current.next = queue.left;
+                    current = current.next;
+                }
+                if (queue.right != null) {
+                    current.next = queue.right;
+                    current = current.next;
+                }
+                queue = queue.next;
+            }
+            queue = level.next;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Concise python solution, 9 lines, space O(1)
+level by level traversal with a dummy head `prekid`. <br>
+root is in the current level, and kid is in the next level. `prekid.next` is the head in the kid level<br>
+`kid = kid.next or kid` :  Update kid ONLY when we actually find its next node
+<br><br>
+runtime is around 96ms with a best runtime 88ms.
+
+
+    def connect(self, root):
+        prekid = kid = TreeLinkNode(0)
+        while root:
+            while root:
+                kid.next = root.left
+                kid = kid.next or kid
+                kid.next = root.right
+                kid = kid.next or kid
+                root = root.next
+            root, kid = prekid.next, prekid
+
+----------------------------------------------------------------------------------------------------
+1ms Java Solution
+    public class Solution {
+        int max = 0;
+        
+        TreeLinkNode findNext(TreeLinkNode node) {
+            if(node==null) return null;
+            if(node.left != null) return node.left;
+            if(node.right != null) return node.right;
+            return findNext(node.next);
+        }
+        
+        public void connect(TreeLinkNode root) {
+            max = -1;
+            connect(root, 0);
+        }
+        
+        public void connect(TreeLinkNode node, int level) {
+            
+            //base case
+            if(node==null) return;
+            
+            if(level > max) {
+                //connect the child nodes at this level
+                TreeLinkNode n = node;
+                while(n != null) {
+                    if(n.left != null) {
+                        n.left.next = n.right != null ? n.right : findNext(n.next);
+                    }
+                    if(n.right != null) {
+                        n.right.next = findNext(n.next);
+                    }
+                    n = n.next;
+                }
+                max = level;
+            }
+            
+            connect(node.left, level+1);
+            connect(node.right, level+1);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution with O(1) space and O(n) time, anyone has simpler code?
+This is my code. Is there any simpler solution?
+
+    void connect(TreeLinkNode *root) {
+        if (root == NULL) return;
+        TreeLinkNode * start = root;
+        TreeLinkNode * end = root;
+        TreeLinkNode * levelEnd = root;
+        while (start != NULL)
+        {
+            if (start->left != NULL)
+            {
+                end->next = start->left;
+                end = end->next;
+            }
+            if (start->right != NULL)
+            {
+                end->next = start->right;
+                end = end->next;
+            }
+            if (start == levelEnd)
+            {
+                start = start->next;
+                levelEnd->next = NULL;
+                levelEnd = end;
+            }
+            else
+            {
+                start = start->next;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Where did I get wrong? JAVA.
+I understand the code doesn't look concise or pretty. However, it pases 34/61 cases. And I'm not sure where is the problem. Since there are cases before No.34 that has several nodes.next() has no child, and the code passed those cases. I don't know how could it miss those two 8s in this case.
+
+Any help would be appreciated.
+
+
+34 / 61 test cases passed.
+Status: Wrong Answer
+Submitted: 14 minutes ago
+Input:	{2,1,3,0,7,9,1,2,#,1,0,#,#,8,8,#,#,#,#,7}
+Output:	{2,#,1,3,#,0,7,9,1,#,2,1,0,#,7,#}
+Expected:	{2,#,1,3,#,0,7,9,1,#,2,1,0,8,8,#,7,#}
+
+ 
+
+       /**
+     * Definition for binary tree with next pointer.
+     * public class TreeLinkNode {
+     *     int val;
+     *     TreeLinkNode left, right, next;
+     *     TreeLinkNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+            if(root==null||(root.left==null&&root.right==null)) return;
+            
+            if(root.left!=null){                                                            //root.left!=null
+                if(root.right!=null){                                                           //root.left&right!=null     left->right
+                root.left.next=root.right;
+                if(root.next==null) root.right.next=null;
+                else{                                                                           //root.left!=null,right==null left->next.left/right
+                    TreeLinkNode temp=root;
+                    while(temp.next.next!=null) {                                               //while loop to skip the next() that has no child
+                        if(temp.next.left==null&&temp.next.right==null) temp=temp.next;
+                        else break;
+                    }
+                        if(temp.next.left==null&&temp.next.right==null) root.right.next=null;
+                        else{
+                            if(temp.next.left!=null) root.right.next=temp.next.left;
+                            else root.right.next=temp.next.right;
+                        }
+                }
+                }else{                                                                      //Same for root.left!=null + root.right==null
+                    if(root.next==null) root.left.next=null;
+                    else{
+                        TreeLinkNode temp=root;
+                        while(temp.next.next!=null) {if(temp.next.left==null&&temp.next.right==null) temp=temp.next; else break;}
+                        if(temp.next.left==null&&temp.next.right==null) root.left.next=null;
+                        else{
+                            if(temp.next.left!=null) root.left.next=temp.next.left;
+                            else root.left.next=temp.next.right;
+                        }
+                    }
+                }
+            }else{                                                                          //Same procedure for root.left==null, root.right!=null
+                if(root.next==null) root.right.next=null;
+                else{
+                    TreeLinkNode temp=root;
+                    while(temp.next.next!=null) {if(temp.next.left==null&&temp.next.right==null) temp=temp.next; else break;}
+                        if(temp.next.left==null&&temp.next.right==null) root.right.next=null;
+                        else{
+                            if(temp.next.left!=null) root.right.next=temp.next.left;
+                            else root.right.next=temp.next.right;
+                        }
+                }
+            }
+            connect(root.left);                                                             //Continue moving nodes downward.
+            connect(root.right);
+            return;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Super short Java recursion solution with O(1) space and another iterative BFS O(n) time and O(1) space.
+Code is short and easy to understand, the merge part is just like a DFS in two trees simultaneously, the order of the four recursions matters.
+
+Then the pain is the time complexity. It's slow but just enough to get AC.
+
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+        	if(root==null) return; 
+        	connect(root.left);
+        	connect(root.right);
+        	merge(root.left,1,root.right,new int[1]);
+        }
+        
+        public void merge(TreeLinkNode rootL, int currDepth, TreeLinkNode rootR, int[] visitedDepth){
+        	if(rootL==null || rootR==null) return;
+        	if(currDepth> visitedDepth[0]) {
+        		rootL.next = rootR;
+        		visitedDepth[0]++;
+        	}
+        	merge(rootL.right,currDepth+1,rootR.left,visitedDepth);
+        	merge(rootL.right,currDepth+1,rootR.right,visitedDepth);
+        	merge(rootL.left,currDepth+1,rootR.left,visitedDepth);
+        	merge(rootL.left,currDepth+1,rootR.right,visitedDepth);
+        }
+    }
+
+Here is iterative BFS solution with O(n) time complexity and O(1) space.
+
+Explanation for 2nd solution: It's a BFS traversal inspired by [aileengw][1]. The curr pointer is the current level traveler and head is the left most element at next level and the tail is the right most element at next level till now. We move curr pointer at current level and populate the the next-link at its children level. (Here the gist is we can move curr to its next because this relationship was already populated in the previous round).
+
+    public class Solution {
+        public void connect(TreeLinkNode root) {
+        	TreeLinkNode curr = root;
+        	TreeLinkNode head = null, tail = null;
+        	while(curr!=null) {
+        	    if(curr.left!=null) {
+        	        if(tail!=null) {
+        	            tail.next = curr.left;
+        	            tail = tail.next;
+        	        }
+        	        else {
+        	            head = curr.left;
+        	            tail = head;
+        	        }
+        	    }
+        	    if(curr.right!=null) {
+        	        if(tail!=null) {
+        	            tail.next = curr.right;
+        	            tail = tail.next;
+        	        }
+        	        else {
+        	            head = curr.right;
+        	            tail = head;
+        	        }
+        	    }
+        	    if(curr.next!=null) curr = curr.next;
+        	    else {
+        	        curr = head;
+        	        head = null;
+        	        tail = null;
+        	    }
+        	}
+        }
+    }
+
+ 
+
+
+  [1]: https://leetcode.com/discuss/44411/simple-40ms-c-o-n-o-1-solution-with-only-one-while-loop
+
+----------------------------------------------------------------------------------------------------
+Clear C++ O(1) Space
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) { //O(1) space
+            while (root)
+            {
+                TreeLinkNode * pre = nullptr;
+                 for (auto cur = root; cur; cur=cur->next)
+                 {
+                     if (cur->left)
+                     {
+                         if (pre == nullptr)
+                             root = cur->left;
+                         else
+                             pre->next = cur->left;
+                         pre = cur->left;
+                     }
+                     if (cur->right)
+                     {
+                         if (pre == nullptr)
+                             root = cur->right;
+                         else
+                             pre->next = cur->right;
+                         pre = cur->right;
+                     }
+                 }
+                 if (pre == nullptr) //No next root found.
+                    break;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my concise dfs solution
+    /**
+     * Definition for binary tree with next pointer.
+     * struct TreeLinkNode {
+     *  int val;
+     *  TreeLinkNode *left, *right, *next;
+     *  TreeLinkNode(int x) : val(x), left(NULL), right(NULL), next(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        map<int, TreeLinkNode*> rec;
+        void dfs(TreeLinkNode *root, int dep) {
+            if (!root) return;
+            if (rec[dep]) {
+                rec[dep]->next = root;
+            }
+            rec[dep] = root;        
+            dfs(root->left, dep + 1);
+            dfs(root->right, dep + 1);
+        }
+    
+        void connect(TreeLinkNode *root) {
+            dfs(root, 0);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share C++ 40ms Code, Constant Space.
+#C++ Code:(old version with extra function, easier to understand)
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            temp = new TreeLinkNode(0);
+            TreeLinkNode *next_root = root;
+            while(next_root){
+                link(next_root);
+                next_root = temp->next;
+            }
+        }
+    private:
+        TreeLinkNode *temp;
+        void link(TreeLinkNode *head){
+            temp->next = NULL;
+            TreeLinkNode *leaf_head = temp;
+            while(head){
+                TreeLinkNode *leaf = head->left;
+                if(leaf){
+                    leaf_head->next = leaf;
+                    leaf_head = leaf_head->next;
+                }
+                leaf = head->right;
+                if(leaf){
+                    leaf_head->next = leaf;
+                    leaf_head = leaf_head->next;
+                }
+                head=head->next;
+            }
+        }
+    };
+
+___
+#Optimized Version:(costs less time, change some variable name)
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            TreeLinkNode *pseudo = new TreeLinkNode(0);
+            TreeLinkNode *level = root;
+            while(level!=NULL){
+                pseudo->next = NULL;
+                TreeLinkNode *leaf_head = pseudo;
+                while(level!=NULL){
+                    TreeLinkNode *node = level->left;
+                    if(node!=NULL){
+                        leaf_head->next = node;
+                        leaf_head = node;
+                    }
+                    node = level->right;
+                    if(node!=NULL){
+                        leaf_head->next = node;
+                        leaf_head = node;
+                    }
+                    level=level->next;
+                }
+                level = pseudo->next;
+            }
+        }
+    };
+
+___
+#And make it more concise:
+
+    class Solution {
+    public:
+        void connect(TreeLinkNode *root) {
+            TreeLinkNode *pseudo = new TreeLinkNode(0);
+            TreeLinkNode *level = root;
+            while(level){
+                pseudo->next = NULL;
+                TreeLinkNode *leaf_head = pseudo;
+                TreeLinkNode *temp;
+                while(level){
+                    temp = level->left;
+                    (!temp)||(leaf_head->next=temp,leaf_head=temp);
+                    temp = level->right;
+                    (!temp)||(leaf_head->next=temp,leaf_head=temp);
+                    level=level->next;
+                }
+                level = pseudo->next;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,585 @@
+simple Java O(KlogK) solution with explanation
+public class Solution {
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        PriorityQueue<int[]> que = new PriorityQueue<>((a,b)->a[0]+a[1]-b[0]-b[1]);
+        List<int[]> res = new ArrayList<>();
+        if(nums1.length==0 || nums2.length==0 || k==0) return res;
+        for(int i=0; i<nums1.length && i<k; i++) que.offer(new int[]{nums1[i], nums2[0], 0});
+        while(k-- > 0 && !que.isEmpty()){
+            int[] cur = que.poll();
+            res.add(new int[]{cur[0], cur[1]});
+            if(cur[2] == nums2.length-1) continue;
+            que.offer(new int[]{cur[0],nums2[cur[2]+1], cur[2]+1});
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Slow 1-liner to Fast solutions
+def kSmallestPairs(self, nums1, nums2, k):
+    queue = []
+    def push(i, j):
+        if i < len(nums1) and j < len(nums2):
+            heapq.heappush(queue, [nums1[i] + nums2[j], i, j])
+    push(0, 0)
+    pairs = []
+    while queue and len(pairs) < k:
+        _, i, j = heapq.heappop(queue)
+        pairs.append([nums1[i], nums2[j]])
+        push(i, j + 1)
+        if j == 0:
+            push(i + 1, 0)
+    return pairs
+
+----------------------------------------------------------------------------------------------------
+Java 9ms heap queue solution, k log(k)
+public class Solution {
+    class Pair{
+        int[] pair;
+        int idx; // current index to nums2
+        long sum;
+        Pair(int idx, int n1, int n2){
+            this.idx = idx;
+            pair = new int[]{n1, n2};
+            sum = (long) n1 + (long) n2;
+        }
+    }
+    class CompPair implements Comparator<Pair> {
+        public int compare(Pair p1, Pair p2){
+            return Long.compare(p1.sum, p2.sum);
+        }
+    }
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        List<int[]> ret = new ArrayList<>();
+        if (nums1==null || nums2==null || nums1.length ==0 || nums2.length ==0) return ret;
+        int len1 = nums1.length, len2=nums2.length;  
+
+        PriorityQueue<Pair> q = new PriorityQueue(k, new CompPair()); 
+        for (int i=0; i<nums1.length && i<k ; i++) { // only need first k number in nums1 to start  
+            q.offer( new Pair(0, nums1[i],nums2[0]) );
+        }
+        for (int i=1; i<=k && !q.isEmpty(); i++) { // get the first k sums
+            Pair p = q.poll(); 
+            ret.add( p.pair );
+            if (p.idx < len2 -1 ) { // get to next value in nums2
+                int next = p.idx+1;
+                q.offer( new Pair(next, p.pair[0], nums2[next]) );
+            }
+        }
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share My Solution which beat 96.42%
+public class Solution {
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        PriorityQueue<Tuple> pq = new PriorityQueue<Tuple>();
+        int m = nums1.length, n = nums2.length;
+        List<int[]> res = new ArrayList<int[]>();
+        if(nums1 == null || nums1.length == 0 || nums2 == null || nums2.length == 0 || k <= 0) return res;
+        for(int j = 0; j <= n-1; j++) pq.offer(new Tuple(0, j, nums1[0]+nums2[j]));
+        for(int i = 0; i < Math.min(k, m *n); i++) {
+            Tuple t = pq.poll();
+            res.add(new int[]{nums1[t.x], nums2[t.y]});
+            if(t.x == m - 1) continue;
+            pq.offer(new Tuple (t.x + 1, t.y, nums1[t.x + 1] + nums2[t.y]));
+        }
+        return res;
+    }
+}
+
+class Tuple implements Comparable<Tuple> {
+    int x, y, val;
+    public Tuple (int x, int y, int val) {
+        this.x = x;
+        this.y = y;
+        this.val = val;
+    }
+    
+    @Override
+    public int compareTo (Tuple that) {
+        return this.val - that.val;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Clean 16ms C++ O(N) Space O(KlogN) Time Solution using Priority queue
+class Solution {
+public:
+    vector<pair<int, int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        vector<pair<int,int>> result;
+        if (nums1.empty() || nums2.empty() || k <= 0)
+            return result;
+        auto comp = [&nums1, &nums2](pair<int, int> a, pair<int, int> b) {
+            return nums1[a.first] + nums2[a.second] > nums1[b.first] + nums2[b.second];};
+        priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(comp)> min_heap(comp);
+        min_heap.emplace(0, 0);
+        while(k-- > 0 && min_heap.size())
+        {
+            auto idx_pair = min_heap.top(); min_heap.pop();
+            result.emplace_back(nums1[idx_pair.first], nums2[idx_pair.second]);
+            if (idx_pair.first + 1 < nums1.size())
+                min_heap.emplace(idx_pair.first + 1, idx_pair.second);
+            if (idx_pair.first == 0 && idx_pair.second + 1 < nums2.size())
+                min_heap.emplace(idx_pair.first, idx_pair.second + 1);
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java 10ms solution no priority queue
+public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        List<int[]> ret = new ArrayList<int[]>();
+        if (nums1.length == 0 || nums2.length == 0 || k == 0) {
+            return ret;
+        }
+        
+        int[] index = new int[nums1.length];
+        while (k-- > 0) {
+            int min_val = Integer.MAX_VALUE;
+            int in = -1;
+            for (int i = 0; i < nums1.length; i++) {
+                if (index[i] >= nums2.length) {
+                    continue;
+                }
+                if (nums1[i] + nums2[index[i]] < min_val) {
+                    min_val = nums1[i] + nums2[index[i]];
+                    in = i;
+                }
+            }
+            if (in == -1) {
+                break;
+            }
+            int[] temp = {nums1[in], nums2[index[in]]};
+            ret.add(temp);
+            index[in]++;
+        }
+        return ret;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+c++ priority_queue solution
+class Solution {
+public:
+vector<pair<int, int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        vector<pair<int, int>> res;
+        int m = (int)nums1.size();
+        int n = (int)nums2.size();
+        k = min(k, m * n);
+        vector<int> indice(m, 0);
+        while(k-- > 0){
+            int tmp_index = 0;
+            long tmp_sum = LONG_MAX;
+            for(int i = 0; i < m; i++){
+                if(indice[i] < n && tmp_sum >= nums1[i] + nums2[indice[i]]){
+                    tmp_index = i;
+                    tmp_sum = nums1[i] + nums2[indice[i]];
+                }
+            }
+            res.push_back(make_pair(nums1[tmp_index], nums2[indice[tmp_index]]));
+            indice[tmp_index]++;
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+O(k) solution
+def kSmallestPairs(self, nums1, nums2, k):
+    del nums1[k:]
+    del nums2[k:]
+
+----------------------------------------------------------------------------------------------------
+Java easy understandable bfs with PriorityQueue
+public class Solution {
+    final int[][] neighbors = {{0, 1}, {1, 0}};
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        List<int[]> list = new ArrayList<>();
+        if (nums1 == null || nums2 == null || nums1.length == 0 || nums2.length == 0 || k == 0) {
+            return list;
+        }
+        int m = nums1.length, n = nums2.length;
+        boolean[][] visited = new boolean[m][n];
+        Queue<Pair> minHeap = new PriorityQueue<>();
+        minHeap.offer(new Pair(0, 0, nums1[0] + nums2[0]));
+        visited[0][0] = true;
+        while (k > 0 && !minHeap.isEmpty()) {
+            Pair min = minHeap.poll();
+            list.add(new int[] {nums1[min.row], nums2[min.col]});
+            k--;
+            for (int[] neighbor : neighbors) {
+                int row1 = min.row + neighbor[0];
+                int col1 = min.col + neighbor[1];
+                if (row1 < 0 || row1 == m || col1 < 0 || col1 == n || visited[row1][col1]) {
+                    continue;
+                }
+                visited[row1][col1] = true;
+                minHeap.offer(new Pair(row1, col1, nums1[row1] + nums2[col1]));
+            }
+        }
+        return list;
+    }
+}
+
+class Pair implements Comparable<Pair> {
+    int row;
+    int col;
+    int value;
+    
+    Pair(int row, int col, int value) {
+        this.row = row;
+        this.col = col;
+        this.value = value;
+    }
+    
+    public int compareTo(Pair other) {
+        return value - other.value;
+    } 
+}
+
+
+----------------------------------------------------------------------------------------------------
+Three different solutions in C++, well-explained
+practical
+
+----------------------------------------------------------------------------------------------------
+9ms Java solution with explanation
+public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) 
+{
+        List<int[]> result = new LinkedList<int[]>();
+        if (nums1 == null || nums2 == null || nums1.length == 0 || nums2.length == 0 || k == 0) return result;
+        
+        PriorityQueue<Triple> queue = new PriorityQueue<Triple>(nums1.length, new Comparator<Triple>() {
+            public int compare(Triple a, Triple b)
+            {
+                return Integer.compare(a.val, b.val);
+            }
+        });
+
+// add the first column
+        for (int i=0; i<nums1.length; i++)
+        {
+            queue.add(new Triple(nums1[i]+nums2[0], i, 0));
+        }
+        
+        while (k-- > 0 && !queue.isEmpty())
+        {
+            Triple current = queue.poll();
+            result.add(new int[]{nums1[current.one], nums2[current.two]});
+// if the current one has a right candidate, add it to the queue. 
+            if (current.two+1 < nums2.length)
+                queue.add(new Triple(nums1[current.one]+nums2[current.two+1], current.one, current.two+1));
+        }
+        
+        return result;
+}
+    
+// Triple is used to store the sum, the index in nums1 and the index in nums2.
+    class Triple
+    {
+        int val;
+        int one;
+        int two;
+        Triple (int val, int one, int two)
+        {
+            this.val = val;
+            this.one = one;
+            this.two = two;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java PriorityQueue 9ms without helper class
+public class Solution {
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        List<int[]> res = new LinkedList<>();
+        if(nums1==null || nums1.length==0 || nums2==null || nums2.length==0) {
+            return res;
+        }
+        
+        // index pair
+        PriorityQueue<int[]> minQ = new PriorityQueue<>(new Comparator<int[]>(){
+            public int compare(int[] pair1, int[] pair2) {
+                return (nums1[pair1[0]]+nums2[pair1[1]])-(nums1[pair2[0]]+nums2[pair2[1]]);
+            }
+            
+        });
+        
+        
+        minQ.offer(new int[]{0, 0});
+        
+        while (k>0 && !minQ.isEmpty()) {
+            int[] pair=minQ.poll();
+            int i = pair[0];
+            int j = pair[1];
+            res.add(new int[]{nums1[i], nums2[j]});
+            k--;
+            
+            if(j+1<nums2.length) {
+                minQ.offer(new int[]{i, j+1});
+            }
+            
+            if(j==0 && i+1<nums1.length){ 
+                minQ.offer(new int[] {i+1, 0});
+            }
+
+        }
+        
+        
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+dijkstra like solution in Java
+public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+	List<int[]> result = new ArrayList<int[]>();
+	PriorityQueue<int[]> pq = new PriorityQueue<int[]>(new Comparator<int[]>(){
+		public int compare(int[] pair1, int[] pair2){
+			return (nums1[pair1[0]] + nums2[pair1[1]]) - (nums1[pair2[0]] + nums2[pair2[1]]);
+		}
+	});
+
+	int length1 = nums1.length;
+	int length2 = nums2.length;
+	boolean[][] visited = new boolean[length1][length2];
+
+	add(pq, visited, nums1, nums2, 0, 0);
+	while(pq.size() > 0 && result.size() < k){
+		int[] next = pq.poll();
+		result.add(new int[]{nums1[next[0]], nums2[next[1]]});
+		add(pq, visited, nums1, nums2, next[0] + 1, next[1]);
+		add(pq, visited, nums1, nums2, next[0], next[1] + 1);
+	}
+
+	return result;
+}
+
+private void add(PriorityQueue<int[]> pq, boolean[][] visited, int[] nums1, int[] nums2, int n1, int n2){
+	if(n1 < nums1.length && n2 < nums2.length && !visited[n1][n2]){
+		pq.add(new int[]{n1, n2});
+		visited[n1][n2] = true;
+	}
+}
+
+----------------------------------------------------------------------------------------------------
+BFS Python 104ms with comments
+class Solution(object):
+    def kSmallestPairs(self, nums1, nums2, k):
+        """
+        :type nums1: List[int]
+        :type nums2: List[int]
+        :type k: int
+        :rtype: List[List[int]]
+        """
+        import heapq
+        ret = []
+        if len(nums1) * len(nums2) > 0:
+            queue = [(nums1[0] + nums2[0], (0, 0))]
+            visited = {}
+            while len(ret) < k and queue:
+                _, (i, j) = heapq.heappop(queue)
+                ret.append((nums1[i], nums2[j]))
+                if j + 1 < len(nums2) and (i, j + 1) not in visited:
+                        heapq.heappush(queue, (nums1[i] + nums2[j + 1], (i, j + 1)))
+                        visited[(i, j + 1)] = 1
+                if i + 1 < len(nums1) and (i + 1, j) not in visited:
+                        heapq.heappush(queue, (nums1[i + 1] + nums2[j], (i + 1, j)))
+                        visited[(i + 1, j)] = 1
+        return ret
+
+
+----------------------------------------------------------------------------------------------------
+9 lines in Python
+class Solution(object):
+    def kSmallestPairs(self, nums1, nums2, k, heap=[]):
+        for n1 in nums1:
+            for n2 in nums2:
+                if len(heap) < k: heapq.heappush(heap, (-n1-n2, [n1, n2]))
+                else:
+                    if heap and -heap[0][0] > n1 + n2:
+                        heapq.heappop(heap)
+                        heapq.heappush(heap, (-n1-n2, [n1, n2]))
+                    else: break
+        return [heapq.heappop(heap)[1] for _ in range(k) if heap]
+
+        # 27 / 27 test cases passed.
+	# Status: Accepted
+        # Runtime: 112 ms
+
+
+----------------------------------------------------------------------------------------------------
+Java heap Solution 13ms
+public class Solution {
+    
+    private class Node implements Comparable<Node>{
+        int i, j;
+        int val;
+        public Node(int i, int j, int val) {
+            this.i = i;
+            this.j = j;
+            this.val = val;
+        }
+        @Override
+        public int compareTo(Node that) {
+            return this.val - that.val;
+        }
+    }
+    
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        Queue<Node> q = new PriorityQueue<>();
+        List<int[]> res = new ArrayList<>();
+        int m = nums1.length, n = nums2.length;
+        if (m == 0 || n == 0) return res;
+        Set<Integer> set = new HashSet<>();
+        q.offer(new Node(0, 0, nums1[0] + nums2[0]));
+        set.add(0);
+        for (int t = 0; t < k; t++) {
+            if (q.isEmpty()) break;
+            Node x = q.poll();
+            res.add(new int[]{nums1[x.i], nums2[x.j]});
+            if (x.i < nums1.length - 1 && !set.contains(x.i * n + n + x.j)) {
+                q.offer(new Node(x.i + 1, x.j, nums1[x.i + 1] + nums2[x.j]));
+                set.add(x.i * n + n + x.j);
+            }
+            if (x.j < nums2.length - 1 && !set.contains(x.i * n + x.j + 1)) {
+                q.offer(new Node(x.i, x.j + 1, nums1[x.i] + nums2[x.j + 1]));
+                set.add(x.i * n + x.j + 1);
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution -- easy to understand
+public class Solution {
+    public List<int[]> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        
+        if (nums1 == null || nums2 == null)
+            return null;
+            
+        int n = nums1.length;
+        int m = nums2.length;
+            
+        List<int[]> ret = new LinkedList<>();
+        
+        for (int i=0; i<n; i++) {
+            for (int j=0; j<m; j++) {
+                ret.add(new int[]{nums1[i], nums2[j]});
+            }
+        }
+        
+        /* Java 7 
+        Collections.sort(ret, new Comparator<int[]>(){
+            public int compare(int[] n1, int[] n2){
+                return (n1[0]+n1[1]) - (n2[0]+n2[1]);
+            }
+        });
+        */
+        
+        //Java 8
+        Collections.sort(ret, (int[] n1, int[] n2) -> (n1[0]+n1[1]) - (n2[0]+n2[1]) );
+        
+        if (ret.size() < k)
+            return ret;
+            
+        return ret.subList(0, k);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Naive Accepted Solution (C++)
+ vector<pair<int, int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        vector<pair<int, int>>result;
+        
+        for(int i1=0;i1<min((int)nums1.size(),k);++i1)
+            for(int i2=0;i2<min((int)nums2.size(),k);++i2)
+                result.push_back({nums1[i1],nums2[i2]});
+            
+        sort(result.begin(),result.end(),[](pair<int, int>&a,pair<int, int>&b){return a.first+a.second<b.first+b.second;});
+         if(result.size()>k)result.erase(result.begin()+k,result.end());
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+c++ solution
+class Solution {
+public:
+    vector<pair<int, int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        k = min(k, int(nums1.size() * nums2.size()));
+        vector<pair<int, int>> ret;
+        int m = nums1.size();
+        vector<int> index(m, 0);
+        for(int i = 0; i < k; ++i){
+            int p1 = 0, sum = INT_MAX;
+            for(int j = 0; j < nums1.size(); ++j){
+                if(index[j] < nums2.size() && sum >= nums1[j] + nums2[index[j]]){
+                    p1 = j;
+                    sum = nums1[j] + nums2[index[j]];
+                }
+            }
+            ret.push_back(make_pair(nums1[p1], nums2[index[p1]]));
+            index[p1]++;
+        }
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Heap-based Java Solution, similar to MERGING K SORTED LIST
+public class Solution {
+    public List<int[]> kSmallestPairs(final int[] nums1, final int[] nums2, int k) {
+        ArrayList<int[]> topKInts = new ArrayList<>();
+        PriorityQueue<int[]> pq;
+        
+        if(nums1.length==0 || nums2.length==0) {
+            return topKInts;
+        }
+        
+        pq = new PriorityQueue(nums1.length, new Comparator<int[]>() {
+            @Override
+            public int compare(int[] indices1, int[] indices2) {
+                if(nums1[ indices1[ 0 ] ]+nums2[ indices1[ 1 ] ] < nums1[ indices2[ 0 ] ]+nums2[ indices2[ 1 ] ]) {
+                    return -1;
+                } else if(nums1[ indices1[ 0 ] ]+nums2[ indices1[ 1 ] ] > nums1[ indices2[ 0 ] ]+nums2[ indices2[ 1 ] ]) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        
+        for(int cnt = 0; cnt < nums1.length; cnt++) {
+            pq.offer(new int[]{cnt, 0});
+        }
+        
+        while(!pq.isEmpty() && topKInts.size()<k) {
+            int[] indices = pq.poll();
+            topKInts.add(new int[]{nums1[ indices[ 0 ] ], nums2[ indices[ 1 ] ]});
+            indices[ 1 ]++;
+            if(indices[ 1 ] < nums2.length) {
+                pq.offer(indices);
+            }
+        }
+        
+        return topKInts;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

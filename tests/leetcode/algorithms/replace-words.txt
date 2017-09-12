@@ -1,0 +1,1042 @@
+Concise Java Solution
+public String solveEquation(String equation) {
+    int[] res = evaluateExpression(equation.split("=")[0]),  
+  	  res2 = evaluateExpression(equation.split("=")[1]);
+    res[0] -= res2[0];
+    res[1] = res2[1] - res[1];
+    if (res[0] == 0 && res[1] == 0) return "Infinite solutions";
+    if (res[0] == 0) return "No solution";
+    return "x=" + res[1]/res[0];
+}  
+
+public int[] evaluateExpression(String exp) {
+    String[] tokens = exp.split("(?=[-+])"); 
+    int[] res =  new int[2];
+    for (String token : tokens) {
+        if (token.equals("+x") || token.equals("x")) res[0] += 1;
+	else if (token.equals("-x")) res[0] -= 1;
+	else if (token.contains("x")) res[0] += Integer.parseInt(token.substring(0, token.indexOf("x")));
+	else res[1] += Integer.parseInt(token);
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple 2-liner (and more)
+def solveEquation(self, equation):
+    x = a = 0
+    side = 1
+    for eq, sign, num, isx in re.findall('(=)|([-+]?)(\d*)(x?)', equation):
+        if eq:
+            side = -1
+        elif isx:
+            x += side * int(sign + '1') * int(num or 1)
+        elif num:
+            a -= side * int(sign + num)
+    return 'x=%d' % (a / x) if x else 'No solution' if a else 'Infinite solutions'
+
+----------------------------------------------------------------------------------------------------
+Python Regex Solution explained
+ def solveEquation(self, equation):
+        """
+        :type equation: str
+        :rtype: str
+        """
+        # define the patterns
+        co_p = re.compile('-?\d*x')
+        num_p = re.compile('-?\d*')
+
+        # split the 2 parts of the equation.
+        lhs = equation.split('=')[0]
+        rhs = equation.split('=')[1]
+
+        # find the list of coefficients with x(in both lhs and rhs)
+        lhs_co = co_p.findall(lhs)
+        rhs_co = co_p.findall(rhs)
+
+        # find the list of all signed numbers after removing the coefficient
+        # Notice that, I replace the coeffiecients with an '*' symbol to extract the remaining numbers. 
+        # And I retrieve the numbers with the sign.
+        lhs_num_list = num_p.findall(re.sub('-?\d*x', '*', lhs))
+        rhs_num_list = num_p.findall(re.sub('-?\d*x', '*', rhs))
+
+        # Now, simply add the numbers on the LHS and RHS
+        lhs_sum = 0
+        rhs_sum = 0
+
+        for i in lhs_num_list:
+            if i:
+                lhs_sum += int(i)
+
+        for i in rhs_num_list:
+            if i:
+                rhs_sum += int(i)
+
+        # Add the Coefficients on both LHS and RHS.
+        lhs_coeff_sum = 0
+        rhs_coeff_sum = 0
+        
+        # While adding coefficients, 'x' and '-x' wil be replaced by 1 and -1 respectively.
+        for i in lhs_co:
+                i = i.replace('x', '')
+                if not i:
+                    i = 1
+                elif i == '-':
+                    i = -1
+                lhs_coeff_sum += int(i)
+
+        for i in rhs_co:
+                i = i.replace('x', '')
+                if not i:
+                    i = 1
+                elif i == '-':
+                    i = -1
+                rhs_coeff_sum += int(i)
+        
+        # Now, this is simple math and check the conditions to handle the edge cases.
+        if lhs_sum == rhs_sum and lhs_coeff_sum == rhs_coeff_sum:
+            return "Infinite solutions"
+
+        if lhs_coeff_sum == rhs_coeff_sum:
+            return "No solution"
+        result = (rhs_sum - lhs_sum) / (lhs_coeff_sum - rhs_coeff_sum)
+        return "x=" + str(result)
+
+
+----------------------------------------------------------------------------------------------------
+Python via helper function
+class Solution(object):
+    def solveEquation(self, equation):
+        """
+        :type equation: str
+        :rtype: str
+        """
+        def helper(s):
+            sign, n = 1, len(s)
+            # i, coef, const stand for current index, and accumulative 'x' coefficient and constant
+            i = coef = const = 0
+            while i < n:
+                if s[i] == '+':
+                    sign = 1
+                elif s[i] == '-':
+                    sign = -1
+                elif s[i].isdigit():
+                    j = i
+                    while j < n and s[j].isdigit():
+                        j += 1
+                    tmp = int(s[i:j])
+                    if j < n and s[j] == 'x':
+                        coef += tmp * sign
+                        j += 1
+                    else:
+                        const += tmp * sign
+                    i = j-1
+                else:
+                    coef += 1 * sign
+                i += 1
+            return coef, const
+            
+        left, right = equation.split('=')
+        k1, b1 = helper(left)
+        k2, b2 = helper(right)
+        # k1x + b1 = k2x + b2
+        ans = 'x=' + str((b2 - b1) / (k1 - k2)) if k1 != k2 and b1 != b2 \
+              else "Infinite solutions" if k1 == k2 and b1 == b2 \
+              else "No solution" if b2 != b1 else 'x=0'
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+C++, Two pointers, concise solution
+class Solution {
+public:
+    string solveEquation(string equation) {
+        int n = equation.size(), sign = 1, coeff = 0, tot = 0, i = 0;
+        for (int j = 0; j < n; j++) {
+            if (equation[j] == '+' || equation[j] == '-') {
+                if (j > i) tot += sign*stoi(equation.substr(i, j-i));
+                i = j;
+            }
+            // corner case: x, -x, +x
+            else if (equation[j] == 'x') {
+                if ((i == j) || equation[j-1] == '+')
+                    coeff += sign;
+                else if (equation[j-1] == '-')
+                    coeff -= sign;
+                else 
+                    coeff += sign*stoi(equation.substr(i, j-i));
+                i = j+1;
+            }
+           // flip sign
+            else if (equation[j] == '=') {
+                if (j > i) tot += sign*stoi(equation.substr(i, j-i));
+                sign = -1;
+                i = j+1;
+            }
+        }
+        // there may be a number in the end
+        if (i < n) tot += sign*stoi(equation.substr(i));
+        if (coeff == 0 && tot == 0) return "Infinite solutions";
+        if (coeff == 0 && tot) return "No solution";
+        int ans = -tot/coeff;
+        return "x="+to_string(ans);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Easiest Java solution, self-explanatory
+public class Solution {
+    public String solveEquation(String equation) {
+        if(equation == null || equation.length() == 0) {
+	    return equation;
+	}
+
+	String[] parts = equation.split("=");
+	String left = parts[0];
+	String right = parts[1];
+
+	int[] lco = process(left);
+	int[] rco = process(right);
+
+	int x = lco[0] - rco[0];
+	int co = rco[1] - lco[1];
+
+	if(x == 0) {
+	    if(co == 0) {
+        	return "Infinite solutions";
+       	    } else {
+		return "No solution";
+	    }
+	} else if(co == 0) {
+	    return "x=0";
+	} else {
+	    return "x=" + "" + String.valueOf((int) (co/x));
+	}
+    }
+
+    public int[] process(String left) {
+        char[] array = left.toCharArray();
+	int length = array.length;
+	int prev = 1;
+	int x = 0;
+	int co = 0;
+	int cur = 0;
+	
+	for(int i = 0; i < length; ++i) {
+            if(array[i] != 'x') {
+		if(array[i] == '-') {
+		    prev = -1;
+		} else if(array[i] == '+') {
+		    prev = 1;
+		} else {
+		    cur = 0;
+	            while(i < length && array[i] != '+' && array[i] != '-' && array[i] != 'x') {
+		        cur = cur * 10 + ((int)(array[i] - '0'));
+			i++;
+		    }
+		    if(i < length && array[i] == 'x') {
+		        x = x + prev * ((int) (cur));
+			i++;
+		    } else {
+			co = co + prev * ((int) (cur));
+		    }
+		    --i;
+		    }
+	    } else {
+	        x += prev;
+	    }
+        }
+	return new int[]{x, co};
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Concise C++ solution with Regular Expression, 12 lines
+string solveEquation(string equation) {
+    // normalize the equation, add 1 for x's which have no coefficient: x => 1x
+    equation = regex_replace(equation, regex("(^|[+=-])x"), "$011x");
+
+    // calculate coefficients for both sides
+    auto pos = equation.find('=');
+    auto l = coef(equation.substr(0, pos));
+    auto r = coef(equation.substr(pos + 1));
+
+    // l.first x + l.second = r.first x + r.second => ax = b
+    int a = l.first - r.first, b = r.second - l.second;
+
+    return a != 0 ? "x=" + to_string(b/a) : b != 0 ? "No solution" : "Infinite solutions";
+}
+
+pair<int, int> coef(string s) {
+    // split the side into form of (+/-)123x
+    auto e = regex("(^|[+-])\\d+x?");
+    regex_token_iterator<string::iterator> it(s.begin(), s.end(), e), end;
+
+    int a = 0, b = 0;
+    for (; it != end; it++)
+        (it->str().back() == 'x' ? a : b) += stoi(*it);
+
+    return {a, b};
+}
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward C++ AC solution
+    int n = equation.size();
+    string ans = "";
+    int i = 0;
+    int left_count = 0, right_count = 0;
+    int left_val = 0, right_val = 0;
+    bool isLeft = true;
+    while(i < n){
+        if(isdigit(equation[i])){
+            int num = equation[i] - '0';
+            int sign = (i > 0 && equation[i-1] == '-') ? -1 : 1;
+            while(i < n-1 && isdigit(equation[i+1])){
+                i++;
+                num = num * 10 + equation[i] - '0';                    
+            }                     
+            num *= sign;
+            if(i < n-1 && equation[i+1] == 'x'){
+                if(isLeft) left_count += num;
+                else right_count += num;
+            }else{
+                if(isLeft) left_val += num;
+                else right_val += num;
+            }
+        }else if(equation[i] == '='){
+            isLeft = false;
+        }else if(equation[i] == 'x' && (i == 0 || !isdigit(equation[i-1]))){
+            int sign = (i > 0 && equation[i-1] == '-') ? -1 : 1;
+            if(isLeft) left_count += sign;
+            else right_count += sign;
+        }    
+        i++;
+    }
+    if(left_count == right_count){
+        if(left_val == right_val) return "Infinite solutions";
+        else return "No solution";
+    }
+    int coeff = left_count - right_count;
+    int val = right_val - left_val;
+    if(val == 0){
+        return "x=0";
+    }
+    else{
+        int tmp = int(val) / coeff;
+        ans = "x=" + to_string(tmp);
+    }
+    return ans;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def solveEquation(self, equation):
+    left = True
+    sign = 1
+    A = B = 0
+    for k, v in itertools.groupby(equation, key = lambda x: x in '+-='):
+        w = "".join(v)
+        if k:
+            for x in w:
+                if x == '=': left = False
+                sign = 1 if x != '-' else -1
+                sign *= 1 if left else -1
+        else:
+            if w[-1] == 'x':
+                A += sign * (int(w[:-1]) if w[:-1] else 1)
+            else:
+                B += sign * int(w)
+
+    if A == B == 0:
+        return "Infinite solutions"
+    elif A == 0:
+        return "No solution"
+    else:
+        return "x={}".format(-B/A)
+
+
+----------------------------------------------------------------------------------------------------
+Java 8, short and using simple regex tokenization, detailed explanation
+public static String solveEquation(String equation) {
+        String[] parts = equation.split("=");
+        final int[][] res = new int[2][2];
+        IntStream.range(0, 2).forEach(i -> solve(parts[i], res[i]));
+
+        float num = res[1][1] - res[0][1], denom = res[0][0] - res[1][0];
+
+        if(num == 0 && denom == 0) return "Infinite solutions";
+        if(denom == 0) return "No solution";
+        String ret =  "x=" + num/denom;
+        ret =  ret.endsWith(".0") ? ret.substring(0, ret.length() - 2) : ret;
+        return ret.endsWith("-0") ? "x=0": ret;
+    }
+
+    private static void solve(String eqn, int[] res) {
+        Arrays.stream(eqn.split("\\+")).forEach( x -> {
+            String[] arr = x.split("-");
+            if(!arr[0].isEmpty()) process(arr[0], res);
+            IntStream.range(1, arr.length).forEach(i -> process("-"+arr[i], res));
+
+        });
+    }
+
+    private static void process(String token, int[] res) {
+        token = token.equals("x") ? "1x" : token.equals("-x") ? "-1x" : token;
+        int i = token.endsWith("x") ? 0 : 1;
+        res[i] += Integer.parseInt(token.substring(0, token.length() - (i ^ 1)));
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Very simple Java solution with full comments
+/*
+* Algorithm:
+* split the equation to two side
+*
+* try all x from -1000 to 1000 and calc value of each side
+*
+* if result of two side is equal, then totalAnswer increase
+*
+* if totalAnswer == 0 mean No solution
+* if totalAnswer > 1 mean Infinite solutions
+* if totalAnswer == 1 mean we have only one answer
+* */
+public String solveEquation(String equation) {
+    // split equation to two side
+    String[] side = equation.split("=");
+
+    // define totalAnswer and lastAnswer
+    int totalAnswer = 0;
+    int lastAnswer = 0;
+
+    // try all x from -1000 to 1000
+    for (int x = -1000; x <= 1000; x++) {
+        if (calc(x, side[0]) == calc(x, side[1])) {
+            totalAnswer++;
+            lastAnswer = x;
+        }
+    }
+
+    if (totalAnswer == 0) {
+        return "No solution";
+    }
+
+    if (totalAnswer > 1) {
+        return "Infinite solutions";
+    }
+
+    return "x=" + lastAnswer;
+}
+
+private long calc(int x, String s) {
+    long answer = 0;
+    int idx = 0;
+    char c = '+';
+    boolean haveBefore;
+
+    while (idx < s.length()) {
+        long val = 0;
+        haveBefore = false;
+        
+        // try to parse string to int
+        // example: "21" to 21, "2x" to 2 * x, "x" to x
+        while (idx < s.length() && !"+-".contains(s.charAt(idx) + "")) {
+            if (s.charAt(idx) != 'x') {
+                val *= 10;
+                val += s.charAt(idx) - '0';
+                haveBefore = true;
+            } else {
+                if (haveBefore) {
+                    val *= x;
+                } else {
+                    val = x;
+                }
+            }
+            idx++;
+        }
+        
+        // sum val to final answer
+        if (c == '+') {
+            answer += val;
+        } else {
+            answer -= val;
+        }
+
+        if (idx < s.length()) {
+            c = s.charAt(idx);
+            idx++;
+        }
+    }
+
+    return answer;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java regex solution
+public class Solution {
+    public String solveEquation(String equation) {
+        int xTotal = 0;
+        int total = 0;
+        int index = 0;
+        int equalIndex = equation.indexOf("=");
+        String [] array = equation.split("[=+-]");
+        for(String temp : array) {
+            if(temp.length() == 0)  
+                continue;
+            index = equation.indexOf(temp, index);
+            int result = 1;
+            if(!temp.contains("x")) {
+                if((index >= equalIndex && (equation.charAt(index - 1) == '-'))
+                  || (index == 0)
+                  || (index > 0 && index < equalIndex && equation.charAt(index - 1) == '+')) 
+                    result = -1;
+                total += (result * Integer.valueOf(temp));
+            } else {
+                if((index > equalIndex && (equation.charAt(index - 1) == '+'))
+                  || (index == equalIndex + 1)  
+                  || (index > 0 && index < equalIndex && equation.charAt(index - 1) == '-'))
+                    result = -1;
+                String num = temp.substring(0, temp.length() - 1);
+                xTotal += (result * Integer.valueOf(num.length() == 0 ? "1" : num));   
+            }
+            index += temp.length(); 
+        }
+        if(xTotal == 0 && total == 0) return "Infinite solutions";
+        if(xTotal == 0) return "No solution";
+        return "x=" + (total/xTotal);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+AC C++, Straight forward
+class Solution {
+public:
+    string solveEquation(string equation) {
+        int i =0;
+        int para=0, xpara=0;
+        int flag = 1;
+        while(i<equation.size())
+        {
+            int sign = 1;
+            int temp = 0;
+            if(equation[i] == '=') 
+            {
+                flag = -1;
+                i++;
+            }
+            if(equation[i] == '-') 
+            {
+                sign = -1; 
+                i++;
+            }
+            if(equation[i] == '+') 
+            {
+                sign = 1;
+                i++;
+            }
+            
+            if(isdigit(equation[i]))
+            {
+                while(i<equation.size() && isdigit(equation[i]))
+                {
+                    temp = temp*10 + equation[i]-'0';
+                    i++;
+                }
+                if(i< equation.size() && equation[i] == 'x')
+                {
+                    xpara += flag*sign*temp;
+                    i++;
+                } 
+                else 
+                    para += flag*sign*temp;
+            } 
+            else //x
+            {
+                xpara += flag*sign;
+                i++;
+            }
+            
+        }
+        string res;
+        //cout<<para<<", "<<xpara<<endl;
+        if(para == 0 && xpara == 0) 
+            res = "Infinite solutions";
+        else if(xpara == 0) 
+            res = "No solution";
+        else
+            res = "x="+to_string(para/xpara*-1);
+        return res;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Python by replace
+class Solution(object):
+    def solveEquation(self, equation):
+        """
+        :type equation: str
+        :rtype: str
+        """
+        left, right = equation.split("=")
+        left = filter(lambda x:x, left.replace("+", "#P").replace("-", "#M").split("#"))
+        right = filter(lambda x:x, right.replace("+", "#M").replace("-", "#P").split("#"))
+        left[0] = "P" + left[0] if left[0][0] not in ["P", "M"] else left[0]
+        right[0] = "M" + right[0] if right[0][0] not in ["P", "M"] else right[0]
+        left += right
+        a = b = 0
+        for param in left:
+            param = param.replace("P", "+").replace("M", "-")
+            if param[-1] == "x":
+                k = 1
+                if len(param) > 2:
+                    k = int(param[1:-1])
+                if param[0] == "-":
+                    a -= k
+                else:
+                    a += k
+            else:
+                b -= int(param)
+        return "x={0}".format(str(b / a)) if a else "No solution" if b else "Infinite solutions"
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution with comments
+
+public class Solution {
+    public String solveEquation(String equation) {
+        int l = equation.length(), lx = 0, rx = 0, lv = 0, rv = 0;
+        boolean flag = true; // we'll calculate lx and lv
+        char[] stc = equation.toCharArray();
+        for (int i = 0; i < l; i++) { // lhs or rhs can be ax + b(constant) where a and b(constant) can be positive or negative integer
+            char c = stc[i];
+            boolean check = false; // this flag is used to to check negative constants or Xs
+            if (c == '=') {
+                flag = false; // now we'll calculate rx and rv
+                continue;
+            }
+            if (c == '+') {
+                continue;
+            } else if (c == 'x') { // we got x so we add 1 to lx or rx depending on flag
+                if (flag)
+                    lx++;
+                else
+                    rx++;
+            } else { // we got ax or constant where a and b(constant) can be positive or negative integer
+                int j = i;
+                if (c == '-') {
+                    check = true; // set the negative flag to true
+                    j++;
+                }
+                if (check && stc[j] == 'x') { //we got -x so we substract 1 from lx or rx depending on flag
+                    if (flag)
+                        lx--;
+                    else
+                        rx--;
+                    i = j;
+                    continue;
+                } else { 
+                    StringBuilder sb = new StringBuilder("");
+                    while (j < l && Character.isDigit(stc[j])) {
+                        sb.append(stc[j++]);
+                    }
+                    int n = Integer.parseInt(sb.toString());// we got the a or b (number) where a is coefficient of x
+                    if (j < l) {
+                        if (stc[j] == 'x') {
+                            if (check) {
+                                if (flag)
+                                    lx -= n;
+                                else
+                                    rx -= n;
+                            } else {
+                                if (flag)
+                                    lx += n;
+                                else
+                                    rx += n;
+                            }
+                            i = j;
+                        } else { // so next char is either + or - so we got the number(b)
+                        // so add or substrct the number depending on the flag(lhs or rhs) and the check boolean
+                            if (check) {
+                                if (flag)
+                                    lv -= n;
+                                else
+                                    rv -= n;
+                            } else {
+                                if (flag)
+                                    lv += n;
+                                else
+                                    rv += n;
+                            }
+                            i = j - 1;
+                        }
+                    } else {// if we reached the end of the string then it can not be ax as after number(n) we reached end, so its  b(number)
+                        // so add or substrct the number depending on the flag(lhs or rhs) and the check boolean
+                        if (check) {
+                            if (flag)
+                                lv -= n;
+                            else
+                                rv -= n;
+                        } else {
+                            if (flag)
+                                lv += n;
+                            else
+                                rv += n;
+                        }
+                        i = j - 1;
+                    }
+
+                }
+            }
+        }
+        // now we have lx,lv,rx and rv
+        String ans = "";
+        if (lx == rx) {
+            if (lv == rv) {
+                ans = "Infinite solutions";
+            } else {
+                ans = "No solution";
+            }
+        } else {
+            int bx = lx - rx;
+            int v = rv - lv;
+
+            ans += "x=";
+            v /= bx;
+            ans += v;
+        }
+        return ans;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution, easy to understand!
+public class Solution {
+    public String solveEquation(String equation) {
+        String[] strs=equation.split("=");
+        
+        int[] left=countX(strs[0]);
+        int[] right=countX(strs[1]);
+        
+        if(left[0]==right[0]&&left[1]==right[1]){
+            return "Infinite solutions";
+        }else if(left[0]==right[0]&&left[1]!=right[1]){
+            return "No solution";
+        }else{
+            int x=(right[1]-left[1])/(left[0]-right[0]);
+            return "x="+x;
+        }
+    }
+    
+    public int[] countX(String str){
+        char[] array=str.toCharArray();
+        int sign=1;
+        int countx=0;
+        int r=0;
+        
+        
+        int num=1;
+        for(int i=0;i<array.length;i++){
+           if(array[i]=='x'){
+               countx+=sign*num;
+           }else if(array[i]=='+'){
+               sign=1;
+           }else if(array[i]=='-'){
+               sign=-1;
+           }else{
+               num=array[i]-'0';
+               while(i+1<array.length&&Character.isDigit(array[i+1])){
+                   num=num*10+array[i+1]-'0';
+                   i++;
+               }
+               if(i+1<array.length&&array[i+1]!='x'){
+                   r+=sign*num;
+                   num=1;
+               }else if(i+1==array.length){
+                   r+=sign*num;
+                   num=1;
+               }
+           }
+        }
+        
+        return new int[]{countx,r};
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Basic Java Solution
+public class Solution {
+    public String solveEquation(String equation) {
+    
+        int i=0;
+        while(equation.charAt(i) != '=') ++i;
+        
+        String eqLeft = equation.substring(0, i);
+        String eqRight = equation.substring(i+1);
+        
+        int left[] = getParts(eqLeft);
+        int right[] = getParts(eqRight);
+        
+        
+        int ax = left[0] - right[0];
+        int b = right[1] - left[1];
+        
+        if(ax == 0 && b != 0) return "No solution";
+        else if(ax == 0 && b == 0) return "Infinite solutions";
+        String str = "x=";
+        int ans = b / ax;
+        str = str +"" + ans;
+        return str;
+    }
+    
+    int[] getParts(String str){
+        
+        int i=0;
+        int sum = 0;
+        int coeff[] = new int[2];
+        int sign = 1;
+        int len = 0;
+        while(i < str.length()){
+            if(str.charAt(i) == 'x'){
+                if(len == 0){
+                    coeff[0] += sign;
+                } else {
+                    coeff[0] += sign * sum;
+                }
+                sum = 0;
+                ++i;
+                if(i == str.length()) break;
+            } 
+            
+            if(str.charAt(i) == '+'){
+                coeff[1] += sign*sum;
+                sign = 1;
+                sum = 0;
+                len = 0;
+            } else if(str.charAt(i) == '-'){
+                coeff[1] += sign*sum;
+                sign = -1;
+                sum = 0;
+                len = 0;
+            } else {
+                sum *= 10;
+                sum += str.charAt(i) - '0';
+                len += 1;
+            }
+            ++i;
+        }
+        
+        coeff[1] += sign*sum;
+        
+        return coeff;
+    }   
+}
+
+----------------------------------------------------------------------------------------------------
+AC Python, definitely needs cleanup!
+def solveEquationHelper(self, equation):
+    
+    cw = ""
+    
+    x_cnt = 0
+    n_cnt = 0
+
+    neg_num = False
+
+    for ch in equation:
+        
+        if ch == '-':
+            
+            if len(cw):
+                
+                if neg_num:
+                    n_cnt -= int(cw)
+                else:
+                    n_cnt += int(cw)
+                    
+                cw = ""
+                    
+            neg_num = True
+            
+        if ord(ch) in range(ord('0'),ord('9')+1):
+            cw += ch
+            
+        if ch == 'x':
+            
+            if len(cw) > 0:
+                
+                if neg_num:
+                    x_cnt -= int(cw[0:len(cw)])
+                else:
+                    x_cnt += int(cw[0:len(cw)])
+            
+            else:
+                
+                if neg_num:
+                    x_cnt -= 1
+                else:
+                    x_cnt += 1
+                
+            cw = ""
+            neg_num = False
+        
+        if ch == "+":
+            
+            if len(cw) > 0:
+                
+                if neg_num:
+                    n_cnt -= int(cw)
+                else:
+                    n_cnt += int(cw)
+        
+            cw = ""
+            neg_num = False
+            
+    if len(cw) > 0:
+        if neg_num:
+            n_cnt -= int(cw)
+        else:
+            n_cnt += int(cw)
+    
+    return [x_cnt, n_cnt]
+
+
+def solveEquation(self, equation):
+    """
+    :type equation: str
+    :rtype: str
+    """
+    leq, req = equation.split("=")
+    
+
+    
+    left_x, left_n = self.solveEquationHelper(leq)
+    right_x, right_n = self.solveEquationHelper(req)
+    
+    if left_x > right_x:
+        
+        x_cnt = left_x - right_x
+        n_cnt = right_n - left_n
+        
+    else:
+        
+        x_cnt = right_x - left_x
+        n_cnt = left_n - right_n
+        
+    
+    if x_cnt == 0 and n_cnt == 0:
+        return "Infinite solutions"
+    
+    # ax = 0, regardless of a, x=0 for this eq to be true always
+    if n_cnt == 0:
+        return "x=0"
+    
+    if x_cnt == 0 and n_cnt != 0:
+        return "No solution"
+
+    if n_cnt % x_cnt == 0:
+        
+        result = "x="
+        
+        if x_cnt < 0:
+            result += "-"
+        
+        result += str(n_cnt//x_cnt) 
+        
+        return result
+        
+    return "No solution"
+
+----------------------------------------------------------------------------------------------------
+Python Solution
+    def solveEquation(self, equation):
+        """
+        :type equation: str
+        :rtype: str
+        """
+        def cal(s):
+            start=0
+            co=0
+            val=0
+            s=s+"+"
+            last=1
+            if s[0]=="-":
+                last=-1
+                start=1
+            for i in xrange(1,len(s)):
+                if s[i]=="+" or s[i]=="-":
+                    tmp=s[start:i]
+                    if "x" in tmp:
+                        if len(tmp)>1:
+                            co+=int(tmp[:len(tmp)-1])*last
+                        else:
+                            co+=1*last
+                    else :
+                        val+=int(tmp)*last
+                    last=1 if s[i]=="+" else -1
+                    start=i+1
+            return (co,val)
+
+
+        s=equation.split("=")
+        left,right=cal(s[0]),cal(s[1])
+        if left[0]==right[0]:
+            if left[1]==right[1]:
+                res= "Infinite solutions"
+            else:
+                res= "No solution"
+        else:
+            res="x="+str((right[1]-left[1])/(left[0]-right[0]))
+            
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Share my python solution
+class Solution(object):
+    def solveEquation(self, equation):
+        """
+        :type equation: str
+        :rtype: str
+        """
+        left, right = equation.split('=')
+        
+        def process(s):
+            a, b = 0, 0
+            if s[0] != '-':
+                s = '+' + s
+            s = s + '+'
+            prev_pos = 1 
+            prev_sign = -1 if s[0] == '-' else 1
+            for i, e in enumerate(s):
+                if e in ['-', '+']:
+                    if i == 0:
+                        continue
+                    term = s[prev_pos:i]
+                    if 'x' in term:
+                        a += int(term[:-1]) * prev_sign if term[:-1] else prev_sign
+                    else:
+                        b += int(term) * prev_sign
+                        
+                    prev_pos = i+1
+                    prev_sign = -1 if e=='-' else 1
+            return a, b
+        
+        a, b = process(left)
+        c, d = process(right)
+        
+        if (a == c):
+            return "No solution" if b != d else "Infinite solutions"
+        return "x=" + str(int((d-b)/(a-c)))
+
+
+----------------------------------------------------------------------------------------------------

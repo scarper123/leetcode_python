@@ -1,0 +1,451 @@
+9ms JAVA DFS solution
+public class Solution {
+    public List<Integer> largestValues(TreeNode root) {
+        List<Integer> res = new ArrayList<Integer>();
+        helper(root, res, 0);
+        return res;
+    }
+    private void helper(TreeNode root, List<Integer> res, int d){
+        if(root == null){
+            return;
+        }
+       //expand list size
+        if(d == res.size()){
+            res.add(root.val);
+        }
+        else{
+        //or set value
+            res.set(d, Math.max(res.get(d), root.val));
+        }
+        helper(root.left, res, d+1);
+        helper(root.right, res, d+1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python BFS
+def findValueMostElement(self, root):
+    maxes = []
+    row = [root]
+    while any(row):
+        maxes.append(max(node.val for node in row))
+        row = [kid for node in row for kid in (node.left, node.right) if kid]
+    return maxes
+
+----------------------------------------------------------------------------------------------------
+Java BFS
+    public int[] findValueMostElement(TreeNode root) {
+        Queue<TreeNode> queue = new LinkedList<TreeNode>();
+        List<Integer> res = new ArrayList<Integer>();
+        queue.add(root);
+        int queueSize = root == null ? 0 : 1;
+        while (queueSize > 0) {
+            int largestElement = Integer.MIN_VALUE;
+            for (int i=0;i<queueSize;i++) {
+                TreeNode cur = queue.poll();
+                largestElement = Math.max(cur.val, largestElement);
+                if (cur.left != null) queue.add(cur.left);
+                if (cur.right != null) queue.add(cur.right);
+            }
+            res.add(largestElement);
+            queueSize = queue.size();
+        }
+        int[] resArray = new int[res.size()];
+        for (int i=0;i<res.size();i++) resArray[i] = res.get(i);
+        return resArray;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ a different approach (12ms beats 100%)
+class Solution {
+    vector<int> solution;
+public:
+    void helper(TreeNode* node, int cl) {
+        if (node == NULL) {
+            return;
+        }
+        if (solution.size() < cl + 1) {
+            solution.push_back(node->val);
+        } else {
+            if (solution[cl] < node->val) {
+                solution[cl] = node->val;
+            }
+        }
+        helper(node->left, cl+1);
+        helper(node->right, cl+1);
+    }
+    //vector<int> largestValues(TreeNode* root) {
+    vector<int> findValueMostElement(TreeNode* root) {
+        if(root == NULL) {
+            return solution;
+        }
+        
+        helper(root, 0);
+        return solution;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+1-liner Python, Divide and conquer
+def largestValues(self, root):
+    return [root.val] + map(max, *map(self.largestValues, (root.left, root.right))) if root else []
+
+
+----------------------------------------------------------------------------------------------------
+Verbose Java Solution, Binary tree level order traversal, again.
+public class Solution {
+    public int[] findValueMostElement(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        if (root == null) return new int[0];
+        
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            int max = Integer.MIN_VALUE;
+            for (int i = 0; i < size; i++) {
+                TreeNode node = queue.poll();
+                max = Math.max(max, node.val);
+                if (node.left != null) queue.add(node.left);
+                if (node.right != null) queue.add(node.right);
+            }
+            res.add(max);
+        }
+        
+        int[] result = new int[res.size()];
+        for (int i = 0; i < res.size(); i++) {
+            result[i] = res.get(i);
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Standard travel by level - Java BFS
+public class Solution {
+    public int[] findValueMostElement(TreeNode root) {
+        if(root==null) return new int[0];
+        List<Integer> res = new LinkedList<>();
+        Queue<TreeNode> q = new LinkedList<>();
+        q.add(root);
+        while(!q.isEmpty()){
+            int max = q.peek().val;
+            int size = q.size();
+            for(int i = 0; i<size; i++){
+                TreeNode cur = q.poll();
+                max = Math.max(max, cur.val);
+                if(cur.left!=null) q.add(cur.left);
+                if(cur.right!=null) q.add(cur.right);
+            }
+            res.add(max);
+        }
+        return res.stream().mapToInt(k->k).toArray();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python BFS &amp; DFS
+class Solution(object):
+    def largestValues(self, root):
+        ans = []
+        if root is None:
+            return ans
+        queue  = [root]
+        while queue:
+            ans.append(max(x.val for x in queue))
+            new_queue = []
+            for node in queue:
+                if node.left:
+                    new_queue.append(node.left)
+                if node.right:
+                    new_queue.append(node.right)
+            queue = new_queue
+        return ans
+
+class Solution(object):
+    def largestValues(self, root):
+        self.ans = []
+        self.helper(root, 0)
+        return self.ans
+    
+    def helper(self, node, level):
+        if not node:
+            return
+        if len(self.ans) == level:
+            self.ans.append(node.val)
+        else:
+            self.ans[level] = max(self.ans[level], node.val)
+        self.helper(node.left, level+1)
+        self.helper(node.right, level+1)
+
+----------------------------------------------------------------------------------------------------
+C++ Simple Solution, Concise Code, Morris Traversal
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> res;
+        TreeNode* cur = root, *prev = NULL;
+        int deep = 0;
+        while (cur) {
+            if (cur->left == NULL) {
+                //
+                if (deep >= res.size())
+                    res.push_back(cur->val);
+                else
+                    res[deep] = max(res[deep], cur->val);
+                cur = cur->right;
+                deep++;
+            } else {
+                prev = cur->left;
+                int move = 1;
+                while (prev->right && prev->right != cur) {
+                    prev = prev->right;
+                    move++;
+                }
+                if (prev->right == NULL) {
+                    if (deep >= res.size())
+                        res.push_back(cur->val);
+                    prev->right = cur;
+                    cur = cur->left;
+                    deep++;
+                } else {
+                    // back to parent node, remove connection
+                    prev->right = NULL;
+                    deep -= move + 1;
+                    //
+                    if (deep >= res.size())
+                        res.push_back(cur->val);
+                    else
+                        res[deep] = max(res[deep], cur->val);
+                    cur = cur->right;
+                    deep++;
+                }
+            }
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+5-lines Java DFS Solution
+public class Solution {
+    public int[] findValueMostElement(TreeNode root) {
+        return dfs(root, 0, new ArrayList<>()).stream().mapToInt(TreeSet::last).toArray();
+    }
+    private ArrayList<TreeSet<Integer>> dfs(TreeNode root, int depth, ArrayList<TreeSet<Integer>> list) {
+        if (root==null) return list;
+        if (list.size()<=depth) list.add(new TreeSet<>());
+        list.get(depth).add(root.val);
+        return dfs(root.right, depth+1, dfs(root.left, depth+1, list));
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code - DFS : PreOrder &amp; PostOrder
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> res;
+        dfs(root, 1, res);
+        return res;
+    }
+
+private:
+    void dfs(TreeNode* node, int depth, vector<int>& res) {
+        if (!node) {
+            return;
+        }
+        dfs(node->left, depth + 1, res);
+        dfs(node->right, depth + 1, res);
+        if (depth > res.size()) {
+            res.resize(depth, INT_MIN);
+        }
+        res[depth - 1] = max(res[depth - 1], node->val);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ BFS solution
+class Solution {
+public:
+    vector<int> findValueMostElement(TreeNode* root) {
+        if(root == nullptr) return {};
+        queue<TreeNode*> q;
+        queue<int> level;
+        
+        q.push(root);
+        level.push(0);
+        vector<int> mac;
+        
+        int m=-1;
+        while(q.size()){
+            TreeNode *r = q.front(); q.pop();
+            int l = level.front(); level.pop();
+            if(r->left) {
+                q.push(r->left);
+                level.push(l+1);
+            }
+            
+            if(r->right){
+                q.push(r->right);
+                level.push(l+1);
+            }
+            
+            if(l > m){
+                m = l;
+                mac.push_back(r->val);
+            } else {
+                mac[l] = std::max(mac[l], r->val);
+            }
+        }
+        
+        return mac;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+C++_BFS_Queue
+class Solution {
+public:
+vector<int> findValueMostElement(TreeNode* root) {
+    if(root == nullptr) return {};
+    vector<int> res;
+    queue<TreeNode*> q;
+    q.push(root);
+    bfs(res, q);
+    return res;
+}
+
+void bfs(vector<int>& res, queue<TreeNode*>& q){
+    int n = q.size();
+    if(n == 0) return;
+    int value = INT_MIN;
+    while(n){
+        TreeNode* node = q.front();
+        if(node->left) q.push(node->left);
+        if(node->right) q.push(node->right);
+        value = max(value, node->val);
+        n--;
+        q.pop();
+    }
+    res.push_back(value);
+    bfs(res, q);
+}
+};
+
+----------------------------------------------------------------------------------------------------
+Java clean BFS 11 ms
+public class Solution {
+    public List<Integer> largestValues(TreeNode root) {
+        List<Integer> result = new ArrayList<>();
+        if (root == null) return result;
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            int max = queue.peek().val;
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                TreeNode temp = queue.poll();
+                max = Math.max(temp.val, max);
+                if (temp.left != null) queue.add(temp.left);
+                if (temp.right!= null) queue.add(temp.right);
+            }
+            result.add(max);
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ level-order traversal
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> res;
+        if (!root) return res;
+        queue<TreeNode*> q;
+        q.push(root);
+        int curSize=0, curMax=INT_MIN;
+        while(q.size()){
+            curSize = q.size();
+            for (int i=0;i<curSize;i++){
+                auto cur = q.front();
+                q.pop();
+                if (cur->val > curMax)
+                    curMax = cur->val;
+                if (cur->left)
+                    q.push(cur->left);
+                if (cur->right)
+                    q.push(cur->right);
+            }
+            res.push_back(curMax);
+            curMax = INT_MIN;
+        }
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+A very quick (12ms), tidy C++ solution with DFS
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> ret;
+        if (root == nullptr) {
+            return ret;
+        }
+        dfs(root, 0, ret);
+        return ret;
+    }
+    
+private:
+    void dfs(const TreeNode* root, const int depth, vector<int>& res) {
+        if (root == nullptr) {
+            return;
+        }
+        if (depth == res.size()) {
+            res.push_back(root->val);
+        } else {
+            res[depth] = max(res[depth], root->val);
+        }
+        dfs(root->left, depth + 1, res);
+        dfs(root->right, depth + 1, res);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed explanation
+from collections import deque
+class Solution(object):
+    def largestValues(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[int]
+        """
+        q = deque()
+        if root:
+            q.append(root)
+        result = []
+        while len(q):
+            result.append(float('-inf'))
+            for _ in range(len(q)):
+                top = q.popleft()
+                result[-1] = max(result[-1], top.val)
+                if top.left:
+                    q.append(top.left)
+                if top.right:
+                    q.append(top.right)
+        return result
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,547 @@
+AC O(N) solution in Java using buckets with explanation
+As a followup question, it naturally also requires maintaining a window of size k. When t == 0, it reduces to the previous question so we just reuse the solution.
+
+Since there is now a constraint on the range of the values of the elements to be considered duplicates, it reminds us of doing a range check which is implemented in tree data structure and would take O(LogN) if a balanced tree structure is used, or doing a bucket check which is constant time. We shall just discuss the idea using bucket here.
+
+Bucketing means we map a range of values to the a bucket. For example, if the bucket size is 3, we consider 0, 1, 2 all map to the same bucket. However, if t == 3, (0, 3) is a considered duplicates but does not map to the same bucket. This is fine since we are checking the buckets immediately before and after as well. So, as a rule of thumb, just make sure the size of the bucket is reasonable such that elements having the same bucket is immediately considered duplicates or duplicates must lie within adjacent buckets. So this actually gives us a range of possible bucket size, i.e. t and t + 1. We just choose it to be t and a bucket mapping to be *num / t*.
+
+Another complication is that negative ints are allowed. A simple *num / t* just shrinks everything towards 0. Therefore, we can just reposition every element to start from Integer.MIN_VALUE.
+
+     public class Solution {
+        public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+            if (k < 1 || t < 0) return false;
+            Map<Long, Long> map = new HashMap<>();
+            for (int i = 0; i < nums.length; i++) {
+                long remappedNum = (long) nums[i] - Integer.MIN_VALUE;
+                long bucket = remappedNum / ((long) t + 1);
+                if (map.containsKey(bucket)
+                        || (map.containsKey(bucket - 1) && remappedNum - map.get(bucket - 1) <= t)
+                            || (map.containsKey(bucket + 1) && map.get(bucket + 1) - remappedNum <= t))
+                                return true;
+                if (map.entrySet().size() >= k) {
+                    long lastBucket = ((long) nums[i - k] - Integer.MIN_VALUE) / ((long) t + 1);
+                    map.remove(lastBucket);
+                }
+                map.put(bucket, remappedNum);
+            }
+            return false;
+        }
+    }
+
+Edits:
+
+Actually, we can use t + 1 as the bucket size to get rid of the case when t == 0. It simplifies the code. The above code is therefore the updated version.
+
+----------------------------------------------------------------------------------------------------
+Java O(N lg K) solution
+This problem requires to maintain a window of size k of the previous values that can be queried for value ranges. The best data structure to do that is Binary Search Tree. As a result maintaining the tree of size k will result in time complexity O(N lg K). In order to check if there exists any value of range abs(nums[i] - nums[j]) to simple queries can be executed both of time complexity O(lg K)
+
+Here is the whole solution using TreeMap.
+
+----------
+
+    public class Solution {
+        public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+            if (nums == null || nums.length == 0 || k <= 0) {
+                return false;
+            }
+    
+            final TreeSet<Integer> values = new TreeSet<>();
+            for (int ind = 0; ind < nums.length; ind++) {
+    
+                final Integer floor = values.floor(nums[ind] + t);
+                final Integer ceil = values.ceiling(nums[ind] - t);
+                if ((floor != null && floor >= nums[ind])
+                        || (ceil != null && ceil <= nums[ind])) {
+                    return true;
+                }
+    
+                values.add(nums[ind]);
+                if (ind >= k) {
+                    values.remove(nums[ind - k]);
+                }
+            }
+    
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python one pass solution, O(n) time O(n) space using buckets
+The idea is like the bucket sort algorithm. Suppose we have consecutive buckets covering the range of nums with each bucket a width of (t+1). If there are two item with difference <= t, one of the two will happen:
+
+    (1) the two in the same bucket
+    (2) the two in neighbor buckets
+
+For detailed explanation see my blog [here](http://algobox.org/contains-duplicate-iii/)
+
+**Python**
+
+    def containsNearbyAlmostDuplicate(self, nums, k, t):
+        if t < 0: return False
+        n = len(nums)
+        d = {}
+        w = t + 1
+        for i in xrange(n):
+            m = nums[i] / w
+            if m in d:
+                return True
+            if m - 1 in d and abs(nums[i] - d[m - 1]) < w:
+                return True
+            if m + 1 in d and abs(nums[i] - d[m + 1]) < w:
+                return True
+            d[m] = nums[i]
+            if i >= k: del d[nums[i - k] / w]
+        return False
+
+
+    # 30 / 30 test cases passed.
+    # Status: Accepted
+    # Runtime: 56 ms
+    # 93.81%
+
+
+**Java**
+
+    private long getID(long i, long w) {
+        return i < 0 ? (i + 1) / w - 1 : i / w;
+    }
+
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if (t < 0) return false;
+        Map<Long, Long> d = new HashMap<>();
+        long w = (long)t + 1;
+        for (int i = 0; i < nums.length; ++i) {
+            long m = getID(nums[i], w);
+            if (d.containsKey(m))
+                return true;
+            if (d.containsKey(m - 1) && Math.abs(nums[i] - d.get(m - 1)) < w)
+                return true;
+            if (d.containsKey(m + 1) && Math.abs(nums[i] - d.get(m + 1)) < w)
+                return true;
+            d.put(m, (long)nums[i]);
+            if (i >= k) d.remove(getID(nums[i - k], w));
+        }
+        return false;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ using set (less 10 lines), with simple explanation.
+     bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+        set<int> window; // set is ordered automatically 
+        for (int i = 0; i < nums.size(); i++) {
+            if (i > k) window.erase(nums[i-k-1]); // keep the set contains nums i j at most k
+            // |x - nums[i]| <= t  ==> -t <= x - nums[i] <= t;
+            auto pos = window.lower_bound(nums[i] - t); // x-nums[i] >= -t ==> x >= nums[i]-t 
+            // x - nums[i] <= t ==> |x - nums[i]| <= t    
+            if (pos != window.end() && *pos - nums[i] <= t) return true;
+            window.insert(nums[i]);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+O(n) Python using buckets with explanation, 10 lines.
+    def containsNearbyAlmostDuplicate(self, nums, k, t):
+        # Bucket sort. Each bucket has size of t. For each number, the possible
+        # candidate can only be in the same bucket or the two buckets besides.
+        # Keep as many as k buckets to ensure that the difference is at most k.
+        buckets = {}
+        for i, v in enumerate(nums):
+            # t == 0 is a special case where we only have to check the bucket
+            # that v is in.
+            bucketNum, offset = (v / t, 1) if t else (v, 0)
+            for idx in xrange(bucketNum - offset, bucketNum + offset + 1):
+                if idx in buckets and abs(buckets[idx] - nums[i]) <= t:
+                    return True
+
+            buckets[bucketNum] = nums[i]
+            if len(buckets) > k:
+                # Remove the bucket which is too far away. Beware of zero t.
+                del buckets[nums[i - k] / t if t else nums[i - k]]
+
+        return False
+
+----------------------------------------------------------------------------------------------------
+I finally got AC in C++
+Using a set container to keep the k+1-length array,which all elements are distinct.Before the container's size reached k+1, we just find the first element that is not less than [nums[i]-t] and judge the element's value whether it is less than [nums[i]+t]. Starting to move forward by erasing the head and adding element at the backend after the container's size reached k+1. The existence of the first element ,which is not less than [nums[i]-t]  and less than [nums[i]+t], is the prerequisite of existing other eligible elements.
+
+     bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t)
+        {
+        		if (!k || t<0 || nums.size()<2)
+            		return false;
+            	set<int>record;                   
+            	auto nLen = nums.size();
+            	for (int i = 0; i < nLen;++i)
+            	{
+            		if (i>k)
+            			record.erase(nums[i - k - 1]);         
+            		set<int>::iterator lower = record.lower_bound(nums[i] - t);
+            		if (lower != record.end() && abs(nums[i] - *lower) <= t)
+            			return true;
+            
+            		record.insert(nums[i]);
+            	}
+            	return false;
+        }
+
+----------------------------------------------------------------------------------------------------
+Accept C++ Solution
+My idea is to preserve a sliding window containing nearest k numbers, and check if next number collides to the numbers in the window.
+
+    class Solution {
+    public:
+        bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+            if (nums.size() < 2 || k == 0)
+                return false;
+            deque<int> windows_deq;
+            multiset<long> windows;
+            for (int i = 0; i < nums.size(); i++) {
+                if (windows.size() > k) {
+                    int num = windows_deq.front();
+                    windows_deq.pop_front();
+                    windows.erase(windows.find(num));
+                }
+                auto it = windows.lower_bound((long)nums[i] - (long)t);
+                if (it == windows.end() || *it > (long)nums[i] + (long)t) {
+                    // not found
+                    windows_deq.push_back(nums[i]);
+                    windows.insert(nums[i]);
+                }
+                else return true;
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+AC Java solution without set or dictionary. Sort the nums and record the positions
+public class Solution {
+
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+    	if(nums.length<2||k<1||t<0) return false;
+    	ValuePosPair[] valPosArr = new ValuePosPair[nums.length];
+    	for(int i =0;i<nums.length;i++) valPosArr[i] = new ValuePosPair(nums[i],i); 
+    	Arrays.sort(valPosArr);	
+    	for(int i=0;i<valPosArr.length;i++){
+    		for(int j=i+1;j<valPosArr.length&&((long)valPosArr[j].val-(long)valPosArr[i].val<=(long)t);j++){
+    			if(Math.abs(valPosArr[j].pos-valPosArr[i].pos)<=k) return true;	
+    		}
+    	}
+    	return false;
+    }  
+}
+
+    class ValuePosPair implements Comparable<ValuePosPair>{
+    
+    	int val;
+    	int pos;
+
+    	ValuePosPair(int v, int p) { val = v; pos = p;}
+
+    	public int compareTo(ValuePosPair x){
+    		return this.val - x.val;
+    	}	
+    }
+
+----------------------------------------------------------------------------------------------------
+Python OrderedDict
+    class Solution:
+
+    def containsNearbyAlmostDuplicate(self, nums, k, t):
+        if k < 1 or t < 0:
+            return False
+        dic = collections.OrderedDict()
+        for n in nums:
+            key = n if not t else n // t
+            for m in (dic.get(key - 1), dic.get(key), dic.get(key + 1)):
+                if m is not None and abs(n - m) <= t:
+                    return True
+            if len(dic) == k:
+                dic.popitem(False)
+            dic[key] = n
+        return False
+
+
+----------------------------------------------------------------------------------------------------
+Short C++ solution
+    class Solution {
+    public:
+        bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+            map<long long,int> M;
+            int l=0;
+            for (int r=0;r<nums.size();r++) {
+                if (r-l>k && M[nums[l]]==l)
+                    M.erase(nums[l++]);
+                auto it=M.lower_bound(nums[r]-t);
+                if (it!=M.end() && abs(it->first-nums[r])<=t)
+                    return true;
+                M[nums[r]]=r;
+            }
+            return false;
+         }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java treeset implementation  NlogK
+this is a very good demonstration of the use of TreeSet ---- which we rarely use normally. 
+
+
+
+        public class Solution {
+    
+        public boolean containsNearbyAlmostDuplicate(final int[] nums, int kk, long t) {
+            if (nums.length < 2) return false;
+            if (kk == 0) return false;
+            TreeSet<Long> window = new TreeSet<Long>();
+            
+            for(int i=0;i<nums.length;i++) {
+    
+                // check dup, window size <= kk right now
+            	if ( window.floor(nums[i] + t) !=null && window.floor(nums[i]+t) >= nums[i]-t ) return true;
+            	
+                window.add(new Long(nums[i]));
+                
+                
+                if (i >= kk) {
+                    //remove one, the size has to be kk on the next fresh step
+                	window.remove(new Long(nums[i-kk]));
+                }
+            }
+            
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python without dictionary
+    class Solution:
+        # @param {integer[]} nums
+        # @param {integer} k
+        # @param {integer} t
+        # @return {boolean}
+        def containsNearbyAlmostDuplicate(self, nums, k, t):
+            ind = sorted(range(len(nums)), key = lambda x: nums[x])
+            for i in range(len(nums)-1):
+                j = i + 1
+                while j < len(nums) and nums[ind[j]] - nums[ind[i]] <= t:
+                    if abs(ind[i]-ind[j]) <= k:
+                        return True
+                    j += 1
+            return False
+
+ind is an array of the indexes of sorted num. Iterate through ind to check if nums are within t and ind are within k.
+
+----------------------------------------------------------------------------------------------------
+Easy AC solution using TreeSet&lt;Long&gt;, in Java
+
+    public class Solution {
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if (nums == null || nums.length == 0) return false;
+        TreeSet<Long> set = new TreeSet<>();
+        set.add((long) nums[0]);
+        for (int i = 1; i < nums.length; i++) {
+            if (i > k) set.remove((long) nums[i - k - 1]);
+            long left = (long) nums[i] - t;
+            long right = (long) nums[i] + t;
+            if (left <= right && !set.subSet(left, right + 1).isEmpty()) return true;
+            set.add((long) nums[i]);
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(n) solution in C++ using bucket sort
+    // time: O(n); space: O(n)
+    class Solution {
+        long long getBucketId(long long i, long long w) {
+            return i < 0 ? (i + 1) / w - 1 : i / w;
+        }
+    public:
+        bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+            int n = nums.size();
+            if (n < 2 || k < 1 || t < 0)
+            {
+                return false;
+            }
+    
+            unordered_map<long long, long long> buckets;
+            long long width = (long long)t + 1;
+            for (int i = 0; i < n; i++)
+            {
+                long long id = getBucketId(nums[i], width);
+    
+                // found the value in the same bucket
+                if (buckets.find(id) != buckets.end())
+                {
+                    return true;
+                }
+    
+                // found the value in the adjacent bucket
+                if ((buckets.find(id - 1) != buckets.end() && nums[i] - buckets[id - 1] < width) ||
+                    (buckets.find(id + 1) != buckets.end() && buckets[id + 1] - nums[i] < width))
+                {
+                    return true;
+                }
+    
+                // insert current value to buckets
+                buckets[id] = nums[i];
+    
+                if (i >= k)    // remove out of range element
+                {
+                    buckets.erase(getBucketId(nums[i - k], width));
+                }
+            }
+    
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Does anyone else consider this problem not accurate
+The problem statement:
+Given an array of integers, find out whether there are two distinct indices i and j in the array such that the difference between nums[i] and nums[j] is at most t and the difference between i and j is at most k.
+
+So then if the following are true then return true:
+
+nums[i] - nums[j] <=t      and
+
+i-j<=k  
+
+Then [4,2], 1,1 should be true:
+
+2-4<=1  check
+
+1-0<=1 check
+
+return true;
+
+So then you have to assume what they're asking for is:
+
+abs(nums[i] - nums[j]) <=t      and
+
+abs(i-j)<=k
+
+but then I propose the question of why offer a possible scenario of t<0.    
+
+Either way, this problem is not correct as written.
+
+----------------------------------------------------------------------------------------------------
+16 ms accepted a unusual C++ solution, even faster than C
+I save the nums to a pointer array, then sort the pointer array ascending. At last, I use the most plain algorithm.
+
+    bool cmpptr(int *a, int *b){
+        return *a < *b; 
+    }
+    class Solution {
+    public:
+        bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+          const int N = nums.size();
+          vector<int*> numptrs(N);
+          for(int i = 0; i < N; ++i){
+             numptrs[i] = &nums[i];
+          }
+          sort(numptrs.begin(), numptrs.end(), cmpptr);
+          if(0 == k) return false;
+          for(int i = 0; i < N; ++i){
+              for(int j = i + 1; j < N; ++j){
+                   //nums[i] and nums[j] is at most t
+                  if((*numptrs[j]) > (*numptrs[i]) + t) 
+                         break;
+                  //the difference between i and j is at most k
+                  if(abs(numptrs[j] - numptrs[i]) <= k) return true;
+              }
+          }
+           return false;
+        }
+
+    };
+
+----------------------------------------------------------------------------------------------------
+My O(n) accepted java solution using hashmap
+I didn't use bs.
+
+Thx lx223 for his corner case. His answer is https://leetcode.com/discuss/38206/ac-solution-in-java-using-o-n-bucket-with-explanation
+
+Already updated for his corner case {-3,3},2,4
+ 
+
+    public static boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if (k < 1 || t < 0) return false;
+        Map<Long, Long> map = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            long j = t == 0 ? (long) nums[i] - Integer.MIN_VALUE : (((long) nums[i] - Integer.MIN_VALUE) / t);
+            if (map.containsKey(j) || (map.containsKey(j - 1) && Math.abs(map.get(j - 1) - nums[i]) <= t)
+                    || (map.containsKey(j + 1) && Math.abs(map.get(j + 1) - nums[i]) <= t)) return true;
+            if (map.keySet().size() == k) map.remove(map.keySet().iterator().next());
+            map.put(j, (long) nums[i]);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Cpp solution by using multiset,  N*log(k),
+    class Solution {
+    public:
+        bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+            multiset<int> mySet;
+            for(int i = 0; i<nums.size(); i++){
+            	auto lb = mySet.lower_bound(nums[i]-t);
+            	//lower_bound returns the iterator (the most near to value equals to nums[i] - t) , this is tricky
+            	if(lb!=mySet.end() && *lb - nums[i]<=t) return true;
+            	mySet.insert(nums[i]);
+            	if(mySet.size()>k) mySet.erase(nums[i-k]);
+    
+            }
+        return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution with TreeSet
+A TreeSet with size less than k is used here. So the time should be O(n * log(k)). 
+
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if(nums == null || k < 0 || t < 0)
+            return false;
+        TreeSet<Integer> set = new TreeSet<>();
+        for(int i = 0; i < nums.length; i++){
+            if(i - k - 1 >= 0)
+                set.remove(nums[i - k - 1]);
+            int n = nums[i];
+            if(set.floor(n) != null && n <= t + set.floor(n) || 
+                    set.ceiling(n) != null && set.ceiling(n) <= t + n)
+                return true;
+            set.add(n);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+AC python code using window and bucketing
+    class Solution:
+        # @param {integer[]} nums
+        # @param {integer} k
+        # @param {integer} t
+        # @return {boolean}
+        def containsNearbyAlmostDuplicate(self, nums, k, t):
+            if k <= 0 or t < 0:
+                return False
+            numsDict = {}
+            for i in range(len(nums)):
+                bucket = nums[i]/(t+1)
+                for key in [bucket-1, bucket, bucket+1]:
+                    if key in numsDict and abs(numsDict[key] - nums[i]) <= t:
+                        return True
+                numsDict[bucket] = nums[i]
+                if i+1 > k:
+                    pop_key = nums[i-k]/(t+1)
+                    numsDict.pop(pop_key)
+            return False
+
+Basically, I kept a window of size k and put all integers in that window into buckets. The index of the bucket is integer mod (t+1), as to avoid zeroDivisionError when t = 0. The runtime should be O(n) for this algorithm.
+
+----------------------------------------------------------------------------------------------------

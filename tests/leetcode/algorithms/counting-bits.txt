@@ -1,0 +1,328 @@
+Short O(1) amortized, C++ &#x2F; Java &#x2F; Ruby
+I have one input stack, onto which I push the incoming elements, and one output stack, from which I peek/pop. I move elements from input stack to output stack when needed, i.e., when I need to peek/pop but the output stack is empty. When that happens, I move all elements from input to output stack, thereby reversing the order so it's the correct order for peek/pop.
+
+The loop in `peek` does the moving from input to output stack. Each element only ever gets moved like that once, though, and only after we already spent time pushing it, so the overall amortized cost for each operation is O(1).
+
+**Ruby**
+
+    class Queue
+        def initialize
+            @in, @out = [], []
+        end
+    
+        def push(x)
+            @in << x
+        end
+    
+        def pop
+            peek
+            @out.pop
+        end
+    
+        def peek
+            @out << @in.pop until @in.empty? if @out.empty?
+            @out.last
+        end
+    
+        def empty
+            @in.empty? && @out.empty?
+        end
+    end
+
+**Java**
+
+    class MyQueue {
+    
+        Stack<Integer> input = new Stack();
+        Stack<Integer> output = new Stack();
+        
+        public void push(int x) {
+            input.push(x);
+        }
+    
+        public void pop() {
+            peek();
+            output.pop();
+        }
+    
+        public int peek() {
+            if (output.empty())
+                while (!input.empty())
+                    output.push(input.pop());
+            return output.peek();
+        }
+    
+        public boolean empty() {
+            return input.empty() && output.empty();
+        }
+    }
+
+**C++**
+
+    class Queue {
+        stack<int> input, output;
+    public:
+    
+        void push(int x) {
+            input.push(x);
+        }
+    
+        void pop(void) {
+            peek();
+            output.pop();
+        }
+    
+        int peek(void) {
+            if (output.empty())
+                while (input.size())
+                    output.push(input.top()), input.pop();
+            return output.top();
+        }
+    
+        bool empty(void) {
+            return input.empty() && output.empty();
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java solution, just edit push() method
+    class MyQueue {
+    Stack<Integer> queue = new Stack<Integer>();
+    // Push element x to the back of queue.
+    public void push(int x) {
+        Stack<Integer> temp = new Stack<Integer>();
+        while(!queue.empty()){
+            temp.push(queue.pop());
+        }
+        queue.push(x);
+        while(!temp.empty()){
+            queue.push(temp.pop());
+        }
+    }
+
+    // Removes the element from in front of queue.
+    public void pop() {
+        queue.pop();
+    }
+
+    // Get the front element.
+    public int peek() {
+        return queue.peek();
+    }
+
+    // Return whether the queue is empty.
+    public boolean empty() {
+        return queue.empty();
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+0 ms C++ solution using one Stack w&#x2F; explanation.
+You can implement queue using just one stack by either making push process costlier or pop costlier. Since we have two functions (`top()` and `pop()`) which require the top element of the stack, well make the push() function costlier - that is, for pushing a new element, we recursively pop the stack till it is empty and push it at the bottom of the stack, and take advantage of the recursive call to push back in the popped elements once the recursive call hits the base condition and returns. This implementation makes `pop()` and `peek()` functions easier. `pop()` is just going to pop off the top element in stack and `peek()` will return the top most element.
+
+    class Queue {
+    public:
+        stack<int> s;
+        
+        // Push element x to the back of queue.
+        void push(int x) {
+            pushHelper(x);
+        }
+        void pushHelper(int x){
+            if(s.size()==0){
+                s.push(x);
+                return;
+            }
+            int data;
+            data = s.top();
+            s.pop();
+            pushHelper(x);
+            s.push(data);
+            return;
+            
+        }
+    
+        // Removes the element from in front of queue.
+        void pop(void) {
+            s.pop();
+        }
+    
+        // Get the front element.
+        int peek(void) {
+            return s.top();
+        }
+    
+        // Return whether the queue is empty.
+        bool empty(void) {
+            return (s.size()==0);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my python solution (32ms)
+The idea is to simulate a queue using two stacks (same as previous posts). I use python list as the underlying data structure for stack and add a "move()" method to simplify code: it moves all elements of the "inStack" to the "outStack" when the "outStack" is empty. Here is the code
+
+
+    class Queue(object):
+        def __init__(self):
+            """
+            initialize your data structure here.
+            """
+            self.inStack, self.outStack = [], []
+    
+        def push(self, x):
+            """
+            :type x: int
+            :rtype: nothing
+            """
+            self.inStack.append(x)
+    
+        def pop(self):
+            """
+            :rtype: nothing
+            """
+            self.move()
+            self.outStack.pop()
+    
+        def peek(self):
+            """
+            :rtype: int
+            """
+            self.move()
+            return self.outStack[-1]
+    
+        def empty(self):
+            """
+            :rtype: bool
+            """
+            return (not self.inStack) and (not self.outStack) 
+            
+        def move(self):
+            """
+            :rtype nothing
+            """
+            if not self.outStack:
+                while self.inStack:
+                    self.outStack.append(self.inStack.pop())
+
+
+
+----------------------------------------------------------------------------------------------------
+Accepted 0ms c++ solution with two std::stack, easy understand.
+    class Queue {
+    public:
+        // Push element x to the back of queue.
+        void push(int x) {
+    		while (!nums.empty()) {
+    			helper.push(nums.top());
+    			nums.pop();
+    		}
+    		nums.push(x);
+    		while (!helper.empty()) {
+    			nums.push(helper.top());
+    			helper.pop();
+    		}
+        }
+        // Removes the element from in front of queue.
+        void pop(void) {
+            nums.pop();
+        }
+        // Get the front element.
+        int peek(void) {
+            return nums.top();
+        }
+        // Return whether the queue is empty.
+        bool empty(void) {
+    		return nums.empty();
+        }
+    private:
+    	std::stack<int> helper, nums;
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted clean Java solution
+      class MyQueue {
+        
+        Stack<Integer> s1 = new Stack();
+        Stack<Integer> s2 = new Stack();
+        
+        // Push element x to the back of queue.
+        public void push(int x) {
+          while (!s2.isEmpty())
+            s1.push(s2.pop());
+          
+          s1.push(x);
+        }
+    
+        // Removes the element from in front of queue.
+        public void pop() {
+          while (!s1.isEmpty())
+            s2.push(s1.pop());
+          
+          s2.pop();
+        }
+    
+        // Get the front element.
+        public int peek() {
+          while (!s1.isEmpty())
+            s2.push(s1.pop());
+          
+          return s2.peek();
+        }
+    
+        // Return whether the queue is empty.
+        public boolean empty() {
+          return s1.isEmpty() && s2.isEmpty();
+        }
+    
+      }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using two stacks
+    class MyQueue {
+        Stack<Integer> pushStack = new Stack<>();
+        Stack<Integer> popStack = new Stack<>();
+    
+        // Push element x to the back of queue.
+        public void push(int x) {
+            pushStack.push(x);
+        }
+    
+        // Removes the element from in front of queue.
+        public void pop() {
+            if(popStack.isEmpty()) {
+                while(!pushStack.isEmpty()) {
+                    popStack.push(pushStack.pop());
+                }
+            }
+            popStack.pop();
+        }
+    
+        // Get the front element.
+        public int peek() {
+            if(popStack.isEmpty()) {
+                while(!pushStack.isEmpty()) {
+                    popStack.push(pushStack.pop());
+                }
+            }
+            return popStack.peek();
+        }
+    
+        // Return whether the queue is empty.
+        public boolean empty() {
+            return pushStack.isEmpty() && popStack.isEmpty();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Do you know when we should use two stacks to implement a queue?
+I was asked in the internship interview of a company two years ago.
+
+The application for this implementation is to separate read & write of a queue in multi-processing. One of the stack is for read, and another is for write. They only interfere each other when the former one is full or latter is empty.
+
+This is not only a trick. :)
+
+----------------------------------------------------------------------------------------------------
+C++solution using two stack ,average O(1) time

@@ -1,0 +1,564 @@
+My easy understood solution with O(n) time and O(1) space without modifying the array. With clear explanation.
+The main idea is the same with problem ***Linked List Cycle II***,*https://leetcode.com/problems/linked-list-cycle-ii/*. Use two pointers the fast and the slow. The fast one goes forward two steps each time, while the slow one goes only step each time. They must meet the same item when slow==fast. In fact, they meet in a circle, the duplicate number must be the entry point of the circle when visiting the array from nums[0]. Next we just need to find the entry point. We use a point(we can use the fast one before) to visit form begining with one step each time, do the same job to slow. When fast==slow, they meet at the entry point of the circle. The easy understood code is as follows.
+
+    int findDuplicate3(vector<int>& nums)
+    {
+    	if (nums.size() > 1)
+    	{
+    		int slow = nums[0];
+    		int fast = nums[nums[0]];
+    		while (slow != fast)
+    		{
+    			slow = nums[slow];
+    			fast = nums[nums[fast]];
+    		}
+    
+    		fast = 0;
+    		while (fast != slow)
+    		{
+    			fast = nums[fast];
+    			slow = nums[slow];
+    		}
+    		return slow;
+    	}
+    	return -1;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Two Solutions (with explanation): O(nlog(n)) and O(n) time , O(1) space, without changing the input array
+This solution is based on binary search.
+
+At first the search space is numbers between 1 to n. Each time I select a number `mid` (which is the one in the middle) and count all the numbers equal to or less than `mid`. Then if the `count` is more than `mid`, the search space will be `[1 mid]` otherwise `[mid+1 n]`. I do this until search space is only one number.
+ 
+Let's say `n=10` and I select `mid=5`. Then I count all the numbers in the array which are less than equal `mid`. If the there are more than `5` numbers that are less than `5`, then by Pigeonhole Principle (https://en.wikipedia.org/wiki/Pigeonhole_principle) one of them has occurred more than once. So I shrink the search space from `[1 10]` to `[1 5]`. Otherwise the duplicate number is in the second half so for the next step the search space would be `[6 10]`. 
+
+    class Solution(object):
+        def findDuplicate(self, nums):
+            """
+            :type nums: List[int]
+            :rtype: int
+            """
+            low = 1
+            high = len(nums)-1
+            
+            while low < high:
+                mid = low+(high-low)/2
+                count = 0
+                for i in nums:
+                    if i <= mid:
+                        count+=1
+                if count <= mid:
+                    low = mid+1
+                else:
+                    high = mid
+            return low
+
+
+There's also a better algorithm with `O(n)` time. Please read this very interesting solution here:
+[http://keithschwarz.com/interesting/code/?dir=find-duplicate](http://keithschwarz.com/interesting/code/?dir=find-duplicate)
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time and O(1) space solution. Similar to find loop in linkedlist.
+suppose the array is 
+
+
+> index: 0 1 2 3 4 5
+> 
+> value: 2 5 1 1 4 3
+
+first subtract 1 from each element in the array, so it is much easy to understand.
+    use the value as pointer. the array becomes:
+
+
+> index: 0 1 2 3 4 5
+> 
+> value: 1 4 0 0 3 2
+
+![enter image description here][1]
+
+
+  [1]: http://cyukang.com/images/cycle3.png
+
+Second if the array is 
+
+> index: 0 1 2 3 4 5
+> 
+> value: 0 1 2 4 2 3
+
+we must choose the last element as the head of the linked list. If we choose 0, we can not detect the cycle.
+
+Now the problem is the same as find the cycle in linkedlist!
+
+    public int findDuplicate(int[] nums) {
+        int n = nums.length;
+        for(int i=0;i<nums.length;i++) nums[i]--;
+        int slow = n-1;
+        int fast = n-1;
+        do{
+            slow = nums[slow];
+            fast = nums[nums[fast]];
+        }while(slow != fast);
+        slow = n-1;
+        while(slow != fast){
+            slow = nums[slow];
+            fast = nums[fast];
+        }
+        return slow+1;
+    }
+
+One condition is we cannot modify the array. So the solution is
+
+    public int findDuplicate(int[] nums) {
+        int n = nums.length;
+        int slow = n;
+        int fast = n;
+        do{
+            slow = nums[slow-1];
+            fast = nums[nums[fast-1]-1];
+        }while(slow != fast);
+        slow = n;
+        while(slow != fast){
+            slow = nums[slow-1];
+            fast = nums[fast-1];
+        }
+        return slow;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple C++ code with O(1) space and O(nlogn) time complexity
+class Solution {
+
+public:
+
+    int findDuplicate(vector<int>& nums) {
+        int n=nums.size()-1;
+        int low=1;
+        int high=n;
+        int mid;
+        while(low<high){
+            mid=(low+high)/2;
+            int count=0;
+            for(int num:nums){
+                if(num<=mid) count++;
+            }
+            if(count>mid) high=mid;
+            else low=mid+1; 
+        }
+        return low;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Share my solution O(N) time O(1) space. 12 ms
+    class Solution {
+    public:
+    int findDuplicate(vector<int>& nums) {
+        int slow = 0;
+		int fast = 0;
+		int finder = 0;
+
+		while (true)
+		{
+			slow = nums[slow];
+			fast = nums[nums[fast]];
+
+			if (slow == fast)
+				break;
+		}
+		while (true)
+		{
+			slow = nums[slow];
+			finder = nums[finder];
+			if (slow == finder)
+				return slow;
+		}
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Java O(1)space using Binary-Search
+    public int findDuplicate(int[] nums) {
+		int low = 1, high = nums.length - 1;
+        while (low <= high) {
+            int mid = (int) (low + (high - low) * 0.5);
+            int cnt = 0;
+            for (int a : nums) {
+                if (a <= mid) ++cnt;
+            }
+            if (cnt <= mid) low = mid + 1;
+            else high = mid - 1;
+        }
+        return low;
+    }
+
+----------------------------------------------------------------------------------------------------
+O(32*N) solution using bit manipulation in 10 lines
+We can count the sum of each 32 bits separately for the given array (stored in "b" variable) and for the array [1, 2, 3, ..., n] (stored in "a" variable). If "b" is greater than "a", it means that duplicated number has 1 at the current bit position (otherwise, "b" couldn't be greater than "a"). This way we retrieve the answer bit by bit:
+
+
+    public int findDuplicate(int[] nums) {
+        int n = nums.length-1, res = 0;
+        for (int p = 0; p < 32; ++ p) {
+            int bit = (1 << p), a = 0, b = 0;
+            for (int i = 0; i <= n; ++ i) {
+                if (i > 0 && (i & bit) > 0) ++a;
+                if ((nums[i] & bit) > 0) ++b;
+            }
+            if (b > a) res += bit;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+JAVA-------------Easy Version To UnderStand!!!!!!!!!
+    	public static int findDuplicate(int[] nums) {
+		if (nums.length == 0 || nums == null)
+			return 0;
+		int low = 1, high = nums.length - 1, mid;
+		while (low < high) {
+			mid = low + (high - low) / 2;
+			int count = 0;
+			for (int i = 0; i < nums.length; i++) {
+				if (nums[i] <= mid)
+					count++;
+			}
+			if (count > mid)
+				high = mid;
+			else
+				low = mid + 1;
+		}
+		return low;
+	}
+
+----------------------------------------------------------------------------------------------------
+AC c++ code with O(n) time and O(1) space.
+Please read the link to understand it:http://keithschwarz.com/interesting/code/?dir=find-duplicate
+
+    class Solution {
+    public:
+        int findDuplicate(vector<int>& nums) {
+            int l=nums.size();
+            int slow =l-1;int fast = l-1;
+            while(1){
+                slow=nums[slow]-1;
+                fast=nums[nums[fast]-1]-1;
+                if(slow == fast){
+                    break;
+                }
+            }
+            fast = l-1;
+            while(1){
+                slow=nums[slow]-1;
+                fast=nums[fast]-1;
+                if(slow==fast)return slow+1;
+            }
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Solution with O(1) space and O(nlogn) time
+    class Solution(object):
+        def findDuplicate(self, nums):
+            low = 0
+            high = len(nums) - 1
+            mid = (high + low) / 2
+            while high - low > 1:
+                count = 0
+                for k in nums:
+                    if mid < k <= high:
+                        count += 1
+                if count > high - mid:
+                    low = mid
+                else:
+                    high = mid
+                mid = (high + low) / 2
+            return high
+
+The difficulty in this problem lies in O(1) space, and many solution using O(n) space can also be accepted by OJ.
+The solution is applying bi-search in the range[1, n] by counting the element which falls in sub range(n/2, n].
+If the number is bigger than capacity of that sub range, it means the duplicated integer falls in the sub-range.
+Otherwise the duplicated integer falls in the other half sub range.
+
+----------------------------------------------------------------------------------------------------
+O(N) time O(1) space using Floyd&#x27;s loop detection
+Let's try to follow a chain starting from element at index 0, and interpret a value of the element as an index, let's take element at that index and interpret it as a next index, and so on. Since there is a duplicate there must be a loop in this chain. It's trivial to show that the beginning of the loop is our duplicate.
+Following implementation uses classic two-pointers Floyd's loop detection algorithm to find the beginning of the loop.
+
+    int findDuplicate(const vector<int>& nums) {
+        int a = 0, b = 0;
+        do a = nums[nums[a]], b = nums[b]; while (a!=b);
+        b = 0;
+        while (a!=b) a = nums[a], b = nums[b];
+        return a;
+    }
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Python same solution as #142 Linked List Cycle II
+In this problem, nums[a] = b can be seen as a.next = b, the the problem is exactly the same as Linked List Cycle II which finds the node that cycle begins.
+
+    def findDuplicate(self, nums):
+        slow = fast = finder = 0
+        while True:
+            slow = nums[slow]
+            fast = nums[nums[fast]]
+            if slow == fast:
+                while finder != slow:
+                    finder = nums[finder]
+                    slow = nums[slow]
+                return finder
+
+----------------------------------------------------------------------------------------------------
+Tortoise &amp; Haire cycle detection algorithm
+O(n) time O(1) space solution - 
+
+
+    public class Solution {
+        public static int findDuplicate(int[] nums) {
+            //using Tortoise & Hair algorithm by Donald Knuth to find cycle in a sequence.
+            //This algorithm also called Floyd's cycele detection algorithm
+            int n = nums.length;
+            int tortoise = n;
+            int hair = n;
+            
+           do{
+                tortoise = nums[tortoise-1];
+                hair = nums[nums[hair-1]-1];
+            } while(hair != tortoise);
+            
+            //find the starting point of the cycle
+            //int mu = 0;
+            tortoise = n;
+            while(hair != tortoise){
+                tortoise = nums[tortoise-1];
+                hair = nums[hair-1];
+                //mu++;
+            }
+            
+            return tortoise;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my C++ solutions,easy to understand
+(1)Binary Search 
+
+    class Solution {
+    public:
+        int findDuplicate(vector<int>& nums) {
+            int n = nums.size(), i = 0, counter = 0;
+            int left = 1, right = n - 1, mid = 0;
+            
+            while (left < right)
+            {
+                mid = left + (right - left) / 2;
+                
+                counter = 0;
+                for (i = 0; i < n; ++i)
+                {
+                    if (nums[i] <= mid)
+                        ++counter;
+                }
+                
+                if (counter > mid)
+                    right = mid;
+                else 
+                    left = mid + 1;
+            }
+            
+            return left;
+        }
+    };
+
+(2)http://keithschwarz.com/interesting/code/find-duplicate/FindDuplicate.python.html
+
+    class Solution {
+    public:
+        int findDuplicate(vector<int>& nums) {
+            int slow = 0, fast = 0, finder = 0;
+            
+            while (1)
+            {
+                slow = nums[slow];
+                fast = nums[nums[fast]];
+                
+                if (slow == fast)
+                    break;
+            }
+            
+            
+            while (1)
+            {
+                finder = nums[finder];
+                slow = nums[slow];
+                
+                if (finder == slow)
+                    return finder;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A java solution, O(n) time and O(1) Space
+    public int findDuplicate(int[] nums) {
+        int fast, slow;
+		
+		fast = slow = nums[0];
+		
+		do {
+			fast = nums[nums[fast]];
+			slow = nums[slow];
+		} while (fast != slow);
+		
+		slow = nums[0];
+		while (fast != slow) {
+			fast = nums[fast];
+			slow = nums[slow];
+		}
+		
+		return fast;
+    }
+
+These numbers constitute a linked list and the value of the node (a array cell) is the index of the next node, and there must be a cycle. Therefore, we use the classical "fast and slow pointers". And you can read the detail which is given at [findArrayDuplicate][1].
+
+
+  [1]: http://keithschwarz.com/interesting/code/?dir=find-duplicate
+
+----------------------------------------------------------------------------------------------------
+O(N) without extra space &amp; without modifying the array
+    //Basically transfer the problem to finding the beginning of cycle in linked list.     
+    public int findDuplicate(int[] nums) {
+                if(nums.length ==0 )
+                    return 0;
+                int slow=0, fast=0;
+                slow = nums[slow];
+                fast = nums[nums[fast]];
+                while(slow != fast){
+                    if(slow == nums[slow])
+                        return slow;
+                    slow = nums[slow];
+                    fast = nums[nums[fast]];
+                }
+                fast = 0;
+                while(slow != fast){
+                    if(slow == nums[slow])
+                        return slow;
+                    slow = nums[slow];
+                    fast = nums[fast];
+                }
+                return slow;
+            }
+
+----------------------------------------------------------------------------------------------------
+Java O(1) space O(nlgn) time solution
+Every time, we scan all the array to find how many numbers are in range of [low, mid), [mid, mid] and (mid, high)
+
+    public static int findDuplicate(int[] nums) {
+      
+        int low = 1; //[low, high)
+        int high = nums.length;
+        while(low < high){
+          int mid = low + (high - low) / 2;
+          int leftCount = 0;
+          int rightCount = 0;
+          int midCount = 0;
+          for(int i : nums){
+            if(i == mid){
+              ++midCount;
+            }else if(i >= low && i < mid){ //[low, mid]
+              ++leftCount;
+            }else if(i > mid && i < high){ //(mid, high)
+              ++rightCount;
+            }
+          }
+          if(midCount > 1){
+            return mid;
+          }else if(leftCount > (mid - low)){//[1, 4) 3
+            high = mid;
+          }else if(rightCount > (high - mid - 1)){//(4, 8) 3
+            low = mid + 1;
+          }
+          
+        }
+        return low;
+    }
+
+----------------------------------------------------------------------------------------------------
+16 ms c++ o(n)time o(1)space solution
+Very straight forward solution:
+
+1) Just count how many 1 should appear on each bit from 1 to n
+
+2) and count again how many actually appears
+
+3) set the bit with extra 1s to 1 and return the result
+
+
+===============*^^*====================
+
+Short explanation:
+
+Say you happen to have 1 to n plus x, then you have extra 1 and extra 0 at places that x has 1 and 0.
+
+ If you have more than two x, then for each additional x you have to delete any number from 1 to n and add an x, which will only add to the number of 1s, if not remain unchanged, in the place that have extra 1s. 
+
+In this case I scan each element once for each bit. Since there are at most 64 bits or 32 bits I consider it a O(n) solution. I improved it a little with scanning only the number of bits needed.
+
+    int findDuplicate(vector<int>& nums) {
+        int result = 0, count,bit,i;
+        
+        for(bit = 1; bit >0 && bit < nums.size(); bit <<= 1 )
+        {
+            count = 0;
+            for(i = 0;i<nums.size();i++) count += bool(nums[i]&bit) - bool(i&bit);
+            if(count > 0) result |= bit;
+        }
+        return result;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple 5 line Python solution using binary search
+The idea is that if you have a number (e.g. 5) and there are 5 numbers in the array that are less than or equal to 5 then the duplicate has to be a number greater than 5.  Otherwise, by the pigeonhole principle the duplicate has to be one of the numbers between 1 and 5 inclusive.
+
+    class Solution(object):
+        def findDuplicate(self, nums):
+            left, right = 1, len(nums)-1
+            while left < right:
+               mid = (right + left)/2
+               left, right = [left, mid] if sum(i <= mid for i in nums) > mid else [mid+1, right]
+            return right
+
+----------------------------------------------------------------------------------------------------
+A pinch of invisible cheat
+I found a way to cheat by modifying the array but only during the algorithm time. The idea is simple : mark revealed case by inverting its content. If a case inverted more than once, then I've found the number that appears more than once.
+
+Here is a C++ implementation :
+
+    class Solution {
+    public:
+        int findDuplicate(vector<int>& nums) {
+            int n = -1;
+            for(int i = 0; i < nums.size(); i++) {
+                n = std::abs(nums[i]);
+                if(nums[n] < 0) {
+                    break;
+                }
+                else {
+                    nums[n] *= -1;
+                }
+            }
+            for(int j = 0; j < nums.size(); j++) {
+                nums[j] = std::abs(nums[j]);
+            }
+            return n;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

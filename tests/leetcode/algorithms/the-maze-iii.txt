@@ -1,0 +1,328 @@
+Easy python solution with explaination
+def repeatedSubstringPattern(self, str):
+
+        """
+        :type str: str
+        :rtype: bool
+        """
+        if not str:
+            return False
+            
+        ss = (str + str)[1:-1]
+        return ss.find(str) != -1
+
+
+----------------------------------------------------------------------------------------------------
+Java Simple Solution with Explanation
+true
+
+----------------------------------------------------------------------------------------------------
+Java &amp; O(n)
+public boolean repeatedSubstringPattern(String str) {
+	        //This is the kmp issue
+	        int[] prefix = kmp(str);
+	        int len = prefix[str.length()-1];
+	        int n = str.length();
+	        return (len > 0 && n%(n-len) == 0);
+	    }
+	    private int[] kmp(String s){
+	        int len = s.length();
+	        int[] res = new int[len];
+	        char[] ch = s.toCharArray();
+	        int i = 0, j = 1;
+	        res[0] = 0;
+	        while(i < ch.length && j < ch.length){
+	            if(ch[j] == ch[i]){
+	                res[j] = i+1;
+	                i++;
+	                j++;
+	            }else{
+	                if(i == 0){
+	                    res[j] = 0;
+	                    j++;
+	                }else{
+	                    i = res[i-1];
+	                }
+	            }
+	        }
+	        return res;
+	    }
+
+----------------------------------------------------------------------------------------------------
+29 ms CPP simple solution. No KMP.
+class Solution {
+public:
+    bool repeatedSubstringPattern(string str) {
+        string nextStr = str;
+        int len = str.length();
+        if(len < 1) return false;
+        for(int i = 1; i <= len / 2; i++){
+            if(len % i == 0){
+                nextStr = leftShift(str, i);
+                if(nextStr == str) return true;
+            }
+        }
+        return false;
+    }
+    
+    string leftShift(string &str, int l){
+        string ret = str.substr(l);
+        ret += str.substr(0, l);
+        return ret;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) using KMP, 32ms, 8 lines of code with brief explanation.
+    bool repeatedSubstringPattern(string str) {
+        int i = 1, j = 0, n = str.size();
+        vector<int> dp(n+1,0);
+        while( i < str.size() ){
+            if( str[i] == str[j] ) dp[++i]=++j;
+            else if( j == 0 ) i++;
+            else j = dp[j];
+        }
+        return dp[n]&&dp[n]%(n-dp[n])==0;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+From intuitive-but-slow to really-fast-but-a-little-hard-to-comprehend.
+public class Solution {
+    public boolean repeatedSubstringPattern(String str) {
+        int l = str.length();
+        for(int i = (l + 1) / 2; i < l; i++) {
+            if(l % (l - i) == 0) {
+                String prefix = str.substring(0, i);
+                String remainder = str.substring(i);
+                String suffix = str.substring(l - i);
+                if(str.startsWith(remainder) && suffix.equals(prefix)){
+                    return true;
+                }
+            }
+        }
+        return false;
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution, 2 lines
+    public boolean repeatedSubstringPattern(String str) {
+        String s = str + str;
+        return s.substring(1, s.length() - 1).contains(str);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My one-line c++ solution
+bool repeatedSubstringPattern(string str) 
+    {
+        return (str + str).substr(1, str.size() * 2 - 2).find(str)!=-1;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my simple solution
+public class Solution {
+    public boolean repeatedSubstringPattern(String str) {
+        int len = str.length();
+        if(len<2) return false;
+        for(int i=2;i<=len;i++){
+            if(len%i!=0) continue;
+            if(check(str, i)) return true;
+        }
+        return false;
+    }
+    public boolean check(String str, int repeat){
+        int len = str.length();
+        String cand = str.substring(0, len/repeat);
+        for(int i=0;i<len;i++){
+            if(str.charAt(i)!=cand.charAt(i%(len/repeat))) return false;
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+1 line in Python
+s[:i] * (len(s) / d) == s
+
+----------------------------------------------------------------------------------------------------
+One line with RegEx
+public class Solution {
+    public boolean repeatedSubstringPattern(String str) {
+        return str.matches("(.+)\\1+");
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n^2) accepted solution
+    public boolean repeatedSubstringPattern(String str) {
+        for(int i = 1; i <= str.length()/2; i++) {
+            String pattern = str.substring(0, i);
+            if(isRepeated(str.substring(i), pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isRepeated(String s, String pattern) {
+        if(s == null || s.isEmpty()) {
+            return true;
+        }
+        if(!s.startsWith(pattern)) {
+            return false;
+        }
+        
+        return isRepeated(s.substring(pattern.length()), pattern);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Repeated Substring Pattern - Simple Java Solution, using KMP
+public class Solution {
+    /* KMP pattern table construction part */
+    public boolean repeatedSubstringPattern(String str) {
+        int n = str.length(), cur = 0, j = 1;
+        int[] pattern = new int[n];
+        pattern[0] = 0;
+        
+        while( j<n ) {
+            if( str.charAt(cur) == str.charAt(j) ) {
+                pattern[j++] = ++cur;
+            }
+            else {
+                if( cur == 0 )  pattern[j++] = 0;
+                else cur = pattern[cur-1]; /* start from beginning of current matching pattern */
+            }
+        }
+        
+        return (pattern[n-1] > 0 && n%(n-pattern[n-1]) == 0);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution, beat 100% in 49ms
+<p>&#39;&#39;&#39;<br/>
+class Solution(object):<br/>
+def repeatedSubstringPattern(self, str):<br/>
+&#34;&#34;&#34;<br/>
+:type str: str<br/>
+:rtype: bool<br/>
+&#34;&#34;&#34;<br/>
+ss = (str*2)&#91;1:-1&#93;<br/>
+return str in ss<br/>
+&#39;&#39;&#39;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python KMP O(n)
+class Solution(object):
+    def repeatedSubstringPattern(self, str):
+        """
+        :type str: str
+        :rtype: bool
+        """
+        def computeLPS(str):
+            lps=[0]*len(str)
+            i=1
+            length=0
+            
+            while i<len(str):
+                if str[i]==str[length]:
+                    length+=1
+                    lps[i]=length
+                    i+=1
+                else:
+                    if length:
+                        length=lps[length-1]
+                    else:
+                        lps[i]=0
+                        i+=1
+            return lps 
+        
+        lps = computeLPS(str)
+        n = len(str)
+        lenn = lps[-1]
+        if lenn and n%(n-lenn)==0:
+            return True 
+        else:
+            return False 
+
+
+----------------------------------------------------------------------------------------------------
+1-line C++ solution: return (s+s).find(s,1) &lt; s.size() with proof!
+(s+s).substr(L,N) == s
+
+----------------------------------------------------------------------------------------------------
+Java Solution (using prime numbers) beats 97.59% (16ms)
+int[] primes = {};//array of primes
+int l = s.length();
+if (l == 0) {
+    return false;
+}
+int index = 0;
+int count;
+while (index < primes.length) {
+    count = primes[index];
+    if (l % count == 0) {
+        int len = l / count;
+        //System.out.println("Len is: " + len);
+        String subS = s.substring(0, len);
+        //System.out.println(subS);
+        int i;
+        for (i = 1; i < count; i++) {
+            if (!subS.equals(s.substring(i * len, len + len * i))) {
+                break;
+            }
+        }
+        if (i == count) {
+            return true;
+        }
+    }
+    index++;
+}
+return false;
+
+----------------------------------------------------------------------------------------------------
+Easy and fast Python
+def repeatedSubstringPattern(self, s):
+    n = len(s)
+    return any(m > 1 and m * s[:n/m] == s
+               for d in range(1, int(n**0.5+2))
+               if n % d == 0
+               for m in {d, n/d})
+
+
+----------------------------------------------------------------------------------------------------
+python regular expression solution
+def repeatedSubstringPattern(self, str):
+    """
+    :type str: str
+    :rtype: bool
+    """
+    import re
+    return bool(re.match(r"^([a-z]+)\1+$", str))
+
+----------------------------------------------------------------------------------------------------
+My JAVA Solution with regex
+public class Solution {
+    public boolean repeatedSubstringPattern(String str) {
+        if(str == null || str.length() < 2) return false;
+        
+        boolean result = false;
+        for(int i = 1; i <= str.length()/2; i++) {
+            if(str.length()%i != 0) continue;
+            String regex = "("+str.substring(0,i)+")" + "+";
+            result = result | str.matches(regex);
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

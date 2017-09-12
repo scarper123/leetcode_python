@@ -1,0 +1,413 @@
+3 lines with O(1) space, 1-Liners, Alternatives
+Just walk down from the whole tree's root as long as both p and q are in the same subtree (meaning their values are both smaller or both larger than root's). This walks straight from the root to the LCA, not looking at the rest of the tree, so it's pretty much as fast as it gets. A few ways to do it:
+
+**Iterative, O(1) space**
+
+Python
+
+    def lowestCommonAncestor(self, root, p, q):
+        while (root.val - p.val) * (root.val - q.val) > 0:
+            root = (root.left, root.right)[p.val > root.val]
+        return root
+
+Java
+
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        while ((root.val - p.val) * (root.val - q.val) > 0)
+            root = p.val < root.val ? root.left : root.right;
+        return root;
+    }
+
+(in case of overflow, I'd do `(root.val - (long)p.val) * (root.val - (long)q.val)`)
+
+Different Python
+
+    def lowestCommonAncestor(self, root, p, q):
+        a, b = sorted([p.val, q.val])
+        while not a <= root.val <= b:
+            root = (root.left, root.right)[a > root.val]
+        return root
+
+"Long" Python, maybe easiest to understand
+
+    def lowestCommonAncestor(self, root, p, q):
+        while root:
+            if p.val < root.val > q.val:
+                root = root.left
+            elif p.val > root.val < q.val:
+                root = root.right
+            else:
+                return root
+
+**Recursive**
+
+Python
+
+    def lowestCommonAncestor(self, root, p, q):
+        next = p.val < root.val > q.val and root.left or \
+               p.val > root.val < q.val and root.right
+        return self.lowestCommonAncestor(next, p, q) if next else root
+
+Python One-Liner
+
+    def lowestCommonAncestor(self, root, p, q):
+        return root if (root.val - p.val) * (root.val - q.val) < 1 else \
+               self.lowestCommonAncestor((root.left, root.right)[p.val > root.val], p, q)
+
+Java One-Liner
+
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        return (root.val - p.val) * (root.val - q.val) < 1 ? root :
+               lowestCommonAncestor(p.val < root.val ? root.left : root.right, p, q);
+    }
+
+"Long" Python, maybe easiest to understand
+
+    def lowestCommonAncestor(self, root, p, q):
+        if p.val < root.val > q.val:
+            return self.lowestCommonAncestor(root.left, p, q)
+        if p.val > root.val < q.val:
+            return self.lowestCommonAncestor(root.right, p, q)
+        return root
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            if(root.val > p.val && root.val > q.val){
+                return lowestCommonAncestor(root.left, p, q);
+            }else if(root.val < p.val && root.val < q.val){
+                return lowestCommonAncestor(root.right, p, q);
+            }else{
+                return root;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy C++ Recursive and Iterative Solutions
+Well, remember to take advantage of the property of binary search trees, which is, `node -> left -> val < node -> val < node -> right -> val`. Moreover, both `p` and `q` will be the descendants of the `root` of the subtree that contains both of them. And the `root` with the largest depth is just the lowest common ancestor. This idea can be turned into the following simple recursive code.
+
+    class Solution {
+    public:
+        TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+            if (p -> val < root -> val && q -> val < root -> val)
+                return lowestCommonAncestor(root -> left, p, q);
+            if (p -> val > root -> val && q -> val > root -> val)
+                return lowestCommonAncestor(root -> right, p, q);
+            return root;
+        }
+    };
+
+Of course, we can also solve it iteratively.
+
+    class Solution { 
+    public:
+        TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+            TreeNode* cur = root;
+            while (true) {
+                if (p -> val < cur -> val && q -> val < cur -> val)
+                    cur = cur -> left;
+                else if (p -> val > cur -> val && q -> val > cur -> val)
+                    cur = cur -> right;
+                else return cur; 
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+11ms java solution, 3 lines
+     public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root.val<Math.min(p.val,q.val)) return lowestCommonAncestor(root.right,p,q);
+        if(root.val>Math.max(p.val,q.val)) return lowestCommonAncestor(root.left,p,q);
+        return root;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clear Java 10 ms
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root==null) return null;
+        if(p.val<root.val&&q.val<root.val) {
+            return lowestCommonAncestor(root.left,p,q);
+        }
+        else if(p.val>root.val&&q.val>root.val){
+            return lowestCommonAncestor(root.right,p,q);
+        }
+        else
+        return root;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python Iterative Solution
+    class Solution:
+
+    def lowestCommonAncestor(self, root, p, q):
+        while root:
+            if root.val > p.val and root.val > q.val:
+                root = root.left
+            elif root.val < p.val and root.val < q.val:
+                root = root.right
+            else:
+                return root
+
+
+
+
+----------------------------------------------------------------------------------------------------
+3-lines Java concise and easy understanding solution
+        if(root.val > p.val && root.val > q.val) return lowestCommonAncestor(root.left, p, q);
+        else if(root.val < p.val && root.val < q.val) return lowestCommonAncestor(root.right, p, q);
+        else return root;
+
+----------------------------------------------------------------------------------------------------
+My java solution to share
+public class Solution {
+
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(p.val>q.val)
+            return lowestCommonAncestor(root, q,p);
+        if(root.val>= p.val && root.val<=q.val)
+            return root;
+        return lowestCommonAncestor(root.val>p.val?root.left:root.right, p,q);    
+    }
+
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution . 40ms
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Solution {
+    public:
+        TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+            if(!root){
+                return NULL;
+            }
+            // check if the current value is larger than both nodes , go left
+            if(p->val < root->val && q->val < root->val){
+                lowestCommonAncestor(root->left , p , q);
+             // go right
+            }else if(p->val > root->val && q->val > root->val){
+                lowestCommonAncestor(root->right , p , q);
+            }// my LCA 
+            else{
+                return root;
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution:)
+    /**
+     * Definition for a binary tree node.
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            while(true){
+              if((root.val-p.val)*(root.val-q.val)<=0) return root;
+              if(p.val<root.val){
+                 root=root.left;
+              }
+             else{
+                  root=root.right;
+              }
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+    If the given both nodes values are less than that of root, then both the nodes must be on the left side of the root , so now we have to check only left tree of the root.
+    Otherwise If the given both nodes values are greater than that of root, then both the nodes must be on the right side of the root , so now we have to check only right tree of the root.
+    Otherwise . both the nodes will be on the either side of the root, this implies the lowest common ancestor is root.
+    
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            if(p.val < root.val && q.val < root.val){
+            return lowestCommonAncestor(root.left,p,q);}
+            else if(p.val > root.val && q.val > root.val){
+            return lowestCommonAncestor(root.right,p,q);}
+            else{
+            return root;}
+        }
+
+----------------------------------------------------------------------------------------------------
+No Comparison needed! (Java)
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            
+            if(root==null || root==p || root==q) return root;
+            
+            TreeNode left = lowestCommonAncestor(root.left,p,q);
+            TreeNode right = lowestCommonAncestor(root.right,p,q);
+            
+            if(left==null) return right;
+            if(right==null) return left;
+            
+            return root;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My Python recursive solution
+
+
+    class Solution:
+        # @param {TreeNode} root
+        # @param {TreeNode} p
+        # @param {TreeNode} q
+        # @return {TreeNode}
+        def lowestCommonAncestor(self, root, p, q):
+            if not root or not p or not q:
+                return None
+            if (max(p.val, q.val) < root.val):
+                return self.lowestCommonAncestor(root.left, p, q)
+            elif (min(p.val, q.val) > root.val):
+                return self.lowestCommonAncestor(root.right, p, q)
+            else:
+                return root
+
+----------------------------------------------------------------------------------------------------
+3 lines non-recursive solution in Java
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        while(true){
+          if((root.val-p.val)*(root.val-q.val) <= 0) return root;
+          root = p.val < root.val ? root.left : root.right;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+1 line solution - java
+If both p and q in same direction (less or greater than), then change the root to its child in that direction. otherwise for all other cases it has to be the root.    
+  
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        return (p.val<root.val && q.val<root.val) ? lowestCommonAncestor(root.left,p,q) : (p.val>root.val && q.val>root.val) ? lowestCommonAncestor(root.right,p,q) : root;
+        }
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+    /**
+     * Definition for a binary tree node.
+     * public class TreeNode {
+     *     int val;
+     *     TreeNode left;
+     *     TreeNode right;
+     *     TreeNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            if (p == null || q == null || root == null){
+                return null;
+            }
+            if (p.val < root.val && q.val < root.val){
+                return lowestCommonAncestor (root.left, p , q);
+            }
+            else if (p.val > root.val && q.val > root.val){
+                return lowestCommonAncestor (root.right, p , q);
+            }
+            else {
+                return root;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My 40ms C++ Solution
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+            if(!root) return root;
+        
+        	if((root->val - p->val)*(root->val - q->val)<=0) return root;
+
+        	if((root->val - p->val)>0 && (root->val - q->val)>0) return lowestCommonAncestor(root->left,p,q);
+
+        	if((root->val - p->val)<0 && (root->val - q->val)<0) return lowestCommonAncestor(root->right,p,q);
+        
+        }
+
+----------------------------------------------------------------------------------------------------
+My accepted JAVA solution
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+             if(root==null)
+            	 return null;
+             if(p.val<root.val&&q.val<root.val)
+             {
+            	 return lowestCommonAncestor(root.left,p,q);
+             }
+             if(p.val>root.val&&q.val>root.val)
+             {
+            	 return lowestCommonAncestor(root.right,p,q);
+             }else{
+            	 
+            	 return root;
+             }
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+20ms C solution; iterative
+    typedef struct TreeNode tn;
+    /* tn* lowestCommonAncestor(struct TreeNode* root, struct TreeNode* p, struct TreeNode* q) */
+    tn* lowestCommonAncestor(tn* root, tn* p, tn* q)
+    {
+      /* assume p is on the left */
+      if(p->val>q->val)
+      {
+        tn* tmp = p;
+        p=q, q=tmp;
+      }
+      
+      tn* lca = root;
+      while(!(p->val<=lca->val && q->val>=lca->val))
+      {
+        if(p->val > lca->val)
+          lca = lca->right;
+        else if(q->val < lca->val)
+          lca = lca->left;
+      }    
+    
+      return lca;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple while loop java solution
+    public class Solution {
+        public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+            boolean change=true;
+            while(change){       //when p and q on the two side of BST (or one is equal to root), exit the loop
+                change=false;
+                while(p.val<root.val&&q.val<root.val){
+                    root=root.left;
+                    change=true;
+                }
+                
+                while(p.val>root.val&&q.val>root.val){
+                    root=root.right;
+                    change=true;
+                }
+            }
+            
+            
+            return root;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

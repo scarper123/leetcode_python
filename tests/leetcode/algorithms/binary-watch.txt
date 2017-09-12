@@ -1,0 +1,263 @@
+Why factor 2 or 3? The math behind this problem.
+I saw many solutions were referring to factors of 2 and 3. But why these two magic numbers? Why other factors do not work?
+Let's study the math behind it.
+
+For convenience, say **n** is sufficiently large and can be broken into any smaller real positive numbers. We now try to calculate which real number generates the largest product.
+Assume we break **n** into **(n / x)**  **x**'s, then the product will be **x<sup>n/x</sup>**, and we want to maximize it.
+
+Taking its derivative gives us **n * x<sup>n/x-2</sup> * (1 - ln(x))**.
+The derivative is positive when **0 < x < e**, and equal to **0** when **x = e**, then becomes negative when **x > e**,
+which indicates that the product increases as **x** increases, then reaches its maximum when **x = e**, then starts dropping.
+
+This reveals the fact that if **n** is sufficiently large and we are allowed to break **n** into real numbers,
+the best idea is to break it into nearly all **e**'s.
+On the other hand, if **n** is sufficiently large and we can only break **n** into integers, we should choose integers that are closer to **e**.
+The only potential candidates are **2** and **3** since **2 < e < 3**, but we will generally prefer **3** to **2**. Why?
+
+Of course, one can prove it based on the formula above, but there is a more natural way shown as follows.
+
+**6 = 2 + 2 + 2 = 3 + 3**. But **2 * 2 * 2 < 3 * 3**.
+Therefore, if there are three **2**'s in the decomposition, we can replace them by two **3**'s to gain a larger product.
+
+All the analysis above assumes **n** is significantly large. When **n** is small (say **n <= 10**), it may contain flaws.
+For instance, when **n = 4**, we have **2 * 2 > 3 * 1**.
+To fix it, we keep breaking **n** into **3**'s until **n** gets smaller than **10**, then solve the problem by brute-force.
+
+
+----------------------------------------------------------------------------------------------------
+A simple explanation of the math part and a O(n) solution
+The first thing we should consider is : What is the max product if we break a number N into two factors?
+
+I use a function to express this product: f=x(N-x)
+
+When x=N/2, we get the maximum of this function.
+
+However, factors should be integers. Thus the maximum is (N/2)*(N/2) when N is even or (N-1)/2 *(N+1)/2 when N is odd.
+
+When the maximum of f is larger than N, we should do the break.
+
+(N/2)*(N/2)>=N, then N>=4
+
+(N-1)/2 *(N+1)/2>=N, then N>=5
+
+These two expressions mean that factors should be less than 4, otherwise we can do the break and get a better product. The factors in last result should be 1, 2 or 3. Obviously, 1 should be abandoned. Thus, the factors of the perfect product should be 2 or 3.
+
+The reason why we should use 3 as many as possible is 
+
+For 6, 3 * 3>2 * 2 * 2. Thus, the optimal product should contain no more than three 2. 
+
+Below is my accepted, O(N) solution.
+
+    public class Solution {
+        public int integerBreak(int n) {
+            if(n==2) return 1;
+            if(n==3) return 2;
+            int product = 1;
+            while(n>4){
+                product*=3;
+                n-=3;
+            }
+            product*=n;
+            
+            return product;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java DP solution
+    public int integerBreak(int n) {
+           int[] dp = new int[n + 1];
+           dp[1] = 1;
+           for(int i = 2; i <= n; i ++) {
+               for(int j = 1; j < i; j ++) {
+                   dp[i] = Math.max(dp[i], (Math.max(j,dp[j])) * (Math.max(i - j, dp[i - j])));
+               }
+           }
+           return dp[n];
+        }
+
+----------------------------------------------------------------------------------------------------
+O(log(n)) Time solution with explanation
+Given a number n lets say we have a possible product P = p1 * p2 * ... *pk. Then we notice what  would happen if we could break pi up into two more terms lets say one of the terms is 2 we would get the terms  pi-2 and 2 so if 2*(pi-2) > pi we would get a bigger product and this happens if pi > 4. since there is one other possible number less then 4 that is not 2  aka 3. Likewise for 3 if we instead breakup the one of the terms into pi-3 and 3 we would get a bigger product if 3*(pi-3) > pi which happens if  pi > 4.5.
+
+Hence we see that all of the terms in the product must be 2's and 3's. So we now just need to write n = a*3 + b*2 such that P =  (3^a) * (2^b) is maximized. Hence we should favor more 3's then 2's in the product then 2's if possible. 
+
+So if n = a*3 then the answer will just be 3^a. 
+
+if n = a*3 + 2 then the answer will be 2*(3^a).
+
+and if n = a*3  + 2*2  then the answer will be 2 * 2 * 3^a
+
+The above three cover all cases  that n can be written as and the Math.pow() function takes O(log n) time to preform hence that is the running time.
+
+
+    public class Solution {
+        public int integerBreak(int n) {
+            if(n == 2)
+                return 1;
+            else if(n == 3)
+                return 2;
+            else if(n%3 == 0)
+                return (int)Math.pow(3, n/3);
+            else if(n%3 == 1)
+                return 2 * 2 * (int) Math.pow(3, (n - 4) / 3);
+            else 
+                return 2 * (int) Math.pow(3, n/3);
+        }
+                
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand C++ with explanation
+For any integer `p` strictly greater than `4`, it has the property such that `3 * (p - 3) > p`, which means breaking it into two integers `3` and `p - 3` makes the product larger while keeping the sum unchanged. If `p - 3` is still greater than `4`, we should break it again into `3` and `p - 6`, giving `3 * 3 * (p - 6)`, and so on, until we cannot break it (less than or equal to 4) anymore. 
+
+For integer `4`, breaking it into `2 * 2` or keeping it as `4` does not change its contribution to the product. 
+We cannot have more than two `4`s, because `2 * 3 * 3 > 4 * 4`. We cannot have more than three `2`s because `3 * 3 > 2 * 2 * 2`. 
+
+
+    class Solution {
+    public:
+        long long integerBreak(long long n) {
+            if(n == 2) return 1;
+            if(n == 3) return 2;
+            if(n == 4) return 4;
+            if(n == 5) return 6;
+            if(n == 6) return 9;
+            return 3 * integerBreak(n - 3);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share some thought process about this problem
+    If we want to break a number, breaking it into 3s turns out to be the most efficient.
+    2^3 < 3^2
+    4^3 < 3^4
+    5^3 < 3^5
+    6^3 < 3^6
+    ...
+    
+    Therefore, intuitively, we want as many 3 as possible 
+    if a number % 3 == 0, we just break it into 3s -> the product is Math.pow(3, n/3)
+
+    As for numbers % 3 == 1, we don't want the 'times * 1' in the end; 
+        borrowing a 3 is a natural thought. 
+        if we borrow a 3, 3 can be divided into 
+             case 1: 1 + 2 -> with the extra 1, we have 2*2 = 4
+             case 2: (0) + 3 -> with the extra 1, we have 4
+             turns out these two cases have the same results
+        so, for numbers % 3 == 1 -> the result would be Math.pow(3, n/3-1)*4
+
+    Then we have the numbers % 3 == 2 left
+         again, we try to borrow a 3,
+             case 1: 1+2 -> with the extra 2, we have 1*5 or 3*2 => 3*2 is better
+             case 2: 0+3 -> with the extra 2, we have 2*3 or 5 => 2*3 is better
+         and we actually just end up with not borrowing at all! 
+         so we can just *2 if we have an extra 2 -> the result would be Math.pow(3, n/3)*2
+
+    Then, we have a couple corner cases two deal with since so far we only looked at 
+    numbers  that are larger than 3 -> luckily, we only have 2 and 3 left, 
+    which are pretty easy to figure out
+    
+    Thus my final solution is 
+
+    public class Solution {
+        public int integerBreak(int n) {
+            if(n <= 3) return n-1; //assuming n >= 2
+            return n%3 == 0 ? (int)Math.pow(3, n/3) : n%3 == 1 ? (int)Math.pow(3, n/3-1)*4 : (int)Math.pow(3, n/3)*2;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ dynamic programming solution
+    class Solution {
+    public:
+        int integerBreak(int n) {
+            
+            if (n <= 2)
+                return 1;
+
+            vector<int> maxArr(n+1, 0);
+                        
+            /** For a number i: write i as a sum of integers, then take the product of those integers.
+            maxArr[i] = maximum of all the possible products */
+            
+            maxArr[1] = 0;
+            maxArr[2] = 1; // 2=1+1 so maxArr[2] = 1*1
+            
+            for (int i=3; i<=n; i++) {
+                for (int j=1; j<i; j++) {
+                    /** Try to write i as: i = j + S where S=i-j corresponds to either one number or a sum of two or more numbers
+                    
+                    Assuming that j+S corresponds to the optimal solution for maxArr[i], we have two cases:
+                    (1) i is the sum of two numbers, i.e. S=i-j is one number, and so maxArr[i]=j*(i-j)
+                    (2) i is the sum of at least three numbers, i.e. S=i-j is a sum of at least 2 numbers,
+                    and so the product of the numbers in this sum for S is maxArr[i-j]
+                    (=maximum product after breaking up i-j into a sum of at least two integers):
+                    maxArr[i] = j*maxArr[i-j]
+                    */
+                    maxArr[i] = max(maxArr[i], max(j*(i-j), j*maxArr[i-j]));
+                }
+            }
+            return maxArr[n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution
+    Basic idea is to divide your number into threes unless when the last number is 4
+Eg : 
+
+    7 = 3 * 2 * 2
+    8 = 3 * 3 * 2
+    9 = 3 * 3 * 3
+    10 = 3 * 3 * 2 * 2
+    11 = 3 * 3 * 3 * 2
+    12 = 3 * 3 * 3 * 3
+    13 = 3 * 3 * 3 * 2 * 2
+See, the pattern?
+
+   	public static int integerBreak(int n) {
+		if(n==2||n==3) return n-1;
+		if(n==4) return 4;
+		int temp = n;
+		int sum = 1;
+		while(temp>4){
+			temp = temp -3;
+			sum = sum*3;
+		}
+			return sum*temp;
+	}
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution with DP
+    class Solution {
+    public:
+        int integerBreak(int n) {
+            int dp[n + 1];
+            dp[0] = 0;
+            dp[1] = 1;
+            dp[2] = 1;
+            dp[3] = 2;
+            dp[4] = 4;
+            for (int i = 5; i <= n; ++i) {
+                dp[i] = 3 * max(i - 3, dp[i - 3]);
+            }
+            return dp[n];
+        }
+    };
+
+2 => 1, 1 => 1  
+3 => 2, 1 => 2  
+4 => 2, 2 => 4  
+5 => 3, 2 => 6  
+6 => 3, 3 => 9  
+7 => 3, 4 => 12  
+8 => 3, 5 => 18  
+9 => 3, 6 => 27  
+10 => 3, 7 => 36  
+
+By observation, when you get maximum, one of the num is always 3.   
+After 3, the result will be larger than or equal the number itself.
+
+----------------------------------------------------------------------------------------------------
+Java O(n) DP solution, store and reuse products

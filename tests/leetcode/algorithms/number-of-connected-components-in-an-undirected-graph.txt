@@ -1,0 +1,434 @@
+Possible solutions.
+This problem seems trivial, so lets try different approaches to solve it:
+
+Starting from worst time complexity to the best one:
+
+----------
+
+Time complexity: O(N^2), memory: O(1)
+
+The naive approach would be to run a iteration for each element and see whether a duplicate value can be found: this results in O(N^2) time complexity.
+
+----------
+
+    public boolean containsDuplicate(int[] nums) {
+    
+            for(int i = 0; i < nums.length; i++) {
+                for(int j = i + 1; j < nums.length; j++) {
+                    if(nums[i] == nums[j]) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+----------
+
+Time complexity: O(N lg N), memory: O(1) - not counting the memory used by sort
+
+Since it is trivial task to find duplicates in sorted array, we can sort it as the first step of the algorithm and then search for consecutive duplicates.
+
+----------
+
+        public boolean containsDuplicate(int[] nums) {
+    
+            Arrays.sort(nums);
+            for(int ind = 1; ind < nums.length; ind++) {
+                if(nums[ind] == nums[ind - 1]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+----------
+
+Time complexity: O(N), memory: O(N)
+
+Finally we can used a well known data structure hash table that will help us to identify whether an element has been previously encountered in the array.
+
+----------
+
+    public boolean containsDuplicate(int[] nums) {
+    
+        final Set<Integer> distinct = new HashSet<Integer>();
+        for(int num : nums) {
+            if(distinct.contains(num)) {
+                return true;
+            }
+            distinct.add(num);
+        }
+        return false;
+    }
+
+----------
+
+This is trivial but quite nice example of space-time tradeoff.
+
+----------------------------------------------------------------------------------------------------
+Single line C++ solution 60ms
+Using anonymous set<>.<br>
+Not the most efficient as many already pointed out... but if you like one-liners ;) <br>
+akin to the solution possible with python. 
+
+    #include <set>
+    using namespace std;
+    
+    class Solution {
+    public:
+        bool containsDuplicate(vector<int>& nums) {
+            return nums.size() > set<int>(nums.begin(), nums.end()).size();        
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+5 lines in Java
+The Set's add method can be used for this situation,because it will return false if the element already exists .   
+
+    public  boolean containsDuplicate(int[] nums) {
+    		 Set<Integer> set = new HashSet<Integer>();
+    		 for(int i : nums)
+    			 if(!set.add(i))// if there is same
+    				 return true; 
+    		 return false;
+    	 }
+
+----------------------------------------------------------------------------------------------------
+One line solution in python
+    class Solution(object):
+    def containsDuplicate(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        """
+        return len(nums) != len(set(nums))
+
+----------------------------------------------------------------------------------------------------
+C++ solution. simply one line.
+    class Solution {
+      public:
+        bool containsDuplicate(vector<int>& nums) {
+            return set<int>(nums.begin(), nums.end()).size() < nums.size();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+12ms C language solution with in-house HashSet
+    struct Node
+    {
+        int val;
+        struct Node *next;
+    };
+    
+    struct Set
+    {
+        int bucketSize;
+        struct Node **table;
+    };
+    
+    void initSet(struct Set *set, int bucketSize)
+    {
+        set->bucketSize = bucketSize;
+        set->table = malloc(sizeof(struct Node*) * bucketSize);
+        memset(set->table, 0, sizeof(struct Node*) * bucketSize);
+    }
+    
+    bool addValue(struct Set *s, int val)
+    {
+        int idx = val > 0 ? val : -val;
+        idx %= s->bucketSize;
+        struct Node *ptr = s->table[idx];
+        while(ptr != NULL)
+        {
+            if(ptr->val == val)
+            {
+                return false;
+            }
+        
+            ptr = ptr->next;
+        }
+        ptr = malloc(sizeof(struct Node));
+        ptr->val = val;
+        ptr->next = s->table[idx];
+        s->table[idx] = ptr;
+        return true;
+    }
+    void releaseSet(struct Set *s)
+    {
+        struct Node *ptr, *tmp;
+        for(int i = 0; i < s->bucketSize; ++i)
+        {
+            ptr = s->table[i];
+            while(ptr != NULL)
+            {
+                tmp = ptr;
+                ptr = ptr->next;
+                free(tmp);
+            }
+        }
+        free(s->table);
+        s->table = NULL;
+        s->bucketSize = 0;
+    }
+    bool containsDuplicate(int* nums, int numsSize) {
+        if(numsSize < 2)
+        {
+            return false;
+        }
+        struct Set set;
+        initSet(&set, numsSize / 2);
+        for(int i = 0; i < numsSize; ++i)
+        {
+            if(!addValue(&set, nums[i]))
+            {
+                releaseSet(&set);
+                return true;
+            }
+        }
+        releaseSet(&set);
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+3ms Java Solution with Bit Manipulation
+if the range of element provided, we can use byte array as a marker.    
+
+
+    public class Solution {
+    public boolean containsDuplicate(int[] nums) {
+        byte[] mark = new byte[150000];
+        for (int i : nums) {
+            int j = i/8;
+            int k = i%8;
+            int check = 1<<k;
+            if ((mark[j] & check) != 0) {
+                return true;
+            }
+            mark[j]|=check;
+        }
+        return false;
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+In python this problem is a joke
+    class Solution:
+        # @param {integer[]} nums
+        # @return {boolean}
+        def containsDuplicate(self, nums):
+            return not (len(nums) == len(set(nums))) 
+
+----------------------------------------------------------------------------------------------------
+Basic 48ms C++ solution with unordered_map
+    class Solution {
+    public:
+        bool containsDuplicate(vector<int>& nums) {
+            if (nums.empty()) { return false; }
+            unordered_map<int,int> mp;
+            for (int i : nums) {
+                if (++mp[i] > 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ solutions (sorting, maps and sets).
+        
+    bool containsDuplicate1(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        for (int i=0; i<int(nums.size())-1; i++) {
+            if (nums[i]==nums[i+1])
+                return true;
+        }
+        return false;    
+    }
+    
+    bool containsDuplicate2(vector<int>& nums) {
+        map<int, bool> myMap;
+        // unordered_map<int, bool> myMap;
+        for (auto& num: nums) {
+            if (myMap.find(num) != myMap.end())
+                return true;
+            else
+                myMap[num] = true;
+        }
+        return false;
+    }
+    
+    bool containsDuplicate3(vector<int>& nums) {
+        multimap<int, bool> myMap;
+        // unordered_multimap<int, bool> myMap;
+        for (auto& num: nums) {
+            if (myMap.find(num) != myMap.end())
+                return true;
+            myMap.insert(make_pair(num, true));
+        }
+        return false;
+    }
+    
+    bool containsDuplicate4(vector<int>& nums) {
+        set<int> mySet;
+        // unordered_set<int> mySet;
+        // multiset<int> mySet;
+        // unordered_multiset<int> mySet;
+        for (auto& num: nums) {
+            if (mySet.find(num) != mySet.end())
+                return true;
+            mySet.insert(num);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+1 line in Python
+    return len(set(nums)) < len(nums)
+
+It's not optimal solution (64 ms), however it simple and clear.
+
+----------------------------------------------------------------------------------------------------
+5 lines simple Java Solution
+public class Solution {
+    
+    public boolean containsDuplicate(int[] nums) {
+        
+        HashSet<Integer> flag = new HashSet<Integer>();
+        
+        for(int i : nums) {
+            if(!flag.add(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java 9ms solution using HashSet---very very easy version
+    public boolean containsDuplicate(int[] nums) {
+    	HashSet<Integer> set = new HashSet<Integer>();
+    	for(int i=0;i<nums.length;i++){
+    		if(!set.add(nums[i])) return true;
+    	}
+		return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+One line 52ms python solution
+    class Solution:
+        # @param {integer[]} nums
+        # @return {boolean}
+        def containsDuplicate(self, nums):
+            return len(set(nums)) != len(nums)
+
+----------------------------------------------------------------------------------------------------
+32 lines in C by hashtable, only 12ms
+    typedef struct hashlist {
+         int val;
+         struct hashlist *next;
+    }list;
+    
+    int containsDuplicate(int* nums, int numsSize) {
+    	int i;
+    	int mask = numsSize - 1;
+    	list *tmp[numsSize];
+    	memset(tmp, 0, sizeof(list*)*numsSize);
+    	if(numsSize == 0 || numsSize == 1) {
+    		return false;
+    	}
+    	for(i=0; i < numsSize; i++) {
+    		int idx;
+    		list *p;
+    		list *node = malloc(sizeof(list));
+    		node->val = *nums;
+    		idx = abs(*nums) % mask;	
+    		p = tmp[idx];
+    		node->next = p;
+    		tmp[idx] = node;
+    		while(p) {
+    			if (p->val == node->val) {
+    				return true;
+    			}
+    			p = p->next;
+    		}
+    		nums++;
+    	}
+    	return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+20ms C++ use bitmap
+    #define BITSPERWORD 32  
+    #define SHIFT 5  
+    #define MASK 0x1F  
+    #define N 10000000  
+    int a[1 + N/BITSPERWORD]; 
+    void set_(int i) {        a[i>>SHIFT] |=  (1<<(i & MASK)); }  
+    void clr(int i) {        a[i>>SHIFT] &= ~(1<<(i & MASK)); }  
+    int  test(int i){ return a[i>>SHIFT] &   (1<<(i & MASK)); }  
+      
+     
+    class Solution {
+        
+    public:
+        bool containsDuplicate(vector<int>& nums) {
+            if(nums.size()==0)return false;
+            int i;  
+        for (i = 0; i < nums.size(); i++)  
+            clr(nums[i]);    
+        for (i = 0; i < nums.size(); i++)  
+        {
+            if(test(nums[i]))return true;
+            else set_(nums[i]);  
+        }
+       return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution Using HashSet O(n)
+    public class Solution {
+        public boolean containsDuplicate(int[] nums) {
+            Set<Integer> set = new HashSet<>();
+            for(int i : nums){ set.add(i); }
+            return nums.length!=0 && set.size()!=nums.length;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very simple C solution
+Sort and search
+
+    int comp (const void * a, const void * b) {
+       return ( *(int*)a - *(int*)b );
+    }
+    
+    
+    bool containsDuplicate(int* nums, int numsSize) {
+        // Sort
+        qsort(nums, numsSize, sizeof(int), comp);
+        
+        // Loop
+        for (int i = 0; i < numsSize - 1; i++) {
+            if (nums[i] == nums[i+1]) return true;
+        }
+        
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 6 lines solution using set
+      bool containsDuplicate(vector<int>& nums) {
+        unordered_set<int> occ;
+        for (auto item : nums) {
+            if(occ.find(item) != occ.end()) return true;
+            else occ.insert(item);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------

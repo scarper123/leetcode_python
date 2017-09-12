@@ -1,0 +1,541 @@
+&#91;C++&#93; O(n*amount) time O(amount) space DP solution
+    class Solution {
+    public:
+        int coinChange(vector<int>& coins, int amount) {
+            int Max = amount + 1;
+            vector<int> dp(amount + 1, Max);
+            dp[0] = 0;
+            for (int i = 1; i <= amount; i++) {
+                for (int j = 0; j < coins.size(); j++) {
+                    if (coins[j] <= i) {
+                        dp[i] = min(dp[i], dp[i - coins[j]] + 1);
+                    }
+                }
+            }
+            return dp[amount] > amount ? -1 : dp[amount];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+*Java* Both iterative and recursive solutions with explanations
+#Recursive Method:#
+The idea is very classic dynamic programming: think of the last step we take. Suppose we have already found out the best way to sum up to amount `a`, then for the last step, we can choose any coin type which gives us a remainder `r` where `r = a-coins[i]` for all `i`'s. For every remainder, go through exactly the same process as before until either the remainder is 0 or less than 0 (meaning not a valid solution). With this idea, the only remaining detail is to store the minimum number of coins needed to sum up to `r` so that we don't need to recompute it over and over again.
+
+Code in Java:
+
+    public class Solution {
+    public int coinChange(int[] coins, int amount) {
+        if(amount<1) return 0;
+        return helper(coins, amount, new int[amount]);
+    }
+    
+    private int helper(int[] coins, int rem, int[] count) { // rem: remaining coins after the last step; count[rem]: minimum number of coins to sum up to rem
+        if(rem<0) return -1; // not valid
+        if(rem==0) return 0; // completed
+        if(count[rem-1] != 0) return count[rem-1]; // already computed, so reuse
+        int min = Integer.MAX_VALUE;
+        for(int coin : coins) {
+            int res = helper(coins, rem-coin, count);
+            if(res>=0 && res < min)
+                min = 1+res;
+        }
+        count[rem-1] = (min==Integer.MAX_VALUE) ? -1 : min;
+        return count[rem-1];
+    }
+    }
+
+
+
+#Iterative Method:#
+For the iterative solution, we think in bottom-up manner. Suppose we have already computed all the minimum counts up to `sum`, what would be the minimum count for `sum+1`?
+
+Code in Java:
+
+    public class Solution {
+    public int coinChange(int[] coins, int amount) {
+        if(amount<1) return 0;
+        int[] dp = new int[amount+1];
+        int sum = 0;
+        
+    	while(++sum<=amount) {
+    		int min = -1;
+        	for(int coin : coins) {
+        		if(sum >= coin && dp[sum-coin]!=-1) {
+        			int temp = dp[sum-coin]+1;
+        			min = min<0 ? temp : (temp < min ? temp : min);
+        		}
+        	}
+        	dp[sum] = min;
+    	}
+    	return dp[amount];
+    }
+    }
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+Easy-To-Understand Recursive DP solution using Java (with explanations)
+This is a very classic dynamic programming algorithm. However, for someone not familiar with the concept, it can be tricky. Here we tackle the problem recursively, for each coin, if I take that coin into account, then the fewest number of coins we can get is 1+coinChange(amount-that_coin_value). So for all the coins, we return the smallest number as min(1+coinChange(amount-coin1_value), 1+coinChange(amount-coin2_value, ......).
+
+As we can see it is recursive, the solution is as below, this solution of upper time complexity O(c^n) where c is number of different denominations and n is the amount given, which is exponential:
+
+    public class Solution {
+        public int coinChange(int[] coins, int amount) {
+            if(amount==0)
+                return 0;
+            int n = amount+1;
+            for(int coin : coins) {
+                int curr = 0;
+                if (amount >= coin) {
+                    int next = coinChange(coins, amount-coin);
+                    if(next >= 0)
+                        curr = 1+next;
+                }
+                if(curr > 0)
+                    n = Math.min(n,curr);
+            }
+            int finalCount = (n==amount+1) ? -1 : n;
+            return finalCount;
+        }
+    }
+
+Then we observed that this algorithm may compute coinChange of same amount for many times, which are kind of duplicate, if we can store "amount->fewest_coin_count" into hashtble, then we don't need to recompute again. Actually, this is DP (dynamic programming), aka. Memorization. So the final solution is to add hashtbl implementation to the previous solution and problem solved, this is of upper time complexity O(n^c), which is polynomial:
+
+    public class Solution {
+        Map<Integer,Integer> amountDict = new HashMap<Integer,Integer>();
+        public int coinChange(int[] coins, int amount) {
+            if(amount==0)
+                return 0;
+            if(amountDict.containsKey(amount))
+                return amountDict.get(amount);
+            int n = amount+1;
+            for(int coin : coins) {
+                int curr = 0;
+                if (amount >= coin) {
+                    int next = coinChange(coins, amount-coin);
+                    if(next >= 0)
+                        curr = 1+next;
+                }
+                if(curr > 0)
+                    n = Math.min(n,curr);
+            }
+            int finalCount = (n==amount+1) ? -1 : n;
+            amountDict.put(amount,finalCount);
+            return finalCount;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Fast Python BFS Solution
+This solution is inspired by the BFS solution for problem [Perfect Square][1]. Since it is to find the least coin solution (like a shortest path from 0 to amount), using BFS gives results much faster than DP.
+
+    class Solution(object):
+        def coinChange(self, coins, amount):
+            """
+            :type coins: List[int]
+            :type amount: int
+            :rtype: int
+            """
+            if amount == 0:
+                return 0
+            value1 = [0]
+            value2 = []
+            nc =  0
+            visited = [False]*(amount+1)
+            visited[0] = True
+            while value1:
+                nc += 1
+                for v in value1:
+                    for coin in coins:
+                        newval = v + coin
+                        if newval == amount:
+                            return nc
+                        elif newval > amount:
+                            continue
+                        elif not visited[newval]:
+                            visited[newval] = True
+                            value2.append(newval)
+                value1, value2 = value2, []
+            return -1
+
+
+  [1]: https://leetcode.com/discuss/62229/short-python-solution-using-bfs
+
+----------------------------------------------------------------------------------------------------
+Clean dp python code
+Assume `dp[i]` is the fewest number of coins making up amount `i`, then for every `coin` in `coins`, dp[i] = min(dp[i - coin] + 1). 
+
+The time complexity is `O(amount * coins.length)` and the space complexity is `O(amount)`
+
+    class Solution(object):
+        def coinChange(self, coins, amount):
+            MAX = float('inf')
+            dp = [0] + [MAX] * amount
+    
+            for i in xrange(1, amount + 1):
+                dp[i] = min([dp[i - c] if i - c >= 0 else MAX for c in coins]) + 1
+    
+            return [dp[amount], -1][dp[amount] == MAX]
+
+
+
+----------------------------------------------------------------------------------------------------
+JAVA---Easy Version To Understand!!!!!
+    public static int coinChange(int[] coins, int amount) {
+		if (coins == null || coins.length == 0 || amount <= 0)
+			return 0;
+		int[] minNumber = new int[amount + 1];
+		for (int i = 1; i <= amount; i++) {
+			minNumber[i] = Integer.MAX_VALUE;
+			for (int j = 0; j < coins.length; j++) {
+				if (coins[j] <= i && minNumber[i - coins[j]] != Integer.MAX_VALUE)
+					minNumber[i] = Integer.min(minNumber[i], 1 + minNumber[i - coins[j]]);
+			}
+		}
+		if (minNumber[amount] == Integer.MAX_VALUE)
+			return -1;
+		else
+			return minNumber[amount];
+	}
+
+----------------------------------------------------------------------------------------------------
+C++ dp solution, O(N*M) time, O(M) space
+dp[i] means the solution of amount 'i'. Initialise each element of the dp array to -1, then for each coin value c:
+
+1). if i - c < 0, do nothing.
+
+2). if i - c >= 0 and dp[i - c] != -1, means there is a solution of amount 'i - c', dp[i] = min(dp[i], dp[i - c] + 1)
+
+    class Solution
+    {
+    public:
+        int coinChange(vector<int>& coins, int amount) 
+        {
+            vector<int> dp(amount + 1, -1);
+            dp[0] = 0;
+            
+            for (int i = 1; i <= amount; ++i)
+                for (auto & c : coins)
+                    if (i - c >= 0 && dp[i - c] != -1)
+                        dp[i] = dp[i] > 0 ? min(dp[i], dp[i - c] + 1) : dp[i - c] + 1;
+            
+            return dp[amount];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java solution: O(amount) space, O(n*amount) time complexity
+Java solution: O(amount) space, O(n*amount) time complexity
+
+    public class Solution {
+        public int coinChange(int[] coins, int amount) {
+            if (coins == null || coins.length == 0)
+    			return -1;
+    
+    		if (amount <= 0)
+    			return 0;
+    
+    		int dp[] = new int[amount + 1];
+    		for (int i = 1; i < dp.length; i++) {
+    			dp[i] = Integer.MAX_VALUE;
+    		}
+    
+    		for (int am = 1; am < dp.length; am++) {
+    			for (int i = 0; i < coins.length; i++) {
+    				if (coins[i] <= am) {
+    					int sub = dp[am - coins[i]];
+    					if (sub != Integer.MAX_VALUE)
+    						dp[am] = Math.min(sub + 1, dp[am]);
+    				}
+    			}
+    		}
+    		return dp[dp.length - 1] == Integer.MAX_VALUE ? -1 : dp[dp.length - 1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+DP AC JAVA Solution 18ms Beating 95%
+
+    public int coinChange(int[] coins, int amount) {
+        if (amount < 1) return 0;
+        int[] dp = new int[amount + 1]; 
+        Arrays.fill(dp, Integer.MAX_VALUE);
+        dp[0] = 0;
+        for (int coin : coins) {
+            for (int i = coin; i <= amount; i++) {
+                if (dp[i - coin] != Integer.MAX_VALUE) {
+                    dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+                }
+            }
+        }
+        return dp[amount] == Integer.MAX_VALUE ? -1 : dp[amount];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution 3ms
+    public class Solution {
+        int total = Integer.MAX_VALUE;
+        public int coinChange(int[] coins, int amount) {
+            if (amount == 0) return 0;
+    		Arrays.sort(coins);
+    		count(amount, coins.length-1, coins, 0);
+    		return total == Integer.MAX_VALUE?-1:total;
+        }
+    	void count(int amount, int index, int[] coins, int count){
+    		if (index<0 || count>=total-1) return;
+    		int c = amount/coins[index];
+    	    for (int i = c;i>=0;i--){
+    			int newCount = count + i;
+    			int rem = amount - i*coins[index];
+    			
+    			if (rem>0 && newCount<total)
+    			    count(rem, index-1, coins, newCount);
+    			else if (newCount<total)
+    			    total = newCount;
+    			else if (newCount>=total-1)
+    				break;
+    		}
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+6-7 lines, 2 ways
+I'm surprised that out of all solutions so far, [only yular](https://leetcode.com/discuss/76240/solution-using-amount-complexity-amount-space-complexity) used the coins for the outer loop. Everybody else used the amount for the outer loop. Making coins the outer loop saves the extra "if" and quite some time. Here's a comparison of both ways.
+
+**Solution 1, `coins` outer loop, average 92ms**
+
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> need(amount+1, amount+1);
+        need[0] = 0;
+        for (int c : coins)
+            for (int a=c; a<=amount; a++)
+                need[a] = min(need[a], need[a-c] + 1);
+        return need.back() > amount ? -1 : need.back();
+    }
+
+**Solution 2, `amount` outer loop, average 180ms**
+
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> need(amount+1, amount+1);
+        need[0] = 0;
+        for (int a=1; a<=amount; a++)
+            for (int c : coins)
+                if (c <= a)
+                    need[a] = min(need[a], need[a-c] + 1);
+        return need.back() > amount ? -1 : need.back();
+    }
+
+----------------------------------------------------------------------------------------------------
+Java DP solution 27 ms
+    int min = Integer.MAX_VALUE;
+    int total = 1;
+    int[] dp = new int[amount + 1];
+    dp[0] = 0;
+    while (total <= amount) {
+        min = Integer.MAX_VALUE;
+        for (int i = 0; i < coins.length; i++) {
+    	int diff = total - coins[i];
+    	if (diff > 0 && dp[diff] > 0 || diff == 0) {
+    	    min = Math.min(min, dp[diff] + 1);
+    	}
+        }
+        dp[total++] = (min == Integer.MAX_VALUE ? -1 : min);
+    }
+    return dp[amount];
+
+----------------------------------------------------------------------------------------------------
+Fast python branch and bound solution, beaten 99% python submissions
+    def coinChange(self, coins, amount):
+        if len(coins) == 0:
+            return -1
+        if amount == 0:
+            return 0
+        
+        # try biggest coins first
+        sortedCoins = sorted(coins, reverse=True)
+
+        # upper bound on number of coins (+1 to represent the impossible case)
+        upperBound = (amount + sortedCoins[-1] - 1) / sortedCoins[-1] + 1
+
+        self.bestNCoins = upperBound
+        
+        self.branchAndBoundSearch(sortedCoins, amount, 0)
+
+        if self.bestNCoins == upperBound:
+            return -1
+        else:
+            return self.bestNCoins
+    
+    def branchAndBoundSearch(self, sortedCoins, amount, nCoins):
+        # lower bound on number of coins, achieved using the biggest coin
+        lowerBound = nCoins + (amount + sortedCoins[0] - 1) / sortedCoins[0]
+
+        if lowerBound > self.bestNCoins:
+            return
+        
+        if len(sortedCoins) == 0:
+            return
+        
+        # if amount matches the biggest coin, that is the solution
+        if amount == sortedCoins[0] and nCoins + 1 < self.bestNCoins:
+            self.bestNCoins = nCoins + 1
+            return
+        
+        # try use the biggest coin
+        if amount > sortedCoins[0]:
+            self.branchAndBoundSearch(sortedCoins, amount - sortedCoins[0], nCoins + 1)
+        
+        # else try not to use the biggest coin
+        if len(sortedCoins) > 1:
+            self.branchAndBoundSearch(sortedCoins[1:], amount, nCoins)
+
+----------------------------------------------------------------------------------------------------
+Sharing my 132ms C++ solution
+    class Solution {
+    public:
+        int coinChange(vector<int>& coins, int amount) {
+            vector<int> DP(amount+1, INT_MAX-1);
+            // DP[i]: the result when amount = i;
+            int n = coins.size(), i, j;
+            DP[0] = 0; // no coins when amount = 0
+            for(i=1; i<=amount; i++)
+            {
+                for(j=0; j<n; j++)
+                {
+                    if(i-coins[j]>=0)
+                        DP[i] = min(DP[i], DP[i-coins[j]]+1);
+                }
+            }
+            
+            if(DP[amount] == INT_MAX-1)
+                return -1;
+            else
+                return DP[amount];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python, 11-line, 280ms, DFS with early termination, 99% up
+First sort the coins, we will deal with big coin first
+
+When there is no hope to reduce total count, stop the dfs
+
+    def coinChange(self, coins, amount):
+        coins.sort(reverse = True)
+        lenc, self.res = len(coins), 2**31-1
+        
+        def dfs(pt, rem, count):
+            if not rem:
+                self.res = min(self.res, count)
+            for i in range(pt, lenc):
+                if coins[i] <= rem < coins[i] * (self.res-count): # if hope still exists
+                    dfs(i, rem-coins[i], count+1)
+
+        for i in range(lenc):
+            dfs(i, amount, 0)
+        return self.res if self.res < 2**31-1 else -1
+
+----------------------------------------------------------------------------------------------------
+C++ 10 lines solution, easy understanding
+     int coinChange(vector<int>& coins, int amount) {
+        vector<int> dp(amount+1, amount+1);
+        dp[0] = 0;
+        for (int i = 1; i <= amount; i++) {
+            for (int j = 0; j < coins.size(); j++) {
+                if (coins[j] <= i) dp[i] = min(dp[i], dp[i - coins[j]] + 1);
+            }
+        }
+        return dp[amount] > amount ? -1 : dp[amount];
+    }
+
+----------------------------------------------------------------------------------------------------
+Python DP Solution -- Coin Change
+    class Solution(object):
+        def coinChange(self, coins, amount):
+            """
+            :type coins: List[int]
+            :type amount: int
+            :rtype: int
+            """
+            rs = [amount+1] * (amount+1)
+            rs[0] = 0
+            for i in xrange(1, amount+1):
+                for c in coins:
+                    if i >= c:
+                        rs[i] = min(rs[i], rs[i-c] + 1)
+    
+            if rs[amount] == amount+1:
+                return -1
+            return rs[amount]
+
+----------------------------------------------------------------------------------------------------
+9 lines concise and easy understand c++ solution DP
+    class Solution {
+    public:
+        int coinChange(vector<int>& coins, int amount) {
+            if(amount == 0) return 0;
+            vector<int> res(amount + 1, INT_MAX);
+            for(int i = 0; i < coins.size(); i++)
+                if(coins[i] < amount + 1) res[coins[i]] = 1;
+            for(int i = 1; i <= amount; i++)
+                for(int j = 0; j < coins.size(); j++)
+                    if(i - coins[j] > 0 && res[i - coins[j]] != INT_MAX) 
+                        res[i] = min(res[i],res[i - coins[j]] + 1); 
+            return res[amount] == INT_MAX ? -1 : res[amount];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Very easily understood Cpp solution
+    class Solution {
+    public:
+        int coinChange(vector<int>& coins, int amount) {
+            vector<int> dp(amount+1,INT_MAX);
+            dp[0] = 0;
+            
+            for(int i=0; i<amount; i++) {
+                for(int j=0; j<(int)coins.size(); j++) {
+                    if(dp[i] != INT_MAX) {
+                        if(i+coins[j]<=amount) dp[i+coins[j]] = min(dp[i+coins[j]], dp[i]+1);
+                    }
+                }
+            }
+            return dp[amount]==INT_MAX ? -1 : dp[amount];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Two short Pythons
+Dynamic programming with `need[a]` telling the number of coins needed for amount `a`. "Not (yet) possible" is represented by `amount + 1`, since the worst actually possible solution is `amount` coins (each having value 1).
+
+---
+
+**Solution 1** ... about 940ms, best 916ms
+
+    def coinChange(self, coins, amount):
+        need = [0] + [amount + 1] * amount
+        for a in xrange(min(coins), amount + 1):
+            need[a] = min([need[a - c] for c in coins if c <= a]) + 1
+        return need[-1] if need[-1] <= amount else -1
+
+I prefer `min( ... )` over `min([ ... ])`, but generators tend to be slower than list comprehensions, and here I wanted fast.
+
+Starting `a` at `min(coins)` is a little optimization and more importantly prevents `min` from getting nothing and erroring on me (I know, I know... it would still fail if there were an input with no coins... if there were, I'd probably prefix the loop with `if coins:`).
+
+---
+
+**Solution 2** ... about 1520ms, best 1460ms
+
+    def coinChange(self, coins, amount):
+        need = [0] + [amount + 1] * amount
+        for c in coins:
+            for a in xrange(c, amount+1):
+                need[a] = min(need[a], need[a - c] + 1)
+        return need[-1] if need[-1] <= amount else -1
+
+
+----------------------------------------------------------------------------------------------------

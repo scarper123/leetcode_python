@@ -1,0 +1,714 @@
+Share my thinking process
+The series of problems are typical dp. The key for dp is to find the variables to represent the states and deduce the transition function.
+
+Of course one may come up with a O(1) space solution directly, but I think it is better to be generous when you think and be greedy when you implement.
+
+The natural states for this problem is the 3 possible transactions : `buy`, `sell`, `rest`. Here `rest` means no transaction on that day (aka cooldown).
+
+Then the transaction sequences can end with any of these three states.
+
+For each of them we make an array, `buy[n]`, `sell[n]` and `rest[n]`. 
+
+`buy[i]` means before day `i` what is the maxProfit for any sequence end with `buy`.
+
+`sell[i]` means before day `i` what is the maxProfit for any sequence end with `sell`.
+
+`rest[i]` means before day `i` what is the maxProfit for any sequence end with `rest`.
+
+Then we want to deduce the transition functions for `buy` `sell` and `rest`. By definition we have:
+
+    buy[i]  = max(rest[i-1]-price, buy[i-1]) 
+    sell[i] = max(buy[i-1]+price, sell[i-1])
+    rest[i] = max(sell[i-1], buy[i-1], rest[i-1])
+	
+Where `price` is the price of day `i`. All of these are very straightforward. They simply represents : 
+
+    (1) We have to `rest` before we `buy` and 
+    (2) we have to `buy` before we `sell`
+
+One tricky point is how do you make sure you `sell` before you `buy`, since from the equations it seems that `[buy, rest, buy]` is entirely possible.
+
+Well, the answer lies within the fact that `buy[i] <= rest[i]` which means `rest[i] = max(sell[i-1], rest[i-1])`. That made sure `[buy, rest, buy]` is never occurred.
+
+A further observation is that  and `rest[i] <= sell[i]` is also true therefore
+
+    rest[i] = sell[i-1]
+	
+Substitute this in to `buy[i]` we now have 2 functions instead of 3:
+    
+	buy[i] = max(sell[i-2]-price, buy[i-1])
+	sell[i] = max(buy[i-1]+price, sell[i-1])
+	
+This is better than 3, but 
+
+**we can do even better**
+
+Since states of day `i` relies only on `i-1` and `i-2` we can reduce the O(n) space to O(1). And here we are at  our final solution:
+
+**Java**
+
+    public int maxProfit(int[] prices) {
+        int sell = 0, prev_sell = 0, buy = Integer.MIN_VALUE, prev_buy;
+        for (int price : prices) {
+            prev_buy = buy;
+            buy = Math.max(prev_sell - price, prev_buy);
+            prev_sell = sell;
+            sell = Math.max(prev_buy + price, prev_sell);
+        }
+        return sell;
+    }
+
+**C++**
+
+    int maxProfit(vector<int> &prices) {
+        int buy(INT_MIN), sell(0), prev_sell(0), prev_buy;
+        for (int price : prices) {
+            prev_buy = buy;
+            buy = max(prev_sell - price, buy);
+            prev_sell = sell;
+            sell = max(prev_buy + price, sell);
+        }
+        return sell;
+    }
+
+For this problem it is ok to use `INT_MIN` as initial value, but in general we would like to avoid this. We can do the same as the following python:
+	
+**Python**
+
+    def maxProfit(self, prices):
+        if len(prices) < 2:
+            return 0
+        sell, buy, prev_sell, prev_buy = 0, -prices[0], 0, 0
+        for price in prices:
+            prev_buy = buy
+            buy = max(prev_sell - price, prev_buy)
+            prev_sell = sell
+            sell = max(prev_buy + price, prev_sell)
+        return sell
+
+
+----------------------------------------------------------------------------------------------------
+Share my DP solution (By State Machine Thinking)
+Hi,
+
+I just come across this problem, and it's very frustating since I'm bad at DP.
+
+So I just draw all the actions that can be done.
+
+Here is the drawing (Feel like an elementary ...)
+
+![enter image description here][1]
+
+
+  [1]: http://i.imgur.com/wvR4TN8.png?1
+
+There are three states, according to the action that you can take.
+
+Hence, from there, you can now the profit at a state at time i as:
+
+    s0[i] = max(s0[i - 1], s2[i - 1]); // Stay at s0, or rest from s2
+    s1[i] = max(s1[i - 1], s0[i - 1] - prices[i]); // Stay at s1, or buy from s0
+    s2[i] = s1[i - 1] + prices[i]; // Only one way from s1
+
+Then, you just find the maximum of s0[n] and s2[n], since they will be the maximum profit we need (No one can buy stock and left with more profit that sell right :) )
+
+Define base case:
+
+    s0[0] = 0; // At the start, you don't have any stock if you just rest
+    s1[0] = -prices[0]; // After buy, you should have -prices[0] profit. Be positive!
+    s2[0] = INT_MIN; // Lower base case
+
+Here is the code :D
+
+    class Solution {
+    public:
+    	int maxProfit(vector<int>& prices){
+    		if (prices.size() <= 1) return 0;
+    		vector<int> s0(prices.size(), 0);
+    		vector<int> s1(prices.size(), 0);
+    		vector<int> s2(prices.size(), 0);
+    		s1[0] = -prices[0];
+    		s0[0] = 0;
+    		s2[0] = INT_MIN;
+    		for (int i = 1; i < prices.size(); i++) {
+    			s0[i] = max(s0[i - 1], s2[i - 1]);
+    			s1[i] = max(s1[i - 1], s0[i - 1] - prices[i]);
+    			s2[i] = s1[i - 1] + prices[i];
+    		}
+    		return max(s0[prices.size() - 1], s2[prices.size() - 1]);
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Easiest JAVA solution with explanations
+Here I share my no brainer weapon when it comes to this kind of problems.
+
+<hr>
+
+**1. Define States**
+
+To represent the decision at index i:
+
+- `buy[i]`: Max profit till index i. The series of transaction is ending with a **buy**.
+- `sell[i]`: Max profit till index i. The series of transaction is ending with a **sell**.
+
+To clarify:
+
+- Till index `i`, the **buy / sell** action must happen and must be the **last action**. It may not happen at index `i`. It may happen at `i - 1, i - 2, ... 0`.
+- In the end `n - 1`, return `sell[n - 1]`. Apparently we cannot finally end up with a buy. In that case, we would rather take a rest at `n - 1`.
+- For special case no transaction at all, classify it as `sell[i]`, so that in the end, we can still return `sell[n - 1]`.  Thanks @alex153 @kennethliaoke  @anshu2. 
+<hr>
+
+**2. Define Recursion**
+
+- `buy[i]`: To make a decision whether to buy at `i`, we either take a rest, by just using the old decision at `i - 1`, or sell at/before `i - 2`, then buy at `i`, We cannot sell at `i - 1`, then buy at `i`, because of **cooldown**.
+- `sell[i]`: To make a decision whether to sell at `i`, we either take a rest, by just using the old decision at `i - 1`, or buy at/before `i - 1`, then sell at `i`.
+
+So we get the following formula:
+
+    buy[i] = Math.max(buy[i - 1], sell[i - 2] - prices[i]);   
+    sell[i] = Math.max(sell[i - 1], buy[i - 1] + prices[i]);
+
+<hr>
+
+**3. Optimize to O(1) Space**
+
+DP solution only depending on `i - 1` and `i - 2` can be optimized using O(1) space.
+
+- Let `b2, b1, b0` represent `buy[i - 2], buy[i - 1], buy[i]`
+- Let `s2, s1, s0` represent `sell[i - 2], sell[i - 1], sell[i]`
+
+Then arrays turn into Fibonacci like recursion:
+
+    b0 = Math.max(b1, s2 - prices[i]);
+    s0 = Math.max(s1, b1 + prices[i]);
+
+<hr>
+
+**4. Write Code in 5 Minutes**
+
+First we define the initial states at `i = 0`:
+
+- We can buy. The max profit at `i = 0` ending with a **buy** is `-prices[0]`.
+- We cannot sell. The max profit at `i = 0` ending with a **sell** is `0`.
+
+<hr>
+
+Here is my solution. Hope it helps!    
+
+    public int maxProfit(int[] prices) {
+        if(prices == null || prices.length <= 1) return 0;
+      
+        int b0 = -prices[0], b1 = b0;
+        int s0 = 0, s1 = 0, s2 = 0;
+     
+        for(int i = 1; i < prices.length; i++) {
+        	b0 = Math.max(b1, s2 - prices[i]);
+        	s0 = Math.max(s1, b1 + prices[i]);
+        	b1 = b0; s2 = s1; s1 = s0; 
+        }
+        return s0;
+    }
+
+----------------------------------------------------------------------------------------------------
+7-line Java: only consider sell and cooldown
+Define:
+
+    profit1[i] = max profit on day i if I sell
+
+    profit2[i] = max profit on day i if I do nothing
+
+How will those profits on day i+1 relate to profits on day i ?
+
+
+    1. profit1[i+1] means I must sell on day i+1, and there are 2 cases:
+    
+    a. If I just sold on day i, then I have to buy again on day i and sell on day i+1
+    
+    b. If I did nothing on day i, then I have to buy today and sell today 
+    
+    Taking both cases into account, profit1[i+1] = max(profit1[i]+prices[i+1]-prices[i], profit2[i])
+    
+    2. profit2[i+1] means I do nothing on day i+1, so it will be max(profit1[i], profit2[i])
+
+And the code:
+
+    public int maxProfit(int[] prices) {
+        int profit1=0, profit2=0;   
+        for(int i=1; i<prices.length; i++){
+            int copy=profit1;
+            profit1=Math.max(profit1+prices[i]-prices[i-1], profit2);
+            profit2=Math.max(copy, profit2);
+        }
+        return Math.max(profit1, profit2);
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Very Easy to Understand One Pass O(n) Solution with No Extra Space
+The idea is as follows:
+
+First, think about what we can do on day `i`? You either have one stock or you don't on day `i`. For each case, you have two options, making a total of four possible actions on day `i`:
+
+ 1. you have 1 stock and you sell it
+ 2. you have 1 stock and you do nothing
+ 3. you have 0 stock and you buy stock `i`
+ 4. you have 0 stock and you do nothing
+
+As you can imagine, these four actions are correlated between day `i-1` and day `i`. For example, if you take action 1 on day `i`, you then have either taken action 2 or 3 on day `i-1` but not 1 or 4. In precise, two consecutive days are related as follows:
+
+ 1. if you take action 1 on day `i` ==> you have either taken action 2 or 3 on day `i-1`
+ 2. if you take action 2 on day `i` ==> you have either taken action 2 or 3 on day `i-1`
+ 3. if you take action 3 on day `i` ==> you must have taken action 4 on day `i-1` (you can not sell on day `i-1` due to cool down)
+ 4. if you take action 4 on day `i` ==> you have either taken action 1 or 4 on day `i-1`
+
+Now you want to maximize your total profit, but you don't know what action to take on day `i` such that you get the total maximum profit, so `you try all 4 actions on every day`. Suppose you take action 1 on day `i`, since there are two possible actions on day `i-1`, namely actions 2 and 3, you would definitely choose the one that makes your profit on day `i` more. Same thing for actions 2 and 4. So we now have an iterative algorithm.
+
+Before coding, one detail to emphasize is that the initial value on day `0` is important. You basically cannot take action 1, so the corresponding profits should be 0. You cannot take action 2 in practice, but you cannot set up the profit to 0, because that means you don't have a stock to sell on day `1`. Therefore, the initial profit should be negative value of the first stock. You can also think of it as you buy the stock on day `-1` and do nothing on day `0`.
+
+Here comes the code in Java:
+
+    public int maxProfit(int[] prices) {
+    	int L = prices.length;
+    	if(L < 2) return 0;
+
+    	int has1_doNothing = -prices[0];
+    	int has1_Sell = 0;
+    	int has0_doNothing = 0;
+    	int has0_Buy = -prices[0];
+    	for(int i=1; i<L; i++) {
+    		has1_doNothing = has1_doNothing > has0_Buy ? has1_doNothing : has0_Buy;
+    		has0_Buy = -prices[i] + has0_doNothing;
+    		has0_doNothing = has0_doNothing > has1_Sell ? has0_doNothing : has1_Sell;
+    		has1_Sell = prices[i] + has1_doNothing;
+    	}
+    	return has1_Sell > has0_doNothing ? has1_Sell : has0_doNothing;
+    }
+
+Please leave your comment if any question.
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+An 8ms C++ DP solution, easy to understand
+I think my solution is not very difficult to understand.
+
+Define `buy[i]` as the max profit when you buy the stock at day i. `sell[i]` as the max profit when you sell the stock at day i. Therefore set `buy[0] = -prices[0]`, that if you buy the stock at first day, the profit is -prices[0], also set `sell[0] = 0`, that you do nothing in the first day.
+
+    sell[i]=max(buy[i-1]+prices[i], sell[i-1]-prices[i-1]+prices[i]);
+
+`buy[i-1]+prices[i]` represents buy the stock on day i-1 and sell it on day i; `sell[i-1]-prices[i-1]+prices[i]` represents you didn't sell the stock on day i-1 but sell it on day i (bought stock back and sell it on day i).
+
+    buy[i]=max(sell[i-2]-prices[i], buy[i-1]+prices[i-1]-prices[i]);
+
+`sell[i-2]-prices[i]` means sold the stock on day i-2 and buy it on day i (day i-1 is cooldown). `buy[i-1]+prices[i-1]-prices[i]` means you didn't buy the stock on day i-1 but buy it on day i.
+
+No doubt that the max profit would appear in sell[i].
+
+    int maxProfit(vector<int>& p) 
+    {
+    	if (p.size() < 2)
+    		return 0;
+    	int i, sz = p.size();
+    	int ret = 0;
+    	vector<int> buy(sz, 0);
+    	vector<int> sell(sz, 0);
+    	buy[0] = -p[0];
+    	for (i = 1; i < sz; ++i)
+    	{
+    		sell[i] = max(buy[i - 1] + p[i], sell[i - 1] - p[i - 1] + p[i]);
+    		if (ret < sell[i]) //record the max sell[i]
+    			ret = sell[i];
+    		if (1 == i)
+    			buy[i] = buy[0] + p[0] - p[1];
+    		else
+    			buy[i] = max(sell[i - 2] - p[i], buy[i - 1] + p[i - 1] - p[i]);
+    	}
+    	return ret;
+    }
+
+----------------------------------------------------------------------------------------------------
+4-line Python solution, 52 ms
+The key is 3 states and 5 edges for state transition. 3 states are `notHold (stock)`, `hold (stock)`,  and `notHold_cooldown`. The initial values of the latter two are negative infinity since they are meaningless, i.e. you won't hold stocks at first and there's no cooldown at first. The 5 edges:
+
+`hold` -----do nothing----->`hold`
+
+`hold` -----sell----->`notHold_cooldown`
+
+`notHold` -----do nothing -----> `notHold`
+
+`notHold` -----buy-----> `hold`
+
+`notHold_cooldown` -----do nothing----->`notHold`
+
+    def maxProfit(self, prices):
+        notHold, notHold_cooldown, hold = 0, float('-inf'), float('-inf')
+        for p in prices:
+            hold, notHold, notHold_cooldown = max(hold, notHold - p), max(notHold, notHold_cooldown), hold + p
+        return max(notHold, notHold_cooldown)
+
+----------------------------------------------------------------------------------------------------
+O(n) JAVA solution 3ms
+Basically for day i there are three types of action we can consider: sell, buy and cooldown.
+
+If we want to buy, then i-1 day must be cooldown, so after buy today our portfolio value should be cooldown-prices[i]. if this number is small than buy itself, then we don't buy today.
+
+If we want to cooldown, then i-1 day must be cooldown or sell. So we take the max of these two.
+
+If we want to sell, then before day i, we must have position, so after sell our portfolio value should be day i-1's buy+prices[i]. if this value is smaller than sell itself, then we don't sell today.
+    	
+
+              if (prices.length<2) return 0;
+    	int buy = -prices[0], sell = 0, cooldown = 0;
+    	for(int i=1; i<prices.length; i++) {
+    		int temp = buy;
+    		buy = Math.max(buy, cooldown-prices[i]);
+    		cooldown = Math.max(sell, cooldown);
+    		sell = Math.max(sell, temp+prices[i]);    		
+    	}
+    	return sell>cooldown?sell:cooldown;
+
+----------------------------------------------------------------------------------------------------
+10 line constant space O(n) complexity dp solution in c++ (4ms) &#91;added explanation&#93;
+Four states are used for the dp: buy, sell, coolDown and noOp, where noOp happens between buy and sell, coolDown happens between sell and buy.
+
+It is actually much more straight forward if you use O(n) space. 
+
+buy[i] -- buy stock i
+
+sell[i] -- sell stock i
+
+noOp[i] -- no operation for stock i, but have one stock at hand
+
+coolDown[i] -- no operation for stock i, and have no stock at hand.
+
+
+Then the update works as buy[i] = coolDown[i-1]-prices[i], coolDown[i] = max(coolDown[i-1], sell[i-1]), noOp[i] = max[noOp[i-1], buy[i-1]]] and sell[i] = max(noOp[i-1], buy[i-1]) + prices[i].
+
+The constant space solution readily follows this since current states for price i only depends on previous states for price i-1.
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            int buy = INT_MIN, noOp = INT_MIN;
+            int coolDown = 0, sell = 0;
+            for (int p : prices) {
+                noOp = max(noOp, buy);
+                buy = coolDown - p;
+                coolDown = max(coolDown, sell);
+                sell = noOp + p;
+            }
+            return max(coolDown, sell);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+5 lines Python, O(n) time, O(1) space
+    def maxProfit(self, prices):
+        free = 0
+        have = cool = float('-inf')
+        for p in prices:
+            free, have, cool = max(free, cool), max(have, free - p), have + p
+        return max(free, cool)
+
+`free` is the maximum profit I can have while being free to buy.  
+`have` is the maximum profit I can have while having stock.  
+`cool` is the maximum profit I can have while cooling down.
+
+----------------------------------------------------------------------------------------------------
+Easy Understand Java DP solution with comments
+O(n) time and O(2n) space
+
+    public class Solution {
+        public int maxProfit(int[] prices) {
+            if(prices == null || prices.length < 2){
+                return 0;
+            }
+            int len = prices.length;
+            int[] sell = new int[len]; //sell[i] means must sell at day i
+            int[] cooldown = new int[len]; //cooldown[i] means day i is cooldown day
+            sell[1] = prices[1] - prices[0];
+            for(int i = 2; i < prices.length; ++i){
+                cooldown[i] = Math.max(sell[i - 1], cooldown[i - 1]);
+                sell[i] = prices[i] - prices[i - 1] + Math.max(sell[i - 1], cooldown[i - 2]);
+            }
+            return Math.max(sell[len - 1], cooldown[len - 1]);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my greedy and C++ solution O(N) time O(1) space
+Generally this problem cannot be directly solved by greedy algorithm because the total value of the strategy you make on day 'i' will have an influence on the future because of the cool down, and that means a locally optimal plan is not necessarily a globally optimal plan.
+
+To be greedy, we need to divide the problem into 2 sets and maybe on each set we can implement the greedy algorithm! Because we don't want the current operation to influence the future(which will result in a situation where a globally optimal plans don't include a locally optimal optimal plan). The influence to future is dependent on whether you have the stock at the beginning of day i. Thus you use two variables to represent the best profit on day i. Variable 'have' means you have the stock at the beginning of day i. Variable 'non' you don't have it at the beginning of that day. So in this way, variable 'have' will always take the risk of price change , but 'non' won't. so the price part is fixed, we need to be greedy on past. The greedy choice for 'have' on day i is the larger one of the 2 variables: 'have' on day i-1 or 'non' on day i-2. And the greedy choice for 'non' on day i is the larger one of 'have' on day i-1 or 'non' on day i-1. And the best plan is the larger one of the two variables on day n. 
+
+
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            if(prices.size()<=1) return 0;
+            int i,j,c=prices.size();
+            int have=prices[1]-prices[0],non=0,nonn=0,temp;
+            for(i=2;i<c;i++){
+                temp=have;
+                have=max(have,nonn)+prices[i]-prices[i-1];
+                nonn=non;
+                non=max(temp,non);
+            }
+            return max(have,non);
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; O(n) time O(1) space dp solution with comments
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            vector<int> full(2, INT_MIN), empty(2, 0), sell(2, 0);
+            for (int i = 0; i < prices.size(); i++) {
+                full[i % 2] = max(full[1 - i % 2], empty[1 - i % 2] - prices[i]);  
+                    // had bought before OR buy today (pay prices[i])
+                sell[i % 2] = full[1 - i % 2] + prices[i];  
+                    // sell today (get prices[i])
+                empty[i % 2] = max(empty[1 - i % 2], sell[1 - i % 2]);  
+                    // had sold before yesterday OR sold yesterday
+            }
+            return max(empty[1 - prices.size() % 2], sell[1 - prices.size() % 2]);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Very simple explanation based basic math, (no state machine etc. ) O(N) DP code attached
+**Define** `profit[i]` - maximum profit can be made on day i following the cool down rule
+
+`profit[i] = Max(prices[i]-prices[j] + profit[j-2])` for `all j < i`  **(1)**
+
+ - `prices[i]-prices[j]` buying on j and sell on i **(1.1)**
+ - `profit[j-2]` accumulated profit from 0 to j-2 **(1.2)**
+
+Above calculation would lead to O(N^2) complexity, let's **simplify using linearity**
+
+`profit[i] = Max(prices[i]) + Max(profit[j-2]-prices[j])`  for all `j<i` **(2)**
+
+ - `Max( prices[i] ) = prices[i]` is O(1) calculation
+ - `Max(profit[j-2]-prices[j])`  for `all j<i` is O(1) calculation
+
+This is O(N), below is the code
+
+    public int maxProfit(int[] prices) {
+        int n = prices.length;
+        if(n<=1) return 0;
+        int[] dp = new int[n + 1];
+        int max = -prices[0];
+        for (int i = 1; i < n; i++) {
+            dp[i + 1] = Math.max(dp[i], max + prices[i]);
+            max = Math.max(dp[i - 1] - prices[i], max);
+        }
+    
+        return dp[n];
+    }
+
+Of course this post is here to illustrate the concept of DP, the space can further be optimized into O(1). Plus, if you read the other posts with state machines and buy,sell,cool down states, it's all reduces into this format. The only difference if how you explain the variables you define in each case.
+
+
+----------------------------------------------------------------------------------------------------
+Two states DP C++ code
+f(i, 0) is the max profit with one stock in hand. f(i, 1) is the max profit with no stock in hand.
+
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            vector<vector<int>> f;
+            int n = prices.size();
+            if (n <= 1) {
+                return 0;
+            } else if (n == 2) {
+                return max(0, prices[1] - prices[0]);
+            }
+        
+            f = vector<vector<int>>(n, vector<int>(2));
+            
+            f[0][0] = -prices[0];
+            f[0][1] = 0;
+            f[1][0] = max(-prices[0], -prices[1]);
+            f[1][1] = max(0, prices[1] - prices[0]);
+            
+            for (int i = 2; i < n; i++) {
+                f[i][0] = max(f[i - 1][0], f[i - 2][1] - prices[i]);
+                f[i][1] = max(f[i - 1][1], f[i - 1][0] + prices[i]);
+            }
+            
+            return f[n - 1][1];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms C++ DP beat 84%
+
+    // 3 values to update each step:
+    //  the most money choosing buy: b;
+    //  the most money choosing sell: s0;
+    //  the most money doing nothing: s1; 
+    
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            if(prices.size()<=1) return 0;
+            int s0=0, s1=0, b=-prices[0];
+            for(int i=1; i<prices.size(); i++) {
+                int tmp = max(s0, s1);
+                s0 = b+prices[i];
+                b = max(s0,s1)-prices[i];
+                s1 = tmp;
+            }
+            return max(s0, s1);
+            
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+JAVA----------Easy Version To Understand!!!!!!!!!!!!!!!!!!!
+    	public static int maxProfit(int[] prices) {
+		if (prices == null || prices.length == 0)
+			return 0;
+		int len = prices.length;
+		int[] sell = new int[len];
+		int[] coolDown = new int[len];
+		sell[0] = 0;
+		coolDown[0] = 0;
+		for (int i = 1; i < len; i++) {
+			sell[i] = Integer.max(sell[i - 1] + prices[i] - prices[i - 1], coolDown[i - 1]);
+			coolDown[i] = Integer.max(sell[i - 1], coolDown[i - 1]);
+		}
+		return Integer.max(sell[len - 1], coolDown[len - 1]);
+	}
+
+----------------------------------------------------------------------------------------------------
+My C++ O(N) DP algorithm 8ms (Finite State Machine based)
+The basic idea is to define a finite state machine (FSM) to describe the state at each step
+S_BUY (nothing to sell, but can buy), S_SELL (can sell, but can not buy), S_COOL (in cooldown mode, i.e. previous operation is SELL). S_BUY can go to S_BUY (do nothing at this step) or S_SELL (i.e. buy at this step); S_SELL can go to S_SELL(do nothing at this step) or S_COOL (SELL at this step); S_COOL can only move to S_BUY (do nothing at this step). With such FSM defined, one can move forward step by step to update the state array, which describes the profits at each possible state. Complexity is O(3*N)
+
+    class Solution {
+    private:
+        const int STATE_NUM =3, STEP_NUM = 2, S_BUY=0, S_SELL=1, S_COOL=2;
+    public:
+        int maxProfit(vector<int>& prices) {
+            int state[STATE_NUM][STEP_NUM], i, j, steps = prices.size(),cur=0, next=1;
+            fill_n(&state[0][0], STATE_NUM*STEP_NUM, INT_MIN);
+            for(i=0,state[0][0]=0;i<steps;++i, swap(cur, next))
+            {
+                state[S_BUY][next]  = max(state[S_BUY][cur], state[S_COOL][cur]);
+                state[S_SELL][next] = max(state[S_BUY][cur]-prices[i], state[S_SELL][cur]);
+                state[S_COOL][next] = state[S_SELL][cur] + prices[i];
+            }
+            return max(state[S_BUY][cur], state[S_COOL][cur]);
+        }
+    }; 
+
+----------------------------------------------------------------------------------------------------
+Share my C++ DP solution
+> profitNoBlock[i] means the maximum profit you have && you have no
+> stock at the end of day i. profitHasBlock[i] means the maximum
+> profit you have && you have stock at the end of day i.
+> profitNoBlock[i] = max(profitNoBlock[i-1], profitHasBlock[i-1] +
+> prices[i]).
+> 
+> profitHasBlock[i] = max(profitHasBlock[i-1], profitNoBlock[i-2] -
+> prices[i]).
+> 
+> profitNoBlock[-1] = 0.
+
+***space complexity:O(n)***
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            int n = prices.size();
+            if (n == 0 || n == 1)
+                return 0;        
+            
+            vector<int> profitNoBlock(n, 0);
+            vector<int> profitHasBlock(n, 0); 
+            int i = 0;
+            
+            //day 0
+            profitNoBlock[0] = 0;
+            profitHasBlock[0] = -prices[0];
+    
+            //day 1
+            profitNoBlock[1] = max(profitNoBlock[0], profitHasBlock[0] + prices[1]);
+            profitHasBlock[1] = max(profitHasBlock[0], 0 - prices[1]);
+            
+            for (i = 2; i < n; ++i)
+            {
+                profitNoBlock[i] = max(profitNoBlock[i-1], profitHasBlock[i-1] + prices[i]);
+                profitHasBlock[i] = max(profitHasBlock[i-1], profitNoBlock[i-2] - prices[i]);
+            }
+            
+            return profitNoBlock[n-1];
+        }
+    };
+
+
+***space complexity:O(1)***
+
+    class Solution {
+    public:
+        int maxProfit(vector<int>& prices) {
+            int n = prices.size();
+            if (n == 0 || n == 1)
+                return 0;
+                
+            int curNo = 0;
+            int preNo = 0;
+            int curHas = 0; 
+            int i = 0, temp = 0;
+            
+            //day 0
+            curNo = 0;
+            preNo = 0;
+            curHas = -prices[0];
+            
+            //day 1
+            preNo = curNo;
+            curNo = max(curNo, curHas + prices[1]);
+            curHas = max(curHas, 0 - prices[1]);
+            
+            for (i = 2; i < n; ++i)
+            {
+                temp = curNo;
+                curNo = max(curNo, curHas + prices[i]);
+                curHas = max(curHas, preNo - prices[i]);
+                preNo = temp;
+            }
+            
+            return curNo;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Concise c# solution
+    public class Solution {
+        public int MaxProfit(int[] prices) {
+            int[] result = new int[prices.Length];
+            int[] sell = new int[prices.Length];
+    
+            for(int i = 1; i < prices.Length; i++) {
+                var diff = prices[i] - prices[i-1];
+                sell[i] = diff + Math.Max(sell[i-1], i > 2 ? result[i-3] : 0);
+                result[i] = Math.Max(sell[i], result[i-1]);
+            }
+                
+            return result.Length == 0 ? 0 : result[result.Length-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

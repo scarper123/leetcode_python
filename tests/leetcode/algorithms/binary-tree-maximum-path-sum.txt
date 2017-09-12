@@ -1,0 +1,521 @@
+Yet another way to see what happens in the O(n) algorithm
+The O(n) solution with proof by contradiction doesn't look intuitive enough to me. Before moving on, read [the algorithm][1] first if you don't know it yet.
+
+Here's another way to see what happens in a matrix representation:
+
+Draw a matrix where the row is the first line, and the column is the second line. For example, say `n=6`.
+
+In the figures below, `x` means we don't need to compute the volume for that case: (1) On the diagonal, the two lines are overlapped; (2) The lower left triangle area of the matrix is symmetric to the upper right area.
+
+We start by computing the volume at `(1,6)`, denoted by `o`. Now if the left line is shorter than the right line, then all the elements left to `(1,6)` on the first row have smaller volume, so we don't need to compute those cases (crossed by `---`).
+ 
+
+      1 2 3 4 5 6
+    1 x ------- o
+    2 x x
+    3 x x x 
+    4 x x x x
+    5 x x x x x
+    6 x x x x x x
+
+Next we move the left line and compute `(2,6)`. Now if the right line is shorter, all cases below `(2,6)` are eliminated.
+
+      1 2 3 4 5 6
+    1 x ------- o
+    2 x x       o
+    3 x x x     |
+    4 x x x x   |
+    5 x x x x x |
+    6 x x x x x x
+And no matter how this `o` path goes, we end up only need to find the max value on this path, which contains `n-1` cases.
+
+      1 2 3 4 5 6
+    1 x ------- o
+    2 x x - o o o
+    3 x x x o | |
+    4 x x x x | |
+    5 x x x x x |
+    6 x x x x x x
+Hope this helps. I feel more comfortable seeing things this way.
+
+
+  [1]: https://oj.leetcode.com/discuss/1074/anyone-who-has-a-o-n-algorithm
+
+----------------------------------------------------------------------------------------------------
+Simple and fast C++&#x2F;C with explanation
+Start by evaluating the widest container, using the first and the last line. All other possible containers are less wide, so to hold more water, they need to be higher. Thus, after evaluating that widest container, skip lines at both ends that don't support a higher height. Then evaluate that new container we arrived at. Repeat until there are no more possible containers left.
+
+**C++**
+
+    int maxArea(vector<int>& height) {
+        int water = 0;
+        int i = 0, j = height.size() - 1;
+        while (i < j) {
+            int h = min(height[i], height[j]);
+            water = max(water, (j - i) * h);
+            while (height[i] <= h && i < j) i++;
+            while (height[j] <= h && i < j) j--;
+        }
+        return water;
+    }
+
+**C**
+
+A bit shorter and perhaps faster because I can use raw int pointers, but a bit longer because I don't have `min` and `max`.
+
+    int maxArea(int* heights, int n) {
+        int water = 0, *i = heights, *j = i + n - 1;
+        while (i < j) {
+            int h = *i < *j ? *i : *j;
+            int w = (j - i) * h;
+            if (w > water) water = w;
+            while (*i <= h && i < j) i++;
+            while (*j <= h && i < j) j--;
+        }
+        return water;
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy Concise Java O(N) Solution with Proof and Explanation
+AKA, the general idea to find some max is to go through all cases where max value can possibly occur and keep updating the max value. The efficiency of the scan depends on the size of cases you plan to scan.
+To increase efficiency, all we need to do is to find a smart way of scan to cut off the useless cases and meanwhile 100% guarantee the max value can be reached through the rest of cases.
+
+In this problem, the smart scan way is to set two pointers initialized at both ends of the array. Every time move the smaller value pointer to inner array. Then after the two pointers meet, all possible max cases have been scanned and the max situation is 100% reached somewhere in the scan. Following is a brief prove of this.
+
+Given a1,a2,a3.....an as input array. Lets assume a10 and a20 are the max area situation. We need to prove that a10 can be reached by left pointer and during the time left pointer stays at a10, a20 can be reached by right pointer. That is to say, the core problem is to prove: when left pointer is at a10 and right pointer is at a21, the next move must be right pointer to a20. 
+
+Since we are always moving the pointer with the smaller value, i.e. if a10 > a21, we should move pointer at a21 to a20, as we hope. Why a10 >a21? Because if a21>a10, then area of a10 and a20 must be less than area of a10 and a21. Because the area of a10 and a21 is at least height[a10] * (21-10) while the area of a10 and a20 is at most height[a10] * (20-10). So there is a contradiction of assumption a10 and a20 has the max area. So, a10 must be greater than a21, then next move a21 has to be move to a20. The max cases must be reached. 
+
+    public int maxArea(int[] height) {
+        int left = 0, right = height.length - 1;
+		int maxArea = 0;
+
+		while (left < right) {
+			maxArea = Math.max(maxArea, Math.min(height[left], height[right])
+					* (right - left));
+			if (height[left] < height[right])
+				left++;
+			else
+				right--;
+		}
+
+		return maxArea;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple and clear proof&#x2F;explanation
+I've seen some "proofs" for the common O(n) solution, but I found them very confusing and lacking. Some even didn't explain anything but just used lots of variables and equations and were like "Tada! See?". I think mine makes more sense:
+
+**Idea / Proof:**
+
+ 1. The widest container (using first and last line) is a good candidate, because of its width. Its water level is the height of the smaller one of first and last line.
+ 2. All other containers are less wide and thus would need a higher water level in order to hold more water.
+ 3. The smaller one of first and last line doesn't support a higher water level and can thus be safely removed from further consideration.
+
+**Implementation:** (Python)
+
+    class Solution:
+        def maxArea(self, height):
+            i, j = 0, len(height) - 1
+            water = 0
+            while i < j:
+                water = max(water, (j - i) * min(height[i], height[j]))
+                if height[i] < height[j]:
+                    i += 1
+                else:
+                    j -= 1
+            return water
+
+**Further explanation:**
+
+Variables `i` and `j` define the container under consideration. We initialize them to first and last line, meaning the widest container. Variable `water` will keep track of the highest amount of water we managed so far. We compute `j - i`, the width of the current container, and `min(height[i], height[j])`, the water level that this container can support. Multiply them to get how much water this container can hold, and update `water` accordingly. Next remove the smaller one of the two lines from consideration, as justified above in "Idea / Proof". Continue until there is nothing left to consider, then return the result.
+
+----------------------------------------------------------------------------------------------------
+Very simple O(n) solution
+The idea is : to compute area, we need to take min(height[i],height[j]) as our height. Thus if `height[i]<height[j]`, then the expression `min(height[i],height[j])` will always lead to at maximum `height[i]` for all other j(i being fixed), hence no point checking them. Similarly when `height[i]>height[j]` then all the other i's can be ignored for that particular j.
+
+    class Solution {
+    public:
+        int maxArea(vector<int> &height)
+        {
+            int j=height.size()-1,i=0,mx=0;
+            
+            while(i<j)
+            {
+                mx=max(mx,((j-i)*(min(height[i],height[j]))));
+                
+                if(height[i]<height[j])
+                 i++;
+                 else if(height[i]>=height[j])
+                 j--;
+            }
+            return mx;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+For someone who is not so clear on this question
+      y ^
+        |
+        |     a2
+        |     |  a3          an
+        |  a1 |  |     a5    | 
+        |  |  |  |  a4 |     |
+        |  |  |  |  |  | ..  |
+        --------------------------->
+       0   1  2  3  4  5 ..  n     x
+    
+
+ 1. For someone who is not clear on this question. It's not like
+    "https://leetcode.com/problems/trapping-rain-water/ " Which is to
+    get the total water for all the bars problem, It actually is to find
+    the any 2 bars ai, aj, which hold most water together with x-axis.
+    This post give a very good detail explanation as well.
+    https://leetcode.com/discuss/37631/simple-and-clear-proof-explanation
+
+------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution with thought process applying simple bucket theory
+The brute force solution can definitely lead us to the right answer just by doing too many redundant comparisons. When two pointer approach comes to mind, it is intuitive to set both pointers `i, j` at each end of this array, and move them strategically to the middle of array, update the answer during this process return the answer when we reach the end of array. Suppose now we have the scenarios below:
+
+    7, 5, 6, 9
+    
+    i        j
+
+When `i = 1,  j = 4`, 
+
+    ans = min(7, 9) * (4 - 1) = 21 
+
+What's next? Should we move `i` or `j`? We notice that to calculate the area, the height is really identified by the `smaller number / shorter end` between the two ends, since it's required that you may not slant the water, so it sounds like Bucket theory: how much water a bucket can contain depends on the shortest plank. So, as to find the next potential maximum area, we disregard the shorter end by moving it to the next position. So in the above case, the next status is to move `i` to the left, 
+
+    7, 5, 6, 9
+    
+       i     j
+
+update:
+
+    area (i, j) = area(2, 4) = min(5, 9) * (4 - 2) = 10
+    ans = max(21, 10) = 21
+
+You may notice that, if we move `j` instead, you actually get a larger area for length of 2: 
+
+    area (i, j) = area(1, 3) = min(7, 6) * (3 - 1) = 18
+
+Does that mean this approach will not work? If you look at this way, we move pointer as to get the next potential max, so it doesn't need to be the maximum for all combinations with length `l`. Even though `18` is greater than `10`, it's smaller than `21` right? So don't worry, we can move on to find the next potential maximum result. Now we need to prove, why disregard the shorter end can safely lead us to the right answer by doing a little maths. 
+
+    Given an array: a1, a2, a3, a4, ai, ......, aj, ......, an
+                                     i           j
+
+Assume the maximum area so far is `ans`, we prove that 
+
+    "By moving shorter end pointer further doesn't eliminate the final answer (with two ends at maxi, maxj respectively) in our process"
+
+Suppose we have two ends at (`i, j`) respectively at this moment:
+
+(i) If the final answer equals what we have already achieved, it's done! In this scenario, we must have
+
+    maxi <= i, maxj >= j 
+
+(ii) Otherwise, we know as we move any pointer further, the length of the next rectangle decreases, so the height needs to increase as to result in a larger area. So we have 
+
+    min(height[maxi], height[maxj]) > min(height[i], height[j]) 
+So the smaller one in height[`i`], height[`j`] won't become any end in the maximum rectangle, so it's safe to move forward without it.
+
+Till now, it has been proved that this approach can work in O(n) time since we advance one end towards the middle in each iteration, and update ans takes constant time in each iteration.
+
+    class Solution {
+    public:
+        int maxArea(vector<int>& height) {
+            int ans = 0;
+            int i = 0, j = height.size() - 1;          
+            while(i < j){
+                ans = max(ans, (j - i) * min(height[i], height[j]));
+                height[i] > height[j] ? j-- : i++;  
+            }
+            
+            return ans;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+*Java* 3ms solution with step-by-step explanations (beats 85%)
+It took me quite some time to finally optimize my solution from 21ms to 3ms :(
+
+If you have difficulty understanding the following code, check [this link][1] for a detailed explanation.
+
+    public int maxArea(int[] height) {
+        int L = height.length, lo = 0, hi = L-1;
+        int max = 0;
+        while(lo<hi) {	  
+	        int loMax = height[lo], hiMax = height[hi];      
+	
+        	int candidate = (hi-lo) * (loMax<hiMax ? loMax : hiMax);
+        	max = candidate > max ? candidate : max;
+
+        	if(height[lo]<=height[hi]) 
+        	    while(lo<hi && height[lo]<=loMax) ++lo; 
+        	else 
+        	    while(hi>lo && height[hi]<=hiMax) --hi;
+        }
+        return max;
+    }
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java/commit/479a42fdbbf4303d89beef8df9e270a29580110d
+
+----------------------------------------------------------------------------------------------------
+Anyone who has a O(N) algorithm ?
+anyone who has a O(N) algorithm ?
+
+I am using the following code but the time exceeds the limit for the extreme case (ascending sequece) , so I added some special code to handle the extreme case to get a pass.  Anyone who has better solution?
+
+
+    	public  int maxArea1(int[] height){
+		if ( (height == null) || (height.length <= 1) )
+			return 0 ;
+		int result = 0 ;
+		ArrayList<Integer> seq = new ArrayList<Integer>();
+		seq.add(new Integer(0));
+		for (int i = 1 ; i < height.length; i++){
+			for ( Integer idx : seq ){
+				int ht = height[i] > height[idx.intValue()] ? height[idx.intValue()] : height[i] ;
+				int area = (i - idx.intValue()) * ht ;
+				if ( area > result ) result = area ;
+			}
+			int lastIdx = seq.get(seq.size() - 1).intValue();
+			if ( height[i] > height[lastIdx]){
+				seq.add(new Integer(i)) ;
+			}
+		}		
+		return result ;
+		
+	}
+
+----------------------------------------------------------------------------------------------------
+My short and easy c++ code in O(n)
+    class Solution {
+    public:
+        int maxArea(vector<int>& height) {
+            int i=0,j=height.size()-1,ans = 0;
+            while(j>i)
+            {
+                ans = max(min(height[i],height[j])*(j-i),ans);
+                if(height[i]>height[j]) j--;
+                else i++;
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(n) Java Solution - Two Pointers
+       public int maxArea(int[] height) {
+    		int maxWater=0, left=0, right=height.length-1;
+    		while(left<right) {
+    			maxWater = Math.max(maxWater,(right-left)*Math.min(height[left], height[right]));
+    			if(height[left]<height[right]) left++;
+    			else right--;
+    		}
+    		return maxWater;
+    	}
+
+ 1. Start with pointer left=0 and pointer right=length-1
+ 2. The max water is limited by the pointer with smaller height
+ 3. When moving a pointer, the width of the area decrease
+ 4. If we move the pointer with higher height, we will never get a
+    greater area, the max height will be at most the one of the pointer with smaller height.
+ 5. So we need to move the pointer with smaller height to have a chance to get higher height at the next step.
+
+----------------------------------------------------------------------------------------------------
+Simple and Easy Understanding JAVA Solution
+    public int maxArea(int[] height) {
+        int maxA = 0;
+        
+        int i = 0, j = height.length-1;
+        
+        while(i < j) {
+            int H = Math.min(height[i], height[j]);
+            int W = j - i;
+            maxA = Math.max(maxA, H*W);
+            
+            while(i < j && height[i] <= H) {
+                ++i;
+            }
+            while(i < j && height[j] <= H) {
+                --j;
+            }
+        }
+        return maxA;
+    }
+
+----------------------------------------------------------------------------------------------------
+From DP to Greedy O(n), with explanation, easy way to see this problem
+           / max{v(i, j), S(i...j-1)};  height(i) >= height(j)
+S(i..j) = |
+           \ max{v(i, j), S(i+1...j)};  height(i) < height(j)
+
+public class Solution {
+    public int maxArea(int[] height) {
+        int lo = 0;
+        int hi = height.length - 1;
+        int max = 0;
+        while(lo < hi) {
+            int min = Math.min(height[lo], height[hi]);
+            max = Math.max(max, min * (hi - lo));
+            while(lo <= hi && height[lo] <= min) lo++;
+            while(lo <= hi && height[hi] <= min) hi--;
+        }
+        return max;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+For those who are not clear with the problem
+ WA
+Input:	[1,2,1]
+Output:	1
+Expected:	2
+ Does this mean to find the total "area"? NO
+
+ WA
+Input:	[1,2,4,3]
+Output:	6
+Expected:	4
+ This is to find the max area between any of two lines.
+
+# You really should refine it a little bit. #
+
+----------------------------------------------------------------------------------------------------
+A fast and easy-understand cpp solution
+        int maxArea(vector<int> &height) {
+            int l(0), r=height.size()-1, result(0);
+            while(l < r){
+                if(height[l] < height[r]){
+                     result =  max(result, height[l] * (r - l));
+                     int pivot = height[l++];
+                     while(l < r && height[l] <= pivot) ++l;
+                }else{
+                     result = max(result, height[r] * (r - l));
+                     int pivot = height[r--];
+                     while(l < r && height[r] <= pivot) --r;
+                }
+            }
+            return result;
+        }
+
+----------------------------------------------------------------------------------------------------
+My C++ code, O(n) time, updated with a concise version
+The basic idea is to use two pointers to scan the vector, and skip the elements that are less than its previous checked element.
+
+// updated version
+
+    class Solution {
+    public:
+        int maxArea(vector<int>& height) {
+            int right = height.size()-1, left =0;
+            int res = 0;
+            
+            while(left < right)
+            {
+                res = max(res, (right-left)*(height[right]<height[left]?height[right--]:height[left++]));    
+            }
+            return res;
+        }
+    }; 
+
+//original one 
+
+   class Solution {
+    public:
+        int maxArea(vector<int> &height) {
+            int bIdx=0, eIdx, lowH;
+            int res=0;
+    
+            eIdx = height.size()-1;
+            while(bIdx<eIdx)
+            {
+                if(height[bIdx] > height[eIdx])
+                { // if the right node has a smaller height
+                    lowH = height[eIdx];
+                    res = max(res, lowH * (eIdx-bIdx) ); // update the max area
+                    eIdx--; // skip the current element
+                    while( (eIdx>bIdx) && (height[eIdx]<= lowH) ) eIdx--; // skip all the subsequent elements that have smaller height
+                }
+                else
+                {// if the left node has a smaller height
+                    lowH = height[bIdx];
+                    res = max(res, lowH * (eIdx-bIdx) );
+                    bIdx++; // skip the current node
+                    while( (eIdx>bIdx) && (height[bIdx]<= lowH) ) bIdx++;  // skip all the subsequent elements that have smaller height
+                }
+            }
+            
+            return res;
+            
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple C++ solution
+    int maxArea(vector<int> &height) {
+        int left = 0, right = height.size() - 1;
+        int maxWater = 0;
+        while(left < right){
+            maxWater = max(maxWater, (right - left) * min(height[left], height[right]));
+            height[left] < height[right] ? left++ : right--;
+        }
+        return maxWater;
+    }
+
+The basic idea is simple: use two pointers to indicate the left edge and right edge of the water container. Every time move the lower edge towards another edge with one step. At last, we can find the max water container.
+
+----------------------------------------------------------------------------------------------------
+Simple O(n) time O(1) solution in Java
+The idea is that a container to hold water can only be formed by two two heights with the lowest height as the height of the container. So, if we start from two numbers farthest apart in length (i.e. first and last element) then we have maximum width rectangle. Now, we can move to shorter height only to left or right to maximize the total area. 
+
+    public class Solution {
+        public int maxArea(int[] height) {
+            int len = height.length, low = 0, high = len -1 ;  
+            int maxArea = 0;  
+            while (low < high) {  
+             maxArea = Math.max(maxArea, (high - low) * Math.min(height[low], height[high]));  
+             if (height[low] < height[high]) {  
+               low++;  
+             } else {  
+               high--;  
+             }  
+            }  
+            return maxArea;  
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java two pointer
+    public class Solution {
+        public int maxArea(int[] height) {
+        int result = 0;
+        for(int i=0,j=height.length-1;i<j;){
+            // get current area
+            int area = Math.min(height[i],height[j])*(j-i);
+            result = Math.max(area,result);
+            //move the pointers
+            if(height[i]<height[j]){
+                i++;
+            }
+            else {
+                j--;
+            }
+        }
+        return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

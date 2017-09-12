@@ -1,0 +1,379 @@
+Share my DP solution
+The DP solution proceeds row by row, starting from the first row. Let the maximal rectangle area at row i and column j be computed by [right(i,j) - left(i,j)]*height(i,j).
+
+All the 3 variables left, right, and height can be determined by the information from previous row, and also information from the current row. So it can be regarded as a DP solution. The transition equations are:
+
+> left(i,j) = max(left(i-1,j), cur_left), cur_left can be determined from the current row
+
+> right(i,j) = min(right(i-1,j), cur_right), cur_right can be determined from the current row 
+
+> height(i,j) = height(i-1,j) + 1,  if matrix[i][j]=='1'; 
+
+> height(i,j) = 0,  if matrix[i][j]=='0'
+
+
+
+The code is as below. The loops can be combined for speed but I separate them for more clarity of the algorithm.
+
+    class Solution {public:
+    int maximalRectangle(vector<vector<char> > &matrix) {
+        if(matrix.empty()) return 0;
+        const int m = matrix.size();
+        const int n = matrix[0].size();
+        int left[n], right[n], height[n];
+        fill_n(left,n,0); fill_n(right,n,n); fill_n(height,n,0);
+        int maxA = 0;
+        for(int i=0; i<m; i++) {
+            int cur_left=0, cur_right=n; 
+            for(int j=0; j<n; j++) { // compute height (can do this from either side)
+                if(matrix[i][j]=='1') height[j]++; 
+                else height[j]=0;
+            }
+            for(int j=0; j<n; j++) { // compute left (from left to right)
+                if(matrix[i][j]=='1') left[j]=max(left[j],cur_left);
+                else {left[j]=0; cur_left=j+1;}
+            }
+            // compute right (from right to left)
+            for(int j=n-1; j>=0; j--) {
+                if(matrix[i][j]=='1') right[j]=min(right[j],cur_right);
+                else {right[j]=n; cur_right=j;}    
+            }
+            // compute the area of rectangle (can do this from either side)
+            for(int j=0; j<n; j++)
+                maxA = max(maxA,(right[j]-left[j])*height[j]);
+        }
+        return maxA;
+    }
+};
+
+
+If you think this algorithm is not easy to understand, you can try this example:
+
+    0 0 0 1 0 0 0 
+    0 0 1 1 1 0 0 
+    0 1 1 1 1 1 0
+
+The vector "left" and "right" from row 0 to row 2 are as follows
+
+row 0:
+ 
+
+    l: 0 0 0 3 0 0 0
+    r: 7 7 7 4 7 7 7
+
+row 1:
+
+    l: 0 0 2 3 2 0 0
+    r: 7 7 5 4 5 7 7 
+
+row 2:
+
+    l: 0 1 2 3 2 1 0
+    r: 7 6 5 4 5 6 7
+
+The vector "left" is computing the left boundary. Take (i,j)=(1,3) for example. On current row 1, the left boundary is at j=2. However, because matrix[1][3] is 1, you need to consider the left boundary on previous row as well, which is 3. So the real left boundary at (1,3) is 3. 
+
+I hope this additional explanation makes things clearer.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+A O(n^2) solution based on Largest Rectangle in Histogram
+This question is similar as [\[Largest Rectangle in Histogram\]][1]:
+
+You can maintain a row length of Integer array H recorded its height of '1's, and scan and update row by row to find out the largest rectangle of each row.
+
+For each row, if matrix[row][i] == '1'. H[i] +=1, or reset the H[i] to zero.
+and accroding the algorithm of [Largest Rectangle in Histogram], to update the maximum area.
+
+    public class Solution {
+        public int maximalRectangle(char[][] matrix) {
+            if (matrix==null||matrix.length==0||matrix[0].length==0)
+                return 0;
+            int cLen = matrix[0].length;    // column length
+            int rLen = matrix.length;       // row length
+            // height array 
+            int[] h = new int[cLen+1];
+            h[cLen]=0;
+            int max = 0;
+            
+            
+            for (int row=0;row<rLen;row++) {
+                Stack<Integer> s = new Stack<Integer>();
+                for (int i=0;i<cLen+1;i++) {
+                    if (i<cLen)
+                        if(matrix[row][i]=='1')
+                            h[i]+=1;
+                        else h[i]=0;
+                    
+                    if (s.isEmpty()||h[s.peek()]<=h[i])
+                        s.push(i);
+                    else {
+                        while(!s.isEmpty()&&h[i]<h[s.peek()]){
+                            int top = s.pop();
+                            int area = h[top]*(s.isEmpty()?i:(i-s.peek()-1));
+                            if (area>max)
+                                max = area;
+                        }
+                        s.push(i);
+                    }
+                }
+            }
+            return max;
+        }
+    }
+
+  [1]: http://oj.leetcode.com/problems/largest-rectangle-in-histogram/
+
+----------------------------------------------------------------------------------------------------
+My java solution based on Maximum Rectangle in Histogram with explanation
+We can apply the maximum in histogram in each row of the 2D matrix. What we need is to maintain an int array for each row, which represent for the height of the histogram.
+
+Please refer to https://leetcode.com/problems/largest-rectangle-in-histogram/      first.
+
+
+Suppose there is a 2D matrix like
+
+1 1 0 1 0 1
+
+0 1 0 0 1 1
+
+1 1 1 1 0 1
+
+1 1 1 1 0 1
+
+
+First initiate the height array as 1 1 0 1 0 1, which is just a copy of the first row. Then we can easily calculate the max area is 2.
+
+Then update the array. We scan the second row, when the matrix[1][i] is 0, set the height[i] to 0; else height[i] += 1, which means the height has increased by 1. So the height array again becomes 0 2 0 0 1 2. The max area now is also 2.
+
+Apply the same method until we scan the whole matrix. the last height arrays is 2 4 2 2 0 2, so the max area has been found as 2 * 4 = 8.
+
+Then reason we scan the whole matrix is that the maximum value may appear in any row of the height.
+
+
+Code as follows: 
+
+    public class Solution {
+    public int maximalRectangle(char[][] matrix) {
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return 0;
+        
+        int[] height = new int[matrix[0].length];
+        for(int i = 0; i < matrix[0].length; i ++){
+            if(matrix[0][i] == '1') height[i] = 1;
+        }
+        int result = largestInLine(height);
+        for(int i = 1; i < matrix.length; i ++){
+            resetHeight(matrix, height, i);
+            result = Math.max(result, largestInLine(height));
+        }
+        
+        return result;
+    }
+    
+    private void resetHeight(char[][] matrix, int[] height, int idx){
+        for(int i = 0; i < matrix[0].length; i ++){
+            if(matrix[idx][i] == '1') height[i] += 1;
+            else height[i] = 0;
+        }
+    }    
+    
+    public int largestInLine(int[] height) {
+        if(height == null || height.length == 0) return 0;
+        int len = height.length;
+        Stack<Integer> s = new Stack<Integer>();
+        int maxArea = 0;
+        for(int i = 0; i <= len; i++){
+            int h = (i == len ? 0 : height[i]);
+            if(s.isEmpty() || h >= height[s.peek()]){
+                s.push(i);
+            }else{
+                int tp = s.pop();
+                maxArea = Math.max(maxArea, height[tp] * (s.isEmpty() ? i : i - 1 - s.peek()));
+                i--;
+            }
+        }
+        return maxArea;
+    }
+    
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+AC Python DP solutioin 120ms based on largest rectangle in histogram
+    def maximalRectangle(self, matrix):
+        if not matrix or not matrix[0]:
+            return 0
+        n = len(matrix[0])
+        height = [0] * (n + 1)
+        ans = 0
+        for row in matrix:
+            for i in xrange(n):
+                height[i] = height[i] + 1 if row[i] == '1' else 0
+            stack = [-1]
+            for i in xrange(n + 1):
+                while height[i] < height[stack[-1]]:
+                    h = height[stack.pop()]
+                    w = i - 1 - stack[-1]
+                    ans = max(ans, h * w)
+                stack.append(i)
+        return ans
+
+    # 65 / 65 test cases passed.
+    # Status: Accepted
+    # Runtime: 120 ms
+    # 100%
+
+The solution is based on [largest rectangle in histogram][1] solution. Every row in the matrix is viewed as the ground with some buildings on it. The building height is the count of consecutive 1s from that row to above rows. The rest is then the same as [this solution for largest rectangle in histogram][2]
+
+
+  [1]: https://leetcode.com/problems/largest-rectangle-in-histogram/
+  [2]: https://leetcode.com/discuss/65647/ac-python-clean-solution-using-stack-76ms
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my straightforward C++ solution with O(n^2) time with explanation
+    int maximalRectangle(vector<vector<char> > &matrix) {
+        if(matrix.empty()){
+            return 0;
+        }
+        int maxRec = 0;
+        vector<int> height(matrix[0].size(), 0);
+        for(int i = 0; i < matrix.size(); i++){
+            for(int j = 0; j < matrix[0].size(); j++){
+                if(matrix[i][j] == '0'){
+                    height[j] = 0;
+                }
+                else{
+                    height[j]++;
+                }
+            }
+            maxRec = max(maxRec, largestRectangleArea(height));
+        }
+        return maxRec;
+    }
+    
+    int largestRectangleArea(vector<int> &height) {
+        stack<int> s;
+        height.push_back(0);
+        int maxSize = 0;
+        for(int i = 0; i < height.size(); i++){
+            if(s.empty() || height[i] >= height[s.top()]){
+                s.push(i);
+            }
+            else{
+                int temp = height[s.top()];
+                s.pop();
+                maxSize = max(maxSize, temp * (s.empty() ? i : i - 1 - s.top()));
+                i--;
+            }
+        }
+        return maxSize;
+    }
+
+In order to solve this problem, I use the solution from "Largest Rectangle in Histogram". 
+
+Now I assume you already know how to solve "Largest Rectangle in Histogram".
+
+We can regard a matrix as many histograms. For example, given a matrix below:
+
+1 0 1 0
+
+0 1 0 1
+
+0 1 1 0
+
+1 0 1 0
+
+1 0 1 1
+
+From top to bottom, we can find these histograms:
+
+Number 1: 1 0 1 0
+
+Number 2: 0 1 0 1
+
+Number 3: 0 2 1 0
+
+Number 4: 1 0 2 0
+
+Number 5: 2 0 3 1
+
+Pass all of these histograms to the function which can solve "Largest Rectangle in Histogram". And then find the maximum one. 
+
+Finally, we get the answer.
+
+----------------------------------------------------------------------------------------------------
+Maximal or minimal?
+I am confused about the requirement. If it is maximal rectangle that contains all the 1s, I could just return the size of the input if any 1 is detected anywhere...
+
+----------------------------------------------------------------------------------------------------
+My O(n^3) solution for your reference
+    class Solution {
+    public:
+        int maximalRectangle(vector<vector<char> > &matrix) {
+            int num_i=matrix.size();
+            if (num_i==0) return 0;
+            int num_j=matrix[0].size();
+            if (num_j==0) return 0;
+            vector<vector<int>> max_x(num_i,vector<int>(num_j,0));  //number of consecutive 1s to the left of matrix[i][j], including itself
+    
+            int area=0;
+            for (int i=0;i<num_i;i++){
+                for (int j=0;j<num_j;j++){
+                    if (matrix[i][j]=='1'){
+                        if (j==0) max_x[i][j]=1;
+                        else max_x[i][j]=max_x[i][j-1]+1;
+                        int y=1;
+                        int x=num_j;
+                        while((i-y+1>=0)&&(matrix[i-y+1][j]=='1')){
+                            x=min(x, max_x[i-y+1][j]);
+                            area=max(area,x*y);
+                            y++;
+                        } 
+                    }
+                }
+            }
+            
+    
+            
+            return area;
+            
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Pyrhon O(n^2) solution based on Largest Rectangle in Histogram
+    class Solution:
+    # @param matrix, a list of lists of 1 length string
+    # @return an integer
+    def maximalRectangle(self, matrix):
+        if not matrix:
+            return 0
+        h, w = len(matrix), len(matrix[0])
+        m = [[0]*w for _ in range(h)]
+        for j in range(h):
+            for i in range(w):
+                if matrix[j][i] == '1':
+                    m[j][i] = m[j-1][i] + 1
+        return max(self.largestRectangleArea(row) for row in m)
+
+    def largestRectangleArea(self, height):
+        height.append(0)
+        stack, size = [], 0
+        for i in range(len(height)):
+            while stack and height[stack[-1]] > height[i]:
+                h = height[stack.pop()]
+                w = i if not stack else i-stack[-1]-1
+                size = max(size, h*w)
+            stack.append(i)
+        return size
+
+m is every row height, it is easy to convert this to Largest Rectangle in Histogram
+
+
+----------------------------------------------------------------------------------------------------
+Question on test case input format for two dimensional char arrays

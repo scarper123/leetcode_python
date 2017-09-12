@@ -1,0 +1,1412 @@
+All in O(1), with detailed explantation
+class AllOne {
+public:
+    struct Row {
+        list<string> strs;
+        int val;
+        Row(const string &s, int x) : strs({s}), val(x) {}
+    };
+
+    unordered_map<string, pair<list<Row>::iterator, list<string>::iterator>> strmap;
+    list<Row> matrix;
+
+    /** Initialize your data structure here. */
+    AllOne() {
+        
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    void inc(string key) {
+        if (strmap.find(key) == strmap.end()) {
+            if (matrix.empty() || matrix.back().val != 1) {
+                auto newrow = matrix.emplace(matrix.end(), key, 1);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+            else {
+                auto newrow = --matrix.end();
+                newrow->strs.push_front(key);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+        }
+        else {
+            auto row = strmap[key].first;
+            auto col = strmap[key].second;
+            auto lastrow = row;
+            --lastrow;
+            if (lastrow == matrix.end() || lastrow->val != row->val + 1) {
+                auto newrow = matrix.emplace(row, key, row->val + 1);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+            else {
+                auto newrow = lastrow;
+                newrow->strs.push_front(key);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+            row->strs.erase(col);
+            if (row->strs.empty()) matrix.erase(row);
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    void dec(string key) {
+        if (strmap.find(key) == strmap.end()) {
+            return;
+        }
+        else {
+            auto row = strmap[key].first;
+            auto col = strmap[key].second;
+            if (row->val == 1) {
+                row->strs.erase(col);
+                if (row->strs.empty()) matrix.erase(row);
+                strmap.erase(key);
+                return;
+            }
+            auto nextrow = row;
+            ++nextrow;
+            if (nextrow == matrix.end() || nextrow->val != row->val - 1) {
+                auto newrow = matrix.emplace(nextrow, key, row->val - 1);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+            else {
+                auto newrow = nextrow;
+                newrow->strs.push_front(key);
+                strmap[key] = make_pair(newrow, newrow->strs.begin());
+            }
+            row->strs.erase(col);
+            if (row->strs.empty()) matrix.erase(row);
+        }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    string getMaxKey() {
+        return matrix.empty() ?  "" : matrix.front().strs.front();
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    string getMinKey() {
+        return matrix.empty() ?  "" : matrix.back().strs.front();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution with comments
+class AllOne {
+public:
+
+    void inc(string key) {
+        
+        // If the key doesn't exist, insert it with value 0.
+        if (!bucketOfKey.count(key))
+            bucketOfKey[key] = buckets.insert(buckets.begin(), {0, {key}});
+            
+        // Insert the key in next bucket and update the lookup.
+        auto next = bucketOfKey[key], bucket = next++;
+        if (next == buckets.end() || next->value > bucket->value + 1)
+            next = buckets.insert(next, {bucket->value + 1, {}});
+        next->keys.insert(key);
+        bucketOfKey[key] = next;
+        
+        // Remove the key from its old bucket.
+        bucket->keys.erase(key);
+        if (bucket->keys.empty())
+            buckets.erase(bucket);
+    }
+
+    void dec(string key) {
+
+        // If the key doesn't exist, just leave.
+        if (!bucketOfKey.count(key))
+            return;
+
+        // Maybe insert the key in previous bucket and update the lookup.
+        auto prev = bucketOfKey[key], bucket = prev--;
+        bucketOfKey.erase(key);
+        if (bucket->value > 1) {
+            if (bucket == buckets.begin() || prev->value < bucket->value - 1)
+                prev = buckets.insert(bucket, {bucket->value - 1, {}});
+            prev->keys.insert(key);
+            bucketOfKey[key] = prev;
+        }
+        
+        // Remove the key from its old bucket.
+        bucket->keys.erase(key);
+        if (bucket->keys.empty())
+            buckets.erase(bucket);
+    }
+
+    string getMaxKey() {
+        return buckets.empty() ? "" : *(buckets.rbegin()->keys.begin());
+    }
+    
+    string getMinKey() {
+        return buckets.empty() ? "" : *(buckets.begin()->keys.begin());
+    }
+
+private:
+    struct Bucket { int value; unordered_set<string> keys; };
+    list<Bucket> buckets;
+    unordered_map<string, list<Bucket>::iterator> bucketOfKey;
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java AC all strict O(1) not average O(1), easy to read
+public class AllOne {
+    // maintain a doubly linked list of Buckets
+    private Bucket head;
+    private Bucket tail;
+    // for accessing a specific Bucket among the Bucket list in O(1) time
+    private Map<Integer, Bucket> countBucketMap;
+    // keep track of count of keys
+    private Map<String, Integer> keyCountMap;
+
+    // each Bucket contains all the keys with the same count
+    private class Bucket {
+        int count;
+        Set<String> keySet;
+        Bucket next;
+        Bucket pre;
+        public Bucket(int cnt) {
+            count = cnt;
+            keySet = new HashSet<>();
+        }
+    }
+
+    /** Initialize your data structure here. */
+    public AllOne() {
+        head = new Bucket(Integer.MIN_VALUE);
+        tail = new Bucket(Integer.MAX_VALUE);
+        head.next = tail;
+        tail.pre = head;
+        countBucketMap = new HashMap<>();
+        keyCountMap = new HashMap<>();
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        if (keyCountMap.containsKey(key)) {
+            changeKey(key, 1);
+        } else {
+            keyCountMap.put(key, 1);
+            if (head.next.count != 1) 
+                addBucketAfter(new Bucket(1), head);
+            head.next.keySet.add(key);
+            countBucketMap.put(1, head.next);
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+        if (keyCountMap.containsKey(key)) {
+            int count = keyCountMap.get(key);
+            if (count == 1) {
+                keyCountMap.remove(key);
+                removeKeyFromBucket(countBucketMap.get(count), key);
+            } else {
+                changeKey(key, -1);
+            }
+        }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+        return tail.pre == head ? "" : (String) tail.pre.keySet.iterator().next();
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+        return head.next == tail ? "" : (String) head.next.keySet.iterator().next();        
+    }
+    
+    // helper function to make change on given key according to offset
+    private void changeKey(String key, int offset) {
+        int count = keyCountMap.get(key);
+        keyCountMap.put(key, count + offset);
+        Bucket curBucket = countBucketMap.get(count);
+        Bucket newBucket;
+        if (countBucketMap.containsKey(count + offset)) {
+            // target Bucket already exists
+            newBucket = countBucketMap.get(count + offset);
+        } else {
+            // add new Bucket
+            newBucket = new Bucket(count + offset);
+            countBucketMap.put(count + offset, newBucket);
+            addBucketAfter(newBucket, offset == 1 ? curBucket : curBucket.pre);
+        }
+        newBucket.keySet.add(key);
+        removeKeyFromBucket(curBucket, key);
+    }
+    
+    private void removeKeyFromBucket(Bucket bucket, String key) {
+        bucket.keySet.remove(key);
+        if (bucket.keySet.size() == 0) {
+            removeBucketFromList(bucket);
+            countBucketMap.remove(bucket.count);
+        }
+    }
+    
+    private void removeBucketFromList(Bucket bucket) {
+        bucket.pre.next = bucket.next;
+        bucket.next.pre = bucket.pre;
+        bucket.next = null;
+        bucket.pre = null;
+    }
+    
+    // add newBucket after preBucket
+    private void addBucketAfter(Bucket newBucket, Bucket preBucket) {
+        newBucket.pre = preBucket;
+        newBucket.next = preBucket.next;
+        preBucket.next.pre = newBucket;
+        preBucket.next = newBucket;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+An accepted JAVA solution, detailed explanation.(HashMap + double linked list)
+public class AllOne {
+    class valueNode {
+        valueNode preNode;             
+        valueNode nextNode;           
+        int value;                     // curNode.value;
+        List<String> curKeys;         // store the key at the value of curNode.value;
+        
+        valueNode(int value,String key) {
+            this.value = value;
+            curKeys = new LinkedList<String>();
+            curKeys.add(key);
+        }
+    }
+    
+    private valueNode head;
+    private valueNode tail;
+    private valueNode curNode;
+    private HashMap<String, valueNode> keyMap;
+    
+    /** Initialize your data structure here. */
+    public AllOne() {
+        keyMap = new HashMap<String,valueNode>();
+        head = null;
+        tail = null;
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        if (tail == null) { // which means head must be null too and the keyMap must be empty.
+                curNode = new valueNode(1,key);
+                head = curNode;
+                tail = curNode;
+                keyMap.put(key,curNode);
+        } else if (!keyMap.containsKey(key)){ //which means that this key should be add to the tail.
+                if (tail.value == 1) {//which means just add the key to the tail list.
+                    tail.curKeys.add(key);
+                    keyMap.put(key,tail);
+                }else {    //which means have to add a value= 1 node.
+                    curNode = new valueNode(1,key);
+                    curNode.preNode = tail;
+                    tail.nextNode = curNode;
+                    tail = curNode;
+                    keyMap.put(key,curNode);
+                }
+        } else { //which the string already exists.
+            curNode = keyMap.get(key);
+            if (curNode.preNode != null) {  //which means the node is in the middle.
+                if (curNode.preNode.value == curNode.value + 1){
+                    curNode.preNode.curKeys.add(key);
+                    curNode.curKeys.remove(key); 
+                    keyMap.put(key,curNode.preNode);
+                    checkEmpty(curNode);
+                }else {                     //which means the preNode value != curNode.value;
+                    valueNode newNode = new valueNode(curNode.value+1, key);
+                    newNode.preNode = curNode.preNode;
+                    newNode.nextNode= curNode;
+                    newNode.preNode.nextNode = newNode;
+                    curNode.preNode = newNode;
+                    curNode.curKeys.remove(key); 
+                    keyMap.put(key,newNode);
+                    checkEmpty(curNode);
+                }
+            }else {//which means the node is the head. so we build a new head.
+                head = new valueNode(curNode.value+1,key);
+                head.nextNode = curNode;
+                curNode.preNode = head;
+                curNode.curKeys.remove(key);
+                keyMap.put(key,head);
+                checkEmpty(curNode);
+            }
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+            if (head ==null ||!keyMap.containsKey(key)) return; //which means nothing here.
+                                                         //or  means no key in the structrue.
+            curNode = keyMap.get(key);
+            if (curNode.nextNode != null) {  //which means the node is in the middle.
+                if (curNode.nextNode.value == curNode.value - 1){ //which means we can just 
+                    curNode.nextNode.curKeys.add(key);
+                    curNode.curKeys.remove(key); 
+                    keyMap.put(key,curNode.nextNode);
+                    checkEmpty(curNode);
+                }else {                     //which means the nextNode value != curNode.value-1;
+                        valueNode newNode = new valueNode(curNode.value-1, key);
+                        newNode.nextNode = curNode.nextNode;
+                        newNode.preNode= curNode;
+                        newNode.nextNode.preNode = newNode;
+                        curNode.curKeys.remove(key); 
+                        curNode.nextNode = newNode;
+                        keyMap.put(key,newNode);
+                        checkEmpty(curNode);
+                }
+            } else {    //which means the node is the tail. so we build a new head.
+                if (curNode.value == 1) {     //just to delete the key.
+                    curNode.curKeys.remove(key);  
+                    keyMap.remove(key);
+                    checkEmpty(curNode);
+                }else {                         // build another tail.
+                    tail = new valueNode(curNode.value-1,key);
+                    tail.preNode = curNode;
+                    curNode.nextNode = tail;
+                    curNode.curKeys.remove(key);  
+                    keyMap.put(key,tail);
+                    checkEmpty(curNode);
+                }
+            }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+         if (head == null) return "";//which means nothing here.
+         return head.curKeys.get(0);
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+         if (tail == null) return "";//which means nothing here.
+         return tail.curKeys.get(0);
+        
+    }
+    // to check whether the node should be delete because the keyList is empty.
+    private void checkEmpty(valueNode checkNode) {
+            if (checkNode.curKeys.size() != 0) return;
+            if (checkNode.preNode == null && checkNode.nextNode == null){
+                tail = null;
+                head = null;
+            }else if (checkNode.preNode == null && checkNode.nextNode != null) {
+                head = checkNode.nextNode;
+                head.preNode = null;
+            }else if (checkNode.nextNode == null && checkNode.preNode != null){
+                tail = checkNode.preNode;
+                tail.nextNode = null;
+            }else {
+                checkNode.preNode.nextNode = checkNode.nextNode;
+                checkNode.nextNode.preNode  = checkNode.preNode; 
+            } 
+    }
+}
+
+...
+
+----------------------------------------------------------------------------------------------------
+AC Java Solution using hashMap and two heaps
+public class AllOne {
+
+    class Node{
+        String key;
+        int val;
+        public Node(String key, int val) {
+            this.key = key;
+            this.val = val;
+        }
+    }
+    /** Initialize your data structure here. */
+    HashMap<String, Node> map;
+    PriorityQueue<Node> minQ;
+    PriorityQueue<Node> maxQ;
+    public AllOne() {
+        map = new HashMap<String, Node>();
+        minQ = new PriorityQueue<Node>(new Comparator<Node>(){
+            public int compare(Node a, Node b) {
+                return a.val - b.val;
+            }
+        });        
+        maxQ = new PriorityQueue<Node>(new Comparator<Node>(){
+            public int compare(Node a, Node b) {
+                return b.val - a.val;
+            }
+        });
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        if (!map.containsKey(key)) {
+            map.put(key, new Node(key, 1));
+            Node node = map.get(key);
+            minQ.add(node);
+            maxQ.add(node);
+        } else {
+            Node node = map.get(key);
+            minQ.remove(node);
+            maxQ.remove(node);
+            node.val++;
+            map.put(key, node);
+            minQ.add(node);
+            maxQ.add(node);
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+        if (map.containsKey(key)) {
+            Node node = map.get(key);
+            if (node.val == 1) {
+                map.remove(key);
+                minQ.remove(node);
+                maxQ.remove(node);
+            } else {
+                minQ.remove(node);
+                maxQ.remove(node);
+                node.val--;
+                map.put(key, node);
+                minQ.add(node);
+                maxQ.add(node);
+            }
+        }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+        return maxQ.isEmpty() ? "" : maxQ.peek().key;
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+        return minQ.isEmpty() ? "" : minQ.peek().key;
+    }
+}
+
+/**
+ * Your AllOne object will be instantiated and called as such:
+ * AllOne obj = new AllOne();
+ * obj.inc(key);
+ * obj.dec(key);
+ * String param_3 = obj.getMaxKey();
+ * String param_4 = obj.getMinKey();
+ */
+
+
+----------------------------------------------------------------------------------------------------
+Problem is not clear
+<p>What does the following mean? Increment a string by 1 (integer)?</p>
+<blockquote>
+<p>increments an existing key by 1</p>
+</blockquote>
+<p>I think it means the value of the key : can be clearly written in the question.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Java and Python solution
+from sets import Set
+class Node:
+    def __init__(self, cnt):
+        self.count = cnt
+        self.prev = None
+        self.next = None
+
+
+class AllOne(object):
+
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        #Key:count, Value:set of key who has been incremented by 'count' time
+        self.count_key_map = {}
+        #Key:key, Value: the number of counts of this key
+        self.key_count_map = {}
+        #Key: the count, Value: the node
+        self.count_node_map = {}
+        
+        #initialize the linkedlist with dummy node
+        self.head = Node(0)
+        self.tail = Node(float('inf'))
+        self.head.next = self.tail
+        self.tail.prev = self.head
+        
+        self.count_node_map[0] = self.head
+        self.count_node_map[float('inf')] = self.tail
+
+    def inc(self, key):
+        """
+        Inserts a new key <Key> with value 1. Or increments an existing key by 1.
+        :type key: str
+        :rtype: void
+        """
+        if key not in self.key_count_map:
+            self.key_count_map[key] = 0
+        
+        prev_count = self.key_count_map[key]
+        prev_node = self.count_node_map[prev_count]
+        
+        #update the key map:
+        self.key_count_map[key] += 1
+        #insert new node:
+        #new count occurs
+        if prev_node.next.count != self.key_count_map[key]:
+            #if a new count is created insert then node
+            new_node = Node(self.key_count_map[key])
+            self.insert(prev_node, new_node)
+         
+            #update 'node_map' and 'count_map'
+            self.count_node_map[self.key_count_map[key]] = new_node
+            self.count_key_map[self.key_count_map[key]] = Set()
+        #if the new count is the same as the count in next node
+        self.count_key_map[self.key_count_map[key]].add(key)
+        
+        #delelte the key in the prev-node
+        if prev_count != 0:
+            self.count_key_map[prev_count].remove(key)
+            if len(self.count_key_map[prev_count]) == 0:
+                self.delete(prev_node)
+                self.count_key_map.pop(prev_count)
+                self.count_node_map.pop(prev_count)
+    
+        
+
+    def dec(self, key):
+        """
+        Decrements an existing key by 1. If Key's value is 1, remove it from the data structure.
+        :type key: str
+        :rtype: void
+        """
+        if key not in self.key_count_map:
+            return
+        
+        prev_count = self.key_count_map[key]
+        prev_node = self.count_node_map[prev_count]
+        
+        self.key_count_map[key] -= 1
+        
+        #insert new node
+        #if the count becomes 0
+        if self.key_count_map[key] == 0:
+            self.key_count_map.pop(key)
+        else:
+            if self.key_count_map[key] !=  prev_node.prev.count:
+                new_node = Node(self.key_count_map[key])
+                self.insert(prev_node.prev, new_node)
+                
+                self.count_node_map[self.key_count_map[key]] = new_node
+                self.count_key_map[self.key_count_map[key]] = Set()
+
+            self.count_key_map[self.key_count_map[key]].add(key)
+                
+        #delete
+        self.count_key_map[prev_count].remove(key)
+        if len(self.count_key_map[prev_count]) == 0:
+            self.delete(prev_node)
+            self.count_key_map.pop(prev_count)
+            self.count_node_map.pop(prev_count)
+            
+    def getMaxKey(self):
+        """
+        Returns one of the keys with maximal value.
+        :rtype: str
+        """
+        if self.head.next == self.tail:
+            return ""
+        x = self.count_key_map[self.tail.prev.count].pop()
+        self.count_key_map[self.tail.prev.count].add(x)
+        return x
+        
+
+    def getMinKey(self):
+        """
+        Returns one of the keys with Minimal value.
+        :rtype: str
+        """
+        if self.head.next == self.tail:
+            return ""
+        x = self.count_key_map[self.head.next.count].pop()
+        self.count_key_map[self.head.next.count].add(x)
+        return x
+        
+    #insert 'node' after prev_node O(1) 
+    def insert(self, prev_node, node):
+        node.next = prev_node.next
+        node.prev = prev_node
+        
+        node.next.prev = node
+        node.prev.next = node
+        
+    def delete(self, node):
+        node.next.prev = node.prev
+        node.prev.next = node.next
+
+
+----------------------------------------------------------------------------------------------------
+Java O(1) Doubly link list :: Accepted
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by debabrata_sharma on 10/17/16.
+ */
+public class AllOne {
+
+    public class Node {
+        Node next, prev;
+        private String key;
+        private int val;
+
+        public Node(String key, int val) {
+            this.key = key;
+            this.val = val;
+        }
+
+    }
+
+    Node head, tail;
+    Map<String, Node> map;
+
+    /**
+     * Initialize your data structure here.
+     */
+    public AllOne() {
+
+        map = new HashMap<String, Node>();
+        head = new Node("", Integer.MAX_VALUE);
+        tail = new Node("", Integer.MIN_VALUE);
+        head.next = tail;
+        tail.prev = head;
+
+    }
+
+
+    /**
+     * Inserts a new key <Key> with value 1. Or increments an existing key by 1.
+     */
+    public void inc(String key) {
+
+        if (map.containsKey(key)) {
+            Node node = map.get(key);
+            node.val++;
+            if(node.val>=head.next.val){
+                removeNode(node);
+                addToHead(node);
+            }
+        } else {
+            Node node = new Node(key, 1);
+            map.put(key, node);
+            addToTail(node);
+        }
+    }
+
+    /**
+     * Decrements an existing key by 1. If Key's value is 1, remove it from the data structure.
+     */
+    public void dec(String key) {
+
+        if (map.containsKey(key)) {
+            Node node = map.get(key);
+            if (node.val == 1) {
+                map.remove(key);
+                removeNode(node);
+            } else {
+
+                node.val--;
+
+                if( node.val<tail.prev.val ){
+                    removeNode(node);
+                    addToTail(node);
+                }
+                if(node.key==head.next.key){
+                    if (node.val<=head.next.val) {
+                        removeNode(node);
+                        addNextToHead(node);
+                    }
+                }
+
+            }
+        } else {
+            return;
+        }
+
+    }
+
+    /**
+     * Returns one of the keys with maximal value.
+     */
+    public String getMaxKey() {
+
+        return head.next.key;
+    }
+
+    /**
+     * Returns one of the keys with Minimal value.
+     */
+    public String getMinKey() {
+        return tail.prev.key;
+    }
+
+    private void removeNode(Node node){
+
+        node.prev.next=node.next;
+        node.next.prev=node.prev;
+        node.prev=null;
+        node.next=null;
+
+    }
+
+    private void addToTail(Node node) {
+
+        tail.prev.next = node;
+        node.prev = tail.prev;
+
+        node.next = tail;
+        tail.prev = node;
+
+
+    }
+
+    private void addToHead(Node node) {
+
+        head.next.prev = node;
+        node.next = head.next;
+        node.prev = head;
+        head.next = node;
+
+
+    }
+    private void addNextToHead(Node node) {
+
+        head.next.next.prev = node;
+        node.next = head.next.next;
+        node.prev = head.next;
+        head.next.next = node;
+
+
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Accepted solution
+public class AllOne {
+
+    // Map that stores key to the node
+    Map<String, Integer> map;
+    
+    // Map that groups keys having same value using double
+    // linked list as value
+    Map<Integer, Set<String>> valueMap;
+    
+    // MinMax linkedlist to keep track of
+    // min and max values
+    LinkedList<Integer> minMax;
+
+    /** Initialize your data structure here. */
+    public AllOne() {
+        map = new HashMap<>();
+        valueMap = new HashMap<>();
+        minMax = new LinkedList<Integer>();
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        // If new key, just insert into the map
+        // and place it in the appropriate position
+        // in value map
+        if(!map.containsKey(key)) {
+            map.put(key, 1);
+            putInValueMap(1, key);
+        } else {
+            // If already existing
+            int val = map.get(key);
+            // Remove from value map for old value
+            removeFromValueMap(val, key);
+            // Increment value
+            map.put(key, val + 1);
+            // Place it the new value in value map
+            putInValueMap(val + 1, key);
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+        // If this key not found, just return
+        if(!map.containsKey(key)) {
+            return;
+        }
+        
+        int val = map.get(key);
+        // If value is 1, then remove from map
+        if(val == 1) {
+            map.remove(key);
+            // Remove from value map too
+            removeFromValueMap(1, key);
+        } else {
+            // Remove from old value
+            removeFromValueMap(val, key);
+            // Decrement value
+            map.put(key, val - 1);
+            
+            // Insert at new value
+            putInValueMap(val - 1, key);
+        }
+        
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+        if(minMax.isEmpty()) {
+            return "";
+        }
+        // minMax.getFirst() always has max value
+        return valueMap.get(minMax.getFirst()).iterator().next();
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+        if(minMax.isEmpty()) {
+            return "";
+        }
+        // minMax.getFirst() always has min value
+        return valueMap.get(minMax.getLast()).iterator().next();
+    }
+    
+    private void putInValueMap(int count, String node) {
+        // If not seen before, create a new dll
+        if(!valueMap.containsKey(count)) {
+            valueMap.put(count, new HashSet<String>());
+        }
+        // Add to dll
+        valueMap.get(count).add(node);
+        
+        // Update min max
+        if(minMax.isEmpty() || minMax.getFirst() < count) {
+            minMax.addFirst(count);
+        }
+        
+        if(!minMax.isEmpty() && minMax.getLast() > count) {
+            minMax.addLast(count);
+        }
+    }
+    
+    private void removeFromValueMap(int count, String node) {
+        // If not present in value map, just return
+        if(!valueMap.containsKey(count)) {
+            return;
+        }
+        
+        // Remove from dll in value map
+        valueMap.get(count).remove(node);
+        
+        // If no elements present with this value
+        if(valueMap.get(count).size() == 0) {
+            // Remove from value map all together
+            valueMap.remove(count);
+            
+            // Update min max
+            if(!minMax.isEmpty() && minMax.getFirst() == count) {
+                minMax.removeFirst();
+            }
+            if(!minMax.isEmpty() && minMax.getLast() == count) {
+                minMax.removeLast();
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+JAVA(HashMap + constructed LinkedList), guarantee O(1) with explanation
+class Node{
+    Node pre;
+    Node next;
+    int count;
+    Set<String> set;
+    Node(int count, String key){
+        this.count = count;
+        set = new HashSet<>();
+        set.add(key);
+    }
+    Node(){
+        
+    }
+}
+
+class nodeList{
+    Node tail;
+    Node head;
+    int len;
+    
+    nodeList(){ // we maintain a tail and head Node here so that we don't need to check if the nodeList is empty or not. they help simplify the insert and remove function. the value of head and tail defined below always satisfied the linked list order, and won't has consecutive count with their neighbors;
+        head = new Node();
+        head.count = -1; 
+        tail = new Node();
+        tail.count = Integer.MAX_VALUE;
+        head.next = tail;
+        tail.pre = head;
+    }
+    
+    void insert(Node node, Node next){ // insert the node in front of the next;
+        len++;
+        Node pre = next.pre;
+        pre.next = node;
+        node.pre = pre;
+        node.next = next;
+        next.pre = node;
+    }
+    
+    void remove(Node node){
+        Node pre = node.pre;
+        Node next = node.next;
+        pre.next = next;
+        next.pre = pre;
+        len--;
+    }
+}
+
+public class AllOne {
+    nodeList list;
+    Map<String, Node> map;
+
+    /** Initialize your data structure here. */
+    public AllOne() {
+      list = new nodeList();
+      map = new HashMap<>();
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        if(map.containsKey(key)){
+            Node node = map.get(key);
+            Node next = node.next;
+            int count = node.count;
+            
+            node.set.remove(key); 
+            if(node.set.isEmpty()){
+                list.remove(node); // we always delete the node whose set is empty, if not; then when we call getMaxKey() or getMinkey() function, it is possible that the leftmost or rightmost(head and tail are exclusive) Node's set is empty, so we have to use a loop to find the one whose set is not empty and O(1) cannot be guaranteed.
+            }
+            
+            if(count + 1 != next.count){ //as the value of the key increased by 1, there is no Node in the linked list whose count is the new value of the key, so we insert a new Node here;
+                Node newNode = new Node(count + 1, key);
+                list.insert(newNode, next);
+                map.put(key, newNode);
+            }
+            else{
+                next.set.add(key);
+                map.put(key, next);
+            }
+        }
+        else{
+            Node first = list.head.next;
+            // check if we have the Node whose count is 1;
+            if(first.count == 1){
+                first.set.add(key);
+                map.put(key, first);
+            }
+            else{
+                Node newNode = new Node(1, key);
+                list.insert(newNode, first);
+                map.put(key, newNode);
+            }
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+        if(map.containsKey(key)){
+            Node node = map.get(key);
+            Node pre = node.pre;
+            int count = node.count;
+            node.set.remove(key);
+            
+            if(node.set.isEmpty()){
+                list.remove(node);
+            }
+           
+            if(pre.count == count - 1){
+                pre.set.add(key);
+                map.put(key, pre);
+            }
+            else if(count > 1){
+                Node newNode = new Node(count - 1, key);
+                list.insert(newNode, pre.next);
+                map.put(key, newNode);
+            }
+            else{
+                map.remove(key);
+            }
+        }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+       if(list.len != 0){
+           Node node = list.tail.pre;
+           for(String str : node.set){
+               return str;
+           }
+       }
+       return "";
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+        if(list.len != 0){
+            Node node = list.head.next;
+            for(String str : node.set){
+                return str;
+            }
+        }
+        
+        return "";
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with detailed comments
+from collections import defaultdict
+class Node(object):
+    def __init__(self):
+        self.key_set = set([])
+        self.prev, self.nxt = None, None 
+
+    def add_key(self, key):
+        self.key_set.add(key)
+
+    def remove_key(self, key):
+        self.key_set.remove(key)        
+
+    def get_any_key(self):
+        if self.key_set:
+            result = self.key_set.pop()
+            self.add_key(result)
+            return result
+        else:
+            return None
+    
+    def count(self):
+        return len(self.key_set)
+
+    def is_empty(self):
+        return len(self.key_set) == 0
+
+
+class DoubleLinkedList(object):
+    def __init__(self):
+        self.head_node, self.tail_node = Node(), Node()
+        self.head_node.nxt, self.tail_node.prev = self.tail_node, self.head_node
+        return
+
+    def insert_after(self, x):
+        node, temp = Node(), x.nxt
+        x.nxt, node.prev = node, x
+        node.nxt, temp.prev = temp, node
+        return node
+    
+    def insert_before(self, x):
+        return self.insert_after(x.prev)
+
+    def remove(self, x):
+        prev_node = x.prev
+        prev_node.nxt, x.nxt.prev = x.nxt, prev_node
+        return
+
+    def get_head(self):
+        return self.head_node.nxt
+    
+    def get_tail(self):
+        return self.tail_node.prev
+
+    def get_sentinel_head(self):
+        return self.head_node
+
+    def get_sentinel_tail(self):
+        return self.tail_node
+    
+class AllOne(object):
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self.dll, self.key_counter = DoubleLinkedList(), defaultdict(int)
+        self.node_freq = {0:self.dll.get_sentinel_head()}
+
+    def _rmv_key_pf_node(self, pf, key):
+        node = self.node_freq[pf]
+        node.remove_key(key)
+        if node.is_empty():
+            self.dll.remove(node)
+            self.node_freq.pop(pf)
+        return
+
+    def inc(self, key):
+        """
+        Inserts a new key <Key> with value 1. Or increments an existing key by 1.
+        :type key: str
+        :rtype: void
+        """
+        self.key_counter[key] += 1
+        cf, pf = self.key_counter[key], self.key_counter[key]-1
+        if cf not in self.node_freq:
+            # No need to test if pf = 0 since frequency zero points to sentinel node
+            self.node_freq[cf] = self.dll.insert_after(self.node_freq[pf])
+        self.node_freq[cf].add_key(key)
+        if pf > 0:
+            self._rmv_key_pf_node(pf, key)
+
+    def dec(self, key):
+        """
+        Decrements an existing key by 1. If Key's value is 1, remove it from the data structure.
+        :type key: str
+        :rtype: void
+        """
+        if key in self.key_counter:
+            self.key_counter[key] -= 1
+            cf, pf = self.key_counter[key], self.key_counter[key]+1
+            if self.key_counter[key] == 0:
+                self.key_counter.pop(key)
+            if cf != 0:
+                if cf not in self.node_freq:
+                    self.node_freq[cf] = self.dll.insert_before(self.node_freq[pf])
+                self.node_freq[cf].add_key(key)
+            self._rmv_key_pf_node(pf, key)
+
+    def getMaxKey(self):
+        """
+        Returns one of the keys with maximal value.
+        :rtype: str
+        """
+        return self.dll.get_tail().get_any_key() if self.dll.get_tail().count() > 0 else ""
+
+    def getMinKey(self):
+        """
+        Returns one of the keys with Minimal value.
+        :rtype: str
+        """
+        return self.dll.get_head().get_any_key() if self.dll.get_tail().count() > 0 else ""
+
+
+----------------------------------------------------------------------------------------------------
+Only ONE HashMap() Java solution, beats 99%
+public class AllOne {
+    Map<String, Node> map;
+    Node head, tail;
+    // head - min
+    // tail - max
+    /** Initialize your data structure here. */
+    public AllOne() {
+        map = new HashMap();
+        head = tail = null;
+    }
+    
+    /** Inserts a new key <Key> with value 1. Or increments an existing key by 1. */
+    public void inc(String key) {
+        if (map.containsKey(key)) {
+            // get old node
+            Node node = map.get(key);
+            // get old val
+            int val = node.val;
+            // remove old key in the old node
+            node.keys.remove(key);
+            // add new node with new val
+            if (node.next == null || node.next.val != val + 1) {
+                Node newNode = new Node(val + 1);
+                newNode.pre = node;
+                newNode.next = node.next;
+                node.next = newNode;
+                if (newNode.next != null) newNode.next.pre = newNode;
+            }
+            // add new key to the next node
+            node.next.keys.add(key);
+            // update node
+            map.put(key, node.next);
+            
+            // udate head
+            if (node.keys.isEmpty()) {
+                if (node == head) head = node.next;
+                node.next.pre = node.pre;
+                if (node.pre != null) node.pre.next = node.next;
+            }
+            // update tail
+            if (tail == node) tail = node.next;
+        } else {
+            if (head == null || head.val > 1) {
+                Node node = new Node(1);
+                node.next = head;
+                if (head != null) head.pre = node;
+                head = node;
+                if (tail == null) tail = node;
+            }
+            head.keys.add(key);
+            map.put(key, head);
+        }
+    }
+    
+    /** Decrements an existing key by 1. If Key's value is 1, remove it from the data structure. */
+    public void dec(String key) {
+        if (!map.containsKey(key)) return;
+        // get old node
+        Node node = map.get(key);
+        // get old val
+        int val = node.val;
+        // remove old val from old node
+        node.keys.remove(key);
+        // remove old key
+        map.remove(key);
+        // if it's head, update head and tail
+        if (val == 1) {
+            if (node.keys.isEmpty()) {
+                if (head == node) head = node.next;
+                if (head != null) head.pre = null;
+                if (tail == node) tail = null;
+            }
+        } else {
+            // add new node at pre position
+            if (node.pre == null || node.pre.val != val - 1) {
+                Node newNode = new Node(val - 1);
+                newNode.next = node;
+                newNode.pre = node.pre;
+                node.pre = newNode;
+                if (newNode.pre != null) newNode.pre.next = newNode;
+            }
+            // add new key to the newNode or pre node
+            node.pre.keys.add(key);
+            // update node
+            map.put(key, node.pre);
+            
+            // update tail
+            if (node.keys.isEmpty()) {
+                if (tail == node) tail = node.pre;
+                node.pre.next = node.next;
+                if (node.next != null) node.next.pre = node.pre;
+            }
+            // update head
+            if (head == node) head = node.pre;
+        }
+    }
+    
+    /** Returns one of the keys with maximal value. */
+    public String getMaxKey() {
+        return tail == null ? "" : tail.keys.iterator().next();
+    }
+    
+    /** Returns one of the keys with Minimal value. */
+    public String getMinKey() {
+        return head == null ? "" : head.keys.iterator().next();
+    }
+    
+    class Node {
+        int val;
+        LinkedHashSet<String> keys;
+        Node next, pre;
+        public Node(int val) {
+            this.val = val;
+            keys = new LinkedHashSet();
+            next = pre = null;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+clean java code using hashmap and doubly linkedlist
+public class AllOne {
+	private Bucket head=new Bucket(0);
+	private Bucket tail=new Bucket(Integer.MAX_VALUE);
+	Map<Integer,Bucket> bucketMap=new HashMap<>();
+	Map<String,Integer> keyMap=new HashMap<>();
+	class Bucket{
+	    int val;
+	    Bucket prev;
+	    Bucket next;
+	    Set<String> keySet;
+	    public Bucket(int val){
+		    this.val=val;
+		    keySet=new HashSet<>();
+        }
+    }
+
+	public AllOne() {
+		head.next=tail;
+		tail.prev=head;
+	}
+
+	public void inc(String key) {
+		if(!keyMap.containsKey(key)){
+			keyMap.put(key,1);
+			if(!bucketMap.containsKey(1)){
+				Bucket bucket=new Bucket(1);
+				insert(head,bucket);
+			}
+			bucketMap.get(1).keySet.add(key);
+		}else{
+			int val=keyMap.get(key);
+			keyMap.put(key,val+1);
+			Bucket curr=bucketMap.get(val);
+			Bucket next=bucketMap.get(val+1);
+			if(next==null){
+				next=new Bucket(val+1);
+				insert(curr,next);
+			}
+			next.keySet.add(key);
+			curr.keySet.remove(key);
+			if(curr.keySet.isEmpty()){
+				delete(curr);
+			}
+		}
+	}
+
+	public void dec(String key) {
+		if(keyMap.containsKey(key)){
+			int val=keyMap.get(key);
+			Bucket curr=bucketMap.get(val);
+			if(val==1){
+				keyMap.remove(key);
+			}else{
+			    keyMap.put(key,val-1);
+				Bucket prev=bucketMap.get(val-1);
+				if(prev==null){
+					prev=new Bucket(val-1);
+					insert(curr.prev,prev);
+				}
+				prev.keySet.add(key);
+			}
+			curr.keySet.remove(key);
+			if(curr.keySet.isEmpty()){
+				delete(curr);
+			}
+		}
+	}
+
+	public String getMaxKey() {
+		return tail.prev==head?"":tail.prev.keySet.iterator().next();
+	}
+
+	public String getMinKey() {
+		return head.next==tail?"":head.next.keySet.iterator().next();
+	}
+		
+	public void insert(Bucket prev,Bucket bucket){
+		bucketMap.put(bucket.val, bucket);
+		bucket.prev=prev;
+		bucket.next=prev.next;
+		prev.next.prev=bucket;
+		prev.next=bucket;
+	}
+		
+	public void delete(Bucket bucket){
+		bucketMap.remove(bucket.val);
+		bucket.prev.next=bucket.next;
+		bucket.next.prev=bucket.prev;
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+My Java solution using Double Linked List + HashMap + LinkedHashSet

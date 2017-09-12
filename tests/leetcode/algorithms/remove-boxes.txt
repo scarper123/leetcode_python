@@ -1,0 +1,650 @@
+Concise Java DP Solution
+public class Solution {
+    public int findRotateSteps(String ring, String key) {
+        int n = ring.length();
+        int m = key.length();
+        int[][] dp = new int[m + 1][n];
+        
+        for (int i = m - 1; i >= 0; i--) {
+            for (int j = 0; j < n; j++) {
+                dp[i][j] = Integer.MAX_VALUE;
+                for (int k = 0; k < n; k++) {
+                    if (ring.charAt(k) == key.charAt(i)) {
+                        int diff = Math.abs(j - k);
+                        int step = Math.min(diff, n - diff);
+                        dp[i][j] = Math.min(dp[i][j], step + dp[i + 1][k]);
+                    }
+                }
+            }
+        }
+        
+        return dp[0][0] + m;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Shared my C++ dp solution ,19ms
+class Solution {
+public:
+    int findRotateSteps(string ring, string key) {
+        int size = ring.size();
+        int ksize = key.size();
+        vector<vector<int>> mp(26);   //Optimazed_1 use vector instead of unordered_map
+            //stored index of each ,pay attention to duplcate characters.
+        for(int i=0;i<size;++i){
+            mp[ring[i]-'a'].push_back(i);
+        }
+        
+        vector<int> dp (size,INT_MAX);   //Optimazed_2,use less space 
+        dp[0] = 0;
+        
+        vector<int> startIndex(1,0);// starting index
+
+        for(int i=1;i<=ksize;++i){
+            vector<int> nextDp(size,INT_MAX);
+            for(auto it:mp[key[i-1]-'a']){
+                for(int j=0;j<startIndex.size();++j){
+                    int minDist = min((startIndex[j] + size -it)%size,(it + size - startIndex[j])%size) + dp[startIndex[j]];// Look at the above explanation
+                    nextDp[it] =min(nextDp[it],minDist);
+                }
+            }
+            startIndex = mp[key[i-1]-'a'];
+            dp = nextDp;
+        }
+        
+        int res = INT_MAX;
+        for(int i=0;i<size;++i){
+            res = min(res,dp[i]);
+        }  // get the smallest value(step)
+        
+        return res + ksize;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Clear Solution, dfs+memoization
+public class Solution {
+    Map<String, Map<Integer, Integer>> memo;
+    public int findRotateSteps(String ring, String key) {
+        memo = new HashMap<>();
+        return dfs(ring, key, 0);
+    }
+    
+    private int findPos(String ring, char ch){ // find first occurrence clockwise
+        return ring.indexOf(ch);
+    }
+    
+    private int findBackPos(String ring, char ch){ //find first occurrence  anti-clockwise
+        if(ring.charAt(0) == ch) return 0;
+        for(int i = ring.length()-1;i>0;i--){
+            if(ring.charAt(i) == ch) return i;
+        }
+        return 0;
+    }
+    
+    private int dfs(String ring, String key, int i){
+        if(i == key.length()) return 0;
+        int res = 0;
+        char ch = key.charAt(i);
+        if(memo.containsKey(ring) && memo.get(ring).containsKey(i)) return memo.get(ring).get(i);
+        int f = findPos(ring, ch);
+        int b = findBackPos(ring, ch);
+        int forward = 1+f+dfs(ring.substring(f)+ring.substring(0, f), key, i+1);
+        int back = 1+ring.length()-b + dfs(ring.substring(b)+ring.substring(0, b),key, i+1);
+        res = Math.min(forward, back);
+        Map<Integer, Integer> ans = memo.getOrDefault(ring, new HashMap<>());
+        ans.put(i, res);
+        memo.put(ring, ans);
+        return res;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Evolve from brute force to dp
+    int findRotateSteps(string ring, string key) {
+        vector<int> pos[26];
+        int r = ring.size(), k = key.size();
+        for(int i=0;i<r;i++) pos[ring[i]-'a'].push_back(i);
+        vector<int> pre(r), cur(r,INT_MAX), *p_pre = &pre, *p_cur = &cur;
+        for(int i=k-1;i>=0;i--) {
+            for(int j=0;j<r;j++)
+                for(int nxt:pos[key[i]-'a']) {
+                    int dist = abs(j-nxt);
+                    (*p_cur)[j]=min((*p_cur)[j],min(dist,r-dist)+(*p_pre)[nxt]);
+                }
+            swap(p_pre,p_cur);
+            p_cur->assign(r,INT_MAX);
+        }
+        return (*p_pre)[0]+k;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+O(RK)-time DP solution
+int R = ring.length(), K = key.length();
+int[][] prev = new int[R][26], next = new int[R][26];
+Map<Character, List<Integer>> map = new HashMap<>();
+for (int i = 0; i < ring.length(); i++) {
+    char ch = ring.charAt(i);
+    map.putIfAbsent(ch, new ArrayList<>());
+    map.get(ch).add(i);
+}
+for (char ch : map.keySet()) {
+    List<Integer> list = map.get(ch);
+    for (int i = 0, ptr = 0; i < ring.length(); i++) {
+        next[i][ch - 'a'] = list.get(ptr);
+        prev[i][ch - 'a'] = list.get((ptr - 1 + list.size()) % list.size());
+        if (ring.charAt(i) == ch) ptr = (ptr + 1) % list.size();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python Solution (222 ms)
+class Solution(object):
+    def findRotateSteps(self, ring, key):
+        n = len(ring)
+        #the distance between two points (i, j) on the ring
+        def dist(i, j):
+            return min(abs(i - j), n - abs(i - j))
+        #build the position list for each character in ring    
+        h = {}
+        for i in xrange(n):
+            a = ring[i]
+            if a in h: h[a].append(i)
+            else: h[a] = [i]
+        
+        pcl_pre = [[0,0]] #list of possible previous position of the ring and the cost
+        for k in key:
+            pl_k = h[k] #obtain the location list of character k
+            pcl_next = [[p, 0] for p in pl_k] #list of possible next position of the ring and the cost
+            
+            for pc_next in pcl_next:
+                p_next = pc_next[0] #next possible position
+                #Find minimum cost to p_next
+                cmin = dist(p_next, pcl_pre[0][0]) + pcl_pre[0][1]
+                for pc_pre in pcl_pre:
+                    cmin = min(cmin, dist(p_next, pc_pre[0]) + pc_pre[1])
+                pc_next[1] = cmin
+            
+            pcl_pre = pcl_next
+        
+        #Find the min cost for all possible end positions
+        cmin = pcl_pre[0][1]
+        for pc in pcl_pre:
+            cmin = min(cmin, pc[1])
+        return len(key) + cmin
+
+
+----------------------------------------------------------------------------------------------------
+JAVA DP with explanation
+// by fallcreek
+public class Solution {
+    public int findRotateSteps(String ring, String key) {        
+        int[][] dp = new int[ring.length()][key.length()];
+        for(int[] line : dp)    Arrays.fill(line, -1);
+        
+        return helper(ring, 0, key, 0, dp) + key.length();
+    }
+    
+    public int helper(String ring, int rIndex, String key, int kIndex, int[][] dp){
+        if(kIndex == key.length()) return 0;
+        if(dp[rIndex][kIndex] != -1) return dp[rIndex][kIndex];
+        
+        char dest = key.charAt(kIndex);
+        
+        int nextIndex = ring.indexOf(dest);
+        int sol = Integer.MAX_VALUE;
+        do{
+            int move = Math.min(Math.abs(rIndex - nextIndex), ring.length() - Math.abs(rIndex - nextIndex));
+            int remain = helper(ring, nextIndex, key, kIndex + 1, dp);
+            sol = Math.min(sol, move + remain);
+            nextIndex = ring.indexOf(dest, nextIndex + 1);
+        }while(nextIndex != -1);
+        dp[rIndex][kIndex] = sol;
+        return sol;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+please modify the tag from &quot;Dynamic Programming&quot; to Dynamic Programming
+<p>otherwise there will be a tag named &#34;Dynamic Programming&#34; with only this problem, rather than merged with other Dynamic Programming problems.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy understanding solution! Recursion + memorization
+    public int findRotateSteps(String ring, String key) {
+        if(ring.length()==0 || key.length()==0) return 0;
+        return findShortest(ring.toCharArray(), 0, key.toCharArray(), 0, new int[ring.length()][key.length()]);
+    }
+    private int findShortest(char[] arr, int p,  char[] key, int idx, int[][] mem) {
+        if(idx==key.length) return 0;
+        if(mem[p][idx]>0) return mem[p][idx];
+        int c1 = 0, c2=0,i=p, j=p;
+        for(; arr[i]!=key[idx]; c1++) {
+            i=(i+1)%arr.length;
+        }
+        for(; arr[j]!=key[idx];c2++) {
+            j=(j-1+arr.length)%arr.length;
+        }
+        if(i==j) { //rotate to same location then use the less count one
+            mem[p][idx]= Math.min(c1,c2)+1 + findShortest(arr, i, key, idx+1, mem);
+        } else {
+            int r1 = findShortest(arr, i, key, idx+1, mem) + c1 + 1;
+            int r2 = findShortest(arr, j, key, idx+1, mem) + c2 + 1;
+            mem[p][idx] = Math.min(r1,r2);
+        }
+        return mem[p][idx];
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ DFS + Memorization
+class Solution {
+public:
+    int findRotateSteps(string ring, string key) {
+        vector<vector<int>> v(26);
+        unordered_map<int, int> memo;
+        int n = ring.size();
+        for (int i = 0; i < n; i++) {
+            v[ring[i]-'a'].push_back(i);
+        }
+        
+        return dfs(v, n, 0, key, 0, memo);
+    }
+    
+    int dfs(vector<vector<int>>& v, int n, int offset, string& key, int cur, unordered_map<int, int>& memo) {
+        if (cur == key.size()) return 0;
+        int k = cur + ((offset % n) << 8);
+        if (memo.count(k)) return memo[k];
+        int res = INT_MAX;
+        for (auto x : v[key[cur]-'a']) {
+            x = (x+offset) % n;
+            res = min(res, min(x, n-x)+1+dfs(v, n, offset+n-x, key, cur+1, memo));
+        }
+        memo[k] = res;
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution
+from collections import Counter
+
+class Solution(object):
+    def findRotateSteps(self, ring, key):
+        if not ring or not key: return 0
+        self.duplicates = {i for i, v in Counter(ring).items() if v > 1}
+        self.cache = {}
+        return self.helper(ring, key)
+        
+    def helper(self, ring, key):
+        if not key: return 0
+        if (ring, key) in self.cache:
+            return self.cache[(ring, key)]
+        c = key[0]
+        if c in self.duplicates:
+            cw, ccw = ring.rfind(c), ring.find(c)
+            res = 1 + min(len(ring) - cw + self.helper(ring[cw:] + ring[:cw], key[1:]), ccw + self.helper(ring[ccw:] + ring[:ccw], key[1:]))
+        else:
+            pos = ring.find(c)
+            res = 1 + min(pos, len(ring) - pos) + self.helper(ring[pos:] + ring[:pos], key[1:])
+        self.cache[(ring, key)] = res
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+12-line C++ DP Solution with Comments
+class Solution {
+public:
+    int findRotateSteps(string ring, string key) {
+        int ans=INT_MAX, KS=key.size(), RS=ring.size();
+        vector<vector<int>> mem(KS+1,vector<int>(RS,INT_MAX));
+        mem[0][0]=0; // start state
+        for(int i=1;i<=KS;i++) // Go through every char in key
+            for(int j=0;j<RS;j++) // Go through every char in ring
+                if(ring[j]==key[i-1]) // ring char matches key char
+                    for(int k=0;k<RS;k++) // look up previous result
+                        if(mem[i-1][k]!=INT_MAX) { // find previous result
+                            mem[i][j]=min(mem[i][j],mem[i-1][k]+min((k+RS-j)%RS,(j+RS-k)%RS)); // update current state
+                            (i==KS)?ans=min(ans,mem[KS][j]):0; // if last row, update answer
+                        }
+        return ans+KS;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+DP Python 225ms O(R^2 * K)-time O(R)-space, easy to understand
+class Solution(object):
+
+    def findRotateSteps(self, ring, key):
+        pre_pos_cost = [[0,0]]
+        pos_d = {}
+        ring_len = len(ring)
+        for idx, i in enumerate(ring):
+            if i in pos_d:
+                pos_d[i].append(idx)
+            else:
+                pos_d[i] = [idx]
+        for k in key:
+            cur_pos_cost = []
+            pos_l = pos_d[k]
+            for p in pos_l:
+                tmp_min = float('inf')
+                for pre in pre_pos_cost:
+                    tmp_min = min(min(abs(pre[0]-p), ring_len-abs(pre[0]-p)) + pre[1], tmp_min)
+                cur_pos_cost.append([p, tmp_min])
+            pre_pos_cost = cur_pos_cost
+        return min([p[1] for p in pre_pos_cost]) + len(key)
+
+
+----------------------------------------------------------------------------------------------------
+c++ 13ms with o(n) space
+class Solution {
+public:
+    int findRotateSteps(string ring, string key) {
+        vector<vector<int> > pos(26, vector<int>());
+        for(int i = 0;i < ring.length();i ++)
+            pos[ring[i] - 'a'].push_back(i);
+        
+        int len = ring.length();
+        vector<vector<int> > nums(2, vector<int>(len, 0));
+        for(int i = key.length()-1;i > 0;i --) {
+            int now = key[i] - 'a';
+            int pre = key[i-1] - 'a';
+            for(int j = 0;j < pos[pre].size();j ++) {
+                int u = pos[pre][j];
+                nums[i%2][u] = INT_MAX;
+                for(int k = 0;k < pos[now].size();k ++) {
+                    int v = pos[now][k];
+                    int dis = min(abs(v - u), len - abs(v - u));
+                    nums[i%2][u] = min(nums[i%2][u], nums[(i+1)%2][v] + dis);
+                }
+            }
+        }
+        
+        nums[0][0] = INT_MAX;
+        for(int k = 0;k < pos[key[0] - 'a'].size();k ++) {
+            int v = pos[key[0] - 'a'][k];
+            int dis = min(v, len - v);
+            nums[0][0] = min(nums[0][0], nums[1][v] + dis);
+        }
+                
+        return nums[0][0] + key.length();
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ DP Solution using HashMap with O(nm) Time Complexity and O(n) Space Complexity
+class Solution {
+public:
+    int findRotateSteps(string ring, string key) {
+        int ans = 0;
+        if(key.size() == 0)
+            return ans;
+        unordered_map<int,int> predp, curdp;
+        unordered_map<int,int>::iterator it;
+        int n = key.size(), m = ring.size(), k, idx, cnt, j;
+        predp[0] = 0;
+        for(int i = 0; i < n; ++ i){
+            curdp.clear();
+            for(it = predp.begin(); it != predp.end(); ++ it ){
+                idx = it->first;
+                for(int j = 0; j < m; ++ j){
+                    if( ring[(idx + j)%m] == key[i] ){
+                        if(curdp.find((idx + j)%m) == curdp.end())
+                            curdp[(idx + j)%m] = predp[idx] + j + 1;
+                        else
+                            curdp[(idx + j)%m] = min(curdp[(idx + j)%m], predp[idx] + j + 1);
+                        break;
+                    }
+                }
+                for(int j = 0; j < m; ++ j){
+                    if( ring[(idx - j + m)%m] == key[i] ){
+                        if(curdp.find((idx - j + m)%m) == curdp.end())
+                            curdp[(idx - j + m)%m] = predp[idx] + j + 1;
+                        else
+                            curdp[(idx - j + m)%m] = min(curdp[(idx - j + m)%m], predp[idx] + j + 1);
+                        break;
+                    }
+                }
+            }
+            predp = curdp;
+        }
+        ans = INT_MAX;
+        for(it = curdp.begin(); it != curdp.end(); ++ it)
+            ans = min(ans, it->second);
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+CPP 22ms DP solution
+class Solution {
+    vector<vector<int>> dp;
+public:
+    int findRotateSteps(string ring, string key) {
+        if (key.empty()) return 0;
+        int keyLen = key.length(), ringLen = ring.length();
+        
+        dp = vector<vector<int>>(keyLen, vector<int>(ringLen, -1));
+        
+        for (int i = 0; i < ringLen; i++) {
+            if (ring[i] == key[0]) {
+                dp[0][i] = min(i, ringLen - i) + 1;
+            }
+        }
+        
+        for (int i = 1; i < keyLen; i++) {
+            for (int j = 0; j < ringLen; j++) {
+                if (ring[j] == key[i]) {
+                    int step = INT_MAX;
+                    for (int k = 0; k < ringLen; k++) {
+                        if (dp[i - 1][k] >= 0) {
+                            int t = abs(k - j);
+                            step = min(step, min(t, ringLen - t) + 1 + dp[i - 1][k]);
+                        }
+                    }
+                    dp[i][j] = step;
+                }
+            }
+        }
+        
+        int minStep = INT_MAX;
+        for (int i = 0; i < ringLen; i++) {
+            if (dp[keyLen - 1][i] >= 0) {
+                minStep = min(minStep, dp[keyLen - 1][i]);
+            }
+        }
+        
+        return minStep;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Super clear DFS + memorization solution
+public class Solution {
+    public int findRotateSteps(String ring, String key) {
+           Map<String,Integer> map = new HashMap();
+           return dfs(ring, key, 0, map);
+    }
+    
+    public int dfs(String ring, String key, int index, Map<String,Integer> map){
+        if(index == key.length()){
+            return 0;
+        }
+    
+        char c = key.charAt(index);
+        String hashKey = ring + index;
+        if(map.containsKey(hashKey)) return map.get(hashKey);
+        
+        int minSteps = Integer.MAX_VALUE;
+        for(int i = 0; i < ring.length(); i ++){
+            if(ring.charAt(i) == c){
+                String s = ring.substring(i, ring.length()) + ring.substring(0, i);
+                int steps = 1 + Math.min(i, ring.length() - i);
+                steps += dfs(s, key, index + 1, map);
+                minSteps = Math.min(minSteps, steps);
+            }
+        }
+        
+        map.put(hashKey, minSteps);
+        
+        return minSteps;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java DP, easy to understand with explanation
+public class Solution {
+    public int findRotateSteps(String ring, String key) {
+        int len = key.length();
+        //With current steps, the max number of chars can spell when stop at ring[i]
+        int[] dp = new int[ring.length()];
+        Arrays.fill(dp, -1); //-1 means can not be reached
+        int step = 0;
+        dp[0] = 0; //start position
+        while(true) {
+            step++;
+            int[] next = new int[ring.length()];
+            Arrays.fill(next, -1);
+            for(int i=0; i<dp.length; i++){
+                if(dp[i]<0){
+                    continue; //can not reach current position
+                }    
+                int left = i-1>=0? i-1 : dp.length-1;
+                next[left] = Math.max(next[left], dp[i]); //move left from i
+                int right = i+1<dp.length? i+1 : 0;
+                next[right] = Math.max(next[right], dp[i]); //move right from i
+                if(ring.charAt(i) == key.charAt(dp[i])){ //spell current char
+                    dp[i]++;
+                    if(dp[i] == len) return step;
+                    next[i] = Math.max(next[i], dp[i]);
+                } 
+                // no else, since if it's not a match, we won't stay
+            }
+            dp = next;
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Please point out what I&#x27;m doing wrong
+public class Solution {
+    public int findRotateSteps(String ring, String key) {
+        
+        int res=0;
+        int [] pos = new int[2];
+        String [] ringArr = ring.split("");
+        for(String k : key.split(""))
+        {
+            int currentIndex = pos[0];
+            int clockSteps = getSteps(k,ringArr,pos,0,currentIndex);
+            int anticlockSteps = getSteps(k,ringArr,pos,1,currentIndex);
+            if(clockSteps<=anticlockSteps)
+                pos[1]=pos[0];
+            else
+                pos[0]=pos[1];
+
+            res+=Math.min(clockSteps,anticlockSteps)+1;
+        }
+        
+        return res;
+    }
+    
+    int getSteps(String k,String [] ringArr,int [] pos, int direction, int currentIndex)
+    {
+        int steps=0;
+        int i=currentIndex;
+        if(direction==0)
+        {
+            do{
+                if(ringArr[i].equals(k))
+                    break;
+                else{
+                    
+                    steps++;
+                }
+                i++;
+                if(i>ringArr.length-1)
+                    i=0;
+            }while(i!=currentIndex);
+            
+        }
+        else
+        {
+            do{
+                if(ringArr[i].equals(k))
+                    break;
+                else{
+                    
+                    steps++;
+                }
+                i--;
+                if(i<0)
+                    i=ringArr.length-1;
+            }while(i!=currentIndex);
+        }
+        pos[direction]=i;  
+        return steps;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution!
+public class Solution {
+    public int findRotateSteps(String ring, String key) {
+        Map<Character,List<Integer>> map = new HashMap<>();
+        for(int i=0;i<ring.length();i++){
+            char c=ring.charAt(i);
+            if(map.containsKey(c)==false){
+                map.put(c,new ArrayList<>());
+            }
+            map.get(c).add(i);
+        }
+        
+        int[][] dp = new int[key.length()][ring.length()];
+        char target = key.charAt(0);
+        List<Integer> pre_list = map.get(target);
+        
+        for(int index:pre_list){
+            dp[0][index]=Math.min(index,ring.length()-index);
+        }
+        
+        
+        for(int i=1;i<key.length();i++){
+              target = key.charAt(i);
+              Arrays.fill(dp[i],Integer.MAX_VALUE);
+              List<Integer> cur_list = map.get(target);
+            
+              for(int index:cur_list){
+                    for(int pre_index:pre_list){
+                        int step=Math.min(Math.abs(index-pre_index),ring.length()-Math.abs(index-pre_index));
+                        dp[i][index]=Math.min(step+dp[i-1][pre_index],dp[i][index]);
+                    }
+              }
+             pre_list=cur_list;
+        }
+        
+        int min=Integer.MAX_VALUE;
+        for(int i=0;i<dp[key.length()-1].length;i++){
+            min=Math.min(dp[key.length()-1][i],min);
+        }
+        return min+key.length();
+        
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

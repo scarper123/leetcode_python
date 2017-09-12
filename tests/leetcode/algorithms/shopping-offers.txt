@@ -1,0 +1,344 @@
+Java O(1) space O(n) time solution beat 100%
+    public int maximumProduct(int[] nums) {
+        int max1 = Integer.MIN_VALUE, max2 = Integer.MIN_VALUE, max3 = Integer.MIN_VALUE, min1 = Integer.MAX_VALUE, min2 = Integer.MAX_VALUE;
+        for (int n : nums) {
+            if (n > max1) {
+                max3 = max2;
+                max2 = max1;
+                max1 = n;
+            } else if (n > max2) {
+                max3 = max2;
+                max2 = n;
+            } else if (n > max3) {
+                max3 = n;
+            }
+
+            if (n < min1) {
+                min2 = min1;
+                min1 = n;
+            } else if (n < min2) {
+                min2 = n;
+            }
+        }
+        return Math.max(max1*max2*max3, max1*min1*min2);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy AC...
+ def maximumProduct(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        nums.sort()
+        a = nums[-1] * nums[-2] * nums[-3]
+        b = nums[0] * nums[1] * nums[-1]
+        return max(a,b)
+
+
+----------------------------------------------------------------------------------------------------
+Python concise solution, O(N) and 1 line
+    def maximumProduct(self, nums):
+        return max(nums) * max(a * b for a, b in [heapq.nsmallest(2, nums), heapq.nlargest(3, nums)[1:]])
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward with Explanation
+def maximumProduct(self, A):
+    A.sort()
+    if len(A) > 6:
+        A = A[:3] + A[-3:]
+    
+    return max(A[i] * A[j] * A[k]
+    	       for i in xrange(len(A))
+    	       for j in xrange(i+1, len(A))
+    	       for k in xrange(j+1, len(A)))
+
+
+----------------------------------------------------------------------------------------------------
+C++ Solution with explanation
+int maximumProduct(vector<int>& nums) {
+    sort(nums.begin(), nums.end());
+    int n = nums.size();
+    int temp1 = nums[n-1]*nums[n-2]*nums[n-3];
+    int temp2 = nums[0]*nums[1]*nums[n-1];
+    return temp1>temp2?temp1:temp2;
+}
+
+----------------------------------------------------------------------------------------------------
+Java sort, 3 lines
+public int maximumProduct(int[] a) {
+        Arrays.sort(a);
+        int len = a.length;
+        return Math.max(a[0] * a[1] * a[len-1], a[len-1] * a[len-2] * a[len-3]);
+
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share my Python solution
+class Solution(object):
+    def maximumProduct(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        nums.sort()
+        return max(nums[-1]*nums[-2]*nums[-3], nums[0]*nums[1]*nums[-1])
+
+
+----------------------------------------------------------------------------------------------------
+python use no sort, but slow
+class Solution(object):
+    def maximumProduct(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        hi = max(nums[0],nums[1])
+        lo = min(nums[0],nums[1])
+        
+        hiprod2 = nums[0]*nums[1]
+        loprod2 = nums[0]*nums[1]
+        
+        hiprod3 = nums[0]*nums[1]*nums[2]
+        
+        for num in nums[2:]:
+            hiprod3 = max(hiprod3, hiprod2 * num, loprod2 * num)
+            
+            hiprod2 = max(hiprod2, hi * num, lo * num)
+            loprod2 = min(loprod2, hi * num, lo * num)
+            
+            hi = max(num, hi)
+            lo = min(num, lo)
+            
+        return hiprod3
+
+
+----------------------------------------------------------------------------------------------------
+Python Easy with Explaination
+def maximumProduct(self, nums):
+    nums.sort()
+    max_num = 0
+    # if all negative, or all positive, or only one negative number. In this case, take 3 rightmost number 
+    if nums[-1] < 0 or nums[0] >= 0 or (nums[0] < 0 and nums[1] > 0):
+        max_num = nums[-1] * nums[-2] * nums[-3]
+    # if two or more negative numbers, compare rightmost 3 nums or 2 left most * 1 rightmost
+    else:
+        max_num = max(nums[-3] * nums[-2] * nums[-1], nums[0] * nums[1] * nums[-1])
+    return max_num
+
+
+----------------------------------------------------------------------------------------------------
+2-liner Python solution with explanations
+def maximumProduct(self, nums):
+  """
+  :type nums: List[int]
+  :rtype: int
+  """
+  nums = sorted(nums)
+  return max(nums[0]*nums[1]*nums[-1], nums[-3]*nums[-2]*nums[-1])
+
+
+----------------------------------------------------------------------------------------------------
+Scalable solution using Priority Queue (Java)
+public class Solution {
+    public int maximumProduct(int[] nums) {
+        PriorityQueue<Integer> minHeap = new PriorityQueue<Integer>();
+        PriorityQueue<Integer> maxHeap = new PriorityQueue<Integer>((a,b) -> b-a);
+        
+        for(int i=0; i<nums.length; i++) {
+            int num = nums[i];
+            
+            if(num < 0) {
+                maxHeap.add(num);
+                if(maxHeap.size() > 3) maxHeap.poll();
+            } else {
+                minHeap.add(num);
+                if(minHeap.size() > 3) minHeap.poll();
+            }
+        }
+        
+        int[] sorted = new int[6];
+        int i = 2;
+        int j = 3;
+        while(!maxHeap.isEmpty()) {
+            sorted[i--] = maxHeap.poll();
+        }
+        while(!minHeap.isEmpty()) {
+            sorted[j++] = minHeap.poll();
+        }
+        
+        int max = Math.max((sorted[i+1] * sorted[i+2] * sorted[j-1]), (sorted[j-1] * sorted[j-2] * sorted[j-3]));
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python
+    def maximumProduct(self, A):
+        """
+        :type A: List[int]
+        :rtype: int
+        """
+        n = len(A)
+        if n<3: return 0
+        res=-sys.maxint-1
+        A.sort();
+        res1=max(A[0]*A[1]*A[2],A[-1]*A[-2]*A[-3])
+        res2=max(A[0]*A[1]*A[-1],A[2]*A[-2]*A[-3])
+        res3=max(A[0]*A[-2]*A[-1],A[2]*A[1]*A[-3])
+        return max(res1,res2,res3)
+
+
+
+----------------------------------------------------------------------------------------------------
+share my java solution using arrays.sort
+public class Solution {
+    public int maximumProduct(int[] nums) {
+        Arrays.sort(nums);
+        int len=nums.length;
+        if(nums[0]>=0){
+            return nums[len-1]*nums[len-2]*nums[len-3];
+        }else if(nums[len-1]<=0){
+            return nums[0]*nums[1]*nums[2];
+        }else if(nums[1]<=0){
+            return Math.max(nums[0]*nums[1]*nums[len-1],nums[len-1]*nums[len-2]*nums[len-3]);
+        }else{
+            return nums[len-1]*nums[len-2]*nums[len-3];
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; Clean Code with Explanation
+/**
+ * when there are no negative, use top 3
+ * when there are 1 negative, use top 3
+ *   -1, 0, 1
+ *   -1, 0, 1, 2
+ *   -1, 0, 1, 2, 3
+ * when there are 2 negative, still use top 3, but the top 2 * bottom 1 might be bigger
+ *   -4, -3, 0, 1, 2, 3
+ *   -4, -3, 0
+ */
+class Solution {
+public:
+    int maximumProduct(vector<int>& a) {
+        sort(a.begin(), a.end());
+        int n = a.size();
+        int res = a[n - 3] * a[n - 2] * a[n - 1];
+        if (a[0] < 0 && a[1] < 0) {
+            res = max(res, a[0] * a[1] * a[n - 1]);
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+2 lines Python via sorting
+class Solution(object):
+    def maximumProduct(self, A):
+        """
+        :type A: List[int]
+        :rtype: int
+        """
+        A.sort()
+        return max(A[-3]*A[-2]*A[-1], A[0]*A[1]*A[-1])
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Solution
+public class Solution {
+    public int maximumProduct(int[] nums) {
+        int negative[] = new int[3];
+        
+        int positive[] = new int[3];
+        if(nums==null || nums.length==0){
+            return 0;
+        }
+        if(nums.length==3){
+            return nums[0]* nums[1]* nums[2];
+        }
+        boolean negflag= false;
+        boolean positiveflag = false;
+        
+        for(int i =0;i<nums.length;i++){
+            if(nums[i]<0){
+                negflag =true;
+                if(negative[0]> nums[i]){
+                    negative[2]= negative[1];
+                    negative[1]= negative[0];
+                    negative[0]= nums[i];
+                }else if(negative[1]> nums[i]){
+                    negative[2]= negative[1];
+                    negative[1]= nums[i];
+                }else if(negative[2]>nums[i]){
+                    negative[2]= nums[i];
+                }
+            }else{
+                positiveflag=true;
+                if(positive[0] < nums[i]){
+                    positive[2] =positive[1];
+                    positive[1] = positive[0];
+                    positive[0]= nums[i];
+                }else if(positive[1]<nums[i]){
+                    positive[2] =positive[1];
+                    positive[1] = nums[i];
+                    
+                }else if(positive[2]<nums[i]){
+                    positive[2]= nums[i];
+                }
+            }
+        }
+        
+        int first =  negative[0]*negative[1]*positive[0];
+        int second = positive[0]*positive[1]*positive[2];
+        
+        if(!negflag){
+            return second;
+        }
+        
+        if(!positiveflag){
+            return negative[0]*negative[1]*negative[2];
+        }
+        
+        return first> second? first:second;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; easy solution
+class Solution {
+public:
+    int maximumProduct(vector<int>& nums) {
+        sort(nums.begin(),nums.end());
+        
+        if(nums[0]>0){
+            return nums[nums.size()-1]*nums[nums.size()-2]*nums[nums.size()-3];
+        }
+        else{
+            
+            return nums[nums.size()-1]*nums[nums.size()-2]*nums[nums.size()-3]>nums[0]*nums[1]*nums[nums.size()-1]?nums[nums.size()-1]*nums[nums.size()-2]*nums[nums.size()-3]:nums[0]*nums[1]*nums[nums.size()-1];
+        }
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; 2 Lines Solution
+class Solution {
+public:
+    int maximumProduct(vector<int>& nums) {
+        sort(nums.begin(),nums.end());
+        // compare (min neg1) * (min neg2) * (max pos) with (max pos1) * (max pos2) * (max pos3) 
+        return max(nums[0] * nums[1] * nums[nums.size()-1], nums[nums.size()-1] * nums[nums.size()-2] * nums[nums.size()-3]);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

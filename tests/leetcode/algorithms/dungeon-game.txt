@@ -1,0 +1,531 @@
+My clean C++ code, quite standard (find tail and reconnect the list)
+There is no trick for this problem. Some people used slow/fast pointers to find the tail node but I don't see the benefit (in the sense that it doesn't reduce the pointer move op) to do so. So I just used one loop to find the length first.
+
+    class Solution {
+    public:
+        ListNode* rotateRight(ListNode* head, int k) {
+            if(!head) return head;
+            
+            int len=1; // number of nodes
+            ListNode *newH, *tail;
+            newH=tail=head;
+            
+            while(tail->next)  // get the number of nodes in the list
+            {
+                tail = tail->next;
+                len++;
+            }
+            tail->next = head; // circle the link
+
+            if(k %= len) 
+            {
+                for(auto i=0; i<len-k; i++) tail = tail->next; // the tail node is the (len-k)-th node (1st node is head)
+            }
+            newH = tail->next; 
+            tail->next = NULL;
+            return newH;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my java solution with explanation
+Since n may be  a large number compared to the length of list. So we need to know the length of linked list.After that, move the list after the (l-n%l )th node to the front to finish the rotation.
+
+Ex: {1,2,3} k=2 Move the list after the 1st node to the front
+
+
+Ex: {1,2,3} k=5, In this case Move the list after (3-5%3=1)st node to the front.
+
+So  the code has three parts. 
+
+1) Get the length
+
+2) Move to the (l-n%l)th node
+
+3)Do the rotation
+
+
+
+    public ListNode rotateRight(ListNode head, int n) {
+        if (head==null||head.next==null) return head;
+        ListNode dummy=new ListNode(0);
+        dummy.next=head;
+        ListNode fast=dummy,slow=dummy;
+
+        int i;
+        for (i=0;fast.next!=null;i++)//Get the total length 
+        	fast=fast.next;
+        
+        for (int j=i-n%i;j>0;j--) //Get the i-n%i th node
+        	slow=slow.next;
+        
+        fast.next=dummy.next; //Do the rotation
+        dummy.next=slow.next;
+        slow.next=null;
+        
+        return dummy.next;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+What to do when k is greater than size of list ?
+i am not getting that what i should do when K is greater than size of the list.
+
+----------------------------------------------------------------------------------------------------
+Anyone solve the problem without counting the length of List?
+My solution has O(n) time complexity and O(1) memory.
+The basic idea is to connect the list into a circle. First, count the length of list while going through the list to find the end of it. Connect the tail to head. The problem asked to rotate k nodes, however, now the tail is at the end of the list and its difficult to move backward, so move *(k - len)* nodes along the list instead. *"k = k % len"* saves the unnecessary moves because rotate a list with length = *len* by *len* times doesn't change the list at all.
+
+    ListNode *rotateRight(ListNode *head, int k) {
+            if (head == NULL || head->next == NULL || k == 0) return head;
+            int len = 1;
+            ListNode *tail = head;
+
+            /* find the end of list */
+            while (tail->next != NULL) {
+                tail = tail->next;
+                len++;
+            }
+
+            /* form a circle */
+            tail->next = head;
+            k = k % len;
+            for (int i = 0; i < len - k; i++) {
+                tail = tail->next;
+            }
+            head = tail->next;
+            tail->next = NULL;
+            return head;
+        }
+
+----------------------------------------------------------------------------------------------------
+Clean Java Solution with Brief Explanation
+The basic idea is to link the tail of the list with the head, make it a cycle. Then count to the rotate point and cut it.
+
+    if (head == null)
+			return head;
+		
+		ListNode copyHead = head;
+		
+		int len = 1;
+		while (copyHead.next != null) {
+			copyHead = copyHead.next;
+			len++;
+		}
+		
+		copyHead.next = head;
+		
+		for (int i = len - k % len; i > 1; i--)
+			head = head.next;
+
+		copyHead = head.next;
+		head.next = null;
+
+		return copyHead;
+	}
+
+    
+
+----------------------------------------------------------------------------------------------------
+I think the description of this problem is misleading.
+Recalling the problems about rotated array, this description is misleading. For those who have trouble understanding this problem like me, think of the SLL as a circle. 
+
+----------------------------------------------------------------------------------------------------
+My short java solution with comments
+
+    public ListNode rotateRight(ListNode head, int k) {
+        if(head==null||head.next==null||k==0) return head;
+        
+        //make it a cricle, break from k postion far from the head
+        ListNode index=head; int len=1;// int len to record the length of list
+        while(index.next!=null)
+        {index=index.next; len++;}
+        index.next=head;
+        
+        for(int i=0;i<len-k%len;i++)
+        {
+           index=index.next;
+        }
+        ListNode result=index.next;
+        index.next=null;
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java clean solution, only one pointer used
+I first used a ListNode p, and point it to the head, then move it to the end of the list, and at the same time get the length of the list.  Then `p.next = head;` gives me a circle.   At this time, by moving `p` for `len-k` times, it will be pointing to the node before the break point.  Then all we need to do is record the next node as head, and break the circle with `p.next = null.`  
+
+    public ListNode rotateRight(ListNode head, int k) {
+        if(head == null || k == 0) {
+            return head;
+        }
+        ListNode p = head;
+        int len = 1;
+        while(p.next != null) {
+            p = p.next;
+            len++;
+        }
+        p.next = head;
+        k %= len;
+        for(int i = 0; i < len - k; i++) {
+            p = p.next;
+        }
+        head = p.next;
+        p.next = null;
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ simple algorithm with explanation
+ 1. Enumerate through the list to find the last node, count the size along the way.
+ 2. Make a loop, by connection last to first
+ 3. Get modulo of |k/size| - avoiding extra rotation
+ 4. Enumerate again *size-k* nodes
+ 5. Break the loop and return new head
+
+code:
+
+     ListNode *rotateRight(ListNode *head, int k) 
+         {
+            if(head == NULL || head->next == NULL||k==0) return head;
+            
+            ListNode* node = head;
+            int size =1;
+            
+            while(node->next != NULL)
+            {
+                size++;
+                node = node->next;
+            }
+            
+            //loop the list
+            node->next=head;
+            
+            //handle the case of k>size
+            k = k%size;
+            
+            //find the node to break the loop at
+            while(--size >= k)
+            {
+                node=node->next;
+            }
+            
+            ListNode* first = node->next;
+            node->next=NULL;
+            
+            return first;
+        }
+
+----------------------------------------------------------------------------------------------------
+97.63% Python Solution
+    class Solution(object):
+    def rotateRight(self, head, k):
+        """
+        :type head: ListNode
+        :type k: int
+        :rtype: ListNode
+        """
+        if not head:
+            return None
+        
+        if head.next == None:
+            return head
+            
+        pointer = head
+        length = 1
+        
+        while pointer.next:
+            pointer = pointer.next
+            length += 1
+        
+        rotateTimes = k%length
+        
+        if k == 0 or rotateTimes == 0:
+            return head
+        
+        fastPointer = head
+        slowPointer = head
+        
+        for a in range (rotateTimes):
+            fastPointer = fastPointer.next
+        
+        
+        while fastPointer.next:
+            slowPointer = slowPointer.next
+            fastPointer = fastPointer.next
+        
+        temp = slowPointer.next
+        
+        slowPointer.next = None
+        fastPointer.next = head
+        head = temp
+        
+        return head
+
+----------------------------------------------------------------------------------------------------
+Sharing my 8ms C++ solution
+    /**
+     * 1) connect the head with the tail, and form a closed circle
+     * 2) rotate (n-k%n) times
+     * 3) find the new head and tail, break them apart, and return the new head
+     */
+     
+    class Solution{
+    public:
+        ListNode* rotateRight(ListNode* head, int k) {
+            if(head==NULL || head->next==NULL)
+                return head;
+                
+            ListNode* last;
+            int n = 1;
+            ListNode* p = head;
+            while(p->next)
+            {
+                n++;
+                p=p->next;
+            }
+            p->next = head;
+            last = p;
+            k = k%n;
+            k = n-k;
+            ListNode* current = head;
+            for(int i=0; i<k; i++)
+            {
+                last = current;
+                current = current->next;
+            }
+            
+            last->next = NULL;
+            return current;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+4ms C solution...
+    struct ListNode *rotateRight(struct ListNode *head, int k) {
+        if (!head || k == 0) return head;
+    
+    	struct ListNode* lastNode = head;
+    	int n = 1;
+    	while (lastNode->next)
+    	{
+    		lastNode = lastNode->next;
+    		n++;
+    	}
+    
+    	k = k%n;		
+    	if (k == 0) return head;
+    	k = n - k;
+    
+    	lastNode->next = head;
+    	struct ListNode *newHead = head;
+    
+    	for (int i = 0; i < k - 1; i++)
+    		newHead = newHead->next;
+    		
+    	head = newHead->next;
+    	newHead->next = NULL;
+    	return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple java solution with explanation
+ My idea is, first concat the tail to the head, building a cycle, then decide where to break the cycle to get the resulting list. The advantage of the method is, you dont need to worry about n being larger than the length of the list.
+
+       public ListNode rotateRight(ListNode head, int n) {
+            if (head == null) return null;
+            ListNode tail = head;                       //first, build a cycle
+            while (tail.next != null){
+                tail = tail.next;
+            }
+            tail.next = head;                          //cycle built.
+            ListNode fast = head, slow = head;         //now find where to break the cycle
+            while (n-->0){
+                fast = fast.next;                      //move the fast runner first
+            }
+            while (fast!=tail){
+                fast = fast.next;                      //then move the fast and the slow runners together
+                slow = slow.next;
+            }
+            head = slow.next;                          //break the cycle at after the slow runner
+            slow.next = null;
+            return head;                              // return the new head
+        }
+
+----------------------------------------------------------------------------------------------------
+Simple java solution
+
+    public ListNode rotateRight(ListNode head, int k) {
+        if (head == null) return head;
+        k = k % getLen(head);
+        ListNode p1 = new ListNode(0);
+        ListNode p2 = new ListNode(0);
+        p1.next = head;
+        p2.next = head;
+        for (int i = 0; i < k; i++) {
+            p2 = p2.next;
+        }
+        while (p2.next != null) {
+            p1 = p1.next;
+            p2 = p2.next;
+        }
+        p2.next = head;
+        ListNode res = p1.next;
+        p1.next = null;
+        return res;
+    }
+    
+    private int getLen(ListNode node) {
+        int count = 0;
+        while (node != null) {
+            count++;
+            node = node.next;
+        }
+        return count;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 12 ms solution
+    class Solution {
+    public:
+        ListNode* rotateRight(ListNode* head, int k) {
+            if(head == NULL || head->next == NULL) return head;
+            ListNode *tail;
+            int n=1,j;
+            for(tail = head;tail->next!=NULL;tail=tail->next) n++;
+            j = (n-k%n)%n;
+            tail->next = head;
+            for(int i=0;i<j;i++){
+                head = head->next;
+                tail = tail->next;
+            }
+            tail->next = NULL;
+            return head;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+What is the meaning of k places here?
+Is K places here means the time of rotation. For example,  k = 2 and the result is 4->5->1->2->3->NULL, how doest it rotate to achieve such result?
+
+----------------------------------------------------------------------------------------------------
+Run time error Last executed input: {1,2}, 1
+Hi,
+
+For unknown reason, I got run time error with input {1,2}, 1. However, I tested in my computer and it works ok...
+
+    class Solution {
+    public:
+    ListNode *rotateRight(ListNode *head, int k) {
+        
+        ListNode *cur, *tail, *new_head;
+        int n = k, len = 0;
+        
+        if (!head)
+            return NULL;
+        if (!head->next)
+            return head;
+        if (k == 0)
+            return head;
+        
+        // {1,2}, 2, {1,2}, 1
+        while (cur) {
+            cur = cur->next;
+            len++;
+        }
+        if (len == k)
+            return head;
+        if (len < k)
+            n = k % len;
+            
+        // keep 2 pointers
+        cur = head;
+        tail = head;
+        
+        while (n--) {
+            tail = tail->next;
+           
+            if (!tail->next)
+                break;
+        }
+        while (tail->next) {
+            tail = tail->next;
+            cur = cur->next;
+        }
+        new_head = cur->next;
+        cur->next = NULL;
+        tail->next = head;
+        return new_head;
+    }
+    
+    };
+
+----------------------------------------------------------------------------------------------------
+My C++ Solution
+    class Solution {
+    public:
+        ListNode* rotateRight(ListNode* head, int k) {
+            if (!head || !head->next) return head;
+            int len = 0;
+    		ListNode* temp = head;
+    		while (temp){
+    			++len;
+    			temp = temp->next;
+    		}
+    		k = k%len;
+    		ListNode* headNode = new ListNode(0);
+    		headNode->next = head;
+    		head = headNode;                        //insert head node
+    		ListNode* prev = head;
+    		ListNode* post = head;
+    		while (prev->next){
+    			if ((--k) < 0) post = post->next;
+    			prev = prev->next;
+    		}
+    		if (post == head) return head->next;
+    		prev->next = head->next;
+    		head->next = post->next;
+    		post->next = nullptr;
+    		return head->next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Why we need mod k by length?
+I'm wondering why we need execute k %= (length of list). Should we return the ordinary list when k >= length? This is not a circular list.
+
+Do anyone know what does the "rotate" mean? Thank you very much!
+
+----------------------------------------------------------------------------------------------------
+Easy and straightforward JAVA solution
+An easy solution:
+
+    public ListNode rotateRight(ListNode head, int k) {
+        if(head == null || head.next == null) return head;
+        
+        // Get length
+        int len = 1;
+        ListNode tail = head;
+        while(tail.next != null) {
+            tail = tail.next;
+            len++;
+        }
+        
+        // Go to position k distance to tail
+        k = k % len;
+        if(k == 0) return head;
+        ListNode newTail = head;
+        for(int i = 0; i < len - k - 1; i++) {
+            newTail = newTail.next;
+        }
+        
+        // Join two parts
+        ListNode newHead = newTail.next;
+        newTail.next = null;
+        tail.next = head;
+        
+        return newHead;
+    }
+
+----------------------------------------------------------------------------------------------------

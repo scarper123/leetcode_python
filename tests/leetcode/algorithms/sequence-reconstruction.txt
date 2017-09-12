@@ -1,0 +1,582 @@
+Concise C++ implementation
+class Solution {
+public:
+    bool validUtf8(vector<int>& data) {
+        int count = 0;
+        for (auto c : data) {
+            if (count == 0) {
+                if ((c >> 5) == 0b110) count = 1;
+                else if ((c >> 4) == 0b1110) count = 2;
+                else if ((c >> 3) == 0b11110) count = 3;
+                else if ((c >> 7)) return false;
+            } else {
+                if ((c >> 6) != 0b10) return false;
+                count--;
+            }
+        }
+        return count == 0;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Feeling like an English reading comprehension problem
+<p>Finally I see it is to judge a UTF-8 char sequence, while the rules described are for a single char.<br/>
+I feel more likely working on an English reading comprehension problem rather than algorithm.<br/>
+Sigh.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Bit Manipulation, Java, 6ms
+public boolean validUtf8(int[] data) {
+	if(data==null || data.length==0) return false;
+	boolean isValid = true;
+	for(int i=0;i<data.length;i++) {
+		if(data[i]>255) return false; // 1 after 8th digit, 100000000
+		int numberOfBytes = 0;
+		if((data[i] & 128) == 0) { // 0xxxxxxx, 1 byte, 128(10000000)
+			numberOfBytes = 1;
+		} else if((data[i] & 224) == 192) { // 110xxxxx, 2 bytes, 224(11100000), 192(11000000)
+			numberOfBytes = 2;
+		} else if((data[i] & 240) == 224) { // 1110xxxx, 3 bytes, 240(11110000), 224(11100000)
+			numberOfBytes = 3;
+		} else if((data[i] & 248) == 240) { // 11110xxx, 4 bytes, 248(11111000), 240(11110000)
+			numberOfBytes = 4;
+		} else {
+			return false;
+		}
+		for(int j=1;j<numberOfBytes;j++) { // check that the next n bytes start with 10xxxxxx
+			if(i+j>=data.length) return false;
+			if((data[i+j] & 192) != 128) return false; // 192(11000000), 128(10000000)
+		}
+		i=i+numberOfBytes-1;
+	}
+	return isValid;
+}
+
+
+----------------------------------------------------------------------------------------------------
+one pass simple solution
+public bool ValidUtf8(int[] data) {
+    int bitCount = 0;
+    
+    foreach(int n in data){
+        
+        if(n >= 192){
+            if(bitCount != 0)
+                return false;
+            else if(n >= 240)
+                bitCount = 3;
+            else if(n >= 224)
+                bitCount = 2;
+            else
+                bitCount = 1;
+        }else if(n >= 128){
+            bitCount--;
+            if(bitCount < 0)
+                return false;
+        }else if(bitCount > 0){
+            return false;
+        }
+    }
+    
+    return bitCount == 0;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short&#x27;n&#x27;Clean 12-lines Python solution
+def check(nums, start, size):
+    for i in range(start + 1, start + size + 1):
+        if i >= len(nums) or (nums[i] >> 6) != 0b10: return False
+    return True
+
+class Solution(object):
+    def validUtf8(self, nums, start=0):
+        while start < len(nums):
+            first = nums[start]
+            if   (first >> 3) == 0b11110 and check(nums, start, 3): start += 4
+            elif (first >> 4) == 0b1110  and check(nums, start, 2): start += 3
+            elif (first >> 5) == 0b110   and check(nums, start, 1): start += 2
+            elif (first >> 7) == 0:                                 start += 1
+            else:                                                   return False
+        return True
+
+# 45 / 45 test cases passed.
+# Status: Accepted
+# Runtime: 89 ms
+
+
+----------------------------------------------------------------------------------------------------
+O(n) JAVA solution, with detailed explaination
+public class Solution {
+    /*
+     * Thought-way: 
+     * As long as every byte in the array is of right type, it is a valid UTF-8 encoding.
+     * 
+     * Method: 
+     * Start from index 0, determine each byte's type and check its validity.
+     *
+     * There are five kinds of valid byte type: 0**, 10**, 110**,1110** and 11110**
+     * Give them type numbers, 0, 1, 2, 3, 4 which are the index of the first 0 from left. 
+     * So, the index of the first 0 determines the byte type.
+     *
+     * if a byte belongs to one of them:
+        1 : if it is type 0, continue
+        2 : if it is type 2 or 3 or 4, check whether the following 1, 2, and 3 byte(s) are of type 1 or not
+                if not, return false;
+     * else if a byte is type 1 or not of valid type, return false
+     *
+     * Analysis :
+     * The faster you can determine the type, the quicker you can get. 
+     * Time O(n), space O(1)
+     * real performance: 7ms
+     */
+     
+    // Hard code "masks" array to find the index of the first appearance of 0 in the lower 8 bits of each integer.
+    private int[] masks = {128, 64, 32, 16, 8};
+    public boolean validUtf8(int[] data) {
+        int len = data.length;
+        for (int i = 0; i < len; i ++) {
+            int curr = data[i];
+            int type = getType(curr);
+            if (type == 0) {
+                continue;
+            } else if (type > 1 && i + type <= len) {
+                while (type-- > 1) {
+                    if (getType(data[++i]) != 1) {
+                        return false;
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public int getType(int num) {
+        for (int i = 0; i < 5; i ++) {
+            if ((masks[i] & num) == 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution using Java
+public class Solution {
+    public boolean validUtf8(int[] data) {
+        int n = data.length;
+        if (n == 0) return true;
+        int skip = 0b10000000;
+        int check = 0;
+        for (int i = 0; i < data.length; i++) {
+            if (check > 0) {
+                if ((data[i] & skip) == skip) check--;
+                else return false;
+            } else {
+                check = getOneBitCountFromHead(data[i]);
+                if (check < 0) return false;
+            }
+        }
+        return check == 0;
+    }
+    private int getOneBitCountFromHead(int num) {
+        if ((num & 0b11110000) == 0b11110000) return 3;
+        if ((num & 0b11100000) == 0b11100000) return 2;
+        if ((num & 0b11000000) == 0b11000000) return 1;
+        if ((num & 0b10000000) == 0b10000000) return -1; //error
+        return 0;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short O(n) Java solution, scan only once
+public boolean validUtf8(int[] data) {
+  int idx = 0;
+  while(idx < data.length) {
+    int utfIdx = idx++;
+    if ((data[utfIdx] & (1<<7)) == 0) continue; //single byte
+    for(int i = 6; i>=0; i--) {
+      if ((data[utfIdx] & (1<<i)) > 0) { //find one more byte in multiple bytes
+        if (idx >= data.length) return false; //not enough bytes
+        if (((data[idx] & (1<<7)) == 0) || ((data[idx] & (1<<6))>0)) return false; //not starting with 10xxxxxx
+        idx++;
+      } else if (i==6) return false;  //for fist byte in multiple bytes is 10xxxxxx, at least 110xxxxx
+      else break; //meet 0, remaining as utf content
+    }
+  }
+  return true;
+}
+
+
+----------------------------------------------------------------------------------------------------
+The problem description is super vague to me.
+<p>For those who are not familiar with UTF-8, the two examples given didn&#39;t tell us what should we do if the number like 11110xxx shows up more than once.</p>
+<p>It appears to me that once we found out one complete sequence like 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx, we can disregard the rest. But the truth is until lots of &#39;wrong answer&#39;s I couldn&#39;t figure out that we needa repeat the sequence cycle after cycle till finishing the list data.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n) scan
+class Solution(object):
+    def validUtf8(self, data):
+        """
+        :type data: List[int]
+        :rtype: bool
+        """
+        if len(data) == 0:
+            return True 
+        i = 0
+        while i < len(data):
+            if data[i] < 128:
+                i += 1
+            elif data[i] >= 192 and data[i] < 224 and len(data)-i>=2:
+                if data[i+1] >= 128 and data[i+1] < 192:
+                    i += 2
+                else:
+                    return False 
+            elif data[i] >= 224 and data[i] < 240 and len(data)-i>=3:
+                if data[i+1] >= 128 and data[i+1] < 192 and data[i+2] >= 128 and data[i+2] < 192:
+                    i += 3
+                else:
+                    return False  
+            elif data[i] >= 240 and data[i] < 248 and len(data)-i>=4:
+                if data[i+1] >= 128 and data[i+1] < 192 and data[i+2] >= 128 and data[i+2] < 192 and data[i+3] >= 128 and data[i+3] < 192:
+                    i += 4
+                else:
+                    return False        
+            else:
+                return False
+        return True 
+
+
+----------------------------------------------------------------------------------------------------
+Simple one pass concise Java solution beating 99%
+public class Solution {
+	public boolean validUtf8(int[] data) {
+		int varCharLeft = 0;
+		for (int b: data) {
+			if (varCharLeft == 0) {
+				if ((b & 0b010000000) == 0)  varCharLeft = 0;
+				else if ((b & 0b011100000) == 0b11000000)  varCharLeft = 1;
+				else if ((b & 0b011110000) == 0b11100000)  varCharLeft = 2;
+				else if ((b & 0b011111000) == 0b11110000)  varCharLeft = 3;
+				else return false;
+			} else {
+				if ((b & 0b011000000) != 0b10000000)  return false;
+				varCharLeft--;
+			}
+		}
+		return varCharLeft==0;
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+public class Solution {
+    public boolean validUtf8(int[] data) {
+        int index = 0, tailLen = 0;
+        while(index < data.length) {
+            tailLen = getTailLen(data[index]);
+            
+            // it is 1-byte character
+            if(tailLen == 0) {
+                index++;
+                continue;
+            }
+            
+            // the first 8-bit is invalid, or the tail is invalid
+            if(tailLen == -1 || !isTailValid(data, index + 1, index + tailLen)) return false;
+            index += tailLen + 1;
+        }
+        return true;
+    }
+    
+    private int getTailLen(int num) {
+        if(num <= 127) return 0;
+        else if(num <= 191) return -1;
+        else if(num <= 223) return 1;
+        else if(num <= 239) return 2;
+        else if(num <= 247) return 3;
+        else if(num <= 251) return 4;
+        else if(num <= 254) return 5;
+        else return 6;
+    }
+    
+    private boolean isTailValid(int[] data, int start, int end) {
+        if(start >= data.length || end >= data.length) return false;
+        for(int i = start; i <= end; i++) {
+            if(data[i] < 128 || data[i] > 191) return false;
+        }
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Wrong test case
+true
+
+----------------------------------------------------------------------------------------------------
+Python self-explanatory and easy to understand solution using bit manipulation
+class Solution(object):
+    def countOne(self, num):
+        count = 0
+        for i in xrange(8):
+            if num >> (7-i) & 1 == 1: count += 1
+            else: break
+        return count
+        
+    def validUtf8(self, data):
+        n = len(data); ind = 0
+        while ind < n:
+            m = self.countOne(data[ind])
+            if ind + m > n: return False
+            if m == 0:
+                if (data[ind] >> 7) & 1 != 0: return False
+            elif m == 1 or m > 4: return False
+            else:
+                for i in xrange(m):
+                    if (data[ind] >> (7-i)) & 1 != 1: return False
+                if (data[ind] >> (7-i-1)) & 1 != 0: return False
+                for i in xrange(ind+1, ind+m):
+                    if (data[i] >> 7) & 1 != 1: return False
+                    if (data[i] >> 6) & 1 != 0: return False
+            ind += m
+            if m == 0: ind += 1
+        return True
+
+
+----------------------------------------------------------------------------------------------------
+Simplest Python Solution
+class Solution(object):
+    def validUtf8(self, data):
+        """
+        :type data: List[int]
+        :rtype: bool
+        """
+        count = 0
+        
+        for byte in data:
+            if byte >= 128 and byte <= 191:
+                if not count:
+                    return False
+                count -= 1
+            else:
+                if count:
+                    return False
+                if byte < 128:
+                    continue
+                elif byte < 224:
+                    count = 1
+                elif byte < 240:
+                    count = 2
+                elif byte < 248:
+                    count = 3
+                else:
+                    return False
+                    
+        return count == 0
+
+
+----------------------------------------------------------------------------------------------------
+Swift solution
+class Solution {
+    func validUtf8(_ data: [Int]) -> Bool {
+        var count = 0
+        
+        for byte in data {
+            if count == 0 {
+                if byte >> 5 == 0b110 {
+                    count = 1
+                } else if byte >> 4 == 0b1110 {
+                    count = 2
+                } else if byte >> 3 == 0b11110 {
+                    count = 3
+                } else if byte >> 7 != 0 {
+                    return false
+                }
+            } else {
+                if byte >> 6 != 0b10 {
+                    return false
+                }
+                count -= 1
+            }
+        }
+        
+        return count == 0
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Readable python solution
+def get_char_byte_num(btext):
+    if btext[0] == '0':
+        return 0
+    return btext.find('0')-1
+
+def validate_leading_byte(btext):
+    if btext[:2] == '10':
+        return False
+    if btext.find('0') == -1 or btext.find('0') > 4:
+        return False
+    return True
+
+def validate_typical_byte(btext):
+    return btext[:2] == '10'
+
+def to_bin(x):
+    bin_text = '{:b}'.format(x)
+    diff = (8-len(bin_text))
+    if diff < 0:
+        diff = 0
+    bin_text = diff*'0'+bin_text
+    return bin_text
+    
+class Solution(object):
+    def validUtf8(self, data):
+        """
+        :type data: List[int]
+        :rtype: bool
+        """
+        if not data:
+            return False
+        bdata = [to_bin(x) for x in data ] 
+        i=0
+        #print(bdata)
+        while i < len(bdata):
+            byte = bdata[i]
+            if not validate_leading_byte(byte):
+                return False
+            bytes_ahead = get_char_byte_num(byte)
+            #print(byte, 'byte')
+            #print(bytes_ahead, 'ahead')
+            if bytes_ahead > 0:
+                for j in range(1, bytes_ahead+1):
+                    if i+j >= len(bdata):
+                        return False
+                    if not validate_typical_byte(bdata[i+j]):
+                        return False
+                i = i+bytes_ahead+1
+            else:
+                i = i +1
+        
+        return True
+
+
+----------------------------------------------------------------------------------------------------
+Brute Force Java
+            public boolean validUtf8(int[] data) {
+                if (data == null || data.length == 0) return false;
+		int n = data.length;
+		for (int i = 0; i < n; ++i) {
+			if ((data[i] & (1 << 7)) == 0) continue;
+			int d = data[i];
+			int k = 7;
+			while (k >= 0) {
+				if ((d & (1 << k)) == 0) break;
+				--k;
+			}
+			k = 7 - k;
+			if (k < 2 || k > 4) return false;
+			int j;
+			for (j = i + 1; j < i + k; ++j) {
+				if (j >= n || (data[j] & ((1 << 7) + (1 << 6))) != (1 << 7)) return false;
+			}
+			i = j - 1;
+		}
+		return true;
+            }
+
+
+----------------------------------------------------------------------------------------------------
+Java solution
+    int count = 0;
+
+    for(int n: data) {
+
+        if(count > 0) {
+
+            if(n >= (2 << 6) && n < (3 << 6)) count--;
+
+            else return false;
+
+        } else {
+
+            if(n < (1 << 7)) continue;
+
+            if(n >= (30 << 3) && n < (31 << 3)) count = 3;
+
+            else if(n >= (14 << 4) && n < (15 << 4)) count = 2;
+
+            else if(n >= (6 << 5) && n < (7 << 5)) count = 1;
+
+            else return false;
+
+        }
+
+    }
+
+    if(count == 0) return true;
+
+    return false;
+
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time, O(1) space AC solution, concise and easy to understand
+public class Solution {
+    // time O(n), n is the length of data, space O(1)
+    public boolean validUtf8(int[] data) {
+        int index = 0;
+        while (index < data.length) {
+            // how many 1 before 0 for this data
+            int prefixOneNumber = prefixOneNumber(data[index]);
+            if (prefixOneNumber ==  0) {
+                // type with pattern "0xxxxxxx"
+                index++;
+            } else if (prefixOneNumber == 1 || prefixOneNumber > 4) {
+                // types with pattern "11111xxx" are not valid
+                // types with pattern "10xxxxxx" are handled at next branch, anyone else are invalid
+                return false;
+            } else {
+                // valid pattern "10xxxxxx" these follows pattern like "1111xxxx" are handled here.
+                index++;
+                prefixOneNumber--;
+                while (prefixOneNumber > 0) {
+                    if (index >= data.length || prefixOneNumber(data[index]) != 1) {
+                        return false;
+                    }
+                    index++;
+                    prefixOneNumber--;
+                }
+            }
+        }
+        return true;
+    }
+    /**
+     * how many 1 at the front of 0 for each data number
+     * @param int: data number
+     * @return int: the number of 1
+     */
+    private int prefixOneNumber(int data) {
+        int count = 0;
+        int nbit = (1 << 7);
+        while ((nbit & data) == nbit && count <= 4) {
+            count++;
+            nbit = (nbit >> 1);
+        }
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------

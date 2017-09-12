@@ -1,0 +1,826 @@
+Simple Java solution using a stack with explanation
+A question before this is the Nested List Weight Sum, and it requires recursion to solve.  As it carries to this problem that we will need recursion to solve it.  But since we need to access each NestedInteger at a time, we will use a stack to help.  
+
+In the constructor, we push all the nestedList into the stack from back to front, so when we pop the stack, it returns the very first element.  Second, in the hasNext() function, we peek the first element in stack currently, and if it is an Integer, we will return true and pop the element.  If it is a list, we will further flatten it.  This is iterative version of flatting the nested list.  Again, we need to iterate from the back to front of the list.
+
+    public class NestedIterator implements Iterator<Integer> {
+        Stack<NestedInteger> stack = new Stack<>();
+        public NestedIterator(List<NestedInteger> nestedList) {
+            for(int i = nestedList.size() - 1; i >= 0; i--) {
+                stack.push(nestedList.get(i));
+            }
+        }
+    
+        @Override
+        public Integer next() {
+            return stack.pop().getInteger();
+        }
+    
+        @Override
+        public boolean hasNext() {
+            while(!stack.isEmpty()) {
+                NestedInteger curr = stack.peek();
+                if(curr.isInteger()) {
+                    return true;
+                }
+                stack.pop();
+                for(int i = curr.getList().size() - 1; i >= 0; i--) {
+                    stack.push(curr.getList().get(i));
+                }
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Real iterator in Python, Java, C++
+An iterator shouldn't copy the entire data but just iterate over the original data structure.
+
+I keep the current progress in a stack. My `hasNext` tries to find an integer. My `next` returns it and moves on. I call `hasNext` in `next` because `hasNext` is optional. Some user of the iterator might call only `next` and never `hasNext`, e.g., if they know how many integers are in the structure or if they want to handle the ending with exception handling.
+
+---
+
+**Python**
+
+Using a stack of [list, index] pairs.
+
+    class NestedIterator(object):
+    
+        def __init__(self, nestedList):
+            self.stack = [[nestedList, 0]]
+    
+        def next(self):
+            self.hasNext()
+            nestedList, i = self.stack[-1]
+            self.stack[-1][1] += 1
+            return nestedList[i].getInteger()
+                
+        def hasNext(self):
+            s = self.stack
+            while s:
+                nestedList, i = s[-1]
+                if i == len(nestedList):
+                    s.pop()
+                else:
+                    x = nestedList[i]
+                    if x.isInteger():
+                        return True
+                    s[-1][1] += 1
+                    s.append([x.getList(), 0])
+            return False
+
+---
+
+**Java**
+
+Using a stack of ListIterators.
+
+    public class NestedIterator implements Iterator<Integer> {
+    
+        public NestedIterator(List<NestedInteger> nestedList) {
+            lists = new Stack<>();
+            lists.push(nestedList.listIterator());
+        }
+    
+        public Integer next() {
+            hasNext();
+            return lists.peek().next().getInteger();
+        }
+    
+        public boolean hasNext() {
+            while (!lists.empty()) {
+                if (!lists.peek().hasNext()) {
+                    lists.pop();
+                } else {
+                    NestedInteger x = lists.peek().next();
+                    if (x.isInteger())
+                        return lists.peek().previous() == x;
+                    lists.push(x.getList().listIterator());
+                }
+            }
+            return false;
+        }
+        
+        private Stack<ListIterator<NestedInteger>> lists;
+    }
+
+---
+
+**C++**
+
+Using stacks of begin and end iterators.
+
+    class NestedIterator {
+    public:
+        NestedIterator(vector<NestedInteger> &nestedList) {
+            begins.push(nestedList.begin());
+            ends.push(nestedList.end());
+        }
+    
+        int next() {
+            hasNext();
+            return (begins.top()++)->getInteger();
+        }
+    
+        bool hasNext() {
+            while (begins.size()) {
+                if (begins.top() == ends.top()) {
+                    begins.pop();
+                    ends.pop();
+                } else {
+                    auto x = begins.top();
+                    if (x->isInteger())
+                        return true;
+                    begins.top()++;
+                    begins.push(x->getList().begin());
+                    ends.push(x->getList().end());
+                }
+            }
+            return false;
+        }
+    
+    private:
+        stack<vector<NestedInteger>::iterator> begins, ends;
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my Java neat solution, 8ms
+I feel my solution is pretty neat compared to the existing solutions, so I want to share it with you to provide some extra ingredients. Basically, I have similar idea as [StafanPochmann][1]'s [solution][2], but I feel to use listIterator seems overkill. So what I do is just to keep an additional field storing the next integer. Please check the code.
+
+    public class NestedIterator implements Iterator<Integer> {
+        NestedInteger nextInt;
+        Stack<Iterator<NestedInteger>> stack;
+
+        public NestedIterator(List<NestedInteger> nestedList) {
+            stack = new Stack<Iterator<NestedInteger>>();
+            stack.push(nestedList.iterator());
+        }
+
+        @Override
+        public Integer next() {
+            return nextInt != null ? nextInt.getInteger() : null; //Just in case
+        }
+
+        @Override
+        public boolean hasNext() {
+            while (!stack.isEmpty()) {
+                if (!stack.peek().hasNext()) stack.pop();
+                else if ((nextInt = stack.peek().next()).isInteger()) return true;
+                else stack.push(nextInt.getList().iterator());
+            }
+            return false;
+        }
+    }
+
+
+  [1]: https://leetcode.com/discuss/user/StefanPochmann
+  [2]: https://leetcode.com/discuss/95934/real-iterator-in-python-java-c
+
+----------------------------------------------------------------------------------------------------
+Concise C++ without storing all values at initialization
+    class NestedIterator {
+    private:
+        stack<NestedInteger> nodes;
+        
+    public:
+        NestedIterator(vector<NestedInteger> &nestedList) {
+            int size = nestedList.size();
+            for(int i = size - 1; i >= 0; --i) {
+                nodes.push(nestedList[i]);
+            }
+        }
+
+    int next() {
+        int result = nodes.top().getInteger();
+        nodes.pop();
+        return result;
+    }
+
+    bool hasNext() {
+        while(!nodes.empty()) {
+            NestedInteger curr = nodes.top();
+            if(curr.isInteger()) {
+                return true;
+            }
+            
+            nodes.pop();
+            vector<NestedInteger>& adjs = curr.getList();
+            int size = adjs.size();
+            for(int i = size - 1; i >= 0; --i) {
+                nodes.push(adjs[i]);
+            }
+        }
+        
+        return false;
+        }
+    };
+
+The same idea as a DFS, the only tricky part probably is you have to find a value node to claim there is next. And to do that, you have to look through all the nodes in the worst case in the entire graph. So you just keep going until you find a value node; if you can't, there is no next.
+
+----------------------------------------------------------------------------------------------------
+Flatten the list and iterate with plain next() and hasNext() (Java)
+First flatten the list to a list of Integer by using DFS, then just call the plain <code>next()</code> and <code>hasNext()</code>
+   
+    public class NestedIterator implements Iterator<Integer> {
+    
+    private List<Integer> flattenedList;
+    private Iterator<Integer> it;
+  
+    public NestedIterator(List<NestedInteger> nestedList) {
+        flattenedList = new LinkedList<Integer>();
+        flatten(nestedList);
+        it = flattenedList.iterator();
+    }
+
+    private void flatten(List<NestedInteger> nestedList) {
+        for (NestedInteger i : nestedList) {
+            if (i.isInteger()) {
+                flattenedList.add(i.getInteger());
+            } else {
+                flatten(i.getList());
+            }
+        }
+    }
+
+    @Override
+    public Integer next() {
+        return it.next();
+    }
+
+    @Override
+    public boolean hasNext() {
+        return it.hasNext();
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Flatten Nested List Iterator
+For this problem "Run Code" button is not working and code can't be tested. Please fix it :)
+
+----------------------------------------------------------------------------------------------------
+8-line Python Solution
+    class NestedIterator(object):
+    
+        def __init__(self, nestedList):
+            """
+            Initialize your data structure here.
+            :type nestedList: List[NestedInteger]
+            """
+            self.stack = nestedList[::-1]
+            
+        def next(self):
+            """
+            :rtype: int
+            """
+            return self.stack.pop().getInteger()
+            
+        def hasNext(self):
+            """
+            :rtype: bool
+            """
+            while self.stack:
+                top = self.stack[-1]
+                if top.isInteger():
+                    return True
+                self.stack = self.stack[:-1] + top.getList()[::-1]
+            return False
+
+----------------------------------------------------------------------------------------------------
+Python Generators solution
+    class NestedIterator(object):
+    
+        def __init__(self, nestedList):
+            def gen(nestedList):
+                for x in nestedList:
+                    if x.isInteger():
+                        yield x.getInteger()
+                    else:
+                        for y in gen(x.getList()):
+                            yield y
+            self.gen = gen(nestedList)
+    
+        def next(self):
+            return self.value
+    
+        def hasNext(self):
+            try:
+                self.value = next(self.gen)
+                return True
+            except StopIteration:
+                return False
+
+This assumes that the iterator is just used as described in the problem. Usually, hasNext should be both optional and idempotent, but a next+hasNext iterator is very unpythonic anyway, so I decided to not do that here, as I feel it would distract from the generator.
+
+And of course while this solution is (IMHO) somewhat cute, it passes each value through each level it's nested in, so it's not efficient.
+
+----------------------------------------------------------------------------------------------------
+For the interview, is it better to use the constructor to construct the entire flattened list first, or no?
+I noticed simple approach is to just flatten entire list first in constructor, since this makes next and hasNext O(1), even though constructor is O(N). Would an interviewer be ok with this approach, or would he want to actually dynamically maintain some kind of stack so that it always has the next integer?
+
+----------------------------------------------------------------------------------------------------
+Simple iterative DFS using stack
+    public class NestedIterator implements Iterator<Integer> {
+        Stack<Iterator<NestedInteger>> stack = new Stack<>();
+        Integer current = null;
+        
+        public NestedIterator(List<NestedInteger> nestedList) {
+            if (nestedList != null) {
+                stack.push(nestedList.iterator());
+            }
+        }
+    
+        @Override
+        public Integer next() {
+            return current;
+        }
+    
+        @Override
+        public boolean hasNext() {
+            while (!stack.isEmpty()) {
+                Iterator<NestedInteger> node = stack.peek();
+        
+                // This will clear out empty iterators.
+                if (!node.hasNext()) {
+                    stack.pop();
+                    continue;
+                }
+                
+                // If the value is an integer, done - load up and return.
+                // Otherwise push the current list to the top of the stack and continue.
+                NestedInteger value = node.next();
+                if (value.isInteger()) {
+                    current = value.getInteger();
+                    return true;
+                } else {
+                    stack.push(value.getList().iterator());
+                }
+            }
+            
+            return false;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Simple iteration solution in C++
+    class NestedIterator {
+        queue<int> myqueue;
+    public:
+        NestedIterator(vector<NestedInteger> &nestedList) {
+            int n = nestedList.size();
+            for(int i = 0; i < n; i++) {
+                if(nestedList[i].isInteger()) {
+                    myqueue.push(nestedList[i].getInteger());
+                }
+                else {
+                    vector<NestedInteger> nest = nestedList[i].getList();
+                    NestedIterator* tmp = new NestedIterator(nest);
+                    while(tmp->hasNext()) {
+                        myqueue.push(tmp->next());
+                    }
+                }
+            }
+        }
+
+        int next() {
+            int tmp = myqueue.front();
+            myqueue.pop();
+            return tmp;
+        }
+
+        bool hasNext() {
+            return !myqueue.empty();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My solution by doing a DFS and using a queue to store numbers
+
+
+    class NestedIterator {
+    private:
+        queue<int> q;
+    public:
+        NestedIterator(vector<NestedInteger> &nestedList) {
+            for(auto ni:nestedList){
+                dfs(ni);
+            }
+        }
+        void dfs(NestedInteger ni){
+            if(ni.isInteger()){
+                int tmp = ni.getInteger();
+                q.push(tmp);
+            }
+            for(auto nii:ni.getList()){
+                dfs(nii);
+            }
+        }
+        
+        int next() {
+           int element = q.front();
+           q.pop();
+           return element;
+        }
+    
+        bool hasNext() {
+            return !q.empty();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Solution 132 ms
+Use queue, iterator
+
+    class NestedIterator(object):
+        def __init__(self,nestedList):
+            self.queue = collections.deque([])
+            for elem in nestedList:
+                if elem.isInteger():
+                    self.queue.append(elem.getInteger())
+                else:
+                    newList = NestedIterator(elem.getList())
+                    while newList.hasNext():
+                        self.queue.append(newList.next())
+        def hasNext(self):
+            if self.queue:
+                return True
+            return False
+        def next(self):
+            return self.queue.popleft()
+
+----------------------------------------------------------------------------------------------------
+One of the testcases maybe wrong for C language.
+I get a similar situation with the problem 251. Flatten 2D Vector.
+
+https://leetcode.com/discuss/68749/i-suspect-that-the-judge-is-wrong-for-c-language
+
+the testcase begin with 
+
+    [[-35,-73,-20,57,51,-14,102,73,-82,-25,-45,-90,95,68,27,-18,-29,-77,-3,-2,19,24,8,-55,-80,-55,-31,55,-95,-
+
+maybe wrong for C language. it has 105 rows and total 10973 integers.
+
+My c solution:
+
+    struct NestedIterator {
+        struct NestedInteger ***stack;
+        int *ind;
+        int *size;
+        int stackSize;
+        int len;
+        int cache;
+    };
+    
+    struct NestedIterator *nestedIterCreate(struct NestedInteger** nestedList, int nestedListSize) {
+        struct NestedIterator *iter = malloc(sizeof(struct NestedIterator));
+        iter->stackSize = 1000;
+        iter->stack = malloc(iter->stackSize * sizeof(struct NestedInteger **));
+        iter->ind = malloc(iter->stackSize * sizeof(int));
+        iter->size = malloc(iter->stackSize * sizeof(int));
+        iter->len = 1;
+        iter->stack[0] = nestedList;
+        iter->ind[0] = 0;
+        iter->size[0] = nestedListSize;
+        return iter;
+    }
+    
+    bool nestedIterHasNext(struct NestedIterator *iter) {
+        if (!iter->len) return false;
+        if (iter->ind[iter->len - 1] == iter->size[iter->len - 1]) {
+            iter->len--;
+            return nestedIterHasNext(iter);
+        }
+        struct NestedInteger **tgt = iter->stack[iter->len - 1][iter->ind[iter->len - 1]];
+        if (NestedIntegerIsInteger(tgt)) return true;
+        iter->ind[iter->len - 1]++;
+        if (iter->len == iter->stackSize) {
+            iter->stackSize += 1000;
+            iter->stack = realloc(iter->stack, iter->stackSize * sizeof(struct NestedInteger **));
+            iter->ind = realloc(iter->ind, iter->stackSize * sizeof(int));
+            iter->size = realloc(iter->size, iter->stackSize * sizeof(int));
+        }
+        iter->stack[iter->len] = NestedIntegerGetList(tgt);;
+        iter->ind[iter->len] = 0;
+        iter->size[iter->len] = NestedIntegerGetListSize(tgt);
+        iter->len++;
+        return nestedIterHasNext(iter);
+    }
+    
+    int nestedIterNext(struct NestedIterator *iter) {
+        struct NestedInteger **tgt = iter->stack[iter->len - 1][iter->ind[iter->len - 1]];
+        iter->ind[iter->len - 1]++;
+        return NestedIntegerGetInteger(tgt);
+    }
+    
+    /** Deallocates memory previously allocated for the iterator */
+    void nestedIterFree(struct NestedIterator *iter) {
+        free(iter->stack);
+        free(iter->ind);
+        free(iter->size);
+        free(iter);
+    }
+    
+    /**
+     * Your NestedIterator will be called like this:
+     * struct NestedIterator *i = nestedIterCreate(nestedList, nestedListSize);
+     * while (nestedIterHasNext(i)) printf("%d\n", nestedIterNext(i));
+     * nestedIterFree(i);
+     */
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution - straightforward to understand
+Assuming the list to be iterated is [A, B], where A and B are in type NestedInteger.
+Whenever we visit an element (current element), it has following three conditions: 
+a) it is an integer; b) it is a non-empty list; c) it is an empty list.
+
+If (a), we just output the integer and move to next element
+
+if (b), actually we are back to original problem (i.e. iterating a list of NestedInteger) before we move to next element
+
+if (c), we skip it and move to next element
+
+Similarly, when we check hasNext() integer, we have two conditions: 
+(1) we are in a nested list
+(2) we just move to the next element in top level
+what hasNext() can bring us is that if it returns 'true', when calling 'next()', we can output an integer; 
+otherwise the iterator already reaches the end of the list. Therefore we won't encounter (c) when calling next(). 
+
+Thus, the iterating solution is using a variable to hold current nestedInteger in top level, if it is an integer, we output the integer and move to the next nestedInteger; else we product a NestedIterator for the current nestedInteger (which is a list).
+
+    public class NestedIterator implements Iterator<Integer> {
+        
+        private List<NestedInteger> nestedIntegerList;
+        private NestedIterator nextNestedIterator;
+        private NestedInteger nextNestedInteger;
+        private int currentPosition;
+        
+        public NestedIterator(List<NestedInteger> nestedList) {
+            this.nestedIntegerList = nestedList;
+            this.currentPosition = 0;
+        }
+    
+        @Override
+        public Integer next() {
+            return nextNestedInteger.isInteger() ? nextNestedInteger.getInteger() : 
+                                                   nextNestedIterator.next();
+        }
+    
+        @Override
+        public boolean hasNext() {
+    
+            if (nextNestedIterator != null && nextNestedIterator.hasNext()) {
+                return true;
+            }
+            if (currentPosition >= nestedIntegerList.size()) {
+                return false;
+            }
+            
+            nextNestedInteger = nestedIntegerList.get(currentPosition++);
+            if ( nextNestedInteger.isInteger() || 
+                 (nextNestedIterator = 
+                    new NestedIterator(nextNestedInteger.getList())).hasNext()) {
+                return true;
+            } else {
+                return hasNext();
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand java solution with recursion
+   We can easily think of recursion since this nestedInteger is defined as Integer and List can contain each other. So my solution basically is to store all integers to a normal ArrayList, well, which costs more space than expected.
+
+For the nestedList given, we iterate all its elements in order. If the nestedInteger is an integer, add it to the list; if not, it means it is a list then. Do the recursion for the list we've done for its parent list. That describes basically what nestedListHelper() and nestedIntegerHelper() do.
+
+Hope it helps.
+
+
+
+    public class NestedIterator implements Iterator<Integer> {
+    
+    List<Integer> list = new ArrayList<Integer>();    
+    
+    int curIdx = 0;
+    
+    public NestedIterator(List<NestedInteger> nestedList) {
+        nestedListHelper(nestedList);
+    }
+    
+    private void nestedListHelper(List<NestedInteger> nestedList) {
+        for(NestedInteger nestedInteger: nestedList) {
+            nestedIntegerHelper(nestedInteger);
+        }
+    }
+
+    private void nestedIntegerHelper(NestedInteger nestedInteger) {
+        if(nestedInteger.isInteger()) {
+            list.add(nestedInteger.getInteger());
+            return;
+        }
+        nestedListHelper(nestedInteger.getList());
+    }
+    @Override
+    public Integer next() {
+        return list.get(curIdx++);
+    }
+
+    @Override
+    public boolean hasNext() {
+        return curIdx < list.size();
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+My Solution using a stack
+    public class NestedIterator implements Iterator<Integer> {
+    	private Deque<Iterator<NestedInteger>> stack;
+    	private NestedInteger current;
+    
+    	public NestedIterator(List<NestedInteger> nestedList) {
+    		stack = new ArrayDeque<Iterator<NestedInteger>>();
+    		current = null;
+    
+    		if (nestedList != null) {
+    			stack.push(nestedList.iterator());
+    		}
+    	}
+    
+    	@Override
+    	public Integer next() {
+    		if (current != null) {
+    			Integer result = current.getInteger();
+    			current = null;
+    			return result;
+    		} else {
+    			throw new RuntimeException();
+    		}
+    	}
+    
+    	@Override
+    	public boolean hasNext() {
+    		while (stack.size() > 0) {
+    			Iterator<NestedInteger> currentIterator = stack.peek();
+    
+    			if (currentIterator.hasNext()) {
+    				NestedInteger next = currentIterator.next();
+    				if (next.isInteger()) {
+    					current = next;
+    					return true;
+    				} else {
+    					stack.push(next.getList().iterator());
+    				}
+    			} else {
+    				stack.pop();
+    			}
+    
+    		}
+    
+    		return false;
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Using javascript, can&#x27;t pass test case, why?
+The code can pass in development, however it is failed on leetcode. I don't know what's wrong ?  the code is below:
+       
+     /**
+         * @constructor
+         * @param {NestedInteger[]} nestedList
+         */
+        var NestedIterator = function(nestedList) {
+            this.list = nestedList;
+            this.position = 0;
+          this.childIterator = null;
+          this.finalList = [];
+        };
+        
+        
+        /**
+         * @this NestedIterator
+         * @returns {boolean}
+         */
+        NestedIterator.prototype.hasNext = function() {
+          return (this.list.length - 1 >= this.position) ? true : false;
+        };
+        
+        /**
+         * @this NestedIterator
+         * @returns {integer}
+         */
+        NestedIterator.prototype.next = function() {
+            while (this.hasNext()) {
+            var item = this.list[this.position];
+            if (Object.prototype.toString.call(item) === '[object Array]') {
+              var childIterator = this.childIterator;
+              if (!childIterator) {
+                this.childIterator = childIterator = new NestedIterator(item);
+              }
+              if (childIterator.hasNext()) {
+                var val = childIterator.next();
+                if (!childIterator.hasNext()) {
+                  this.position++;
+                  this.childIterator = null;
+                }
+                return val;
+              }
+            } else {
+              this.position++;
+              return item;
+            }
+          }
+          return this.finalList;
+        };
+
+----------------------------------------------------------------------------------------------------
+7ms java solution
+    private List<Integer> nestedList = new ArrayList<>();
+    private int index;
+    
+    private static void buildList(List<Integer> list, List<NestedInteger> nestedList) {
+        for (NestedInteger nestedInteger : nestedList) {
+            if (nestedInteger.isInteger()) list.add(nestedInteger.getInteger());
+            else buildList(list, nestedInteger.getList());
+        }
+    }
+
+    public NestedIterator(List<NestedInteger> nestedList) {
+        buildList(this.nestedList, nestedList);
+    }
+
+    @Override
+    public Integer next() {
+        return nestedList.get(index++);
+    }
+
+    @Override
+    public boolean hasNext() {
+        return nestedList.size() != index;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java easy to understand solution.
+The idea is to prepare the value of the next() call. If there is no more, set it as null.
+
+    public class NestedIterator implements Iterator<Integer> {
+        private Stack<Iterator<NestedInteger>> stack;
+        private Integer prepared = null;
+        
+        public NestedIterator(List<NestedInteger> nestedList) {
+            stack = new Stack<Iterator<NestedInteger>>();
+            stack.push(nestedList.iterator());
+            prepare();
+        }
+    
+        /**
+         * prepare sets the prepared as the return value of the next() function.
+         * if there is no more element, set it null
+         * if it sees a list, look for the first non-list element.
+         */
+        private void prepare()  {
+            if (stack.empty())	{
+                prepared = null;
+                return;
+            }
+            
+            Iterator<NestedInteger> iter = stack.peek();
+            // the list has been all visited
+            if (!iter.hasNext())    {
+                stack.pop();
+                prepare();
+                return;
+            }
+            
+            // next item in the current non-empty list
+            NestedInteger ni = iter.next();
+                
+            if (!ni.isInteger()) {
+            	// stack up another list
+                stack.push(ni.getList().iterator());
+                prepare();
+            } else 
+                prepared = ni.getInteger();
+        }
+        
+        @Override
+        public Integer next() {
+            Integer res = prepared;
+            prepare();
+            
+            return res;
+        }
+    
+        @Override
+        public boolean hasNext() {
+            return prepared != null;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

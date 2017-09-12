@@ -1,0 +1,389 @@
+Super Short &amp; Easy Java O(n) Solution
+public class Solution {
+    public int findMinMoves(int[] machines) {
+        int total = 0; 
+        for(int i: machines) total+=i;
+        if(total%machines.length!=0) return -1;
+        int avg = total/machines.length, cnt = 0, max = 0;
+        for(int load: machines){
+            cnt += load-avg; //load-avg is "gain/lose"
+            max = Math.max(Math.max(max, Math.abs(cnt)), load-avg);
+        }
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C++ 16ms O(n) solution (with trivial proof)
+class Solution {
+public:
+    int findMinMoves(vector<int>& machines) {
+        int len = machines.size();
+        vector<int> sum(len + 1, 0);
+        for (int i = 0; i < len; ++i)
+            sum[i + 1] = sum[i] + machines[i];
+
+        if (sum[len] % len) return -1;
+
+        int avg = sum[len] / len;
+        int res = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            int l = i * avg - sum[i];
+            int r = (len - i - 1) * avg - (sum[len] - sum[i] - machines[i]);
+
+            if (l > 0 && r > 0)
+                res = std::max(res, std::abs(l) + std::abs(r));
+            else
+                res = std::max(res, std::max(std::abs(l), std::abs(r)));
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) DP Solution
+public class Solution {
+    public int findMinMoves(int[] machines) {
+        int total = 0, target = 0, result = 0, n = machines.length;
+        for (int d : machines) total += d;
+        if (total == 0) return 0;
+        if (total % n != 0) return -1;
+        target = total / n;
+        
+        int[] move = new int[n];
+        for (int i = 0; i < n - 1; i++) {
+            if (machines[i] > target) {
+                move[i] += machines[i] - target;
+                machines[i + 1] += machines[i] - target;
+                machines[i] = target;
+                result = Math.max(result, move[i]);
+            }
+            else {
+                move[i + 1] = target - machines[i];
+                machines[i + 1] -= target - machines[i];
+                machines[i] = target;
+                result = Math.max(result, move[i + 1]);
+            }
+        }
+        
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Very intuitive O(n) solution
+public class Solution {
+    public int findMinMoves(int[] machines) {
+        int n = machines.length;
+        int sum = 0;
+        for (int num : machines) {
+            sum += num;
+        }
+        if (sum % n != 0) {
+            return -1;
+        }
+        int avg = sum / n;
+        int[] leftSums = new int[n];
+        int[] rightSums = new int[n];
+        for (int i = 1; i < n; i ++) {
+            leftSums[i] = leftSums[i-1] + machines[i-1];
+        }
+        for (int i = n - 2; i >= 0; i --) {
+            rightSums[i] = rightSums[i+1] + machines[i+1];
+        }
+        int move = 0;
+        for (int i = 0; i < n; i ++) {
+            int expLeft = i * avg;
+            int expRight = (n - i - 1) * avg;
+            int left = 0;
+            int right = 0;
+            if (expLeft > leftSums[i]) {
+                left = expLeft - leftSums[i];
+            } 
+            if (expRight > rightSums[i]) {
+                right = expRight - rightSums[i];
+            }
+            move = Math.max(move, left + right);
+        }
+        return move;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy understand solution O(n) time and O(1) space
+def findMinMoves(self, machines):
+    if sum(machines) % len(machines) == 0:
+        target = sum(machines) / len(machines)
+    else:
+        return -1
+    toLeft = 0
+    res = 0
+    for i in range(len(machines)):
+        toRight =  machines[i]- target - toLeft
+        res = max(res, toLeft, toRight, toLeft + toRight)
+        toLeft = -toRight
+    return res
+
+----------------------------------------------------------------------------------------------------
+C++ 12 ms O(n) 8 lines
+int findMinMoves(vector<int>& machines) {
+    int totalDresses = 0, size = machines.size();
+    for (auto i = 0; i < size; ++i) totalDresses += machines[i];
+    if (totalDresses % size != 0) return -1;
+    
+    auto targetDresses = totalDresses / size, totalMoves = 0, ballance = 0;
+    for (auto i = 0; i < size; ++i) {
+        ballance += machines[i] - targetDresses;
+        totalMoves = max(totalMoves, max(machines[i] - targetDresses, abs(ballance)));
+    }
+    return totalMoves;
+}
+
+
+----------------------------------------------------------------------------------------------------
+why &#91;0,0,11,5&#93; needs 8 steps?...
+<p>my algorithm gives 7 steps and is considered wrong</p>
+<p>&#91;0,0,11,5&#93;:</p>
+<p>&#91;1,1,10,4&#93;<br/>
+&#91;2,2,9,3&#93;<br/>
+&#91;3,3,8,2&#93;<br/>
+&#91;3,3,7,3&#93;<br/>
+&#91;3,4,6,3&#93;<br/>
+&#91;4,4,5,3&#93;<br/>
+&#91;4,4,4,4&#93;</p>
+<p>is this path wrong?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python solution
+class Solution(object):
+    def findMinMoves(self, machines):
+        """
+        :type machines: List[int]
+        :rtype: int
+        """
+        if not machines:
+            return 0
+        n = len(machines)
+        s = sum(machines)
+        if s % n:
+            return -1
+        avg = s / n
+        ans = 0
+        left_sum = 0
+        for x in machines:
+            delta = x - avg
+            ans = max(ans, -left_sum, delta + max(0, left_sum))
+            left_sum += delta
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+My clean and concise c++ solution by checking  balance and maximum
+class Solution {
+public:
+    int findMinMoves(vector<int>& machines) 
+    {
+        int sum=0,maxNum=0;
+        for(int val:machines)
+            sum+=val,maxNum=max(maxNum,val);
+        if(!machines.size()||sum%machines.size()!=0)
+            return -1;
+        int ave=sum/machines.size(),res=maxNum-ave,balance=0;
+        for(int val:machines)
+        {
+            balance+=val-ave;
+            res=max(res,abs(balance));
+        }
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Why does &#91;4,0,0,4&#93; needs 2 steps?
+<p>4 --&gt; 0 0 4<br/>
+3 1 0 &lt;-- 4<br/>
+3 --&gt; 1 1 3<br/>
+2 2 1 &lt;-- 3<br/>
+2 2 2 2 // so - 4 steps? or am I wrong?</p>
+
+
+----------------------------------------------------------------------------------------------------
+Should improve the wording (unprecise)
+<p>It is not clear that the direction in which we pass a dress can be different for different machines during one round.<br/>
+To make that clear, we should add an example like:<br/>
+Input: &#91;2,0,0,2&#93;<br/>
+Ouptut: 1<br/>
+Explanation:<br/>
+1st move:    2 --&gt; 0     0 &lt;-- 2    =&gt;    1     1     1     1</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python 5 lines
+    def findMinMoves(self, ms):
+        if sum(ms) % len(ms) != 0: return -1
+        avg = sum(ms)/len(ms)
+        ds = map(lambda x: x-avg, ms)
+        dss = [abs(sum(ds[0:i])) for i in xrange(len(ds))]
+        return max(dss + ds)
+
+
+----------------------------------------------------------------------------------------------------
+Why does &#91;5,2,4,2,2&#93; returns 2?
+<p>Is this allowed in one step?<br/>
+&#91;<strong>5</strong>,2,<strong>4</strong>,2,2&#93; -&gt; &#91;4,3,3,2,2&#93;</p>
+
+
+----------------------------------------------------------------------------------------------------
+Just write down my thought and the code maybe pretty same with others
+<p>We go through the array from left to right or reverse.<br/>
+&#91;1&#93;count the all number of dress we need to operate with the other side up to now as A (that means the  dress we have to give out or we lack).<br/>
+&#91;2&#93;in every step, the Math.abs(A) maybe final answer.<br/>
+&#91;3&#93;for every machine, if it have more dress than avg, it must will take (his dress number)-(avg) times operate to make it be in avg. So it also maybe the final answer.</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python 72ms O(n) solution
+    return most
+
+----------------------------------------------------------------------------------------------------
+Java O(N) solution 15ms
+public class Solution {
+    public int findMinMoves(int[] ma) {
+        if(ma.length < 2) return 0;
+        int[] left = new int[ma.length];
+        int[] right = new int[ma.length];
+        
+        int sum1 = 0;
+        for(int i : ma) sum1 += i;
+        if(sum1 % ma.length != 0) return -1;
+        int ave = sum1/ma.length;
+        
+        for(int i = 0; i < ma.length; i++){
+            ma[i] -= ave;
+        }
+        
+        sum1 = 0;
+        for(int i = 1; i < ma.length; i++){
+            sum1 = left[i] = sum1 + ma[i-1];
+        }
+
+        sum1 = 0;
+        for(int i = ma.length - 2; i >= 0; i--){
+            sum1 = right[i] = sum1 + ma[i+1];
+        }
+
+        int res = 0;
+        for(int i = 0; i < ma.length; i++){
+            if(ma[i] > 0){
+                int j = i, k = i;
+                sum1 = 0;
+                while(i < ma.length && ma[i] >= 0){
+                    sum1 += ma[i++];
+                }
+                if(left[j] >= 0){
+                    res = Math.max(res, sum1 + left[j]);
+                }else if(right[i-1] >= 0){
+                    res = Math.max(res, sum1 + right[i-1]);
+                }else{
+                    sum1 = left[j] + ma[j];
+                    while(sum1 < 0 && ++j < i){
+                        sum1 += ma[j];
+                    }
+                    int r = sum1;  // portion of ma[j] will be allocated to the right
+                    int l = ma[j] - r; // portion of ma[j] will be allocated to the left
+                    int rr = - right[i-1] - sum1 + left[k];  // positive volume with index > j && < i - 1; right of right
+                    int ll = sum1 - ma[j] - left[k];  // positive volume with index > k && < j; left of left
+                    
+                    // Tricky part, try to understand.
+                    if(r <= ll || l <= rr) res = Math.max(res, -Math.min(left[k], right[i-1])); 
+                    else res = Math.max(res, ma[j]);
+                }
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+My solution seems to be too simple, is it wrong? Also OJ has wrong results
+[[topic:post_is_deleted]]
+
+----------------------------------------------------------------------------------------------------
+Very simple Java O(n) solution with explaination in the comment
+public int findMinMoves(int[] machines) {
+    if ((machines == null) || (machines.length <= 1)) return 0;
+    long sum = 0;
+    for (final int machine : machines) sum += machine;
+    if ((sum % machines.length) != 0) return -1;
+    final int avg = (int)(sum / machines.length);
+    if (machines.length == 2) return Math.max(machines[0], machines[1]) - avg;
+    
+    /*
+     * The main idea is that we only need to find out the machine which needs the maximum moves.
+     * This maximum moves is the min moves to make all the machine having same dresses.
+     */
+	int moves = 0, giveToNext = 0, tmp = 0;
+	for (final int machine : machines) {
+		tmp = machine + giveToNext -avg;
+		moves = Math.max(moves, getMoves(giveToNext, tmp));
+		giveToNext = tmp;
+	}
+	
+	return moves;	
+}
+
+private static int getMoves(final int gotFromPrev, final int giveToNext) {
+	if (gotFromPrev >= 0) { 
+		/* 
+		 * In this case, this machine has got some dresses from prev machine.
+		 * Then 
+		 * (1) if giveToNext >= 0, it means this machine also needs to move some dresses to next machine,
+		 * so the giveToNext = the necessary moves happening on this machine.
+		 * (2) if giveToNext < 0, it means the next machine needs to move some dresses to this machine,
+		 * so the necessary moves happening on this machine itself = 0.
+		 */
+		return giveToNext >= 0 ? giveToNext : 0;
+	} else {
+		/* 
+		 * In this case, this machine has to move some dresses to prev machine.
+		 * So at least, the necessary moves on this machine is already (-gotFromPrev).
+		 * Then 
+		 * (1) if giveToNext >= 0, it means this machine also needs to move some dresses to next machine,
+		 * so the necessary moves happening on this machine = giveToNext + (-gotFromPrev)
+		 * (2) if giveToNext < 0, it means the next machine needs to move some dresses to this machine,
+		 * so the necessary moves happening on this machine itself is just (-gotFromPrev).
+		 */
+		return giveToNext >= 0 ? giveToNext-gotFromPrev : -gotFromPrev;
+	}
+}
+
+
+----------------------------------------------------------------------------------------------------
+c++ 3ms solution with explanations
+int findMinMoves(vector<int>& machines) {
+    int sum = 0;
+    for(int i = 0;i < machines.size();i ++)
+        sum += machines[i];
+    if(sum % machines.size() != 0)
+        return -1;
+    int res = 0;
+    int pre = 0, ave = sum / machines.size();
+    for(int i = 0;i < machines.size();i ++) {
+        int next = ave + pre - machines[i];
+        int cnt = max(pre, 0) - min(0, next);
+        
+        pre = next;
+        res = max(cnt, res);
+    }
+    return res;
+}
+
+----------------------------------------------------------------------------------------------------

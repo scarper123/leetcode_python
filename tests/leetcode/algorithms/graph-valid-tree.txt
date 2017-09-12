@@ -1,0 +1,507 @@
+My solution does not need a table for palindrome, is it right ? It uses only O(n) space.
+    class Solution {
+    public:
+        int minCut(string s) {
+            int n = s.size();
+            vector<int> cut(n+1, 0);  // number of cuts for the first k characters
+            for (int i = 0; i <= n; i++) cut[i] = i-1;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; i-j >= 0 && i+j < n && s[i-j]==s[i+j] ; j++) // odd length palindrome
+                    cut[i+j+1] = min(cut[i+j+1],1+cut[i-j]);
+    
+                for (int j = 1; i-j+1 >= 0 && i+j < n && s[i-j+1] == s[i+j]; j++) // even length palindrome
+                    cut[i+j+1] = min(cut[i+j+1],1+cut[i-j+1]);
+            }
+            return cut[n];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My DP Solution ( explanation and code)
+Calculate and maintain 2 DP states: 
+
+ 1. pal[i][j] , which is whether s[i..j] forms a pal
+ 
+ 2.  d[i], which
+        is the minCut for s[i..n-1]
+
+Once we comes to a pal[i][j]==true:
+
+ - if j==n-1, the string s[i..n-1] is a Pal, minCut is 0, d[i]=0; 
+ - else: the current cut num (first cut s[i..j] and then cut the rest
+   s[j+1...n-1]) is 1+d[j+1], compare it to the exisiting minCut num
+   d[i], repalce if smaller.
+
+d[0] is the answer.
+
+     class Solution {
+        public:
+            int minCut(string s) {
+                if(s.empty()) return 0;
+                int n = s.size();
+                vector<vector<bool>> pal(n,vector<bool>(n,false));
+                vector<int> d(n);
+                for(int i=n-1;i>=0;i--)
+                {
+                    d[i]=n-i-1;
+                    for(int j=i;j<n;j++)
+                    {
+                        if(s[i]==s[j] && (j-i<2 || pal[i+1][j-1]))
+                        {
+                           pal[i][j]=true;
+                           if(j==n-1)
+                               d[i]=0;
+                           else if(d[j+1]+1<d[i])
+                               d[i]=d[j+1]+1;
+                        }
+                    }
+                }
+                return d[0];
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+Easiest Java DP Solution (97.36%)
+This can be solved by two points:
+
+ 1. `cut[i]` is the minimum of `cut[j - 1] + 1 (j <= i)`, if `[j, i]` is palindrome.
+ 2. If  `[j, i]` is palindrome, `[j + 1, i - 1]` is palindrome, and `c[j]  == c[i]`.
+
+The 2nd point reminds us of using dp (caching).
+
+    a   b   a   |   c  c
+                    j  i
+           j-1  |  [j, i] is palindrome
+       cut(j-1) +  1
+
+
+Hope it helps!
+
+    public int minCut(String s) {
+        char[] c = s.toCharArray();
+        int n = c.length;
+        int[] cut = new int[n];
+        boolean[][] pal = new boolean[n][n];
+        
+        for(int i = 0; i < n; i++) {
+            int min = i;
+            for(int j = 0; j <= i; j++) {
+                if(c[j] == c[i] && (j + 1 > i - 1 || pal[j + 1][i - 1])) {
+                    pal[j][i] = true;  
+                    min = j == 0 ? 0 : Math.min(min, cut[j - 1] + 1);
+                }
+            }
+            cut[i] = min;
+        }
+        return cut[n - 1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Two C++ versions given (one DP 28ms, one Manancher-like algorithm 10 ms)
+One typical solution is DP based. Such solution first constructs a two-dimensional bool array isPalin to indicate whether the sub-string s[i..j] is palindrome. To get such array, we need O(N^2) time complexity. Moreover, to get the minimum cuts, we need another array minCuts to do DP and minCuts[i] saves the minimum cuts found for the sub-string s[0..i-1]. minCuts[i] is initialized to i-1, which is the maximum cuts needed (cuts the string into one-letter characters) and minCuts[0] initially sets to -1, which is needed in the case that s[0..i-1] is a palindrome. When we construct isPalin array, we update minCuts everytime we found a palindrome sub-string, i.e. if s[i..j] is a palindrome, then minCuts[j+1] will be updated to the minimum of the current minCuts[j+1] and minCut[i]+1(i.e. cut s[0..j] into s[0,i-1] and s[i,j]). At last, we return minCuts[N]. 
+So the complexity is O(N^2). However, it can be further improved since as described above, we only update minCuts when we find a palindrome substring, while the DP algorithm spends lots of time to calculate isPalin, most of which is false (i.e. not a palindrome substring). If we can reduce such unnecessary calculation, then we can speed up the algorithm. This can be achieved with a Manancher-like solution, which is also given as following. 
+
+    // DP solution
+        class Solution {
+        public:
+            int minCut(string s) {
+                const int N = s.size();
+                if(N<=1) return 0;
+                int i,j;
+                bool isPalin[N][N];
+                fill_n(&isPalin[0][0], N*N, false);
+                int minCuts[N+1];
+                for(i=0; i<=N; ++i) minCuts[i] = i-1;
+                
+                for(j=1; j<N; ++j)
+                {
+                    for(i=j; i>=0; --i)
+                    {
+                        if( (s[i] == s[j]) && ( ( j-i < 2 ) || isPalin[i+1][j-1] ) )
+                        {
+                            isPalin[i][j] = true;
+                            minCuts[j+1] = min(minCuts[j+1], 1 + minCuts[i]);    
+                        }
+                    }
+                }
+                return minCuts[N];
+                
+            }
+        };
+
+The Manancher-like solution scan the array from left to right (for i loop) and only check those sub-strings centered at s[i]; once a non-palindrome string is found, it will stop and move to i+1. Same as the DP solution, minCUTS[i] is used to save the minimum cuts for s[0:i-1]. For each i, we do two for loops (for j loop) to check if the substrings s[i-j .. i+j] (odd-length substring) and s[i-j-1.. i+j] (even-length substring) are palindrome. By increasing j from 0, we can find all the palindrome sub-strings centered at i and update minCUTS accordingly. Once we meet one non-palindrome sub-string, we stop for-j loop since we know there no further palindrome substring centered at i. This helps us avoid unnecessary palindrome substring checks, as we did in the DP algorithm. Therefore, this version is faster. 
+
+    //Manancher-like solution
+    class Solution {
+    public:
+        int minCut(string s) {
+            const int N = s.size();
+            if(N<=1) return 0;
+            
+            int i, j, minCUTS[N+1];
+            for(i=0; i<=N; ++i) minCUTS[i] = i-1;
+            
+            for(i=1;i<N;i++)
+            {
+                for(j=0;(i-j)>=0 && (i+j)<N && s[i-j]== s[i+j]; ++j) // odd-length substrings 
+                    minCUTS[i+j+1] = min(minCUTS[i+j+1], 1 + minCUTS[i-j]);
+    
+                for(j=0;(i-j-1)>=0 && (i+j)<N && s[i-j-1]== s[i+j]; ++j) // even-length substrings
+                    minCUTS[i+j+1] = min(minCUTS[i+j+1], 1 + minCUTS[i-j-1]);
+            }
+            return minCUTS[N];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+DP solution &amp; some thoughts
+Some thoughts:
+
+1. return the mininum cut of the partition s => optimization => DP
+2. try to divide & conqure => 
+
+ public int minCutRecur(String s){
+        int n = s.length;
+        
+        //base case
+        if(s < 2 || isPalindr(s)) return 0;
+        int min = n - 1;
+        for(int i = 1; i <= n - 1; i++){
+            if(isPalindr(s)){
+                min = Math.min(min, 1 + minCutRecur(s.substring(i)));
+            }
+        }
+        
+        return min;
+ }
+
+However, sub problem overlapped (are not independent with each other). 
+
+3. Use DP to build the solution from bottom up.
+
+    public int minCut(String s) {
+            int n = s.length(); 
+            
+            boolean[][] isPalindr = new boolean[n + 1][n + 1]; //isPalindr[i][j] = true means s[i:j) is a valid palindrome
+            int[] dp = new int[n + 1]; //dp[i] means the minCut for s[0:i) to be partitioned 
+    
+            for(int i = 0; i <= n; i++) dp[i] = i - 1;//initialize the value for each dp state.
+            
+            for(int i = 2; i <= n; i++){
+                for(int j = i - 1; j >= 0; j--){
+                    //if(isPalindr[j][i]){
+                    if(s.charAt(i - 1) == s.charAt(j) && (i - 1 - j < 2 || isPalindr[j + 1][i - 1])){
+                        isPalindr[j][i] = true;
+                        dp[i] = Math.min(dp[i], dp[j] + 1);
+                    }
+                }
+            }
+            
+            return dp[n];
+    }
+
+Several optimizations include: 
+
+ 1. No need to check if a string is a palindrome or not inside the loop by adjusting the order of getting of solution of the sub problems. 
+ 2. assign dp[0] to be -1 so that when s[0:i) is a palindrome by itself, dp[i] is 0. This is for the consistency of the code.
+
+The time complexity and the space complexity are both O(n ^ 2). 
+
+
+
+----------------------------------------------------------------------------------------------------
+Solved by shortest path algorithm, clear and straightforward, O(n^2)
+1) Build the directed acyclic graph: if substring s[i, .., j] is a palindrome, then there is an edge from i to j+1.
+2) Find the shortest path d from 0 to n. Then d - 1 is the mincut.
+
+    class Solution {
+     public:
+      int minCut(string s) {
+        int n = s.size();
+        if (n <= 0) return 0;
+    
+        vector<vector<bool> > lut(n, vector<bool>(n, true));
+        vector<vector<int> > adjList(n+1, vector<int>());
+    
+        // build the palindrome look up table, O(n^2)
+        for (int k = 1; k <= n-1; ++k) {
+          int i = 0, j = k;
+          while (j < n) {
+            lut[i][j] = (s[i] == s[j] && lut[i+1][j-1]);
+            ++i;
+            ++j;
+          }
+        }
+    
+        // build the graph, O(n^2);
+        for (int i = 0; i < n; ++i) {
+          for (int j = i; j < n; ++j) {
+            if (lut[i][j] == true) {
+              adjList[i].push_back(j+1);
+            }
+          }
+        }
+    
+        // Use bfs to find shortest path from 0 to n, O(|E|)
+        // |E| is the number of edges, at most O(n^2)
+        vector<int> dist(n+1, -1);
+        queue<int> q;
+    
+        dist[0] = 0;
+        q.push(0);
+    
+        while (!q.empty()) {
+          int u = q.front();
+          q.pop();
+    
+          if (u == n) break;
+    
+          vector<int>& neighbors = adjList[u];
+
+          // Greedy strategy, in reversed order so that furthest nodes are explored first.
+          for (auto it = neighbors.rbegin(); it != neighbors.rend(); ++it) {
+            int v = *it;
+            if (dist[v] == -1) {
+              q.push(v);
+              dist[v] = dist[u] + 1;
+            }
+          }
+        }
+    
+        return dist[n] - 1;
+      }
+    
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+56 ms python with explanation
+Algorithm (460 ms) credits go to:
+[https://leetcode.com/discuss/9476/solution-does-not-need-table-palindrome-right-uses-only-space][1]
+
+The main algorithm idea is if s[i,j] is a palindrome, then the minCut(s[:j]) is **at most** minCut(s[:i-1])+1. This literally needs to find out all possible palindromes in the list. The above post provides an efficient search algorithm. O(n) space and O(n^2) time complexity.
+
+Further acceleration (460 ms -> 56 ms) credits go to:
+[https://leetcode.com/discuss/43950/python-100ms-extra-dealing-super-cases-reduces-576ms-100ms][2]
+
+The main idea for acceleration is to quickly check and exclude a few long palindrome tests..
+
+    def minCut(self, s):
+        # acceleration
+        if s == s[::-1]: return 0
+        for i in range(1, len(s)):
+            if s[:i] == s[:i][::-1] and s[i:] == s[i:][::-1]:
+                return 1
+        # algorithm
+        cut = [x for x in range(-1,len(s))]  # cut numbers in worst case (no palindrome)
+        for i in range(len(s)):
+            r1, r2 = 0, 0
+            # use i as origin, and gradually enlarge radius if a palindrome exists
+            # odd palindrome
+            while i-r1 >= 0 and i+r1 < len(s) and s[i-r1] == s[i+r1]:
+                cut[i+r1+1] = min(cut[i+r1+1], cut[i-r1]+1)
+                r1 += 1
+            # even palindrome
+            while i-r2 >= 0 and i+r2+1 < len(s) and s[i-r2] == s[i+r2+1]:
+                cut[i+r2+2] = min(cut[i+r2+2], cut[i-r2]+1)
+                r2 += 1
+        return cut[-1]
+
+The following code simply implements the algorithm without any optimization (1800 ms), and should be easier to understand. O(n) space and O(n^3) time complexity.
+
+    def minCut(self, s):
+        cut = [x for x in range(-1,len(s))]
+        for i in range(0,len(s)):
+            for j in range(i,len(s)):
+                if s[i:j] == s[j:i:-1]:
+                    cut[j+1] = min(cut[j+1],cut[i]+1)
+        return cut[-1]
+
+
+  [1]: https://leetcode.com/discuss/9476/solution-does-not-need-table-palindrome-right-uses-only-space
+  [2]: https://leetcode.com/discuss/43950/python-100ms-extra-dealing-super-cases-reduces-576ms-100ms
+
+----------------------------------------------------------------------------------------------------
+My accepted O(n^2) DP solution in Java
+    public class Solution {
+        public int minCut(String s) {
+             if(s==null)
+                return 0;
+             int i,j,n=s.length();
+             int cuts[]=new int[n];   //cuts[i] will store the minimum no. of cuts required for substring [0...i];
+             boolean dp[][]=new boolean[n][n];   // dp[i][j]=true if substring [i...j] can be partitioned into list of palindromes.
+            
+            for(i=0;i<n;i++)
+            {
+                /*since every single character is a palindrome, maximum no. of cuts for substring [0...i] will be i
+                 hence initiating cuts[i] with maximum possible value. */        
+                 
+                cuts[i]=i; 
+                for(j=0;j<=i;j++)
+                { 
+                    if(j == i)
+                       dp[j][i] = true;
+                    else
+                    {
+                      if(s.charAt(i)!= s.charAt(j))
+                      continue;
+                      if(j==i-1)
+                      
+                      dp[j][i]=true;
+                      else
+                      dp[j][i]=dp[j+1][i-1] ;
+                    }
+                    
+                  if(dp[j][i])
+                  {
+                      if(j==0)
+                      cuts[i]=0;
+                      else
+                      cuts[i]=Math.min(cuts[j-1]+1,cuts[i]);  
+                     /*since dp[j][i] is a palindrome, cuts[j]+1 equals no. of cuts required in [0...i] if we include the current  word [j..i]; New cuts[i] will be equal to min of previous cuts[i] and the newly calculated cuts[i] i.e. cuts[j]+1 */
+                  }
+                  
+                  
+                }
+            }
+            return cuts[n-1];
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My accepted Java solution
+I've solved the problem some time ago (with DP, of course), and I thought I would share it:
+ 
+  
+
+     public class Solution {
+            int[] cost;
+            public int minCut(String s) {
+                if (s == null || s.length() < 2) return 0;
+                int N = s.length();
+                cost = new int[N]; 
+                for (int i = 0; i < N; i++)
+                    cost[i] = Integer.MAX_VALUE;
+                cut(s);
+                return cost[N-1];
+            }
+            
+            private void cut (String s) {
+                if (s.length() > 0) cost[0] = 0;
+                if (s.length() > 1) cost[1] = s.charAt(1) == s.charAt(0) ? 0 : 1;
+                int k = 0, l = 0, ni = 0;
+                for (int i = 2; i < s.length(); i++) {
+                    if (cost[i] == Integer.MAX_VALUE) cost[i] = cost[i-1]+1;
+                    for (int j = 1; j <= 2; j++) {
+                        for (k = i-j, l = i;
+                            k >= 0 && l <= s.length()-1 && s.charAt(k) == s.charAt(l);
+                            k--, l++) {
+                            int c = k == 0 ? 0 : cost[k-1]+1;
+                            if (cost[l] > c) cost[l] = c;
+                        }
+                    }
+                }
+            }
+        }
+
+## Explanation ##
+So my thought process was go through the string, char by char starting from the left. The current character would be the center of the palindrome and expand as much as I can. After it ceases to be a palindrome (e.g no longer matching end chars or reached the boundary of the string), the cost would be 
+"1 + the cost of the substring I already processed to the left of the current palindrome I am on". I compare this cost under the index of the last char of my current palindrome. If it is less than what was previously recorded, the I record this new cost.
+
+For example, let's take 'abb':
+
+ - Start with 'a'. Obviously a cost of 0 (base case)
+ - Now we go to 'b' (index 1). Since we haven't visited 'b', let's assign an initial cost to it, which is 1 + cost[0]. So cost[1] = 0+1 = 1. This makes sense since you only need a 1 cut to get two palindromes: 'a' and 'b'
+ - Let's try to expand 'b'
+<ul><li> 'ab': It's not a palindrome so do nothing</li>
+<li>'abb': Not a palindrome either</li></ul></li>
+After expansion, cost[1] remains 1.
+ - Now we go to 'b' (index 2). Initial cost[2] = cost[1]+1 = 2. Expanding...
+<ul><li> 'bb': Hey, a palindrome! So I will compute a cost of cost[0]+1 = 1 (remember "1 + cost of substring to the left...). Is 1 less than what I initially have in cost[2]? Yup, it is. So I record it: cost[2] = 1</li></ul></li>
+After expansion, cost[2] was changed from 2 to 1, and rightfully so because that is the minimum cut we can do to get all substrings as palindromes: 'a' and 'bb'.
+
+Another example but we'll go faster this time: 'xccx'
+
+ - 'x': cost[0] = 0. Base case.
+ - 'c' (index 1): Init cost[1] = 1. Expanding...
+<ul><li> 'xc': Nope</li>
+<li>'xcc': Nope</li></ul></li>
+ - 'c': Init cost[2] = 2. Expanding...
+<ul><li> 'cc->xccx': Yes. Since we reached start of string, this is a base case. So new cost = 0. Is 0 > cost[3] = Integer.MAX_VALUE? Yes, so cost[3] = 0</li>
+<li>'ccx': Nope</li></ul></li>
+ - 'x': Since cost[3] was previously entered a cost, we don't need to init. Expanding...
+<ul><li> 'cx': Nope</li></ul></li>
+ - Cost to cut entire string: cost[3] = 0
+
+So there you go. With this method, you are assured that remaining substring (or 'previous state') to the left of the current palindrome is the minimum at that point because you already computed it earlier. You just need to +1 to the cost and see if you have a new minimum cost for the state you are currently in (the last character of the current palindrome).
+
+Sorry for the lengthy explanation :|
+
+
+
+----------------------------------------------------------------------------------------------------
+O(n^2) TLE Palindrome Partitioning II
+I used DP in 2 dimensional array to solve the palindrome problem and this cut problem. To avoid Arrays.fill(), I let both the value of pal[][] and cut[][] be of  the true value+1. But it goes TLE in the "apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfostpqczidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcucxpobxmelmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgospohznkoyzocjlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgtobhgxukwrdlszfaiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftjlunlgnfwcqqxcqikocqffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfhlccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajizxasjnrcjwzdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp" case, I used System.currentTimeMillis() and got it's 175ms to 230ms. Are there some more space to make improvement? Thanks. 
+
+        public static int pal(int i,int j,String s,int[][] pal){
+		if(pal[i][j]!=0)
+			return pal[i][j];
+		
+		if(j-i<=1){
+			pal[i][j]=2;
+			return 2;
+		}
+		
+		
+		if(s.charAt(i)==s.charAt(j-1)){
+			pal[i][j]=pal(i+1,j-1,s,pal);
+			return pal[i][j];
+		}
+		else{
+			pal[i][j]=1;
+			return 1;
+		}
+	}
+	
+	public static int cut(int i,int j,String s,int[][] cut,int[][] pal){
+		
+		if(cut[i][j]!=0){
+			return cut[i][j];
+		}
+		if(pal(i,j,s,pal)==2){
+			cut[i][j]=1;
+			return 1;
+		}
+		
+		int min=j-i;
+		int tmp=min;
+		for(int mid=i+1;mid<j;mid++){
+			tmp=cut(i,mid,s,cut,pal)+cut(mid,j,s,cut,pal);
+			if(tmp<min)
+				min=tmp;
+			if(tmp==2)
+				break;
+		}
+		cut[i][j]=min;
+		
+		return min;
+	}
+	public static int minCut(String s) {
+		int len=s.length();
+		if(len<=1)
+			return 0;
+		int pal[][]=new int[len+1][len+1];
+		int cut[][]=new int[len+1][len+1];
+		
+		return cut(0,len,s,cut,pal)-1;
+		
+		
+		
+		
+		
+    }
+
+----------------------------------------------------------------------------------------------------
+24ms c++ solution with BFS, no dp

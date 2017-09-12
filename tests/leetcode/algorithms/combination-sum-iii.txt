@@ -1,0 +1,797 @@
+Share my 4ms c++ recursive solution
+Assume the strings are all lower case letters
+
+    class Solution {
+    public:
+        bool isScramble(string s1, string s2) {
+            if(s1==s2)
+                return true;
+                
+            int len = s1.length();
+            int count[26] = {0};
+            for(int i=0; i<len; i++)
+            {
+                count[s1[i]-'a']++;
+                count[s2[i]-'a']--;
+            }
+            
+            for(int i=0; i<26; i++)
+            {
+                if(count[i]!=0)
+                    return false;
+            }
+            
+            for(int i=1; i<=len-1; i++)
+            {
+                if( isScramble(s1.substr(0,i), s2.substr(0,i)) && isScramble(s1.substr(i), s2.substr(i)))
+                    return true;
+                if( isScramble(s1.substr(0,i), s2.substr(len-i)) && isScramble(s1.substr(i), s2.substr(0,len-i)))
+                    return true;
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution
+    public class Solution {
+        public boolean isScramble(String s1, String s2) {
+            if (s1.equals(s2)) return true; 
+            
+            int[] letters = new int[26];
+            for (int i=0; i<s1.length(); i++) {
+                letters[s1.charAt(i)-'a']++;
+                letters[s2.charAt(i)-'a']--;
+            }
+            for (int i=0; i<26; i++) if (letters[i]!=0) return false;
+        
+            for (int i=1; i<s1.length(); i++) {
+                if (isScramble(s1.substring(0,i), s2.substring(0,i)) 
+                 && isScramble(s1.substring(i), s2.substring(i))) return true;
+                if (isScramble(s1.substring(0,i), s2.substring(s2.length()-i)) 
+                 && isScramble(s1.substring(i), s2.substring(0,s2.length()-i))) return true;
+            }
+            return false;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+My C++ solutions (recursion with cache , DP, recursion with cache and pruning) with explanation (4ms)
+The basic idea is to divide s1(s2) into two substrings with length k and len-k and check if the two substrings s1[0..k-1] and s1[k, len-1] are the scrambles of s2[0..k-1] and s2[k,len-1] or s2[len-k, len-1] and s2[0..len-k-1] via recursion. The straigtforward recursion will be very slow due to many repeated recursive function calls. To speed up the recursion, we can use an unordered_map isScramblePair to save intermediate results. The key used here is s1+s2, but other keys are also possible (e.g. using indices)
+
+        class Solution {
+            bool DP_helper(unordered_map<string, bool> &isScramblePair, string s1, string s2)
+            {
+                int i,len = s1.size();
+                bool res = false;
+                if(0==len) return true;
+                else if(1==len) return s1 == s2;
+                else
+                {
+                    if(isScramblePair.count(s1+s2)) return isScramblePair[s1+s2]; // checked before, return intermediate result directly
+                    if(s1==s2) res=true;
+                    else{
+                        for(i=1; i<len && !res; ++i)
+                        {
+    //check s1[0..i-1] with s2[0..i-1] and s1[i..len-1] and s2[i..len-1]
+                            res = res || (DP_helper(isScramblePair, s1.substr(0,i), s2.substr(0,i)) && DP_helper(isScramblePair, s1.substr(i,len-i), s2.substr(i,len-i)));
+     //if no match, then check s1[0..i-1] with s2[len-k.. len-1] and s1[i..len-1] and s2[0..len-i]
+                           res = res || (DP_helper(isScramblePair, s1.substr(0,i), s2.substr(len-i,i)) && DP_helper(isScramblePair, s1.substr(i,len-i), s2.substr(0,len-i)));
+                        }
+                    }
+                    return isScramblePair[s1+s2]= res; //save the intermediate results
+                    
+                }
+            }
+        public:
+            bool isScramble(string s1, string s2) {
+               unordered_map<string, bool> isScramblePair;
+               return DP_helper(isScramblePair, s1, s2);
+            }
+        };
+
+The recursive version has exponential complexity. To further improve the performance, we can use bottom-up DP, which is O(N^4) complexity. Here we build a table isS[len][i][j], which indicates whether s1[i..i+len-1] is a scramble of s2[j..j+len-1].
+
+    class Solution {
+    public:
+        bool isScramble(string s1, string s2) {
+            int sSize = s1.size(), len, i, j, k;
+            if(0==sSize) return true;
+            if(1==sSize) return s1==s2;
+            bool isS[sSize+1][sSize][sSize];
+    
+            for(i=0; i<sSize; ++i)
+                for(j=0; j<sSize; ++j)
+                    isS[1][i][j] = s1[i] == s2[j];
+                    
+            for(len=2; len <=sSize; ++len)
+                for(i=0; i<=sSize-len; ++i)
+                    for(j=0; j<=sSize-len; ++j)
+                    {
+                        isS[len][i][j] = false;
+                            for(k=1; k<len && !isS[len][i][j]; ++k)
+                            {
+                                isS[len][i][j] = isS[len][i][j] || (isS[k][i][j] && isS[len-k][i+k][j+k]);
+                                isS[len][i][j] = isS[len][i][j] || (isS[k][i+len-k][j] && isS[len-k][i][j+k]);
+                            }
+                    }
+            return isS[sSize][0][0];            
+    
+        }
+    }; 
+
+Furhtermore, in many cases, we found we can terminate our recursion early by pruning: i.e. by first checking if s1 and s2 have the same character set before we do recursion: if not, just terminate without recursion.  This observation leads us to the following Recursion+cache+pruning version. Here the key of the cache changes to idx1*sSize +idx2 + len*sSize*sSize;
+
+    class Solution {
+    private:
+        bool DP_helper(string &s1, string &s2, int idx1, int idx2, int len, char isS[])
+        {
+            int sSize = s1.size(),i, j, k, hist[26] , zero_count =0;
+            if(isS[(len*sSize+idx1)*sSize+idx2]) return isS[(len*sSize+idx1)*sSize+idx2]==1;
+            bool res = false;
+            
+            fill_n(hist, 26, 0);
+            for(k=0; k<len;++k)
+            { // check if s1[idx1:idx1+len-1] and s2[idx2:idx2+len-1] have same characters
+                zero_count +=  (0==hist[s1[idx1+k]-'a']) - (0== ++hist[s1[idx1+k]-'a']);
+                zero_count +=  (0==hist[s2[idx2+k]-'a']) - (0== --hist[s2[idx2+k]-'a']);
+            }
+            if(zero_count) {isS[(len*sSize+idx1)*sSize+idx2] = 2; return false;} //if not, return directly
+            if(len==1)     {isS[(len*sSize+idx1)*sSize+idx2] = 1; return true;}
+            for(k=1;k<len && !res;++k) //otherwise, recursion with cache
+            {
+                res = res || (DP_helper(s1, s2, idx1, idx2, k, isS) && DP_helper(s1, s2, idx1+k, idx2+k, len-k, isS) );
+                res = res || (DP_helper(s1, s2, idx1+len-k, idx2, k, isS) && DP_helper(s1, s2, idx1, idx2+k, len-k, isS) );
+            }
+            isS[(len*sSize+idx1)*sSize+idx2] = res?1:2;
+            return res;
+        }
+    public:
+        bool isScramble(string s1, string s2) {
+            const int sSize = s1.size();
+            if(0==sSize) return true;
+            char isS[(sSize+1)*sSize*sSize];
+            fill_n(isS, (sSize+1)*sSize*sSize, 0);
+            return DP_helper(s1, s2, 0, 0, sSize, isS);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Can you partition a string at ANY index at ANY time in producing a scramble?
+The example shows the case where left child ALWAYS has equal or one-less characters than right child. But since "abb" is a scramble of "bab", as suggested by a test case, strings are not always partitioned in the way as the example implies.
+
+However, if the answer is Yes, I think scrambles just become permutations. Isn't it?
+
+So I am so confused what is expected...
+
+Thanks!
+
+----------------------------------------------------------------------------------------------------
+Simple iterative DP Java solution with explanation
+Explanation in code itself. The iterative version of the idea is considerably slower than the recursive simply because here we consider all possible states, while the recursive will only compute required states as it founds them. Time complexity of both is, in any case, the same.
+    
+    public class Solution {
+    	public boolean isScramble(String s1, String s2) {
+    		if (s1.length() != s2.length()) return false;
+    		int len = s1.length();
+    		/**
+    		 * Let F(i, j, k) = whether the substring S1[i..i + k - 1] is a scramble of S2[j..j + k - 1] or not
+    		 * Since each of these substrings is a potential node in the tree, we need to check for all possible cuts.
+    		 * Let q be the length of a cut (hence, q < k), then we are in the following situation:
+    		 * 
+    		 * S1 [   x1    |         x2         ]
+    		 *    i         i + q                i + k - 1
+    		 * 
+    		 * here we have two possibilities:
+    		 *      
+    		 * S2 [   y1    |         y2         ]
+    		 *    j         j + q                j + k - 1
+    		 *    
+    		 * or 
+    		 * 
+    		 * S2 [       y1        |     y2     ]
+    		 *    j                 j + k - q    j + k - 1
+    		 * 
+    		 * which in terms of F means:
+    		 * 
+    		 * F(i, j, k) = for some 1 <= q < k we have:
+    		 *  (F(i, j, q) AND F(i + q, j + q, k - q)) OR (F(i, j + k - q, q) AND F(i + q, j, k - q))
+    		 *  
+    		 * Base case is k = 1, where we simply need to check for S1[i] and S2[j] to be equal 
+    		 * */
+    		boolean [][][] F = new boolean[len][len][len + 1];
+    		for (int k = 1; k <= len; ++k)
+    			for (int i = 0; i + k <= len; ++i)
+    				for (int j = 0; j + k <= len; ++j)
+    					if (k == 1)
+    						F[i][j][k] = s1.charAt(i) == s2.charAt(j);
+    					else for (int q = 1; q < k && !F[i][j][k]; ++q) {
+    						F[i][j][k] = (F[i][j][q] && F[i + q][j + q][k - q]) || (F[i][j + k - q][q] && F[i + q][j][k - q]);
+    					}
+    		return F[0][0][len];
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Any better solution?
+My AC code is as below. I think it's not very efficient. Is there any better solution?
+
+    class Solution {
+    private:
+    	bool anagram(string &s1, string &s2){
+    		if(s1.size() != s2.size()) return false;
+    		unordered_map<char, int> m;
+    		int n = s1.size();
+    		for(int i = 0; i < n; ++i){
+    			if(m.find(s1[i]) != m.end()){
+    				++m[s1[i]];
+    			}else{
+    				m[s1[i]] = 1;
+    			}
+    		}
+    		for(int i = 0; i < n; ++i){
+    			if(m.find(s2[i]) != m.end()){
+    				--m[s2[i]];
+    				if(m[s2[i]] < 0){
+    					return false;
+    				}
+    			}else{
+    				return false;
+    			}
+    		}
+    		return true;
+    	}
+    public:
+        bool isScramble(string s1, string s2) {
+        	if(s1.size() != s2.size()) return false;
+        	if(s1 == s2) return true;
+        	int n = s1.size();
+        	for(int i = 1; i < n; ++i){
+        		string s11 = s1.substr(0, i);
+        		string s12 = s1.substr(i, n - i);
+        		string s21 = s2.substr(0, i);
+        		string s22 = s2.substr(i, n - i);
+        		string s23 = s2.substr(n - i, i);
+        		string s24 = s2.substr(0, n - i);
+        		if(anagram(s11, s21) && anagram(s12, s22) &&
+        			isScramble(s11, s21) && isScramble(s12, s22)
+        			||
+        			anagram(s11, s23) && anagram(s12, s24) &&
+        			isScramble(s11, s23) && isScramble(s12, s24)){
+        			return true;
+        		}
+        	}
+            return false;
+        }
+    };
+
+The main idea is:
+
+1. separate `s1` into two parts, namely `--s11--`, `--------s12--------`
+2. separate `s2` into two parts, namely `--s21--`, `--------s22--------`, and test the corresponding part (`s11` and `s21` && `s12` and `s22`) with `isScramble`.
+3. separate `s2` into two parts, namely `--------s23--------`, `--s24--`, and test the corresponding part (`s11` and `s24` && `s12` and `s23`) with `isScramble`.
+4. Note that before testing each sub-part with `isScramble`, `anagram` is used first to test if the corresponding parts are anagrams. If not, skip directly.
+
+
+
+----------------------------------------------------------------------------------------------------
+Python recursive solution
+    class Solution:
+    # @return a boolean
+    def isScramble(self, s1, s2):
+        n, m = len(s1), len(s2)
+        if n != m or sorted(s1) != sorted(s2):
+            return False
+        if n < 4 or s1 == s2:
+            return True
+        f = self.isScramble
+        for i in range(1, n):
+            if f(s1[:i], s2[:i]) and f(s1[i:], s2[i:]) or \
+               f(s1[:i], s2[-i:]) and f(s1[i:], s2[:-i]):
+                return True
+        return False
+
+----------------------------------------------------------------------------------------------------
+A simple solution without dp in C++
+    class Solution {
+    public:
+        bool isScramble(string s1, string s2) {
+            int n = s1.length();
+            return judge(s1.c_str(), s2.c_str(), 0, n-1, 0, n-1);
+        }
+        
+        bool judge(const char* s1, const char* s2,int a,int b,int u, int v){
+            if(b-a!=v-u) return false;
+            if(b-a==0 && s1[a]==s2[u]) return true;
+            
+            int cnt[256]={0};
+            for(int i=a;i<=b;++i){
+                cnt[s1[i]]++;
+            }
+            for(int i=u;i<=v;++i){
+                cnt[s2[i]]--;
+            }
+            for(int i=0;i<256;++i){
+                if(cnt[i]!=0) return false;
+            }
+            
+            for(int i=a;i<b;++i){
+                if(judge(s1,s2,a,i,u,u+i-a) && judge(s1,s2,i+1,b,v-(b-i-1),v)){                    
+                    return true;
+                }
+                if(judge(s1,s2,a,i,v-(i-a),v) && judge(s1,s2,i+1,b,u,u+b-(i+1))){
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+Surprisingly, it runs very fast even without dynamic programming.
+
+----------------------------------------------------------------------------------------------------
+Optimized recursive (0ms) and DP (20ms) solution C beating 100% submissions
+Simply we can just use recursive method to traverse every possible situations but as we can expect that we will run into TLE. 
+
+There are other factors we should make full use of to reduce the traversing range - the limited characters  and the scrambled string is containing just exactly the same set of characters as the original string which can be used to <font color="ff0000">prune</font> almost all invalid traversing branches and result in the best time cost.  
+
+    bool isnScramble(char* s1, char* s2, int len) 
+    {
+        if(!strncmp(s1, s2, len)) return true;
+        int count[26] = {0};
+        for(int i = 0; i < len; i++)
+            count[s1[i]-'a']++, count[s2[i]-'a']--;
+        for(int i = 0; i < 26; i++)
+            if(count[i]) return false;
+        for(int i=1; i < len; i++)
+            if(isnScramble(s1, s2, i) && isnScramble(s1+i, s2+i, len-i) ||
+                    isnScramble(s1, s2+len-i, i) && isnScramble(s1+i, s2, len-i)) return true;
+        return false;
+    }
+    
+    //AC - 0ms - beats 100% submissions;
+    bool isScramble(char* s1, char* s2)
+    {
+        int len = strlen(s1);
+        return isnScramble(s1, s2, len);
+    }
+
+A DP solution is also provided here with 20ms time cost, which is inspired by the above recursive method using three-dimension array to store the state 
+
+> match[size][index1][index2]
+
+the size is the comparing size of the two strings, index1 is the start index of string 1 and index2 is that of string 2.
+
+    //AC - 20ms - beats 100% submissions - DP solution;
+    bool isScramble(char* s1, char* s2)
+    {
+        int len = strlen(s1);
+        if(!len) return true;
+        if(len==1) return *s1==*s2;
+        bool*** match = (bool***)malloc(sizeof(bool**)*(len+1));
+        for(int i = 0; i <= len; i++)
+        {
+            match[i] = (bool**)malloc(sizeof(bool*)*len);
+            for(int j = 0; j < len; j++)
+            {
+                match[i][j] = (bool*)malloc(sizeof(bool)*len);
+                memset(match[i][j], 0, sizeof(bool)*len);
+            }
+        }
+        for(int i = 0; i < len; i++)
+            for(int j = 0; j < len; j++)
+                match[1][i][j] = (s1[i] == s2[j]);
+        for(int size = 2; size <= len; size++)
+            for(int i = 0; i <= len-size; i++)
+                for(int j = 0; j <= len-size; j++)
+                    for(int k = 1; k<size && !match[size][i][j]; k++)
+                        match[size][i][j] = (match[k][i][j] && match[size-k][i+k][j+k]) || (match[k][i+size-k][j] && match[size-k][i][j+k]);
+        return match[len][0][0];
+    }
+
+There are still lots of redundant search in the above methods; can someone further improve it? Thanks in advance!
+
+----------------------------------------------------------------------------------------------------
+66 ms python solution with dict
+    def is_scramble(s1, s2):
+        m = {}
+        return f(s1, s2, m)
+
+
+    def f(s1, s2, m):
+        if (s1, s2) in m:
+            return m[(s1, s2)]
+    
+        if len(s1) == 1:
+            return s1 == s2
+        elif not sorted(s1) == sorted(s2):
+            return False
+    
+        for i in range(1, len(s1)):
+            if f(s1[:i], s2[-i:], m) and f(s1[i:], s2[:-i], m) or \
+               f(s1[:i], s2[:i], m) and f(s1[i:], s2[i:], m):
+                m[(s1, s2)] = True
+                return True
+        m[(s1, s2)] = False
+        return False
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solutions w&#x2F; explanation. Both recursive and Top-Down Dynamic Programming.
+    // This was a very interesting problem! Here is my solution, using top down dynamic programming. 
+    //
+    // Lets discuss the recurrence. The question posed is, when is string s1 considered to be a scrambling of string s2? 
+    // Let us pose this as a modified question in the form of the following boolean function:
+    // bool isScrambling(int s1s, int s1e, int s2s, int s2e);
+    // i.e., given two strings s1 and s2, are their SUBSTRINGS s1[s1s, s1e] and s2[s2s, s2e] scramblings of each other?
+    // The original question can be answered by isScrambling(0, s1.length()-1, 0, s2.length() -1);
+    //
+    //    First the trivial cases which result in false result:
+    //     1. The two strings are not of same length, then it cannot be a scrambling.
+    //     2. if s1e < s1s, or s2e < s2s, then they are not scramblings of each other.
+    //
+    //    Now the case for identity scrambling (i.e. no scrambling at all)
+    //    If s1[s1s, s1e] == s2[s2s, s2e] then they are trivial scramblings of each other
+    //
+    //    Another trivial case, if the two strings are of length 1, just check that character
+    //    
+    //    Now we come to the meat of the problem. Consider all breaks of the string s1:
+    //    s1[s1s, s1s+k] and s1[s1s+k+1, s1e] for all k <-[0..(s1e-s1s)]
+    //       for each of these substrings, the original strings are scramblings if
+    //       1. Either isScrambling(s1s, s1s+k, s2s, s2s+k)   && isScrambling(s1s+k+1, s1e, s2s+k+1, s2e)
+    //       2. Or isScrambling(s1s, s1s+k, (s2e-k), s2e)     && isScrambling(s1s+k+1, s1e, s2s, s2e-k-1)
+    //     The first case is one where we do NOT flip the current node in the tree.
+    //     The second case is one where we flip the current node in the tree.
+    //
+    //    If none of the above cases return true, then the strings are NOT scramblings of each other.
+    //
+    // Here is a non-memoized (hence non-DP) recursive version:
+    class Solution {
+        string s1;
+        string s2;
+    public:
+        // is s1[s1s, s1e] a scrambling of s2[s2s, s2e]?
+        bool isScrambling (int s1s, int s1e, int s2s, int s2e) {
+            if ((s1e-s1s) != (s2e-s2s)) return false;
+            if (s1e < s1s || s2e < s2s) return false;
+            if (s1.substr(s1s, (s1e - s1s + 1)) == s2.substr(s2s, (s2e - s2s + 1))) return true; //identity scrambling
+            if (s1e == s1s) return s1[s1s] == s2[s2s];     
+            for (int k=0; k<(s1e-s1s); k++) { 
+                if (isScrambling(s1s, s1s+k, s2s, s2s+k)   && isScrambling(s1s+k+1, s1e, s2s+k+1, s2e)) return true;
+                if (isScrambling(s1s, s1s+k, (s2e-k), s2e) && isScrambling(s1s+k+1, s1e, s2s, s2e-k-1)) return true;
+            }
+            return false;
+        }
+        bool isScramble(string is1, string is2) {
+            if (is1.length() == 0 || is2.length() == 0) return false;
+            s1 = is1;
+            s2 = is2;
+            return isScrambling(0, s1.length()-1, 0, s2.length()-1);
+        }
+    };
+    // The above solution is functionally correct, but will result in Time-Limit-Exceeded, 
+    // because we are solving the same sub-problems again and again and again
+    //
+    // To make this dynamic programming, we just have to memoize the results. 
+    // i.e. first check if results are in the cache, if so return them
+    // else compute the results, store in cache, and return the result.
+    // Here is a Top-Down dynamic programming version, which now passes in the online judge:
+    //
+    class Solution {
+        string s1;
+        string s2;
+        std::hash<std::string> str_hash;
+        unordered_map<size_t, bool> cache;
+        
+        // is s1[s1s, s1e] a scrambling of s2[s2s, s2e]?
+        bool isScrambling (int s1s, int s1e, int s2s, int s2e) {
+            string hashStr = s1.substr(s1s, s1e-s1s+1) + "#" + s2.substr(s2s, s2e-s2s+1);
+            auto it = cache.find(str_hash(hashStr));
+            if (it != cache.end()) { 
+                return it->second;
+            }
+            bool ret = false;
+            if ((s1e-s1s) != (s2e-s2s)) {ret = false;}
+            else if (s1e < s1s || s2e < s2s) {ret = false;}
+            else if (s1.substr(s1s, (s1e - s1s + 1)) == s2.substr(s2s, (s2e - s2s + 1)))  { ret = true;} //identity scrambling
+            else if (s1e == s1s) {ret = s1[s1s] == s2[s2s];}      
+            else {
+                for (int k=0; k<(s1e-s1s); k++) { 
+                    if (isScrambling(s1s, s1s+k, s2s, s2s+k)   && isScrambling(s1s+k+1, s1e, s2s+k+1, s2e)) {ret = true; break;}
+                    if (isScrambling(s1s, s1s+k, (s2e-k), s2e) && isScrambling(s1s+k+1, s1e, s2s, s2e-k-1)) {ret = true; break;}
+                }
+            }
+            cache[str_hash(hashStr)] = ret;
+            return ret;
+        }
+    public:
+        bool isScramble(string is1, string is2) {
+            if (is1.length() == 0 || is2.length() == 0) return false;
+            s1 = is1;
+            s2 = is2;
+            return isScrambling(0, s1.length()-1, 0, s2.length()-1);
+        }
+
+};
+
+----------------------------------------------------------------------------------------------------
+Python dp solutions (with and without memorization).
+    # DP 
+    def isScramble1(self, s1, s2):
+        if len(s1) != len(s2):
+            return False
+        if s1 == s2:
+            return True
+        if sorted(s1) != sorted(s2): # prunning
+            return False
+        for i in xrange(1, len(s1)):
+            if (self.isScramble(s1[:i], s2[:i]) and self.isScramble(s1[i:], s2[i:])) or \
+            (self.isScramble(s1[:i], s2[-i:]) and self.isScramble(s1[i:], s2[:-i])):
+                return True
+        return False
+        
+    # DP with memorization
+    def __init__(self):
+        self.dic = {}
+        
+    def isScramble(self, s1, s2):
+        if (s1, s2) in self.dic:
+            return self.dic[(s1, s2)]
+        if len(s1) != len(s2) or sorted(s1) != sorted(s2): # prunning
+            self.dic[(s1, s2)] = False
+            return False
+        if s1 == s2:
+            self.dic[(s1, s2)] = True
+            return True
+        for i in xrange(1, len(s1)):
+            if (self.isScramble(s1[:i], s2[:i]) and self.isScramble(s1[i:], s2[i:])) or \
+            (self.isScramble(s1[:i], s2[-i:]) and self.isScramble(s1[i:], s2[:-i])):
+                return True
+        self.dic[(s1, s2)] = False
+        return False
+
+----------------------------------------------------------------------------------------------------
+Why &quot;abbbcbaaccacaacc&quot; is scrambled of &quot;acaaaccabcabcbcb&quot;?
+My method is first divide each of the strings to 2 parts: s11, s12, s21, s22, so that each two of corresponding parts have the same collection of characters i.e. `(sameCollection(s11, s21) && sameCollection(s12, s22)) || (sameCollection(s11, s22) && sameCollection(s12, s21))`. This checks whether the root has been swaped.
+
+However, I can't find a way to divide "abbbcbaaccacaacc" and "acaaaccabcabcbcb" to meet the requirement above, so my result is `false`. But the OJ tells me the expected result is `true`. So can anyone tell me how can "abbbcbaaccacaacc" be scrambled to "acaaaccabcabcbcb"?
+
+----------------------------------------------------------------------------------------------------
+Java fast DP iteration solution and recursion solution
+Iterative version:
+
+    public class Solution {
+        public boolean isScramble(String s1, String s2) {
+            int len = s1.length();
+            if(len!=s2.length()) return false;
+            if(len==0) return true;
+            boolean[][][] isScr = new boolean[len][len][len];
+            for(int i = 0; i < len; i++) { //length of current substring, 0 means length==1
+                for(int j = 0; j + i < len; j++) { //start point of current substring at s1.
+                    for(int k = 0; k + i < len; k++) { //start point of current substring at s2.
+                        if(i==0) isScr[i][j][k] = s1.charAt(j)==s2.charAt(k);
+                        for(int m = 0; m < i; m++) {
+                            if(isScr[m][j][k] && isScr[i-(m+1)][j+m+1][k+m+1]) isScr[i][j][k] = true;
+                            else if(isScr[m][j][k+i-m] && isScr[i-(m+1)][j+m+1][k]) isScr[i][j][k] = true;
+                        }
+                    }
+                }
+            }
+            return isScr[len-1][0][0];
+        }
+    }
+
+Recursive version: with some pruning check at the beginning, finally get rid of TLE...
+
+
+    public class Solution {
+        public boolean isScramble(String s1, String s2) {
+            int len= s1.length();
+            if(s2.length()!=len) return false;
+            if(s1.equals(s2)) return true;
+            Map<Character,Integer> checkPermutation = new HashMap<Character,Integer>();
+            for(int i = 0; i < len; i++) {
+                char a = s1.charAt(i), b = s2.charAt(i);
+                if(checkPermutation.containsKey(a)) checkPermutation.put(a,checkPermutation.get(a)+1);
+                else checkPermutation.put(a,1);
+                if(checkPermutation.containsKey(b)) checkPermutation.put(b,checkPermutation.get(b)-1);
+                else checkPermutation.put(b,-1);
+            }
+            for(char c : checkPermutation.keySet()) if(checkPermutation.get(c)!=0) return false;
+            
+            for(int i = 1; i < s1.length(); i++) {
+                if(isScramble(s1.substring(0,i),s2.substring(0,i))&&isScramble(s1.substring(i,len),s2.substring(i,len))) return true;
+                else if(isScramble(s1.substring(0,i),s2.substring(len-i,len))&&isScramble(s1.substring(i,len),s2.substring(0,len-i))) return true;
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple to understand Python recursive solution
+    from collections import Counter
+    class Solution(object):
+        def isScramble(self, s1, s2):
+            if s1 == s2: return True
+            if Counter(s1) != Counter(s2): return False # early backtracking
+            for i in xrange(1,len(s1)):
+                if (self.isScramble(s1[:i], s2[:i]) and self.isScramble(s1[i:], s2[i:])): return True
+                if (self.isScramble(s1[:i], s2[-(i):]) and self.isScramble(s1[i:], s2[:-(i)])): return True
+            return False
+
+----------------------------------------------------------------------------------------------------
+60 ms recursive python solution (faster than 100% of Python solutions) with comments
+    class Solution(object):
+        def isScramble(self, s1, s2):
+            """
+            :type s1: str
+            :type s2: str
+            :rtype: bool
+            """
+            if s1 == s2:
+                return True
+            if len(s1) != len(s2):
+                return False
+                
+            # Check both strings have same count of letters
+            count1 = collections.defaultdict(int)
+            count2 = collections.defaultdict(int)
+            for c1, c2 in zip(s1, s2):
+                count1[c1] += 1
+                count2[c2] += 1
+            if count1 != count2: return False
+            
+            # Iterate through letters and check if it results in a partition of 
+            # string 1 where the collection of letters are the same
+            # on the left (non-swapped) or right (swapped) sides of string 2
+            # Then we recursively check these partitioned strings to see if they are scrambled
+            lcount1 = collections.defaultdict(int) # s1 count from left
+            lcount2 = collections.defaultdict(int) # s2 count from left
+            rcount2 = collections.defaultdict(int) # s2 count from right
+            for i in xrange(len(s1) - 1):
+                lcount1[s1[i]] += 1          
+                lcount2[s2[i]] += 1
+                rcount2[s2[len(s1) - 1 - i]] += 1
+                if lcount1 == lcount2:  # Left sides of both strings have same letters
+                    if self.isScramble(s1[:i + 1], s2[:i + 1]) and \
+                       self.isScramble(s1[i + 1:], s2[i + 1:]):
+                        return True
+                elif lcount1 == rcount2: # Left side of s1 has same letters as right side of s2
+                    if self.isScramble(s1[:i + 1], s2[-(i + 1):]) and \
+                       self.isScramble(s1[i + 1:], s2[:-(i + 1)]):
+                        return True
+            return False
+
+----------------------------------------------------------------------------------------------------
+2ms Java Recursive solution (beat 100%)
+    public class Solution {
+        int[] p = new int[]{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997};
+        public boolean isScramble(String s1, String s2) {
+            int l1=s1.length(), l2=s2.length();
+            if(l1!=l2) return false;
+            if(l1<=1) return s1.equals(s2);
+            if(s1.equals(s2)) return true;
+            long a=1, b=1, c=1;
+            for(int i=0; i<l1; i++){
+                if(i>0 && a==b && isScramble(s1.substring(0,i),s2.substring(l2-i)) && isScramble(s1.substring(i),s2.substring(0,l2-i)))
+                    return true;
+                if(i>0 && a==c && isScramble(s1.substring(0,i),s2.substring(0,i)) && isScramble(s1.substring(i),s2.substring(i)))
+                    return true;
+                a*=p[s1.charAt(i)-'A'];
+                b*=p[s2.charAt(l2-1-i)-'A'];
+                c*=p[s2.charAt(i)-'A'];
+            }
+            return false;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My C++ accepted solution in 6ms, little change in normal solution
+i read some solutions, usually we will check every location [i] in s1 and s2 to see if they are splinted there.
+In that case, the process of [0~i] will be done when processing [i+1].
+On the other hand(is this sentence implies me Chinese ? 23333), s1 and s2 is scramble only in two ways:
+
+1. -----******** and -----********
+
+2. -----******** and ********-----
+
+ so i check this and do recursion and resulting in 6ms
+
+here is the code
+
+    bool work(string s1, string s2){
+            // special case
+            int len=s1.length();
+            if(len==0 || s1==s2) return true;
+            if(len==1 && s1!=s2) return false;
+            if(len==2 && s1[0]==s2[1] && s1[1]==s2[0]) return true;
+            
+            // check for case s1 and s2 are divided as  -----******** and -----********
+            // cnt stores the number of none zero numbers
+            int sum[200],cnt=0,i;
+            memset(sum,0,sizeof(sum));
+            for(i=0;i<len;i++){
+                sum[s1[i]]++;
+                if(sum[s1[i]]==0) cnt--;
+                else if(sum[s1[i]]==1) cnt++;
+                
+                sum[s2[i]]--;
+                if(sum[s2[i]]==0) cnt--;
+                else if(sum[s2[i]]==-1) cnt++;
+                
+                if(cnt==0) break;
+            }
+            
+            i++;
+            if(i<len && work(s1.substr(0,i),s2.substr(0,i)) && work(s1.substr(i),s2.substr(i)) ) return true;
+            
+            // check for case s1 and s2 are divided as  -----******** and ********_____
+            memset(sum,0,sizeof(sum));
+            cnt=0;
+            for(i=0;i<len;i++){
+                sum[s1[i]]++;
+                if(sum[s1[i]]==0) cnt--;
+                else if(sum[s1[i]]==1) cnt++;
+                
+                sum[s2[len-1-i]]--;
+                if(sum[s2[len-1-i]]==0) cnt--;
+                else if(sum[s2[len-1-i]]==-1) cnt++;
+                
+                if(cnt==0) break;
+            }
+            
+            i++;
+            if(i<len && work(s1.substr(0,i),s2.substr(len-i)) && work(s1.substr(i),s2.substr(0,len-i))) return true;
+            
+            return false;
+        }
+        bool isScramble(string s1, string s2) {
+            int len=s1.length();
+            int sum[200],i;
+            memset(sum,0,sizeof(sum));
+            for(i=0;i<len;i++){
+                sum[s1[i]]++;
+                sum[s2[i]]--;
+            }
+            for(i=0;i<200;i++)
+            if(sum[i]!=0) return false;
+            
+            return work(s1,s2);
+        }
+
+----------------------------------------------------------------------------------------------------
+Why &quot;aabb&quot; is a scrambled string of &quot;abab&quot;
+I think I might miss something. 
+But how could aabb be scrambled string of abab?
+My understanding is that abab can only be scrambled into 
+abba, baab, baba.
+Thanks a lot! 
+
+----------------------------------------------------------------------------------------------------
+My O(n^4) solution for your reference
+    class Solution:
+    # @return a boolean
+    def isScramble(self, s1, s2):
+        n=len(s1)
+        if n==0: return True
+        table=[[[None for i in range(n+1)] for i2 in range(n)] for i1 in range(n)] #table[i1][i2][i] stores if s1[i1:i1+i] is a scramble of s2[i2:i2+i]
+        
+        def helper(i1,i2,i):
+            if table[i1][i2][i]==None:
+                if i==1: 
+                    table[i1][i2][i]=(s1[i1]==s2[i2])
+                else:
+                    result=False
+                    for partition in range(1,i):
+                        if helper(i1,i2,partition) and helper(i1+partition,i2+partition,i-partition): result=True
+                        if helper(i1,i2+i-partition,partition) and helper(i1+partition,i2,i-partition): result=True
+                    table[i1][i2][i]=result
+            return table[i1][i2][i]
+            
+        return helper(0,0,n)
+        
+
+----------------------------------------------------------------------------------------------------

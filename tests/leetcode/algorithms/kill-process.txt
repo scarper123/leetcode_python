@@ -1,0 +1,407 @@
+Improving the runtime from O(n) to O(log n)
+final int MOD = 1000000007;
+final int M = 6;
+
+int[][] mul(int[][] A, int[][] B) {
+    int[][] C = new int[M][M];
+    for (int i = 0; i < M; i++)
+        for (int j = 0; j < M; j++)
+            for (int k = 0; k < M; k++)
+                C[i][j] = (int) ((C[i][j] + (long) A[i][k] * B[k][j]) % MOD);
+    return C;
+}
+
+
+int[][] pow(int[][] A, int n) {
+    int[][] res = new int[M][M];
+    for (int i = 0; i < M; i++)
+        res[i][i] = 1;
+    while (n > 0) {
+        if (n % 2 == 1)
+            res = mul(res, A);
+        A = mul(A, A);
+        n /= 2;
+    }
+    return res;
+}
+
+public int checkRecord(int n) {
+    int[][] A = {
+            {0, 0, 1, 0, 0, 0},
+            {1, 0, 1, 0, 0, 0},
+            {0, 1, 1, 0, 0, 0},
+            {0, 0, 1, 0, 0, 1},
+            {0, 0, 1, 1, 0, 1},
+            {0, 0, 1, 0, 1, 1},
+    };
+    return pow(A, n + 1)[5][2];
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my O(n) C++ DP solution with thinking process and explanation
+class Solution {
+public:
+    int checkRecord(int n) {
+        int m = 1000000007;
+        int *A = new int [n];
+        int *P = new int [n];
+        int *L = new int [n];
+        
+        P[0] = 1;
+        L[0] = 1;
+        L[1] = 3;
+        A[0] = 1;
+        A[1] = 2;
+        A[2] = 4;
+        
+        if(n == 1) return 3;
+        
+        for(int i = 1; i < n; i++)
+        {
+            A[i - 1] %= m;
+            P[i - 1] %= m;
+            L[i - 1] %= m;
+            
+            P[i] = ((A[i - 1] + P[i - 1]) % m + L[i - 1]) % m;
+            
+            if(i > 1) L[i] = ((A[i - 1] + P[i - 1]) % m + (A[i - 2] + P[i - 2]) % m) % m;
+            
+            if(i > 2) A[i] = ((A[i - 1] + A[i - 2]) % m + A[i - 3]) % m;
+        }
+        
+        return ((A[n - 1] % m + P[n - 1] % m) % m + L[n - 1] % m) % m;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python DP with explanation
+class Solution(object):
+    def checkRecord(self, n):
+        if n == 1:
+            return 3
+        if n == 0:
+            return 0
+        nums = [1, 1, 2]
+        i = 2
+        while i < n:
+            nums.append((nums[i] + nums[i-1] + nums[i-2])% 1000000007)
+            i += 1
+        result = (nums[n] + nums[n-1] + nums[n-2]) % 1000000007
+        for i in range(n):
+            result += nums[i+1] * nums[n-i] % 1000000007
+            result %= 1000000007
+        return result
+
+
+----------------------------------------------------------------------------------------------------
+Simple Java O(n) solution
+static final int M = 1000000007;
+
+public int checkRecord(int n) {
+    long[] PorL = new long[n + 1]; // ending with P or L, no A
+    long[] P = new long[n + 1]; // ending with P, no A
+    PorL[0] = P[0] = 1; PorL[1] = 2; P[1] = 1;
+
+    for (int i = 2; i <= n; i++) {
+        P[i] = PorL[i - 1];
+        PorL[i] = (P[i] + P[i - 1] + P[i - 2]) % M;
+    }
+    
+    long res = PorL[n];
+    for (int i = 0; i < n; i++) { // inserting A into (n-1)-length strings
+    	long s = (PorL[i] * PorL[n - i - 1]) % M;
+        res = (res + s) % M;
+    }
+    
+    return (int) res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time O(1) space solution
+public class Solution {
+    long M = 1000000007;
+    public int checkRecord(int n) {
+        long a0l0 = 1, a0l1 = 0, a0l2 = 0, a1l0 = 0, a1l1 = 0, a1l2 = 0;
+        for (int i = 0; i <= n; i++) {
+            long a0l0_ = (a0l0 + a0l1 + a0l2) % M;
+            a0l2 = a0l1;
+            a0l1 = a0l0;
+            a0l0 = a0l0_;
+            long a1l0_ = (a0l0 + a1l0 + a1l1 + a1l2) % M;
+            a1l2 = a1l1;
+            a1l1 = a1l0;
+            a1l0 = a1l0_;
+        }
+        return (int) a1l0;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;552. Student Attendance Record II&#93; C++_with explanation_from DFS to DP
+ class Solution {
+ public:
+int checkRecord(int n) {
+    const int M = 1000000007;
+    vector< vector<long> > dp(2, vector<long>(3, 0));
+    dp = {{1,1,0},{1,0,0}};
+    for(int i = 1; i < n; ++i){
+        vector< vector<long> > tmp(2, vector<long>(3, 0));
+        tmp[0][0] = ((dp[0][0] + dp[0][1] + dp[0][2])%M);
+        tmp[0][1] = dp[0][0]%M;
+        tmp[0][2] = dp[0][1];
+        tmp[1][0] = (((dp[0][0] + dp[0][1] + dp[0][2])%M + (dp[1][0] + dp[1][1] + dp[1][2])%M))%M;
+        tmp[1][1] = dp[1][0]%M;
+        tmp[1][2] = dp[1][1]%M;
+        dp = tmp;
+    }
+    long res = 0;
+    for(int A = 0; A < 2; ++A){
+        for(int L = 0; L < 3; ++L){
+            res += dp[A][L]%M;
+        }
+    }
+    return res%M;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution using simple recurrence formula with explanation
+Q(n) = Q(n-1) + Q(n-2) + Q(n-3) + R(n-1) + R(n-2) + R(n-3)
+     = Q(n-1) + Q(n-2) + Q(n-3) + R(n)
+
+
+----------------------------------------------------------------------------------------------------
+Python, Straightforward DP with Explanation
+def checkRecord(self, N):
+    MOD = 10**9 + 7
+    a = b = d = 1
+    c = e = f = 0
+    for _ in xrange(N-1):
+        a, b, c, d, e, f = (a+b+c)%MOD, a, b, (a+b+c+d+e+f)%MOD, d, e
+    
+    return (a+b+c+d+e+f)%MOD
+
+
+----------------------------------------------------------------------------------------------------
+Pure math and easy to understand python O(n) solution
+class Solution(object):
+    def checkRecord(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        res=[1,0,0,1,1,0]
+        for i in range(1,n):
+            temp=[0,0,0,0,0,0]
+            temp[0]=sum(res)%(10**9+7)
+            temp[1]=res[0]%(10**9+7)
+            temp[2]=res[1]%(10**9+7)
+            temp[3]=(res[3]+res[4]+res[5])%(10**9+7)
+            temp[4]=res[3]%(10**9+7)
+            temp[5]=res[4]%(10**9+7)
+            res=temp
+        return sum(res)%(10**9+7)
+            
+        ```
+
+----------------------------------------------------------------------------------------------------
+O(LogN) is possible?
+        n = n + 1
+        a = (1 + 5**0.5) / 4
+        b = (1 - 5**0.5) / 4
+        res = 2**n / 5**0.5 * ((1 - a**n) / (1 - a) * a - (1 - b**n) / (1 - b) * b)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution easy to understand (at least for me)
+    public int checkRecord(int n) {
+    	if (n == 1) {
+    		return 3;
+    	}
+    	if (n == 2) {
+    		return 8;
+    	}
+
+    	long[] dpPLP = new long[n+1]; // awarded count only with P or L, end with P
+    	long[] dpPLL = new long[n+1]; // awarded count only with P or L, end with L
+    	long[] dpP = new long[n+1]; // awarded count, ends with 'P'
+    	long[] dpA = new long[n+1]; // awarded count, ends with 'A'
+    	long[] dpL = new long[n+1]; // awarded count, ends with 'L'
+    	dpPLP[0] = 0; dpPLL[0] = 0;
+    	dpPLP[1] = 1; dpPLL[1] = 1;
+    	dpPLP[2] = 2; dpPLL[2] = 2;
+    	dpP[0] = 0; dpA[0] = 0; dpL[0] = 0;
+    	dpP[1] = 1; dpA[1] = 1; dpL[1] = 1;
+    	dpP[2] = 3; dpA[2] = 2; dpL[2] = 3;
+
+    	for (int i = 3; i <= n; i++) {
+    	        dpPLP[i] = dpPLP[i-1] + dpPLL[i-1];
+    	        dpPLL[i] = dpPLP[i-1] + dpPLP[i-2];
+    		dpP[i] = dpP[i-1] + dpA[i-1] + dpL[i-1]; // last one is 'P'
+    		dpA[i] = dpPLP[i-1] + dpPLL[i-1];
+    		dpL[i] = dpP[i-1] + dpA[i-1] + dpP[i-2] + dpA[i-2];
+    		dpPLP[i] %= 1000000007;
+    		dpPLL[i] %= 1000000007;
+    		dpP[i] %= 1000000007;
+    		dpA[i] %= 1000000007;
+    		dpL[i] %= 1000000007;
+    	}
+    	return (int)((dpP[n] + dpA[n] + dpL[n]) % (long)1000000007);
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Java 4 lines DP solution with state transition table explained
+public int checkRecord(int n) {
+    int[] dp = { 1, 1, 0, 1, 0, 0 }; // init table for n = 1
+    for (int i = 2; i <= n; i++) // updating table for n = i
+        dp = new int[] { sum(dp, 0, 2), dp[0], dp[1], sum(dp, 0, 5), dp[3], dp[4] };
+    return sum(dp, 0, 5);       
+}                                   
+
+static int sum(int[] arr, int l, int h) {
+    int s = 0;  
+    for (int i = l; i <= h; i++) 
+        s = (s + arr[i]) % 1000000007;  
+    return s;                   
+} 
+
+
+----------------------------------------------------------------------------------------------------
+Share my thinking and impove the method
+def matrix_multi(a, b):
+    m, s, n = len(a), len(a[0]), len(b[0])
+    if len(b) != s:
+        return
+    rmtr = [[0]*m for _ in range(n)]
+    for i in range(m):
+        for j in range(n):
+            rmtr[i][j] = sum(a[i][k]*b[k][j] for k in range(s)) % 1000000007
+    return rmtr
+
+p = [[0]*6 for _ in range(6)]
+for i in range(6):
+    p[i][i] = 1
+mtx = [\
+[3, -1, -1, 0, 0, 0],
+[1, 1, 0, 0, -1, 0],
+[0, 0, -1, 1, 0, 0],
+[1, 0 , -1, 0, 0, 0],
+[0, 0, 0, 0, -1, 1], 
+[0, 1, 0, 0, -1, 0]]
+while n:
+    if n & 1:
+        p = matrix_multi(p, mtx)
+    mtx = matrix_multi(mtx, mtx)
+    n >>= 1
+return p[0][0]
+
+
+----------------------------------------------------------------------------------------------------
+the result of test is wrong
+<p>if n = 28, the result is 530803311, but if n =29, the result is 9569297, which is smaller than the result of n=28, so the answer is incorrect.</p>
+
+
+----------------------------------------------------------------------------------------------------
+O(n) time and O(1) space solution
+    public int checkRecord(int n) {
+        if (n <= 0)
+            return 0;
+        if (n == 1)
+            return 3;
+        int A2L = 0, i;
+        int A1L = 1;
+        int AnoL = 3;
+        int noA2L = 1;
+        int noA1L = 1;
+        int noAnoL = 2;
+        int temp1,temp2, temp3,temp4,temp5,temp6;
+        int remain = 1000000007;
+        
+        for (i=3;i<=n;i++) {
+            temp1=A2L;temp2=A1L;temp3=AnoL;temp4=noA2L;temp5=noA1L;temp6=noAnoL;
+            A2L = temp2;
+            A1L = temp3;
+            AnoL = (((((temp1 + temp2) % remain + temp3) % remain + temp4) % remain + temp5) % remain + temp6) % remain;
+            noA2L = temp5;
+            noA1L = temp6;
+            noAnoL = ((temp4 + temp5) % remain + temp6) % remain;
+        }
+        return (((((A2L + A1L) % remain + AnoL) % remain + noA2L) % remain + noA1L) % remain + noAnoL) % remain;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+great solution
+<p>Re: <a href="/topic/93839/python-o-n-solution-using-simple-recurrence-formula-with-explanation">Python O(n) solution using simple recurrence formula with explanation</a></p>
+
+
+----------------------------------------------------------------------------------------------------
+4-liner Python DP with brief explanation
+    def checkRecord(self, n):
+        if n < 3: return 1 if n == 0 else (3 if n == 1 else 8)
+        noA = [1, 1, 2]
+        while (len(noA) < n+3): noA.append(sum(noA[-3:])%1000000007)            
+        return (sum((noA[i+1]*noA[n-i]) for i in range(n+1)))%1000000007
+
+
+----------------------------------------------------------------------------------------------------
+The recrusive solution,when it comes to n=9,bug appear!why
+<p>int checkRecord(int n) {<br/>
+int time(int n,int A,int L);<br/>
+int num=time(n,0,0);<br/>
+return num;<br/>
+}<br/>
+int time(int n,int A,int L)<br/>
+{<br/>
+if(n==0)<br/>
+return 0;<br/>
+int num=time(n-1,A,0)+1;<br/>
+if(!A)<br/>
+A=1,num+=time(n-1,A,0)+1;<br/>
+if(!L)<br/>
+L=1,num+=time(n-1,A,L)+1;<br/>
+return num;!&#91;alt text&#93;(!&#91;image url&#93;(image url))<br/>
+}&#91;link text&#93;(&#91;link url&#93;(link url))</p>
+
+
+----------------------------------------------------------------------------------------------------
+Python
+    def checkRecord(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        if n == 0: return 0
+        if n == 1: return 3
+        M = 1000000007
+        dp = [0 for j in range (3)] 
+        tmp = [0 for j in range (3)]
+        dpsum = [0 for i in range(n)]
+        #First calculate only P and up to 2 L combinations
+        dp[0] = 1 #1 p
+        dp[1] = 1 #0p 1L
+        dp[2] = 0 # 2L not possible for initial value of only one character
+        dpsum[0] = sum(dp)
+        for i in range(1,n):
+            tmp[0] = (dp[0] + dp[1] + dp[2])%M
+            tmp[1] = dp[0]        
+            tmp[2] = dp[1]
+            dp = tmp[:]
+            dpsum[i] = sum(dp)
+        retVal = (dpsum[-1])
+
+        retVal += 2 * (dpsum[n-2]) %M
+        for i in range(1, n-1):
+            #insert 'A' one-by-one at every location by breaking the 
+            #original list into two and lookup and multiply the total 
+            #combinations of the two broken lists from the dpsum list. 
+            retVal += (dpsum[i-1] * dpsum[n-2-i])%M 
+        return retVal%M
+
+
+----------------------------------------------------------------------------------------------------

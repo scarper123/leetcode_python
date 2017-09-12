@@ -1,0 +1,467 @@
+Java code with 13 lines
+
+    public String longestCommonPrefix(String[] strs) {
+        if(strs == null || strs.length == 0)    return "";
+        String pre = strs[0];
+        int i = 1;
+        while(i < strs.length){
+            while(strs[i].indexOf(pre) != 0)
+                pre = pre.substring(0,pre.length()-1);
+            i++;
+        }
+        return pre;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Sorted the array, Java solution, 2 ms
+Sort the array first, and then you can simply compare the first and last elements in the sorted array.
+
+
+        public String longestCommonPrefix(String[] strs) {
+            StringBuilder result = new StringBuilder();
+            
+            if (strs!= null && strs.length > 0){
+            
+                Arrays.sort(strs);
+                
+                char [] a = strs[0].toCharArray();
+                char [] b = strs[strs.length-1].toCharArray();
+                
+                for (int i = 0; i < a.length; i ++){
+                    if (b.length > i && b[i] == a[i]){
+                        result.append(b[i]);
+                    }
+                    else {
+                        return result.toString();
+                    }
+                }
+            return result.toString();
+        }
+
+
+----------------------------------------------------------------------------------------------------
+What does Longest Common Prefix mean ?
+The problem statement is confusing and unclear. Can someone throw light on this ?
+
+Is it to find prefix between each pair of strings and return the one which is longest. Or
+all the strings has to have a common prefix?
+
+----------------------------------------------------------------------------------------------------
+Simple Python solution
+Might be a bit slow, but here's my relatively elegant Python solution:
+
+    class Solution:
+        # @return a string
+        def longestCommonPrefix(self, strs):
+            if not strs:
+                return ""
+                
+            for i, letter_group in enumerate(zip(*strs)):
+                if len(set(letter_group)) > 1:
+                    return strs[0][:i]
+            else:
+                return min(strs)
+
+----------------------------------------------------------------------------------------------------
+Accepted c++ 6 lines 4ms
+    class Solution {
+    public:
+        string longestCommonPrefix(vector<string>& strs) {
+            string prefix = "";
+            for(int idx=0; strs.size()>0; prefix+=strs[0][idx], idx++)
+                for(int i=0; i<strs.size(); i++)
+                    if(idx >= strs[i].size() ||(i > 0 && strs[i][idx] != strs[i-1][idx]))
+                        return prefix;
+            return prefix;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Fast and simple Java code 231ms
+    public class Solution {
+        public String longestCommonPrefix(List<String> strs) {
+            if(strs.size()==0) return "";
+            StringBuilder lcp=new StringBuilder();
+            for(int i=0;i<strs.get(0).length();i++){
+                char c=strs.get(0).charAt(i);
+                for(String s:strs){
+                    if(s.length()<i+1||c!=s.charAt(i)) return lcp.toString();
+                }
+                lcp.append(c);
+            }
+            return lcp.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java ------ We Love Clear Code!
+    public String longestCommonPrefix(String[] strs) {
+        if (strs == null) return null;
+        if (strs.length == 0) return "";
+        
+        Arrays.sort(strs);
+        char[] first = strs[0].toCharArray();
+        char[] last  = strs[strs.length - 1].toCharArray();
+         
+        int i = 0, len = Math.min(first.length, last.length);
+        while (i < len && first[i] == last[i]) i++;
+        return strs[0].substring(0, i);
+    }
+
+----------------------------------------------------------------------------------------------------
+Short Python Solution
+ def longestCommonPrefix(self, strs):
+        """
+        :type strs: List[str]
+        :rtype: str
+        """
+        if not strs:
+            return ""
+        shortest = min(strs,key=len)
+        for i, ch in enumerate(shortest):
+            for other in strs:
+                if other[i] != ch:
+                    return shortest[:i]
+        return shortest 
+
+
+----------------------------------------------------------------------------------------------------
+3 diffrent C++ solutions, each one costs 8ms.
+First one: check from strs[0][0] to strs[i][0]. If matches, check strs[0][1] to strs[i][1].
+
+Code:
+
+    class Solution {
+    public:
+        string longestCommonPrefix(vector<string>& strs) {
+            if(strs.size()==0)
+            return "";
+            string ans="";
+            int max=INT_MAX;
+            for(auto& s:strs)
+            {
+                max=(max>s.length())?s.length():max;
+            }
+            for(int i=0;i<max;i++)
+            {
+                bool flag=true;
+                char x=strs[0][i];
+                for(auto& s:strs)
+                {
+                    if(s[i]!=x)
+                    {
+                        flag=false;
+                        break;
+                    }
+                }
+                if(flag==false)
+                return ans;
+                ans+=x;
+            }
+            return ans;
+        }
+    };
+
+Second one: assume the prefix is strs[0]. Compair with strs[i], and cut the letters which don't match.
+
+Code:
+
+    class Solution {
+    public:
+        string longestCommonPrefix(vector<string>& strs) {
+            if(strs.size()==0)
+            return "";
+            string ans=strs[0];
+            int max=INT_MAX;
+            for(auto& s:strs)
+            {
+                if(s.length()==0)
+                return "";
+                int i=0;
+                for(i=0;i<ans.length()&&i<s.length();i++)
+                {
+                    if(s[i]!=ans[i])
+                    break;
+                }
+                ans=ans.substr(0,i);
+            }
+    
+            return ans;
+        }
+    };
+
+Third one:  use a Trie data structure to save the strs. Search the trie, and stops when a TrieNode has more than one son.
+
+Code:
+
+    class TrieNode{
+    public:
+    	bool val;
+    	TrieNode* next[52];
+    	int sons;
+    	TrieNode() :val(false), sons(0)
+    	{
+    		for (int i = 0; i < 52; i++)
+    			next[i] = nullptr;
+    	}
+    };
+    class Trie{
+    private:
+    	TrieNode* putst(string& s, TrieNode * node, int loc, TrieNode *father)
+    	{
+    		if (s.length() == 0)
+    		{
+    			node->val = true;
+    			node->sons++;
+    			return node;
+    		}
+    		if (node == nullptr)
+    		{
+    			node = new TrieNode();
+    			if (father != nullptr)
+    				father->sons++;
+    		}
+    		if (loc == s.length())
+    		{
+    			node->val = true;
+    			return node;
+    		}
+    		if (s[loc] >= 'a')
+    			node->next[s[loc] - 'a'] = putst(s, node->next[s[loc] - 'a'], loc + 1, node);
+    		else
+    			node->next[s[loc] - 'A' + 26] = putst(s, node->next[s[loc] - 'A' + 26], loc + 1, node);
+    		return node;
+    	}
+    public:
+    	TrieNode *root;
+    	void insert(string & str){ putst(str, root, 0, nullptr); }
+    	Trie(){ root = new TrieNode(); }
+    };
+    class Solution {
+    private:
+    	string findPre(TrieNode * node)
+    	{
+    		if (node == nullptr || (node != nullptr&&node->sons > 1))
+    			return string("");
+    		int i = 0;
+    		for (i = 0; i < 52; i++)
+    		{
+    			if (node->next[i] != nullptr)
+    				break;
+    		}
+    		if (i == 52)
+    			return string("");
+    		char temp1 = ((i>25) ? ('A' + i) : ('a' + i));
+    		string temp;
+    		temp.insert(temp.begin(), temp1);
+    		if (node->val)
+    		{
+    			return string("");
+    		}
+    		else
+    		{
+    			return temp + findPre(node->next[i]);
+    		}
+    	}
+    public:
+    	string longestCommonPrefix(vector<string>& strs) {
+    		Trie a;
+    		for (auto& str : strs)
+    			a.insert(str);
+    		return findPre(a.root);
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+Already implemented in Python
+    import os
+    
+    class Solution:
+        # @param {string[]} strs
+        # @return {string}
+        def longestCommonPrefix(self, strs):
+            return os.path.commonprefix(strs)
+
+----------------------------------------------------------------------------------------------------
+Optimal Solution (?)
+I think there are two (straightforward) solutions:
+
+1) "Horizontal matching (over strings)". Pick up the first string and compare it with the rest. Return the minimum prefix found among all comparisons.
+
+2) "Vertical matching (over characters)". Compare the characters between all strings from left to right. Stop whenever a mismatch is found.
+
+What is the complexity of these two approaches ?
+
+Is there a better solution ?
+
+----------------------------------------------------------------------------------------------------
+Js higher-order function solution with concise and easy to understand code
+reduce is just for this: take a list of strings and reduce them to one string
+
+    var longestCommonPrefix = function(strs) {
+        'use strict';
+        if (strs === undefined || strs.length === 0) { return ''; }
+        
+        return strs.reduce((prev, next) => {
+            let i = 0;
+            while (prev[i] && next[i] && prev[i] === next[i]) i++;
+            return prev.slice(0, i);
+        });
+    };
+
+----------------------------------------------------------------------------------------------------
+5 line python with zip() and len(set())
+Just for fun :)
+
+    class Solution(object):
+        def longestCommonPrefix(self, strs):
+            """
+            :type strs: List[str]; rtype: str
+            """
+            sz, ret = zip(*strs), ""
+            # looping corrected based on @StefanPochmann's comment below
+            for c in sz:
+                if len(set(c)) > 1: break
+                ret += c[0]
+            return ret
+
+----------------------------------------------------------------------------------------------------
+My 2ms  Java solution may help u
+    public class Solution {
+        public String longestCommonPrefix(String[] strs) {
+            int len = strs.length;
+    		if (len == 0)
+    			return "";
+    		int minlen = 0x7fffffff;
+    		for (int i = 0; i < len; ++i) 
+    			minlen = Math.min(minlen, strs[i].length());
+    		for (int j = 0; j < minlen; ++j) 
+    			for (int i = 1; i < len; ++i) 
+    				if (strs[0].charAt(j) != strs[i].charAt(j)) 
+    					return strs[0].substring(0, j);
+    		return strs[0].substring(0, minlen);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+6-line c++ lightening fast
+    string longestCommonPrefix(vector<string>& strs) {
+            if (strs.size()==0) return "";
+            for (int i=0; i<strs[0].length(); i++)
+                for (int j=0; j<strs.size(); j++)
+                    if ( !(i<strs[j].length() && strs[0][i]==strs[j][i]) )
+                        return strs[0].substr(0, i);
+            return strs[0];
+        }
+
+----------------------------------------------------------------------------------------------------
+My 6 lines Java solution 90%
+    public String longestCommonPrefix(String[] strs) {
+        int n=strs.length;
+        if(n==0) return "";
+        StringBuilder st=new StringBuilder(strs[0]);
+        for(int i=1;i<n;i++){
+            while(!strs[i].startsWith(st.toString())) st.deleteCharAt(st.length()-1);
+        }
+        return st.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+My 1ms Java solution
+I have read many solutions but I just add couple of lines. I think finding the shortest string first can make the solution more effective.
+
+    public class Solution {
+        public String longestCommonPrefix(String[] strs) {
+            if (strs.length < 1 || strs == null) {
+                return "";
+            }
+            if (strs.length == 1) {
+                return strs[0];
+            }
+            //find the shortest String
+            int shortest = 0;
+            int len = strs[0].length();
+            for (int i = 1; i < strs.length; i++) {
+                int curLen = strs[i].length();
+                if (curLen < len) {
+                    len = curLen;
+                    shortest = i;
+                }
+            }
+            //find the longest common prefix
+            String sub = strs[shortest];
+            for (int i = 0; i < strs.length; i++) {
+                while (strs[i].indexOf(sub) != 0) {
+                    sub = sub.substring(0, sub.length()-1);
+                }
+            } 
+            return sub;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Neat C++ Solution 8ms for longest common prefix
+In fact, we just need to select the minimum and maximum string and their common prefix is the answer!
+The implement is a sort (forgive my laziness XD) which is 8ms. So quick :)
+
+    class Solution {
+    public:
+        string longestCommonPrefix(vector<string> &strs) {
+            int i, j, n = strs.size();
+            if (n == 0) return "";
+            sort(strs.begin() ,strs.begin() + n);
+            for (j = 0; j < strs[0].size() && j < strs[n - 1].size() && strs[0][j] == strs[n - 1][j]; j++);
+            return strs[0].substr(0, j);
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Here is my solution in C (0 ms)
+    #include<stdio.h>
+    #include<string.h>
+    char* longestCommonPrefix(char** strs, int strsSize) 
+    {
+        int i=0; int j=0;int index;int tempindex=0;
+        if(strsSize<1)
+        return "";
+        index=strlen(strs[0]);
+        char *a;
+        a= malloc(sizeof(char)*(index+1));
+        strcpy(a,strs[0]);
+        for(i=1;i<strsSize;i++)
+        {   tempindex=0;
+            for(j=0;j<index;j++)
+            { 
+                if(a[j]==strs[i][j])
+                tempindex++;
+                else
+                {a[j]='\0';
+                 break;
+                }
+            } 
+              if (tempindex==0)return ("");
+              if(tempindex<index)index=tempindex;
+            
+        }
+        return a;
+        
+    }
+
+----------------------------------------------------------------------------------------------------
+A pythonic solution, 52 ms
+    def longestCommonPrefix(self, strs):
+        prefix = '';
+        # * is the unpacking operator, essential here
+        for z in zip(*strs):
+            bag = set(z);
+            if len(bag) == 1:
+                prefix += bag.pop();
+            else:
+                break;
+        return prefix;
+
+----------------------------------------------------------------------------------------------------

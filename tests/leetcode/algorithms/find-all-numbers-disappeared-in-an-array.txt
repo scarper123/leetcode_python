@@ -1,0 +1,468 @@
+A couple of Java solutions with explanations
+public int integerReplacement(int n) {
+    int c = 0;
+    while (n != 1) {
+        if ((n & 1) == 0) {
+            n >>>= 1;
+        } else if (n == 3 || ((n >>> 1) & 1) == 0) {
+            --n;
+        } else {
+            ++n;
+        }
+        ++c;
+    }
+    return c;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java 12 line 4(5)ms iterative solution with explanations. No other data structures.
+public int integerReplacement(int n) {
+    if (n == Integer.MAX_VALUE) return 32; //n = 2^31-1;
+    int count = 0;
+    while (n > 1){
+        if (n % 2 == 0) n  /= 2;
+        else{
+            if ( (n + 1) % 4 == 0 && (n - 1 != 2) ) n++;
+            else n--;
+        }
+        count++;
+    }
+    return count;
+}
+
+----------------------------------------------------------------------------------------------------
+Python O(log n) time, O(1) space with explanation and proof
+class Solution(object):
+    def integerReplacement(self, n):
+        rtn = 0
+        while n > 1:
+            rtn += 1
+            if n % 2 == 0:
+                n //= 2
+            elif n % 4 == 1 or n == 3:
+                n -= 1
+            else:
+                n += 1
+        return rtn
+
+
+----------------------------------------------------------------------------------------------------
+0 ms C++ recursion solution with Explanation
+class Solution 
+{
+    // date: 2016-09-11     location: Vista Del Lago III Apartments
+    int res = 0;
+public:
+    int integerReplacement(int n) 
+    {
+        if (n == 1)
+            return res;
+        if (n == 3)
+        {
+            res += 2;
+            return res;
+        }
+        if (n == INT_MAX)
+            return 32;
+        
+        res ++;
+        if (n & 1)
+            if ((n + 1) % 4 == 0)
+                integerReplacement(n + 1);
+            else
+                integerReplacement(n - 1);
+        else
+            integerReplacement(n / 2);
+            
+        return res;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+JAVA 3ms Bit Manipulation Solution
+public class Solution {
+    public int integerReplacement(int n) {
+        long N = n;
+        long small,big;
+        int cnt = 0;
+        while( N != 1){
+        	small = (N  & ( N -1));
+        	big = ( N & (N + 1));
+        	if( (N & 1) == 0){
+        		N >>= 1;
+        	}
+        	else if ( (small & (small-1)) <= (big & (big-1))){
+        		N = N - 1;
+        	}
+        	else{
+        		N = N +1;
+        	}
+        	cnt++;
+        }
+        return cnt;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+my java solution with memorization search, handling overflow test case
+public class Solution {
+    public int integerReplacement(int n) {
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        map.put(1, 0);
+        map.put(2, 1);
+
+        return helper(n, map);
+    }
+    
+    private int helper(int n, Map<Integer, Integer> map) {
+        if (map.containsKey(n)) {
+            return map.get(n);
+        }
+        
+        int steps = -1;
+        if (n % 2 == 0) {
+            steps = helper(n / 2, map) + 1;
+        } else {
+            steps = Math.min(helper((n - 1), map) + 1, helper(1 + (n - 1) / 2, map) + 2);
+        }
+        
+        map.put(n, steps);
+        
+        return steps;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Could you anyone offer an elegant solution to deal with 2147483647?
+public int integerReplacement(int n) {
+        if (n == 1) return 0;
+        if (n == 2147483647) {
+            return Math.min(1 + integerReplacement(2147483647 - 1), 2 + integerReplacement((2147483646 / 2) + 1));
+        }
+        if (n % 2 == 0) {
+            return (1 + integerReplacement(n / 2));
+        } else {
+            return (1 + Math.min(integerReplacement(n - 1), integerReplacement(n + 1)));
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ 0ms 11 lines &quot;DP&quot; solution
+class Solution {
+private:
+    unordered_map<int, int> visited;
+
+public:
+    int integerReplacement(int n) {        
+        if (n == 1) { return 0; }
+        if (visited.count(n) == 0) {
+            if (n & 1 == 1) {
+                visited[n] = 2 + min(integerReplacement(n / 2), integerReplacement(n / 2 + 1));
+            } else {
+                visited[n] = 1 + integerReplacement(n / 2);
+            }
+        }
+        return visited[n];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java BFS solution, tail recursion
+public class Solution {
+    public int integerReplacement(int n) {
+        assert n > 0;
+        Queue<Long> queue = new LinkedList<>();
+        queue.offer((long)n);
+        return bfs(queue, 0);
+    }
+    
+    private int bfs(Queue<Long> oldqueue, int level) {
+        Queue<Long> newqueue = new LinkedList<>();
+        while (!oldqueue.isEmpty()) {
+            long n = oldqueue.poll();
+            if (n == 1) {
+                return level;
+            }
+            if (n % 2 == 0) {
+                newqueue.offer(n / 2);
+            } else {
+                newqueue.offer(n + 1);
+                newqueue.offer(n - 1);
+            }
+        }
+        return bfs(newqueue, level + 1);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+3 Lines Python Recursive AC Solution
+class Solution(object):
+    def integerReplacement(self, n, counter=0):
+    	if n == 1: return counter
+    	if not n%2: return self.integerReplacement(n/2, counter+1)
+    	else: return min(self.integerReplacement(n+1, counter+1), self.integerReplacement(n-1, counter+1))
+
+
+----------------------------------------------------------------------------------------------------
+Python top-down approach. Memoization saves hundreds of ms (345ms -&gt; 36ms).
+class Solution(object):
+    def integerReplacement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        memo = {1:0}
+        return self.recRep(n, memo)
+        
+    def recRep(self, n, memo):
+        if n in memo:
+            return memo[n]
+        if n % 2:
+            memo[n] = 1 + min(self.recRep(n+1, memo), self.recRep(n-1, memo))
+            return memo[n]
+        else:
+            memo[n] = 1 + self.recRep(n/2, memo)
+            return memo[n]
+
+
+----------------------------------------------------------------------------------------------------
+Share my 6ms C code
+int myRP(int n, int k) {
+    if (n == 1) return k;
+    if (n % 2) {
+        int result1 = myRP(((n - 1)>>1) + 1, k + 2);
+        int result2 = myRP(n - 1, k + 1);
+        return result1 < result2 ? result1 : result2;
+    } else {
+        return myRP(n>>1, k + 1);
+    }
+}
+
+int integerReplacement(int n) {
+    return myRP(n, 0);
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my 0ms C++ code...
+class Solution {
+public:
+    int integerReplacement(int n) {
+        return countRec(n,0);
+    }
+private:
+    int countRec(int n,int count){
+        if(n==1)
+            return count;
+        if(n==3)
+            return count+2;
+        if((n&1)==0){
+            return countRec((n>>1),count+1);
+        }
+        long long a=(long long)n+1;
+        if((a&3)==0){
+            a=a>>1;
+            return countRec((int)a,count+2);
+        }
+        return countRec(n-1,count+1);
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+4ms Java solution
+public class Solution {
+    public int integerReplacement(int n) {
+        int i = 0;
+	long a = n;
+	while (a != 1){
+		if (a == 3) return i + 2;
+		if ((a & 1) == 0){
+			++i;
+			a = a >> 1;
+			continue;
+		}
+		if ((a & 2) == 2){
+			++a;
+			++i;
+		}
+		else{
+			--a;
+			++i;
+		}
+	}
+	return i;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python solution with cache beating 98.06%
+class Solution(object):
+    def integerReplacement(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        def helper(n, d):
+            if n in d:
+                return d[n]
+            
+            if n%2 == 0:
+                d[n] = helper(n/2, d) + 1
+            else:
+                d[n] = 1 + min(helper(n + 1, d), helper(n - 1, d))
+            return d[n]
+                
+        d = {1: 0}
+        return helper(n, d)
+
+
+----------------------------------------------------------------------------------------------------
+4ms recursive Java solution explained
+public class Solution {
+    public int integerReplacement(int n) {
+        if (n == 1) {
+            return 0;
+        } else if (n == 3) {
+            return 2;
+        } else if (n == 2147483647) {
+            return 2 + integerReplacement((n >> 1) + 1);
+        }
+        if (n % 2 == 0) {
+            return integerReplacement(n >> 1) + 1;
+        }
+        else {
+            return numTrailingOnes(n) > 1 ? integerReplacement(n + 1) + 1 : integerReplacement(n - 1) + 1;
+        }
+    }
+
+    private int numTrailingOnes(int num) {
+        int shift = 0;
+        while (((num >> shift) & 1) == 1) {
+            shift++;
+        }
+        return shift;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(logn) 4ms solution
+public int integerReplacement(int n) {
+    int steps = 0;
+    while (n > 1)
+    {
+        if (n%2 == 0)
+        {
+            steps++;
+            n >>= 1;
+        }
+        else
+        {
+            int temp1 = n-1;
+            int temp2 = n+1;
+            
+            int tempSteps = 1;
+            // Reduce n to the number that has more factors of 2
+            while (temp1 % 2 == 0 && temp2 % 2 == 0)
+            {
+                temp1 >>= 1;
+                temp2 >>= 1;
+                tempSteps++;
+            }
+            
+            // To handle MAX_VALUE+1 case
+            temp2 = Math.abs(temp2);
+          
+            if (temp1 == 1)
+            {
+                n = temp1;
+            }
+            else if (temp2 == 1)
+            {
+                n = temp2;
+            }
+            else if (temp1 % 2 > 0)
+            {
+                n = temp2;
+            }
+            else
+            {
+                n = temp1;
+            }
+            
+            steps += tempSteps;
+        }
+    }
+    
+    return steps;
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;java&#x2F;4ms&#93; iterative, greedy, explained in detail.
+public int integerReplacement(int n) {
+        int cnt = 0;
+        while (n > 1) {
+            cnt++;
+            if ((n & 1) != 0) {
+                cnt++;
+                n >>= 1;
+                if (n != 1 && (n & 1) != 0) n++;
+            } else {
+                n >>= 1;
+            }
+        }
+        
+        return cnt;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+4ms Java Solution
+public class Solution {
+    public int integerReplacement(int n) {
+        int count = 0;
+        long N = n;
+        while (N > 1) {
+            if (N % 2 != 0) {
+                if ((N + 1) / 2 % 2 == 0 && (N + 1) / 2 < (N - 1)) N += 1;
+                else N -= 1;
+            } else {
+                N /= 2;
+            }
+            count++;
+        }
+        return count;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+3 ms elegant C++ Code with explanation
+    int integerReplacement(int n) {
+        if(n==1) return 0;
+        else if(n==2) return 1;
+        static unordered_map<int, int> map_n_cnt;
+        
+        if( map_n_cnt[n] != 0 ) return map_n_cnt[n];
+        if( (n&1) == 0 ) {
+            map_n_cnt[n] = 1 + integerReplacement(n>>1);
+            return map_n_cnt[n];
+        }
+        else{
+            map_n_cnt[n] = 1 + std::min( integerReplacement(n-1), 1+integerReplacement(1+(n>>1)) );
+            return map_n_cnt[n];
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------

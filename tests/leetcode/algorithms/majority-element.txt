@@ -1,0 +1,277 @@
+A simple Java solution
+The idea is to sort the intervals by their starting points. Then, we take the first interval and compare its end with the next intervals starts. As long as they overlap, we update the end to be the max end of the overlapping intervals. Once we find a non overlapping interval, we can add the previous "extended" interval and start over.
+
+Sorting takes O(n log(n)) and merging the intervals takes O(n). So, the resulting algorithm takes O(n log(n)).
+
+I used an anonymous comparator and a for-each loop to try to keep the code clean and simple.
+
+    public List<Interval> merge(List<Interval> intervals) {
+        if (intervals.size() <= 1)
+            return intervals;
+        
+        // Sort by ascending starting point using an anonymous Comparator
+        Collections.sort(intervals, new Comparator<Interval>() {
+            @Override
+            public int compare(Interval i1, Interval i2) {
+                return Integer.compare(i1.start, i2.start);
+            }
+        });
+        
+        List<Interval> result = new LinkedList<Interval>();
+        int start = intervals.get(0).start;
+        int end = intervals.get(0).end;
+        
+        for (Interval interval : intervals) {
+            if (interval.start <= end) // Overlapping intervals, move the end if needed
+                end = Math.max(end, interval.end);
+            else {                     // Disjoint intervals, add the previous one and reset bounds
+                result.add(new Interval(start, end));
+                start = interval.start;
+                end = interval.end;
+            }
+        }
+        
+        // Add the last interval
+        result.add(new Interval(start, end));
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ 10 line solution. easing understanding
+    vector<Interval> merge(vector<Interval>& ins) {
+        if (ins.empty()) return vector<Interval>{};
+        vector<Interval> res;
+        sort(ins.begin(), ins.end(), [](Interval a, Interval b){return a.start < b.start;});
+        res.push_back(ins[0]);
+        for (int i = 1; i < ins.size(); i++) {
+            if (res.back().end < ins[i].start) res.push_back(ins[i]);
+            else
+                res.back().end = max(res.back().end, ins[i].end);
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+7 lines, easy, Python
+Just go through the intervals sorted by start coordinate and either combine the current interval with the previous one if they overlap, or add it to the output by itself if they don't.
+
+    def merge(self, intervals):
+        out = []
+        for i in sorted(intervals, key=lambda i: i.start):
+            if out and i.start <= out[-1].end:
+                out[-1].end = max(out[-1].end, i.end)
+            else:
+                out += i,
+        return out
+
+
+----------------------------------------------------------------------------------------------------
+Beat 98% Java. Sort start &amp; end respectively.
+  The idea is that for the result distinct Interval, the latter one's start must > previous one's end.
+
+    public List<Interval> merge(List<Interval> intervals) {
+		// sort start&end
+		int n = intervals.size();
+		int[] starts = new int[n];
+		int[] ends = new int[n];
+		for (int i = 0; i < n; i++) {
+			starts[i] = intervals.get(i).start;
+			ends[i] = intervals.get(i).end;
+		}
+		Arrays.sort(starts);
+		Arrays.sort(ends);
+		// loop through
+		List<Interval> res = new ArrayList<Interval>();
+		for (int i = 0, j = 0; i < n; i++) { // j is start of interval.
+			if (i == n - 1 || starts[i + 1] > ends[i]) {
+				res.add(new Interval(starts[j], ends[i]));
+				j = i + 1;
+			}
+		}
+		return res;
+	}
+
+----------------------------------------------------------------------------------------------------
+A clean java solution
+    public class Solution {
+        public List<Interval> merge(List<Interval> intervals) {
+            Collections.sort(intervals, new Comparator<Interval>(){
+                @Override
+                public int compare(Interval obj0, Interval obj1) {
+                    return obj0.start - obj1.start;
+                }
+            });
+    
+            List<Interval> ret = new ArrayList<>();
+            Interval prev = null;
+            for (Interval inter : intervals) {
+                if (  prev==null || inter.start>prev.end ) {
+                    ret.add(inter);
+                    prev = inter;
+                } else if (inter.end>prev.end) {
+                    // Modify the element already in list
+                    prev.end = inter.end;
+                }
+            }
+            return ret;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My easy C++ solution
+    static bool comp(const Interval& a, const Interval& b){
+        return a.start < b.start;
+    }
+    vector<Interval> merge(vector<Interval> &intervals) {
+        vector<Interval> result;
+        if(intervals.empty()){
+            return result;
+        }
+        sort(intervals.begin(), intervals.end(), comp);
+        result.push_back(intervals[0]);
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i].start <= result.back().end){
+                Interval temp(result.back().start, max(result.back().end, intervals[i].end));
+                result.pop_back();
+                result.push_back(temp);
+            }
+            else{
+                result.push_back(intervals[i]);
+            }
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+Fast ana simple java code
+
+ The idea is to sort intervals based on start and iterate all itervals to merge them if:
+
+    curr.end >= iter.start
+
+The time complexity is : sort nO(logn)+ merge: O(n) = nO(logn)
+
+No Extra space except necessary result : )
+
+       public class Solution {
+            public List<Interval> merge(List<Interval> intervals) {
+                List<Interval> res = new LinkedList<Interval>();
+                if(intervals.size()<2) return intervals;
+                Collections.sort(intervals, new Comparator<Interval>() {
+                @Override
+                    public int compare(Interval o1, Interval o2) {
+                        return o1.start-o2.start;
+                    }
+                });
+                Interval curr = intervals.get(0);
+                for(Interval iter: intervals) {
+                    if(curr.end >= iter.start) {
+                        curr.end = Math.max(curr.end,iter.end);
+                    }else {
+                        res.add(curr);
+                        curr = iter;
+                    }
+                }
+                res.add(curr);
+                return res;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Short python solution
+Sort the list first. Check if the new interval overlaps with the previous one in the output list. If yes, update it. Otherwise, append the new one.
+
+    class Solution(object):
+        def merge(self, intervals):
+            """
+            :type intervals: List[Interval]
+            :rtype: List[Interval]
+            """
+            if len(intervals) == 0: return []
+            intervals = sorted(intervals, key = lambda x: x.start)
+            res = [intervals[0]]
+            for n in intervals[1:]:
+                if n.start <= res[-1].end: res[-1].end = max(n.end, res[-1].end)
+                else: res.append(n)
+            return res
+
+----------------------------------------------------------------------------------------------------
+My C++ O(NlogN) solution 580ms
+Just copy the input to res and do sorting (in ascending order of start). Then try to merge the sorted interval: cur is the last processed interval and i is the current to-be-processed interval. if cur is ahead of i and no overlapping, just copy i to cur+1, and update cur to cur+1, otherwise, merge interval cur and i and move to i+1. At last, we need to resize res to remove the redundent intervals.  
+
+    class Solution {
+    public:
+        vector<Interval> merge(vector<Interval>& intervals) {
+            int len = intervals.size(),i,cur;
+            vector<Interval> res(intervals);
+            if(len>1)
+            {
+                std::sort(res.begin(), res.end(), [](Interval i, Interval j){return i.start<j.start;});
+                for(cur=0, i=1;i<len; ++i)
+                    if(res[cur].end<res[i].start) res[++cur] = res[i]; // no overlapping, copy to cur+1, 
+                    else res[cur].end = max(res[cur].end, res[i].end); // cur and i overlap with each other, merge
+                res.resize(cur+1); // resize to remove redundant intervals
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean Java Sort Solution using Comparator
+    public List<Interval> merge(List<Interval> intervals) {
+		if (intervals.isEmpty())
+			return intervals;
+
+		Collections.sort(intervals, new Comparator<Interval>() {
+			public int compare(Interval a, Interval b) {
+				// TODO Auto-generated method stub
+				return a.start - b.start;
+			}
+		});
+
+		List<Interval> ans = new LinkedList<Interval>();
+		Interval hold = intervals.get(0);
+		for (int i = 1; i < intervals.size(); i++) {
+			Interval current = intervals.get(i);
+			if (hold.end >= current.start) {
+				hold.end = Math.max(current.end, hold.end);
+			} else {
+				ans.add(hold);
+				hold = current;
+			}
+		}
+
+		if (!ans.contains(hold))
+			ans.add(hold);
+
+		return ans;
+	}
+
+----------------------------------------------------------------------------------------------------
+Sort function problems
+I use the sort function to sort the starting points of all intervals,
+
+    sort(intervals.begin(),intervals.end(),compareInterval); 
+
+However, when I am trying to use
+
+    bool compareInterval(Interval a, Interval b)
+    {
+        return (a.start<=b.start);
+    }
+
+the compiler outputs some Runtime error, however, the compiler accepts the code if I use
+
+    bool compareInterval(Interval a, Interval b)
+    {
+        return (a.start<b.start);
+    }
+
+any genius here have some ideas?
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my BST interval tree solution C++ No sorting!

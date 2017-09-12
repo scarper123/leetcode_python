@@ -1,0 +1,673 @@
+Very Clean Solution in Java
+public class ImageSmoother {
+
+    public int[][] imageSmoother(int[][] M) {
+        if (M == null) return null;
+        int rows = M.length;
+        if (rows == 0) return new int[0][];
+        int cols = M[0].length;
+
+        int result[][] = new int[rows][cols];
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int count = 0;
+                int sum = 0;
+                for (int incR : new int[]{-1, 0, 1}) {
+                    for (int incC : new int[]{-1, 0, 1}) {
+                        if (isValid(row + incR, col + incC, rows, cols)) {
+                            count++;
+                            sum += M[row + incR][col + incC];
+                        }
+                    }
+                }
+                result[row][col] = sum / count;
+            }
+        }
+
+        return result;
+
+    }
+
+    private boolean isValid(int x, int y, int rows, int cols) {
+        return x >= 0 && x < rows && y >= 0 && y < cols;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Basic Java Solution : 33ms
+public int[][] imageSmoother(int[][] M) {
+        int[][] res = new int[M.length][M[0].length];
+        int count = 0;
+        int sum = 0;
+        for(int i = 0 ; i < M.length ; i++){
+            
+            for(int j = 0 ; j < M[0].length ; j++){
+                sum =M[i][j];
+                count=1;
+                
+                if(i-1>=0){
+                    sum+=M[i-1][j];
+                    count++;
+                    if(j-1>=0){
+                        sum+=M[i-1][j-1];
+                        count++;
+                    } 
+                    if(j+1<M[0].length){
+                        sum+=M[i-1][j+1];
+                        count++;  
+                    }
+                }
+            
+                if(j+1<M[0].length){
+                    sum+=M[i][j+1];
+                    count++;
+                }
+                
+                if(j-1>=0){
+                    sum+=M[i][j-1];
+                    count++;
+                    if(i+1<M.length){
+                        sum+=M[i+1][j-1];
+                        count++;
+                    }
+                }
+                
+                if(i+1<M.length){
+                    sum+=M[i+1][j];
+                    count++;
+                    
+                    if(j+1<M[0].length){
+                        sum+=M[i+1][j+1];
+                        count++;
+                    }
+                }
+                res[i][j] = (int)Math.floor(sum/count);
+            }
+        }
+        
+        return res;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward python solution
+from copy import deepcopy as copy
+
+class Solution(object):
+    def imageSmoother(self, M):
+        """
+        :type M: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        x_len = len(M)
+        y_len = len(M[0]) if x_len else 0
+        res = copy(M)
+        for x in range(x_len):
+            for y in range(y_len):
+                neighbors = [
+                    M[_x][_y]
+                    for _x in (x-1, x, x+1)
+                    for _y in (y-1, y, y+1)
+                    if 0 <= _x < x_len and 0 <= _y < y_len
+                ]
+                res[x][y] = sum(neighbors) // len(neighbors)
+        return res
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward C++ solution
+class Solution {
+private: 
+    bool valid(int i,int j,vector<vector<int>>& M)
+    {
+        if (i >=0 && i<M.size() && j>=0 && j<M[0].size())
+            return true;
+        return false;
+    }
+    
+public:
+    vector<vector<int>> imageSmoother(vector<vector<int>>& M) {
+        vector<vector<int>> res;
+        if (M.size()==0 || M[0].size()==0)
+            return res;
+
+        for (int i = 0; i< M.size(); i++)
+        {            
+            vector<int> cur;
+            for(int j = 0; j< M[0].size(); j++)
+            {
+                int total = 0;
+                int count = 0;
+                for (int x = -1; x<2;x++)
+                {
+                    for (int y = -1; y<2; y++)
+                    {
+                        if(valid(i+x,j+y,M))
+                        {
+                            count++;
+                            total +=M[i+x][j+y];
+                        }
+                    }
+                }
+                cur.push_back(total/count);
+            }
+            res.push_back(cur);
+        }
+        return res; 
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(1) space using &quot;game of life&quot; idea
+    vector<vector<int>> imageSmoother(vector<vector<int>>& M) {
+        int m = M.size(), n = M[0].size();
+        if (m == 0 || n == 0) return {{}};
+        vector<vector<int>> dirs = {{0,1},{0,-1},{1,0},{-1,0},{-1,-1},{1,1},{-1,1},{1,-1}};
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                int sum = M[i][j], cnt = 1;
+                for (int k = 0; k < dirs.size(); k++) {
+                    int x = i + dirs[k][0], y = j + dirs[k][1];
+                    if (x < 0 || x > m - 1 || y < 0 || y > n - 1) continue;
+                    sum += (M[x][y] & 0xFF);
+                    cnt++;
+                }
+                M[i][j] |= ((sum / cnt) << 8);
+            }
+        }
+         for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                M[i][j] >>= 8;
+            }
+         }
+        return M;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Super clean and easy solution
+class Solution {
+    public int[][] imageSmoother(int[][] M) {
+        if(M==null||M.length==0) return new int[][];
+        int n=M.length;
+        int m=M[0].length;
+        int res[][]=new int[n][m];
+        
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                res[i][j]=avg(M,i,j,n,m);
+            }
+        }
+        return res;
+    }
+    
+    public int avg(int[][] M,int x,int y,int n,int m){
+        int sum=0;
+        int count=0;
+        int[] valueAndCount=new int[]{0,0};
+        
+        for(int[] co:new int[][]{{x,y},{x,y-1},{x,y+1},{x-1,y},{x+1,y},{x+1,y-1},{x+1,y+1},{x-1,y-1},{x-1,y+1}}){
+            valueAndCount=valueAndCount(M,co[0],co[1],n,m);
+            sum+=valueAndCount[0];
+            count+=valueAndCount[1]; 
+        }
+        return sum/count;
+    }
+    
+    public int[] valueAndCount(int[][] M,int x,int y,int n,int m){
+        boolean valid=x>=0&&x<n&&y>=0&&y<m;
+        return new int[]{valid?M[x][y]:0,valid?1:0};
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Simple Python Solution by Enlarging Matrix
+<p>We can simply add a group of things around the original matrix. So for each element in the original matrix, it is surrounded by 8 numbers and there will be no index problem any longer. When calculating the average, we can simply discard those added things and focus on the real numbers. For example, in my code, I added some -1 to the original matrix.</p>
+<pre>class Solution(object):
+    def imageSmoother(self, M):
+        &#34;&#34;&#34;
+        :type M: List&#91;List&#91;int&#93;&#93;
+        :rtype: List&#91;List&#91;int&#93;&#93;
+        &#34;&#34;&#34;
+        N = &#91;&#91;0&#93;*len(M&#91;0&#93;) for i in range(len(M))&#93;
+        M.insert(0,&#91;-1&#93;*(len(M&#91;0&#93;)+2))
+        M.append(&#91;-1&#93;*len(M&#91;0&#93;))
+        for i in range(1,len(M)-1):
+            M&#91;i&#93;.insert(0,-1)
+            M&#91;i&#93;.append(-1)
+        for i in range(1,len(M)-1):
+            for j in range(1,len(M&#91;0&#93;)-1):
+                count = 0
+                Sum = 0
+                for k in range(-1,2):
+                    for l in range(-1,2):
+                        if M&#91;i+k&#93;&#91;j+l&#93; != -1:
+                            count += 1
+                            Sum += M&#91;i+k&#93;&#91;j+l&#93;
+                N&#91;i-1&#93;&#91;j-1&#93; = int(Sum/count)
+        return N</pre>
+
+----------------------------------------------------------------------------------------------------
+simple C solution
+int** imageSmoother(int** M, int MRowSize, int MColSize, int** columnSizes, int* returnSize) {
+    int **ret=(int **)malloc(MRowSize*sizeof(int*));
+    *columnSizes=calloc(MRowSize,sizeof(int));
+    for(int i=0;i<MRowSize;i++){
+    	ret[i]=calloc(MColSize,sizeof(int));
+    	(*columnSizes)[i]=MColSize;
+    	for(int j=0;j<MColSize;j++){
+    		int sum=M[i][j];
+    		int count=1;
+    		for(int k=0;k<8;k++){
+    			switch(k){
+    				case 0:
+    					if(j-1>=0) {sum+=M[i][j-1];count++;}
+    					break;
+    				case 1:
+    					if(i-1>=0&&j-1>=0) {sum+=M[i-1][j-1];count++;}
+    					break;
+    				case 2:
+    					if(i-1>=0) {sum+=M[i-1][j];count++;}
+    					break;
+    				case 3:
+    					if(i-1>=0&&j+1<MColSize) {sum+=M[i-1][j+1];count++;}
+    					break;
+    				case 4:
+    					if(j+1<MColSize) {sum+=M[i][j+1];count++;}
+    					break;
+    				case 5:
+    					if(i+1<MRowSize&&j+1<MColSize) {sum+=M[i+1][j+1];count++;}
+    					break;
+    				case 6:
+    					if(i+1<MRowSize) {sum+=M[i+1][j];count++;}
+    					break;
+    				case 7:
+    					if(i+1<MRowSize&&j-1>=0) {sum+=M[i+1][j-1];count++;}
+    					break;
+    			}
+    		}
+    		ret[i][j]=sum/count;
+    	}	
+    }
+    * returnSize=MRowSize;
+    return ret;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python AC Solution
+class Solution(object):
+    def imageSmoother(self, M):
+        """
+        :type M: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        if not M or not M[0]:
+            return
+        m = len(M)
+        n = len(M[0])
+        self.N = []
+        for i in xrange(m):
+            for j in xrange(n):
+                self.update(M, m, n, i, j)
+        return zip(*([iter(self.N)] * n))
+    def update(self, M, m, n, i, j):
+        x = y = 0
+        for p in xrange(max(i - 1, 0), min(i + 2, m)):
+            for q in xrange(max(j - 1, 0), min(j + 2, n)):
+                x += M[p][q]
+                y += 1
+        self.N.append(x/y)
+
+----------------------------------------------------------------------------------------------------
+Easy Java Straightforward solution
+class Solution {
+    public int[][] imageSmoother(int[][] M) {
+        if(M==null || M.length==0 ) return M;
+        
+        int[] dx = {-1,0,1,1,1,0,-1,-1};
+        int[] dy = {1,1,1,0,-1,-1,-1,0};
+        int[][] ret = new int[M.length][M[0].length];
+        for(int i=0;i<M.length;i++)
+        {
+            for(int j=0;j<M[0].length;j++)
+            {
+                int count = 1,sum=M[i][j];
+                for(int k=0;k<8;k++)
+                {
+                    if(isValid(M,i+dx[k],j+dy[k]))
+                    {
+                        //System.out.println((i+dx[k]) +" "+(j+dy[k]));
+                        sum+=M[i+dx[k]][j+dy[k]];
+                        count++;
+                    }
+                }
+                //System.out.println(sum+" "+count);
+                ret[i][j] = (sum)/(count);
+            }
+        }
+        return ret;
+        
+    }
+    
+    boolean isValid(int[][] M,int x,int y)
+    {
+        if(x<0 || x>=M.length || y<0 || y>=M[0].length)
+            return false;
+        
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+simple Python solution
+import numpy as np 
+
+class Solution(object):
+    def imageSmoother(self,M):
+        """
+        :type M: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        tmp=np.array(M)
+        ret=[]
+        (height,width)=tmp.shape
+        for i in np.arange(height):
+            ret_tmp=[]
+            for j in np.arange(width):
+                ret_tmp.append(int(tmp[max(i-1,0):min(i+1,height-1)+1,max(j-1,0):min(j+1,width-1)+1].mean()))
+            ret.append(ret_tmp)
+        return ret
+
+
+----------------------------------------------------------------------------------------------------
+Simple C++ solution
+
+class Solution {
+public:
+    vector<vector<int>> imageSmoother(vector<vector<int>>& M) {
+        row = M.size();
+        column = M[0].size();
+
+        matrix = M;
+        vector<vector<int>> ret(row, vector<int> (column));
+        for (int x=0; x<row; x++) {
+            for (int y=0; y<column; y++) {
+                ret[x][y] = smoother(x, y);
+            }
+        }
+        return ret;
+    };
+
+private:
+    vector<vector<int>> matrix;
+    int row;
+    int column;
+
+    int smoother(int x, int y) {
+        int sum = 0;
+        int count = 0;
+
+        vector<int> index({-1, 0, 1});
+        for (int i=0; i<index.size(); i++) {
+            if ((x + index[i]) < 0)
+                continue;
+            if ((x + index[i]) >= row)
+                continue;
+
+            for (int j=0; j<index.size(); j++) {
+                if ((y + index[j]) < 0)
+                    continue;
+                if ((y + index[j]) >= column)
+                    continue;
+
+                sum += matrix[x+index[i]][y+index[j]];
+                count++;
+
+            }
+        }
+        return sum / count;
+    }
+};
+
+
+
+----------------------------------------------------------------------------------------------------
+python O(m*n)
+class Solution(object):
+    def imageSmoother(self, M):
+        if not M: return M
+        new = [[0 for _ in range(len(M[0]))] for _ in range(len(M))]
+        directions = ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (-1, 1), (1, -1))
+        for i in range(len(new)):
+            for j in range(len(new[0])):
+                total = 0
+                count = 0
+                for r, c in directions:
+                    if i + r < 0 or j + c < 0 or i + r >= len(M) or j + c >= len(M[0]):
+                        continue
+                    total += M[i + r][j + c]
+                    count += 1
+                new[i][j] = total/count
+        return new
+
+----------------------------------------------------------------------------------------------------
+Python Solution
+class Solution(object):
+    def imageSmoother(self, M):
+        if not M:
+        	return M
+        h, w = len(M), len(M[0])
+        ans = [[0 for i in range(w)] for j in range(h)]
+        for i in range(h):
+            for j in range(w):
+                s, cnt = M[i][j], 1
+                dir = [[0, 1], [0, -1], [1, 0], [-1, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]]
+                for x in range(len(dir)):
+                    ty, tx = i + dir[x][0], j + dir[x][1]
+                    if (0 <= ty < h and 0 <= tx < w):
+                        s += M[ty][tx]
+                        cnt += 1
+                ans[i][j] = s / cnt
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Python solution simple logic
+import math
+
+class Solution(object):
+    def imageSmoother(self, M):
+        arr = []
+        
+        N = [[0 for col in range(len(M[0]))] for row in range(len(M))]
+        
+        for i in xrange(0, len(M)):
+            for j in xrange(0, len(M[0])):
+                arr.append([0,0])
+                if j - 1 >= 0:
+                    arr.append([0, -1])
+                if j + 1 < len(M[0]):
+                    arr.append([0, 1])
+                if i - 1 >= 0:
+                    if j - 1 >= 0:
+                        arr.append([-1,-1])
+                    arr.append([-1, 0])
+                    if j + 1 < len(M[0]):
+                        arr.append([-1, 1])
+                if i + 1 < len(M):
+                    if j - 1 >= 0:
+                        arr.append([1, -1])
+                    arr.append([1, 0])
+                    if j + 1 < len(M[0]):
+                        arr.append([1,1])
+                summe = 0
+                for ark in arr:
+                    summe += M[ark[0] + i][ark[1] + j]
+                N[i][j] = int(math.floor(summe / len(arr)))
+                arr = []
+        return N
+
+
+----------------------------------------------------------------------------------------------------
+C++ 22line
+class Solution {
+public:
+    vector<vector<int>> imageSmoother(vector<vector<int>>& M) {
+        if(M.empty()) return vector<vector<int>>();
+        vector<vector<int>> result(M.size(), vector<int>(M[0].size(),0));
+        vector<pair<int,int>> dir({{-1,-1}, {0,-1}, {1,-1}, {-1,0}, {0,0}, {1,0}, {-1,1}, {0,1}, {1,1}});
+        for(int i=0; i<M.size(); i++) {
+            for(int j=0; j<M[0].size(); j++) {
+                int nume = 0, deno = 0;
+                for(const auto& d:dir) {
+                    int ii = i+d.first, jj = j+d.second;
+                    if(ii>=0 && ii<M.size() && jj>=0 && jj<M[0].size()) {
+                        deno++;
+                        nume+=M[ii][jj];
+                    }
+                }
+                result[i][j]=nume/deno;
+            }
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+JAVA - 10 LINES OF CODE - E A S Y
+class Solution {
+    public int[][] imageSmoother(int[][] M) {
+        int[][] ret = new int[M.length][M[0].length];
+        for(int i = 0; i < M.length; i++) for(int j = 0; j < M[0].length; j++) smooth(M, ret, i, j);
+        return ret;
+    }
+    
+//use a loop instead of writing out all surrounding indexes...(='D)
+    public void smooth(int[][] source, int[][] dest, int row, int col) {
+        int count = 0, sum = 0;
+        for(int i = row-1; i < row-1+3; i++) {
+            for(int j = col-1; j < col-1+3; j++) {
+                if(i < 0 || j < 0 || i > source.length-1 || j > source[0].length-1) continue;
+                count++;
+                sum += source[i][j];
+            }
+        }
+        dest[row][col] = (int)Math.floor(sum/count);
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Reasonable Java solution, few lines
+class Solution {
+    public int[][] imageSmoother(int[][] M) {
+        // assume valid input
+        int height = M.length;
+        int width = M[0].length;
+        int[][] result = new int[height][width];
+        for(int i = 0; i < height; i++) {
+            for(int j = 0; j < width; j++) {
+                double sum = 0.0;
+                int total = 0;
+                for(int x: new int[]{-1, 0, 1}) {
+                    for(int y: new int[]{-1, 0, 1}) {
+                        if(i + x >= 0 && i + x < height && j + y >= 0 && j + y < width) {
+                            total++;
+                            sum += M[i + x][j + y];
+                        }
+                    }
+                }
+                result[i][j] = (int) Math.floor(sum/total);
+            }
+        }
+        return result;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java solution O(M)
+class Solution {
+    public int[][] imageSmoother(int[][] M) {
+        int [][] N = new int [M.length][M[0].length];
+        int row = M.length;
+        int col = M[0].length;
+        for(int i = 0; i < row; i++)
+            for(int j = 0; j < col; j++) {
+                int avg = 0;
+                int sum = 0;
+                for(int m = i - 1; m <= i + 1; m++)
+                    if(m >= 0 && m < row) 
+                        for(int n = j - 1; n <= j + 1; n++) 
+                            if(n >= 0 && n < col) {
+                                sum += M[m][n];
+                                avg++;
+                            }
+                N[i][j] = sum / avg;
+            }
+        return N;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand Swift solution
+extension Collection where Indices.Iterator.Element == Index {
+	
+	subscript (safe index: Index) -> Generator.Element? {
+		return indices.contains(index) ? self[index] : nil
+	}
+	
+}
+
+func imageSmoother(_ M: [[Int]]) -> [[Int]] {
+	guard !M.isEmpty else { return [] }
+	
+	let traversalGridPoints = [
+		[0, -1],
+		[-1, 0],
+		[1, 0],
+		[0, 1],
+		[-1, -1],
+		[1, 1],
+		[1, -1],
+		[-1, 1]
+	]
+	
+	let traversalGridPointsCoordinates = traversalGridPoints.map { (x: $0[0], y: $0[1]) }
+	
+	let rows = M.count
+	let columns = M[0].count
+	
+	var result = Array(repeating: Array(repeating: 0, count: columns), count: rows)
+	
+	for y in M.indices {
+		for x in M[y].indices {
+			var sum = M[y][x]
+			var count = 1
+			
+			traversalGridPointsCoordinates.forEach({ coordinate in
+				if let value = M[safe: coordinate.y + y]?[safe: coordinate.x + x] {
+					sum += value
+					count += 1
+				}
+			})
+			
+			result[y][x] = sum / count
+		}
+	}
+	
+	return result
+}
+
+
+----------------------------------------------------------------------------------------------------

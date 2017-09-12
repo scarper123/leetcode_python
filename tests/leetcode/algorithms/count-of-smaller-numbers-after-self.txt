@@ -1,0 +1,752 @@
+Accepted clean Java O(n) solution (two pointers)
+    public int minSubArrayLen(int s, int[] a) {
+      if (a == null || a.length == 0)
+        return 0;
+      
+      int i = 0, j = 0, sum = 0, min = Integer.MAX_VALUE;
+      
+      while (j < a.length) {
+        sum += a[j++];
+        
+        while (sum >= s) {
+          min = Math.min(min, j - i);
+          sum -= a[i++];
+        }
+      }
+      
+      return min == Integer.MAX_VALUE ? 0 : min;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Two AC solutions in Java with time complexity of N and NLogN with explanation
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            return solveNLogN(s, nums);
+        }
+        
+        private int solveN(int s, int[] nums) {
+            int start = 0, end = 0, sum = 0, minLen = Integer.MAX_VALUE;
+            while (end < nums.length) {
+                while (end < nums.length && sum < s) sum += nums[end++];
+                if (sum < s) break;
+                while (start < end && sum >= s) sum -= nums[start++];
+                if (end - start + 1 < minLen) minLen = end - start + 1;
+            }
+            return minLen == Integer.MAX_VALUE ? 0 : minLen;
+        }
+    
+        private int solveNLogN(int s, int[] nums) {
+            int[] sums = new int[nums.length + 1];
+            for (int i = 1; i < sums.length; i++) sums[i] = sums[i - 1] + nums[i - 1];
+            int minLen = Integer.MAX_VALUE;
+            for (int i = 0; i < sums.length; i++) {
+                int end = binarySearch(i + 1, sums.length - 1, sums[i] + s, sums);
+                if (end == sums.length) break;
+                if (end - i < minLen) minLen = end - i;
+            }
+            return minLen == Integer.MAX_VALUE ? 0 : minLen;
+        }
+        
+        private int binarySearch(int lo, int hi, int key, int[] sums) {
+            while (lo <= hi) {
+               int mid = (lo + hi) / 2;
+               if (sums[mid] >= key){
+                   hi = mid - 1;
+               } else {
+                   lo = mid + 1;
+               }
+            }
+            return lo;
+        }
+    }
+
+Since the given array contains only positive integers, the subarray sum can only increase by including more elements. Therefore, you don't have to include more elements once the current subarray already has a sum large enough. This gives the linear time complexity solution by maintaining a minimum window with a two indices.
+
+As to NLogN solution, logN immediately reminds you of binary search. In this case, you cannot sort as the current order actually matters. How does one get an ordered array then? Since all elements are positive, the cumulative sum must be strictly increasing. Then, a subarray sum can expressed as the difference between two cumulative sum. Hence, given a start index for the cumulative sum array, the other end index can be searched using binary search.
+
+----------------------------------------------------------------------------------------------------
+4ms O(n) &#x2F; 8ms O(nlogn) C++
+The problem statement has stated that there are both `O(n)` and `O(nlogn)` solutions to this problem. Let's see the `O(n)` solution first (taken from [this link][1]), which is pretty clever and short.
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int n = nums.size(), start = 0, sum = 0, minlen = INT_MAX;
+            for (int i = 0; i < n; i++) { 
+                sum += nums[i]; 
+                while (sum >= s) {
+                    minlen = min(minlen, i - start + 1);
+                    sum -= nums[start++];
+                }
+            }
+            return minlen == INT_MAX ? 0 : minlen;
+        }
+    };
+
+Well, you may wonder how can it be `O(n)` since it contains an inner `while` loop. Well, the key is that the `while` loop executes at most once for each starting position `start`. Then `start` is increased by `1` and the `while` loop moves to the next element. Thus the inner `while` loop runs at most `O(n)` times during the whole `for` loop from `0` to `n - 1`. Thus both the `for` loop and `while` loop has `O(n)` time complexity in total and the overall running time is `O(n)`.
+
+There is another `O(n)` solution in [this link][2], which is easier to understand and prove it is `O(n)`. I have rewritten it below.
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int n = nums.size(), left = 0, right = 0, sum = 0, minlen = INT_MAX;
+            while (right < n) {
+                do sum += nums[right++];
+                while (right < n && sum < s);
+                while (left < right && sum - nums[left] >= s)
+                    sum -= nums[left++];
+                if (sum >= s) minlen = min(minlen, right - left);
+            }
+            return minlen == INT_MAX ? 0 : minlen;
+        }
+    };
+
+Now let's move on to the `O(nlogn)` solution. Well, this less efficient solution is far more difficult to come up with. The idea is to first maintain an array of accumulated summations of elements in `nums`. Specifically, for `nums = [2, 3, 1, 2, 4, 3]` in the problem statement, `sums = [0, 2, 5, 6, 8, 12, 15]`. Then for each element in `sums`, if it is not less than `s`, we search for the first element that is greater than `sums[i] - s` (in fact, this is just what the `upper_bound` function does) in `sums` using binary search.
+
+Let's do an example. Suppose we reach `12` in `sums`, which is greater than `s = 7`. We then search for the first element in `sums` that is greater than `sums[i] - s = 12 - 7 = 5` and we find `6`. Then we know that the elements in `nums` that correspond to `6, 8, 12` sum to a number `12 - 5 = 7` which is not less than `s = 7`. Let's check for that: `6` in `sums` corresponds to `1` in `nums`, `8` in `sums` corresponds to `2` in `nums`, `12` in `sums` corresponds to `4` in `nums`. `1, 2, 4` sum to `7`, which is `12` in `sums` minus `5` in `sums`.
+
+We add a `0` in the first position of `sums` to account for cases like `nums = [3], s = 3`.
+
+The code is as follows.
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            vector<int> sums = accumulate(nums);
+            int n = nums.size(), minlen = INT_MAX;
+            for (int i = 1; i <= n; i++) { 
+                if (sums[i] >= s) {
+                    int p = upper_bound(sums, 0, i, sums[i] - s);
+                    if (p != -1) minlen = min(minlen, i - p + 1);
+                }
+            }
+            return minlen == INT_MAX ? 0 : minlen;
+        }
+    private:
+        vector<int> accumulate(vector<int>& nums) {
+            int n = nums.size();
+            vector<int> sums(n + 1, 0);
+            for (int i = 1; i <= n; i++) 
+                sums[i] = nums[i - 1] + sums[i - 1];
+            return sums;
+        }
+        int upper_bound(vector<int>& sums, int left, int right, int target) {
+            int l = left, r = right;
+            while (l < r) {
+                int m = l + ((r - l) >> 1);
+                if (sums[m] <= target) l = m + 1;
+                else r = m;
+            }
+            return sums[r] > target ? r : -1;
+        }
+    };  
+
+  [1]: https://leetcode.com/discuss/35464/c-simple-o-n-solution
+  [2]: https://leetcode.com/discuss/35678/c-6ms-solution-sliding-window
+
+
+----------------------------------------------------------------------------------------------------
+O(N),O(NLogN) solutions, both O(1) space
+O(N) - keep a moving window expand until sum>=s, then shrink util sum<s. Each time after shrinking, update length. (similar to other solutions, just removed unnecessary min value assignment)
+
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            int i = 0, j = 0, sum = 0, min = Integer.MAX_VALUE;
+            while (j < nums.length) {
+                while (sum < s && j < nums.length) sum += nums[j++];
+                if(sum>=s){
+                    while (sum >= s && i < j) sum -= nums[i++];
+                    min = Math.min(min, j - i + 1);
+                }
+            }
+            return min == Integer.MAX_VALUE ? 0 : min;
+        }
+    }
+
+
+
+
+O(NLogN) - search if a window of size k exists that satisfy the condition
+
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            int i = 1, j = nums.length, min = 0;
+            while (i <= j) {
+                int mid = (i + j) / 2;
+                if (windowExist(mid, nums, s)) {
+                    j = mid - 1;
+                    min = mid;
+                } else i = mid + 1;
+            }
+            return min;
+        }
+    
+    
+        private boolean windowExist(int size, int[] nums, int s) {
+            int sum = 0;
+            for (int i = 0; i < nums.length; i++) {
+                if (i >= size) sum -= nums[i - size];
+                sum += nums[i];
+                if (sum >= s) return true;
+            }
+            return false;
+        }
+    }
+
+
+Another O(NLogN) solution that first calculate cumulative sum and then for each starting point binary search for end position. This uses O(N) space
+
+    public class Solution {
+     public int minSubArrayLen(int s, int[] nums) {
+            int sum = 0, min = Integer.MAX_VALUE;
+    
+            int[] sums = new int[nums.length];
+            for (int i = 0; i < nums.length; i++)
+                sums[i] = nums[i] + (i == 0 ? 0 : sums[i - 1]);
+    
+            for (int i = 0; i < nums.length; i++) {
+                int j = findWindowEnd(i, sums, s);
+                if (j == nums.length) break;
+                min = Math.min(j - i + 1, min);
+            }
+            
+            return min == Integer.MAX_VALUE ? 0 : min;
+        }
+    
+        private int findWindowEnd(int start, int[] sums, int s) {
+            int i = start, j = sums.length - 1, offset = start == 0 ? 0 : sums[start - 1];
+            while (i <= j) {
+                int m = (i + j) / 2;
+                int sum = sums[m] - offset;
+            if (sum >= s) j = m - 1;
+            else i = m + 1;
+        }
+        return i;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+O(N)  template for Minimum Size Subarray Sum &amp; Minimum Window Substring &amp; Longest Substring Without Repeating Characters
+First , I will show you the solution of this problem,
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int start=0, end=0;
+            int minLen=INT_MAX, sum=0;
+            while(end<nums.size()){
+                if(sum<s) sum+=nums[end];
+                end++;
+                while(sum>=s){
+                    if(end-start<minLen)
+                        minLen=end-start;
+                    sum-=nums[start];
+                    start++;
+                }
+            }
+            return minLen==INT_MAX ? 0 : minLen;
+        }
+    };
+
+Next, let me show you the solution to the problem "Minimum Window Substring"
+
+    class Solution {
+    public:
+        string minWindow(string s, string t) {
+            vector<int> v(128, 0);
+            for(auto c:t) v[c]++;
+            int start=0, end=0, counter=t.size();
+            int m_start=0, m_len=INT_MAX;
+            while(end<s.size()){
+                if(v[s[end]]>0)  counter--;
+                v[s[end]]--;
+                end++;
+                /** loop from start to check whether we can find more short string **/
+                while(counter==0){
+                    if(m_len>end-start){
+                        m_start=start;
+                        m_len=end-start;
+                    }
+                    v[s[start]]++;
+                    if(v[s[start]]>0) counter++;
+                    start++;
+                }
+            }
+            return m_len==INT_MAX ? "" : s.substr(m_start, m_len);
+        }
+    };
+
+The solution for the problem "Longest Substring Without Repeating Characters" can also be solved in the 
+
+same pattern .
+
+Here is the solution for "Longest Substring Without Repeating Characters"
+
+    class Solution {
+    public:
+        int lengthOfLongestSubstring(string s) {
+            vector<int> v(128, 0);
+            int start=0, end=0;
+            int m_len=INT_MIN;
+            while(end<s.size()){
+                if(v[s[end]]==0) m_len=max(m_len, end-start+1);
+                v[s[end]]++;
+                end++;
+                while(v[s[end]]>0){
+                    v[s[start]]--;
+                    start++;
+                }
+            }
+            return m_len==INT_MIN ? 0 : m_len;
+        }
+    };
+
+As you can see, they all follow the same pattern !
+
+This post deserves your up vote!
+
+----------------------------------------------------------------------------------------------------
+C++ Simple O(n) solution
+    class Solution {
+    public:
+    int minSubArrayLen(int s, vector<int>& nums) {
+        int firstPos = 0, sum = 0, minLength = INT_MAX;
+        for(int i = 0; i<nums.size(); i++) {
+            sum += nums[i];
+            while(sum >= s) {
+                minLength = min(minLength, i - firstPos + 1);
+                sum -= nums[firstPos++];
+            }
+        }
+        
+        return minLength == INT_MAX? 0 : minLength;
+      }
+    };
+
+----------------------------------------------------------------------------------------------------
+1 ms O(n) time solution in Java - dynamic sliding window
+We will maintain a window that grows until sum reach the given sum. Once the window grows to sum at least s then we can start shirking the window from left with the hope to find a smaller window. We shrink until sum falls below s. Then we can grow the window on right again and so on. We keep this procedure of growing-shrinking until the window start reaches the end of the array. Below is the implementation of the above idea which runs in O(n) time and O(1) space. 
+
+
+
+    public class Solution {
+        public int minSubArrayLen(int sum, int[] nums) {
+            int minlen = Integer.MAX_VALUE;
+    		int curSum = 0;
+    		int start = 0;
+    		int end = 0;
+    		
+    		while(start < nums.length){
+    			//if current window doesn't add up to the given sum then 
+    			//strech the window to right
+    			if(curSum < sum && end < nums.length){
+    				curSum += nums[end];
+    				end++;
+    			}
+    			//if current window adds up to at least given sum then
+    			//we can shrink the window 
+    			else if(curSum >= sum){
+    				minlen = Math.min(minlen, end-start);
+    				curSum -= nums[start];
+    				start++;
+    			}
+    			//cur sum less than required sum but we reach the end 
+    			else{
+    				break;
+    			}
+    		}
+    		
+    		return (minlen == Integer.MAX_VALUE) ? 0 : minlen;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 6ms solution sliding window
+Any elegant way to replace do-while loop ? Look like it's the most fitting....
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int num_len= nums.size();
+            int left=0, right=0, total=0, min_len= num_len+1;
+            while (right < num_len) {
+                // move right silder forward till total >= s
+                do { total += nums[right++]; } while (right<num_len && total< s);
+                // move left slider forward while maintaining total >= s
+                while (left<right && total-nums[left]>=s) total -= nums[left++];
+                // record if it's the minimum
+                if (total>=s && min_len> right- left) 
+                    min_len= right- left;
+            }
+            return min_len<=num_len ? min_len: 0;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python O(n) and O(n log n) solution
+    class Solution:
+
+    def minSubArrayLen(self, s, nums):
+        total = left = 0
+        result = len(nums) + 1
+        for right, n in enumerate(nums):
+            total += n
+            while total >= s:
+                result = min(result, right - left + 1)
+                total -= nums[left]
+                left += 1
+        return result if result <= len(nums) else 0
+
+
+O(n log n)
+
+    class Solution:
+
+    def minSubArrayLen(self, target, nums):
+        result = len(nums) + 1
+        for idx, n in enumerate(nums[1:], 1):
+            nums[idx] = nums[idx - 1] + n
+        left = 0
+        for right, n in enumerate(nums):
+            if n >= target:
+                left = self.find_left(left, right, nums, target, n)
+                result = min(result, right - left + 1)
+        return result if result <= len(nums) else 0
+
+    def find_left(self, left, right, nums, target, n):
+        while left < right:
+            mid = (left + right) // 2
+            if n - nums[mid] >= target:
+                left = mid + 1
+            else:
+                right = mid
+        return left
+
+----------------------------------------------------------------------------------------------------
+Java AC solution using two pointers
+Using two pointers to solve this question
+
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            if(nums.length == 0)return 0;       
+            int first = 0;
+            int second = 0;
+            int min = nums.length+1;
+            int sum = nums[0];
+            while(first<nums.length && second<=first)
+            {
+                
+                if(sum<s){
+                    first++;
+                    if(first<nums.length)
+                    sum+= nums[first];
+                }
+                else {
+                    min = Math.min(first-second+1, min);
+                    sum-=nums[second];
+                    second++;
+                    
+                }
+            }
+            
+            if(min == nums.length+1)return 0;
+            return min;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+I don&#x27;t know how the case 11, &#91;1,2,3,4,5&#93; , expected answer is 3
+
+
+For array [1,2,3,4,5],  obviously, there is no sub array  whose sum equal 11.
+
+So I think there answer is 0. 
+
+
+consecutive sub array , right ?
+
+
+----------------------------------------------------------------------------------------------------
+290 ms super simple java solution
+    public class Solution {
+        
+        public int minSubArrayLen(int targetSum, int[] nums) {
+            int minLength = Integer.MAX_VALUE;
+            
+            int left=0, right=0;
+            int slidingSum = 0;
+            int n = nums.length;
+            
+            while(right < n) {
+                if(slidingSum  + nums[right] < targetSum) {
+                    slidingSum += nums[right];
+                    right += 1;
+                } else {
+                    minLength = Math.min(minLength, right - left + 1);
+                    slidingSum -= nums[left];
+                    left += 1;
+                }
+            }
+            
+            return minLength == Integer.MAX_VALUE ? 0 : minLength;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(nlgn) is not that easy, here is my Java code
+Use sums[i] store the sum of nums from 0 to i, then sums is a sorted array, and then we can use binary search.
+
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            if (nums.length == 0) return 0;
+            
+            int[] sums = new int[nums.length];
+            sums[0] = nums[0];
+            for (int i = 1; i < nums.length; i++) {
+                sums[i] = sums[i - 1] + nums[i];
+            }
+            if (sums[nums.length - 1] < s) return 0;
+            
+            int ans = Integer.MAX_VALUE;
+            for (int i = 0; i < nums.length; i++) {
+                int l = i;
+                int r = nums.length - 1;
+                while (l <= r) {
+                    int mid = l + (r - l)/2;
+                    if (sums[mid] - sums[i] + nums[i] == s) {
+                        l = mid;
+                        break;
+                    } else if (sums[mid] - sums[i] + nums[i] < s) {
+                        l = mid + 1;
+                    } else {
+                        r = mid - 1;
+                    }
+                }
+                if (l >= sums.length) break;
+                ans = Math.min(ans, l - i + 1);
+            }
+            
+            return (ans == Integer.MAX_VALUE ? 0 : ans);
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java concise solution with O(n) complexity
+    public int minSubArrayLen(int s, int[] nums) {
+        if (nums == null || nums.length == 0) {
+		    return 0;
+	    }
+	    int minLen = Integer.MAX_VALUE;
+	    int start = 0;
+	    int localSum = 0;
+	    for (int end = 0; end < nums.length; end++) {
+		    localSum += nums[end];
+		    while (localSum >= s) {
+			    minLen = Math.min(minLen, end - start + 1);
+			    localSum -= nums[start++];
+		    }
+	    }
+	    return minLen == Integer.MAX_VALUE ? 0 : minLen;
+    }
+
+----------------------------------------------------------------------------------------------------
+10-line C++ O(n) Solution
+Just the windowing technique.
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int sum=0,front=0,back=0,res=INT_MAX;
+            while(front<nums.size()||sum>=s) {
+                if(sum<s&&front<nums.size())
+                    sum+=nums[front++];
+                if(sum>=s) {
+                    res=min(res,front-back);
+                    sum-=nums[back++];
+                }
+            } 
+            return res==INT_MAX?0:res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My C++ moving window solution, O(n) time, O(1) space; another binary search version added(O(nlogn) time)
+1) O(n) time, O(1) space moving window method
+using a moving window [start,end] to calculate the sum, first move end forward to get a sub-array with sum>=s, then move start forward to make sum < s, then move end again,..., until end reach the end of array.
+
+    class Solution {
+    public:
+        int minSubArrayLen(int s, vector<int>& nums) {
+            int start=0, end=0, sum=0, len = nums.size(), res;
+            while(end<len)
+            {
+                while(sum<s && end<len) sum += nums[end++];
+                while(sum>=s) sum -=nums[start++];
+                res = min(res, end-start + 1);
+            }
+            return res>len?0:res;
+        }
+    };
+
+2) O(nlogn) time, O(n) space version, binary search method
+
+    class Solution {
+    public:
+        int binary_search(vector<int>&sum, int left, int target)
+        {
+            int right = sum.size()-1, mid;
+            while(left<=right)
+            {
+                mid = (left+right)>>1;
+                if(sum[mid]>=target) right = mid-1;
+                else left = mid+1;
+            }
+            return (left<sum.size()?left:-1);
+        }
+        
+        int minSubArrayLen(int s, vector<int>& nums) {
+        int len = nums.size();
+        vector<int> sum(len+1,0);
+        int i, start = 0, end;
+        int res = len+1;
+        
+        if(len>0)
+        {
+            for(i=1;i<=len;i++) sum[i] =sum[i-1] + nums[i-1];
+            while(start<len && (end = binary_search(sum, start+1, s+sum[start]))>=0 )
+            {
+                res = min(res, end-start);
+                start++;
+            }
+        }
+        return res>len?0:res;
+
+    
+    
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Python: 3 different AC solutions
+Two pointers:
+
+    def minSubArrayLen(self, s, nums):
+        if not nums:
+            return 0
+        l = len(nums)
+        if not l:
+            return 0
+        sum = 0
+        i = 0
+        j = 0
+        res = l + 1
+        while sum < s:
+            sum += nums[j]
+            j += 1
+            while sum >= s:
+                if j - i < res:
+                    res = j - i
+                sum -= nums[i]
+                i += 1
+            if j == l:
+                break
+        if res > l:
+            return 0
+        return res
+
+Precalculated sums saved at the same list:
+
+    def minSubArrayLen(self, s, nums):
+        sm = sum(nums)
+        if sm < s:
+            return 0
+        l = len(nums)
+        for i in xrange(l):
+            nums[i], sm = sm, sm - nums[i]
+        res = l
+        nums.append(0)
+        for i in xrange(l - 1, -1, -1):
+            if nums[i] >= s:
+                b = min(l, i + res - 1)
+                while nums[i] - nums[b] >= s:
+                    res = b - i
+                    b -= 1
+        return res
+
+Using binary search:
+
+    def minSubArrayLen(self, s, nums):
+        sm = sum(nums)
+        if sm < s:
+            return 0
+        l = len(nums)
+        for i in xrange(l):
+            nums[i], sm = sm, sm - nums[i]
+        res = l
+        nums.append(0)
+        for i in xrange(l - 1, -1, -1):
+            e = min(l, i + res - 1)
+            while nums[i] - nums[e] >= s:
+                if res > e - i:
+                    res = e - i
+                b = (i + e) / 2
+                while nums[i] - nums[b] < s and b < e - 1:
+                    b = (b + e) / 2
+                if b == e:
+                    break
+                e = b
+        return res
+
+The running time for all three solutions is between 45 - 65 ms.
+
+----------------------------------------------------------------------------------------------------
+Easy JAVA O(n) Solution!
+    public class Solution {
+        public int minSubArrayLen(int s, int[] nums) {
+            if(nums==null || nums.length<1)
+                return 0;
+            
+            int start=0, end=0, sum=0, min=Integer.MAX_VALUE;
+            
+            while(end<nums.length){
+                sum+=nums[end];
+                
+                //optimize the array
+                while(sum>=s){
+                    min=Math.min(min, end-start+1);
+                    sum-=nums[start++];
+                }
+                end++;
+            }
+            return min== Integer.MAX_VALUE ? 0 : min;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Super simple easy to understand O(N) solution
+    public int minSubArrayLen(int s, int[] nums) {
+        if (nums == null || nums.length == 0) {
+            return 0;
+        }
+        int res = Integer.MAX_VALUE;
+        int low = 0, high = 0;
+        int temp = 0;
+        boolean flag = false;
+        while (high < nums.length) {
+            temp += nums[high];
+            while (temp >= s && (low <= high)) {
+                res = Math.min(res, high - low + 1);
+                flag = true;
+                temp -= nums[low++];
+            }
+            high++;
+        }
+        return flag ? res : 0;
+    }
+
+----------------------------------------------------------------------------------------------------
+C solution, both O(n) &amp; O(nLogn)

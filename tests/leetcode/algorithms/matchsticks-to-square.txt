@@ -1,0 +1,609 @@
+one pass O(n) JAVA Solution, Simple and Clear
+public String originalDigits(String s) {
+    int[] count = new int[10];
+    for (int i = 0; i < s.length(); i++){
+        char c = s.charAt(i);
+        if (c == 'z') count[0]++;
+        if (c == 'w') count[2]++;
+        if (c == 'x') count[6]++;
+        if (c == 's') count[7]++; //7-6
+        if (c == 'g') count[8]++;
+        if (c == 'u') count[4]++; 
+        if (c == 'f') count[5]++; //5-4
+        if (c == 'h') count[3]++; //3-8
+        if (c == 'i') count[9]++; //9-8-5-6
+        if (c == 'o') count[1]++; //1-0-2-4
+    }
+    count[7] -= count[6];
+    count[5] -= count[4];
+    count[3] -= count[8];
+    count[9] = count[9] - count[8] - count[5] - count[6];
+    count[1] = count[1] - count[0] - count[2] - count[4];
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i <= 9; i++){
+        for (int j = 0; j < count[i]; j++){
+            sb.append(i);
+        }
+    }
+    return sb.toString();
+}
+
+----------------------------------------------------------------------------------------------------
+Share my simple and easy O(N) solution
+public class Solution {
+    public String originalDigits(String s) {
+        if(s==null || s.length()==0) return "";
+        int[] count = new int[128];
+        for(int i=0;i<s.length();i++)  count[s.charAt(i)]++;
+        int[] num = new int[10];
+        num[0] = count['z'];
+        num[2] = count['w'];
+        num[4] = count['u'];
+        num[6] = count['x'];
+        num[8] = count['g'];
+        num[1] = count['o']-count['z']-count['w']-count['u'];
+        num[3] = count['h']-count['g'];
+        num[5] = count['v']-count['s']+count['x'];
+        num[7] = count['s']-count['x'];
+        num[9] = count['i']-count['x']-count['g']-count['v']+count['s']-count['x'];
+        String ret = new String();
+        for(int i=0;i<10;i++)
+            for(int j=num[i];j>0;j--) ret += String.valueOf(i);
+        return ret;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Fun fact
+nine
+
+----------------------------------------------------------------------------------------------------
+Straightforward C++ Accepted Solution
+class Solution {
+public:
+    string originalDigits(string s) {
+        vector<string> words = {"zero", "two", "four", "six", "eight", "one", "three", "five", "seven", "nine"};
+        vector<int> nums = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+        vector<int> distinct_char = {'z', 'w', 'u', 'x', 'g', 'o', 'r', 'f', 'v', 'i'};
+        vector<int> counts(26, 0);
+        string result;
+        for(auto ch : s){ counts[ch-'a']++;}
+        for(int i = 0; i < 10; i++){
+            int count = counts[distinct_char[i]-'a'];
+            for(int j = 0; j < words[i].size(); j++)
+                counts[words[i][j]-'a'] -= count;
+            while(count--)
+                result += to_string(nums[i]);
+        }
+        sort(result.begin(), result.end());
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+C++ O(n) solution
+class Solution {
+public:
+    string originalDigits(string s) {
+        vector<int> a(10, 0);
+        vector<int> alpha(128, 0);
+        for (char c : s)
+            alpha[c]++;
+        a[0] = alpha['z'];
+        a[2] = alpha['w'];
+        a[4] = alpha['u'];
+        a[6] = alpha['x'];
+        a[8] = alpha['g'];
+        a[3] = alpha['h'] - a[8];
+        a[5] = alpha['f'] - a[4];
+        a[7] = alpha['v'] - a[5];
+        a[1] = alpha['o'] - a[0] - a[2] - a[4];
+        a[9] = alpha['i'] - a[5] - a[6] - a[8];
+        string ans;
+        for (int i = 0; i < 10; i++) {
+            if (a[i] > 0)
+                ans += string(a[i], '0' + i);
+        }
+        return ans;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Stupid but easy understanding C++ solution
+class Solution {
+public:
+    string originalDigits(string s) {
+        vector<int> res(10, 0);
+        vector<int> cache(26, 0);
+        for (auto ch : s) 
+            cache[ch - 'a']++;
+        res[0] = cache['z' - 'a'];
+        res[2] = cache['w' - 'a'];
+        res[4] = cache['u' - 'a'];
+        res[6] = cache['x' - 'a'];
+        res[8] = cache['g' - 'a'];
+        res[3] = cache['h' - 'a'] - res[8];
+        res[7] = cache['s' - 'a'] - res[6];
+        res[5] = cache['v' - 'a'] - res[7];
+        res[1] = cache['o' - 'a'] - (res[0] + res[2] + res[4]);
+        res[9] = (cache['n' - 'a'] - (res[1] + res[7])) / 2;
+        string str = "";
+        for (int i = 0; i < 10; i++) 
+            if (res[i]) 
+                str += string(res[i], i + '0');
+        return str;    
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Short Matrix Solution
+def original_digits(s)
+  Solve[('a'..'z').map { |c| s.count(c) }][0..9].map.with_index { |x, i| i.to_s * x }.join
+end
+
+
+----------------------------------------------------------------------------------------------------
+JAVA easy to understand + explanation
+void getDigitByChar(char c, String digitString, int digit,  HashMap<Character,Integer> hm, List<Integer> ret)
+{
+    if(hm.containsKey(c)){
+        int nr=hm.get(c);
+        for(char x : digitString.toCharArray()){
+            hm.put(x, hm.get(x)-nr);
+            if(hm.get(x)==0) hm.remove(x);
+        }
+         while(nr>0){
+             ret.add(digit); 
+             nr--;
+         }
+    }
+}
+
+public String originalDigits(String s) 
+{
+    List<Integer> ret = new LinkedList<Integer>();
+    HashMap<Character,Integer> hm = new HashMap<Character,Integer>();
+    for(char c : s.toCharArray()){
+        if(!hm.containsKey(c)) hm.put(c,0);
+        hm.put(c,hm.get(c)+1);
+    }
+    getDigitByChar('z',"zero",0,hm,ret);
+    getDigitByChar('w',"two",2,hm,ret);
+    getDigitByChar('u',"four",4,hm,ret);
+    getDigitByChar('x',"six",6,hm,ret);
+    getDigitByChar('g',"eight",8,hm,ret);
+    getDigitByChar('o',"one",1,hm,ret);
+    getDigitByChar('h',"three",3,hm,ret);
+    getDigitByChar('f',"five",5,hm,ret);
+    getDigitByChar('v',"seven",7,hm,ret);
+    getDigitByChar('i',"nine",9,hm,ret);
+
+    Collections.sort(ret);
+    String result="";
+    for(int x: ret) result+=x;
+    
+    return result;
+}
+
+----------------------------------------------------------------------------------------------------
+Jave find unique char in each number and remove
+public class Solution {
+    public String originalDigits(String s) {
+        int[] frequency = new int[26];
+        for (char c : s.toCharArray()) {
+            frequency[c - 'a']++;
+        }
+        List<Character> list = new ArrayList<>();
+        removeDigit('z', '0', "zero", list, frequency);
+        removeDigit('w', '2', "two", list, frequency);
+        removeDigit('u', '4', "four", list, frequency);
+        removeDigit('x', '6', "six", list, frequency);
+        removeDigit('g', '8', "eight", list, frequency);
+        removeDigit('o', '1', "one", list, frequency);
+        removeDigit('h', '3', "three", list, frequency);
+        removeDigit('f', '5', "five", list, frequency);
+        removeDigit('s', '7', "seven", list, frequency);
+        removeDigit('n', '9', "nine", list, frequency);
+        
+        Collections.sort(list);
+        StringBuilder result = new StringBuilder();
+        for (char c : list) {
+            result.append(c);
+        }
+        return new String(result);
+    }
+    
+    private void removeDigit(char symbol, char digit, String number, List<Character> list, int[] frequency) {
+        while (frequency[symbol - 'a'] > 0) {
+            list.add(digit);
+            for (char c : number.toCharArray()) {
+                frequency[c - 'a']--;
+            }
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my clear java solution
+public String originalDigits(String s) {
+    int[] wordCount = new int[26];
+    //check order because of some digit include unique char, eg only '0' include 'z', '2'-'w', '4'-'u' and so on.
+    String[] digits = {"zero", "two", "four", "six", "eight", "one", "three", "five", "seven", "nine"};
+    int[] number = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+    int[] result = new int[10];
+    for (int i = 0; i < s.length(); i++)
+		wordCount[s.charAt(i) - 'a']++;        
+    for (int i = 0; i < 10; ) {
+		if(createDigit(wordCount, digits[i]))
+			result[number[i]]++;
+		else
+			i++;
+	}
+    StringBuffer strRes = new StringBuffer();
+    for (int i = 0; i < result.length; ) {
+		if(result[i]-- != 0)
+			strRes.append(i);
+		else
+			i++;
+	}
+    return strRes.toString();
+}
+private boolean hasDigit(int[] wordCount, String digit){
+	for (int i = 0; i < digit.length(); i++)
+		if(wordCount[digit.charAt(i) - 'a'] == 0)
+			return false;
+	return true;
+}
+private boolean createDigit(int[] wordCount, String digit){
+	if(hasDigit(wordCount, digit)){
+		for (int i = 0; i < digit.length(); i++)
+			wordCount[digit.charAt(i) - 'a']--;
+		return true;
+	}
+	return false;
+}
+
+----------------------------------------------------------------------------------------------------
+python: solve valid equation problem
+class Solution(object):
+    def originalDigits(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        dic = {}
+        for ch in s:
+            dic[ch] = dic.get(ch, 0) + 1
+        ret = []
+        ret.extend( ['0'] * dic.get('z', 0) )
+        ret.extend( ['1'] * (dic.get('o', 0)-dic.get('z', 0)-dic.get('w', 0)-dic.get('u', 0)) )
+        ret.extend( ['2'] * dic.get('w', 0) )
+        ret.extend( ['3'] * (dic.get('h', 0)-dic.get('g', 0)) )
+        ret.extend( ['4'] * dic.get('u', 0) )
+        ret.extend( ['5'] * (dic.get('f', 0)-dic.get('u', 0)) )
+        ret.extend( ['6'] * dic.get('x', 0) )
+        ret.extend( ['7'] * (dic.get('s', 0)-dic.get('x', 0)) )
+        ret.extend( ['8'] * dic.get('g', 0) )
+        ret.extend( ['9'] * (dic.get('i', 0)-dic.get('g', 0)-dic.get('x', 0)-dic.get('f', 0)+dic.get('u', 0) ) )
+        return ''.join( ret )
+
+
+
+----------------------------------------------------------------------------------------------------
+O(n) solution by ordering digits in specific order
+public class Solution {
+
+    String digits[] = {"zero", "eight", "two", "four" , "six", "one", "three", "five", "seven", "nine"};
+    int digitNumber[] = {0,8,2,4,6,1,3,5,7,9};
+        
+    public String originalDigits(String s) {
+        HashMap<Character, Integer> totalCharCounter = countChars(s);
+        ArrayList<Integer> ansList = new ArrayList<>();
+        
+        for (int i=0; i<digits.length; i++) {
+            String digit = digits[i];
+            boolean allCharExists = true;
+            while (allCharExists) {
+                allCharExists &= checkWordFromMap(countChars(digit), totalCharCounter);
+                if (allCharExists) {
+                    deleteWordCharsFromCounter(digit, totalCharCounter);
+                    ansList.add(digitNumber[i]);
+                }
+            }
+        }
+        
+        return sortAndConvert(ansList);
+    }
+    
+    private HashMap<Character, Integer> countChars(String s) {
+         HashMap<Character, Integer> charCounter = new HashMap<>();
+         for (int i=0; i<s.length(); i++) {
+            char c = s.charAt(i);
+            charCounter.put(c, charCounter.getOrDefault(c, 0) + 1);
+        }
+        return charCounter;
+    }
+    
+    private boolean checkWordFromMap(HashMap<Character, Integer> digitCharCounter, HashMap<Character, Integer> totalCharCounter) {
+        boolean allCharExists = true;
+        for (Map.Entry<Character, Integer> entry: digitCharCounter.entrySet()) {
+            char key = entry.getKey();
+            int counter = entry.getValue();
+            allCharExists &= (totalCharCounter.containsKey(key) && totalCharCounter.get(key)>=counter);
+        }
+        return allCharExists;
+    }
+    
+    private void deleteWordCharsFromCounter(String digit, HashMap<Character, Integer> totalCharCounter) {
+        for (int i=0; i<digit.length(); i++) {
+            char c = digit.charAt(i);
+            totalCharCounter.put(c, totalCharCounter.get(c)-1);
+            if (totalCharCounter.get(c)<=0) {
+                totalCharCounter.remove(c);
+            }
+        }
+    }
+    
+    private String sortAndConvert(ArrayList<Integer> ansList) {
+        Collections.sort(ansList);
+        StringBuilder digitsString = new StringBuilder();
+        for (int val: ansList) {
+            digitsString .append(val);
+        }
+        return digitsString.toString();
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Beat 96.37% eazy JAVA solution, use pre-defined array for looking up
+    public String originalDigits(String s) {
+        int[] table = new int[26];
+        for(char c : s.toCharArray())table[c - 'a']++;
+        int[] res = new int[10];
+        String[] num = {"zro","o","wo","h","fou","fi","six","sv","igh","i"};
+        char[] identity = {'z','w','x','g','h','u','f','s','i','o'};
+        int [] order = {0,2,6,8,3,4,5,7,9,1};
+        for(int i = 0; i < 10; i++){
+        	res[order[i]] = table[identity[i] - 'a'];
+        	for(char n : num[order[i]].toCharArray()){
+				table[n - 'a'] -= res[order[i]];
+			}
+        }
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < 10; i++){
+        	for(int j = 0; j < res[i]; j++) sb.append(i);
+        }
+        return sb.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+JavaScript O(n) solution
+var originalDigits = function(s) {
+    const words = { 'z': 'zero', 'x': 'six', 'w': 'two', 'u': 'four', 'g': 'eight', 's': 'seven', 'v': 'five', 'r': 'three', 'o': 'one', 'n': 'nine' };
+    const nums = { 'z': 0, 'x': 6, 'w': 2, 'u': 4, 'g': 8, 's': 7, 'v': 5, 'r': 3, 'o': 1, 'n': 9 };
+    let order = 'zxwugsvron';
+    const counts = {};
+    for (let c of s) {
+        counts[c] = (counts[c] || 0) + 1;
+    }
+    const res = new Array(10);
+    for (let key of order) {
+        while (counts[key]) {
+            for (let w of words[key]) {
+                counts[w]--;
+            }
+            res[nums[key]] = (res[nums[key]] || '') + nums[key];
+        }
+    }
+    return res.join('');
+};
+
+
+----------------------------------------------------------------------------------------------------
+Python: short (8 lines) and clear
+def originalDigits(self, s):
+    numbers = [('zero',0),('two',2),('eight',8),('four',4),('one',1),('three',3),('five',5),('six',6),('seven',7),('nine',9)]
+    res, S = [], collections.Counter(s)
+    for n in numbers:
+        c = collections.Counter(n[0])
+        while c&S == c:
+            res.append(n[1])
+            S -= c
+    return ''.join([str(i) for i in sorted(res)])
+
+
+----------------------------------------------------------------------------------------------------
+Anyone saw a clearer&#x2F;cleaner C++ version than mine ? :)
+struct Solution {
+    string originalDigits(string s) {
+        int char_counts[26] = {0};
+        for (auto c : s)
+            char_counts[c - 'a'] ++;
+        int digit_counts[10] = {0};
+        digit_counts[0] = char_counts['z' - 'a'];
+        digit_counts[2] = char_counts['w' - 'a'];
+        digit_counts[4] = char_counts['u' - 'a'];
+        digit_counts[6] = char_counts['x' - 'a'];
+        digit_counts[8] = char_counts['g' - 'a'];
+        digit_counts[1] = char_counts['o' - 'a'] - digit_counts[0] - digit_counts[2] - digit_counts[4];
+        digit_counts[3] = char_counts['r' - 'a'] - digit_counts[0] - digit_counts[4];
+        digit_counts[5] = char_counts['f' - 'a'] - digit_counts[4];
+        digit_counts[7] = char_counts['s' - 'a'] - digit_counts[6];
+        digit_counts[9] = char_counts['i' - 'a'] - digit_counts[5] - digit_counts[6] - digit_counts[8];
+        string result;
+        for (int i = 0; i < 10; ++ i)
+            result.append(digit_counts[i], '0' + i);
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+python solution
+class Solution(object):
+    def originalDigits(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        ss=collections.Counter(s)
+        tmp=['z','o','w','t','u','f','x','s','g','i']
+        i=0
+        ans=''
+        while i<len(tmp):
+            if i%2==0 and tmp[i] in ss:
+                for j in range(ss[tmp[i]]):
+                    ans+="%s"%i
+            elif  i%2==1 and tmp[i] in ss:
+                if tmp[i]=='o':
+                    n=ss[tmp[i]]-ss[tmp[0]]-ss[tmp[2]]-ss[tmp[4]]
+                elif tmp[i]=='t':
+                    n=ss[tmp[i]]-ss[tmp[2]]-ss[tmp[8]]
+                elif tmp[i]=='f':
+                   n=ss[tmp[i]]-ss[tmp[4]]
+                elif tmp[i]=='s':
+                   n=ss[tmp[i]]-ss[tmp[6]]
+                elif tmp[i]=='i':
+                   n=ss[tmp[i]]-ss[tmp[6]]-ss[tmp[8]]-ss['f']+ss[tmp[4]]
+                for j in range(n):
+                    ans+="%s"%i
+            i+=1
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+python solution easy to understand
+from collections import defaultdict
+
+
+class Solution(object):
+    def originalDigits(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        result = ""
+        dd = defaultdict(int)
+        for i in s:
+            dd[i] += 1
+        if dd["w"]:
+            result += "2" * dd["w"]
+            dd["t"] -= dd["w"]
+            dd["o"] -= dd["w"]
+            dd["w"] = 0
+        if dd["u"]:
+            result += '4'*dd["u"]
+            dd["f"]-=dd["u"]
+            dd["o"]-=dd["u"]
+            dd["r"]-=dd["u"]
+            dd["u"]=0
+        if dd["f"]:
+            result += '5'*dd["f"]
+            dd["i"]-=dd["f"]
+            dd["v"]-=dd["f"]
+            dd["e"]-=dd["f"]
+            dd["f"]=0
+        if dd["x"]:
+            result += "6" * dd["x"]
+            dd["s"] -= dd["x"]
+            dd["i"] -= dd["x"]
+            dd["x"] = 0
+        if dd["z"]:
+            result += "0" * dd["z"]
+            dd["e"] -= dd["z"]
+            dd["r"] -= dd["z"]
+            dd["o"] -= dd["z"]
+            dd["z"] = 0
+        if dd["o"]:
+            result += "1" * dd["o"]
+            dd["n"] -= dd["o"]
+            dd["e"] -= dd["o"]
+            dd["o"] = 0
+        if dd["s"]:
+            result += "7" * dd["s"]
+            dd["v"] -= dd["s"]
+            dd["n"] -= dd["s"]
+            dd["e"] -= 2*dd["s"]
+            dd["s"] = 0
+
+        if dd["g"]:
+            result += "8" * dd["g"]
+            dd["e"] -= dd["g"]
+            dd["i"] -= dd["g"]
+            dd["h"] -= dd["g"]
+            dd["t"] -= dd["g"]
+            dd["g"] = 0
+
+        if dd["t"]:
+            result += "3" * dd["t"]
+            dd["r"] -= dd["t"]
+            dd["n"] -= dd["t"]
+            dd["e"] -= 2 * dd["t"]
+            dd["t"] = 0
+        if dd["i"]:
+            result += "9" * dd["i"]
+
+        return "".join(sorted(result,key=lambda c:int(c)))
+
+
+
+
+----------------------------------------------------------------------------------------------------
+python beat 98.5%
+class Solution(object):
+    def originalDigits(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        ret = ""
+        numbers = ['zero','two','four','one','six','seven','five','three','eight','nine']
+        digits = [0,2,4,1,6,7,5,3,8,9]
+        uniqueChar = ['z', 'w','u','o','x','s','f','r','g','i']
+        hashtable = {x:s.count(x) for x in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z')}
+        for i in range(0, 10):
+            count = hashtable[uniqueChar[i]]
+            if count == 0:
+                continue
+            ret = ret + str(digits[i])*count
+            for c in numbers[i]:
+                hashtable[c] -= count
+        return "".join(sorted(ret))
+        
+
+
+----------------------------------------------------------------------------------------------------
+a fun hard coding(O(n), one pass)
+    c = collections.Counter(s)
+    res = ''
+    res += c['u'] * '4'
+    c.subtract('four' * c['u'])
+    res += c['f'] * '5'
+    c.subtract('five' * c['f'])
+    res += c['x'] * '6'
+    c.subtract('six' * c['x'])
+    res += c['v'] * '7'
+    c.subtract('seven' * c['v'])
+    res += c['g'] * '8'
+    c.subtract('eight' * c['g'])
+    res += c['i'] * '9'
+    c.subtract('nine' * c['i'])
+    res = c['h'] * '3' + res
+    c.subtract('three' * c['t'])
+    res = c['w'] * '2' + res
+    c.subtract('two' * c['w'])
+    res = c['n'] * '1' + res
+    c.subtract('one' * c['n'])
+    res = c['z'] * '0' + res
+    c.subtract('zero' * c['z'])
+    #print c, res
+    return res
+
+
+----------------------------------------------------------------------------------------------------

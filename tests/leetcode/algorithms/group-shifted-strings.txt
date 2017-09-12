@@ -1,0 +1,492 @@
+DP Solution for Triangle
+This problem is quite well-formed in my opinion. The triangle has a tree-like structure, which would lead people to think about traversal algorithms such as DFS. However, if you look closely, you would notice that the adjacent nodes always share a 'branch'. In other word, there are **overlapping subproblems**. Also, suppose x and y are 'children' of k. Once minimum paths from x and y to the bottom are known, the minimum path starting from k can be decided in O(1), that is **optimal substructure**. Therefore, dynamic programming would be the best solution to this problem in terms of time complexity.
+
+What I like about this problem even more is that the difference between 'top-down' and 'bottom-up' DP can be 'literally' pictured in the input triangle. For 'top-down' DP, starting from the node on the very top, we recursively find the minimum path sum of each node. When a path sum is calculated, we store it in an array (memoization); the next time we need to calculate the path sum of the same node, just retrieve it from the array. However, you will need a cache that is at least the same size as the input triangle itself to store the pathsum, which takes O(N^2) space. With some clever thinking, it might be possible to release some of the memory that will never be used after a particular point, but the order of the nodes being processed is not straightforwardly seen in a recursive solution, so deciding which part of the cache to discard can be a hard job.
+
+'Bottom-up' DP, on the other hand, is very straightforward: we start from the nodes on the bottom row; the min pathsums for these nodes are the values of the nodes themselves. From there, the min pathsum at the ith node on the kth row would be the lesser of the pathsums of its two children plus the value of itself, i.e.:
+
+    minpath[k][i] = min( minpath[k+1][i], minpath[k+1][i+1]) + triangle[k][i];
+
+Or even better, since the row minpath[k+1] would be useless after minpath[k] is computed, we can simply set minpath as a 1D array, and iteratively update itself:
+
+    For the kth level:
+    minpath[i] = min( minpath[i], minpath[i+1]) + triangle[k][i]; 
+
+Thus, we have the following solution
+
+    int minimumTotal(vector<vector<int> > &triangle) {
+        int n = triangle.size();
+        vector<int> minlen(triangle.back());
+        for (int layer = n-2; layer >= 0; layer--) // For each layer
+        {
+            for (int i = 0; i <= layer; i++) // Check its every 'node'
+            {
+                // Find the lesser of its two children, and sum the current value in the triangle with it.
+                minlen[i] = min(minlen[i], minlen[i+1]) + triangle[layer][i]; 
+            }
+        }
+        return minlen[0];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+7 lines neat Java Solution
+    public int minimumTotal(List<List<Integer>> triangle) {
+        int[] A = new int[triangle.size()+1];
+        for(int i=triangle.size()-1;i>=0;i--){
+            for(int j=0;j<triangle.get(i).size();j++){
+                A[j] = Math.min(A[j],A[j+1])+triangle.get(i).get(j);
+            }
+        }
+        return A[0];
+    }
+
+----------------------------------------------------------------------------------------------------
+My 8 line DP Java code(4 meaningful lines) with O(1) space
+    public class Solution {
+        public int minimumTotal(List<List<Integer>> triangle) {
+            for(int i = triangle.size() - 2; i >= 0; i--)
+                for(int j = 0; j <= i; j++)
+                    triangle.get(i).set(j, triangle.get(i).get(j) + Math.min(triangle.get(i + 1).get(j), triangle.get(i + 1).get(j + 1)));
+            return triangle.get(0).get(0);
+        }
+    }
+
+The idea is simple. 
+
+1) Go from bottom to top.
+
+2) We start form the row above the bottom row [size()-2].
+
+3) Each number add the smaller number of two numbers that below it. 
+
+4) And finally we get to the top we the smallest sum.
+
+----------------------------------------------------------------------------------------------------
+Bottom Up 5 line C++ Solution
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int> > &triangle) 
+        {
+            vector<int> mini = triangle[triangle.size()-1];
+            for ( int i = triangle.size() - 2; i>= 0 ; --i )
+                for ( int j = 0; j < triangle[i].size() ; ++ j )
+                    mini[j] = triangle[i][j] + min(mini[j],mini[j+1]);
+            return mini[0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python easy to understand solutions (top-down, bottom-up).
+        
+    # O(n*n/2) space, top-down 
+    def minimumTotal1(self, triangle):
+        if not triangle:
+            return 
+        res = [[0 for i in xrange(len(row))] for row in triangle]
+        res[0][0] = triangle[0][0]
+        for i in xrange(1, len(triangle)):
+            for j in xrange(len(triangle[i])):
+                if j == 0:
+                    res[i][j] = res[i-1][j] + triangle[i][j]
+                elif j == len(triangle[i])-1:
+                    res[i][j] = res[i-1][j-1] + triangle[i][j]
+                else:
+                    res[i][j] = min(res[i-1][j-1], res[i-1][j]) + triangle[i][j]
+        return min(res[-1])
+        
+    # Modify the original triangle, top-down
+    def minimumTotal2(self, triangle):
+        if not triangle:
+            return 
+        for i in xrange(1, len(triangle)):
+            for j in xrange(len(triangle[i])):
+                if j == 0:
+                    triangle[i][j] += triangle[i-1][j]
+                elif j == len(triangle[i])-1:
+                    triangle[i][j] += triangle[i-1][j-1]
+                else:
+                    triangle[i][j] += min(triangle[i-1][j-1], triangle[i-1][j])
+        return min(triangle[-1])
+        
+    # Modify the original triangle, bottom-up
+    def minimumTotal3(self, triangle):
+        if not triangle:
+            return 
+        for i in xrange(len(triangle)-2, -1, -1):
+            for j in xrange(len(triangle[i])):
+                triangle[i][j] += min(triangle[i+1][j], triangle[i+1][j+1])
+        return triangle[0][0]
+    
+    # bottom-up, O(n) space
+    def minimumTotal(self, triangle):
+        if not triangle:
+            return 
+        res = triangle[-1]
+        for i in xrange(len(triangle)-2, -1, -1):
+            for j in xrange(len(triangle[i])):
+                res[j] = min(res[j], res[j+1]) + triangle[i][j]
+        return res[0]
+
+----------------------------------------------------------------------------------------------------
+Java solution -- dynamic programming
+    public int minimumTotal(List<List<Integer>> trgl) {
+        int sz = trgl.size();
+        int[] results = new int[sz+1];
+        
+        for(int i=sz-1; i>=0; i--) {
+            List<Integer> tmp = trgl.get(i);
+            
+            for(int j=0; j<tmp.size(); j++) {
+                results[j] = Math.min(results[j], results[j+1]) + tmp.get(j);
+            }
+        }
+        return results[0];
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ top-down and bottom-up solutions.
+        
+    // top-down 
+    int minimumTotal1(vector<vector<int>>& triangle) {
+        vector<int> res(triangle.size(), triangle[0][0]);
+        for (unsigned int i = 1; i < triangle.size(); i++) 
+            for (int j = i; j >= 0; j--) {
+                if (j == 0)
+                    res[0] += triangle[i][j];
+                else if (j == i)
+                    res[j] = triangle[i][j] + res[j-1];
+                else 
+                    res[j] = triangle[i][j] + min(res[j-1], res[j]);
+            }
+        return *min_element(res.begin(), res.end());
+    }
+    
+    // bottom-up
+    int minimumTotal(vector<vector<int>>& triangle) {
+        vector<int> res = triangle.back();
+        for (int i = triangle.size()-2; i >= 0; i--) 
+            for (unsigned int j = 0; j <= i; j++) 
+                res[j] = triangle[i][j] + min(res[j], res[j+1]);
+        return res[0];
+    }
+
+----------------------------------------------------------------------------------------------------
+One-liner in Python
+**Solution**
+
+    def minimumTotal(self, t):
+        return reduce(lambda a,b:[f+min(d,e)for d,e,f in zip(a,a[1:],b)],t[::-1])[0]
+
+---
+
+**Explanation**
+
+Starting with the bottom row, I move upwards, always combining the current row and the next upper row. At the end, I have combined everything into the top row and simply return its only element. Here's a longer version with meaningful variable names:
+
+    def minimumTotal(self, triangle):
+        def combine_rows(lower_row, upper_row):
+            return [upper + min(lower_left, lower_right)
+                    for upper, lower_left, lower_right in
+                    zip(upper_row, lower_row, lower_row[1:])]
+        return reduce(combine_rows, triangle[::-1])[0]
+
+
+----------------------------------------------------------------------------------------------------
+My C++ code (Bottom up DP, 8ms)
+Just do bottom up DP, it is easier and cleaner than top-down DP.
+
+    class Solution {
+    
+        public:
+            int minimumTotal(vector<vector<int>>& triangle) {
+                for(int i= triangle.size()-2; i>=0; --i)
+                    for(int j=0; j<triangle[i].size();++j)
+                        triangle[i][j] += min(triangle[i+1][j],triangle[i+1][j+1]);
+                return triangle[0][0];        
+            }
+        };
+
+// another version, without modifying the input array
+
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int>>& triangle) {
+            vector<int> res(triangle[triangle.size()-1]);
+            for(int i= triangle.size()-2; i>=0; --i)
+                for(int j=0; j<triangle[i].size();++j)
+                    res[j] = triangle[i][j] + min(res[j],res[j+1]);
+            return res[0];        
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My solution without extra space
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int> > &triangle) {
+            for(int i=triangle.size()-2;i>=0;i--)
+            {
+                for(int j=0;j<=i;j++)
+                {
+                    triangle[i][j]=min(triangle[i+1][j],triangle[i+1][j+1])+triangle[i][j];
+                }
+            }
+            return triangle[0][0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+1 ms Java dp solution beats 99.91% O(n) extra space without modifying the triangle
+The idea is to storage the min path sum so far at current level in the array dp[] of max length triangle.size(), then deduce the array values at the next level. When it reaches the triangle.size(), return the minimum of the dp[] array.
+
+    public int minimumTotal(List<List<Integer>> triangle) {
+			if (triangle.size() == 0)
+				return 0;
+			if (triangle.size() == 1)
+				return triangle.get(0).get(0);
+
+			int[] dp = new int[triangle.size()];
+			dp[0] = triangle.get(0).get(0);
+			return minimumTotal(triangle, dp, 1);
+		}
+
+		public int minimumTotal(List<List<Integer>> triangle, int[] dp, int lvlidx) {
+			/**
+			 * dp: dp[i]_lvlidx = the min path sum up to current level and up to
+			 * index i
+			 * 
+			 * dp[0]_lvlidx = this_level_list[0] + dp[0]_(lvlidx-1);
+			 * dp[end]_lvlidx = this_level_list[end] + dp[end-1]_(lvlidx-1);
+			 * 
+			 * dp[i]_lvlidx = this_level_list[i] + min{ dp[i-1]_(lvlidx-1),
+			 * dp[i]_(lvlidx-1) };
+			 */
+
+			List<Integer> list = triangle.get(lvlidx);
+			int pre = dp[0], temp;
+			dp[0] += list.get(0);
+			for (int i = 1; i < lvlidx; i++) {
+				temp = dp[i];
+				dp[i] = list.get(i) + Math.min(pre, dp[i]);
+				pre = temp;
+			}
+			dp[lvlidx] = pre + list.get(lvlidx);
+
+			if (lvlidx + 1 == triangle.size()) {
+				int res = dp[0];
+				for (int i = 1; i <= lvlidx; i++)
+					res = Math.min(res, dp[i]);
+				return res;
+			}
+
+			return minimumTotal(triangle, dp, lvlidx + 1);
+		}
+
+----------------------------------------------------------------------------------------------------
+5 lines c++, short and sweet
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int>>& triangle) {
+            for(int i=triangle.size()-2;i>=0;i--)
+                for(int j=0;j<=i;j++)
+                    triangle[i][j] += min(triangle[i+1][j], triangle[i+1][j+1]);
+            return triangle[0][0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Define adjacent number in the triangle?
+if we choose index=2 in second row, the range to choose in 3rd row is {2, 3} or {1,2,3} ?
+
+mathematically {1,2,3} make sense, 
+
+but in a (left right balanced) triangle showing in the question, seems only {2,3} is visually adjacent.
+
+----------------------------------------------------------------------------------------------------
+Python Bottom up DP O(n)+O(n) solution ( 5 lines )
+Source code worth thousand words:
+
+    def minimumTotal(self, triangle):
+        f = [0] * (len(triangle) + 1)
+        for row in triangle[::-1]:
+            for i in xrange(len(row)):
+                f[i] = row[i] + min(f[i], f[i + 1])
+        return f[0]]
+
+
+----------------------------------------------------------------------------------------------------
+Java solution using O(n) space without modify triangle
+    public int minimumTotal(List<List<Integer>> triangle) {
+        int len = triangle.size();
+        int[] dp = new int[len];
+        for(int i = len-1;i >= 0; i--){
+            for(int j = 0; j <= i; j++){
+                if(i == len-1) dp[j]= triangle.get(i).get(j);
+                else{
+                    dp[j] = Math.min(dp[j],dp[j+1])+triangle.get(i).get(j);
+                }
+            }
+        }
+        return dp[0];
+    }
+
+----------------------------------------------------------------------------------------------------
+My 4-line python solution with O(1) space
+    class Solution:
+        # @param triangle, a list of lists of integers
+        # @return an integer
+        def minimumTotal(self, triangle):
+            for i in reversed(range(len(triangle) - 1)):
+                for j in range(0, i + 1):
+                    triangle[i][j] += min(triangle[i + 1][j], triangle[i + 1][j + 1])
+            return triangle[0][0]
+
+It's a bottom-up dp, and direct modify the input array instead of using an extra array
+
+----------------------------------------------------------------------------------------------------
+Iterative 13ms solution &#x2F; C++ &#x2F; with Explaination
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int> > &a) {
+            vector<int> min;
+            int n = a.size();
+            
+            // push the last row to min vector
+            for (int i = 0; i <= n; ++i) {
+                min.push_back(a[n-1][i]);
+            }
+            
+            vector<int>& row_below = min;
+            
+            // Logic : at each element of the row , check against
+            // two elements, and take minimum.
+            // its a DP, as you add to the already minimum sum
+            // at each stage
+            for (int i = n-2; i >= 0; --i) {
+                vector<int> cur_row;
+                for (int j = 0; j < a[i].size(); ++j) {
+                    if (row_below[j] < row_below[j+1]) {
+                        cur_row.push_back(row_below[j]+a[i][j]);
+                    } else {
+                        cur_row.push_back(row_below[j+1]+a[i][j]);
+                    }
+                }
+                row_below.resize(0);
+                row_below = cur_row;
+            }
+            return row_below[0];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+O(n^2) time O(n) space java dp solution
+This bottom-up solution uses the array mins[] to store the minimum sum
+of each path until the current number.
+
+
+
+    public class Solution {
+        public int minimumTotal(List<List<Integer>> triangle) {
+            if(triangle==null||triangle.isEmpty()) return 0;
+            final int height=triangle.size();
+            int[] mins = new int[height];
+            for(int i=0;i<height;i++){
+                mins[i]=triangle.get(height-1).get(i);
+            }
+            
+            for(int i=height-1;i>0;i--){
+                for(int j=0;j<i;j++){
+                    mins[j]=Math.min(mins[j+1],mins[j])+triangle.get(i-1).get(j);
+                }
+            }
+            return mins[0];
+        }
+     
+    }
+
+----------------------------------------------------------------------------------------------------
+My 15ms C++ DP solution. o(1)extra space o(n2) time. 10 code lines
+    class Solution {
+    public:
+        int minimumTotal(vector<vector<int> > &triangle) {
+            if(triangle.size() == 0) return 0;
+            
+            int height = triangle.size();
+            for(int i = height - 2; i >= 0; i --) {
+                for(int j = 0; j <= i; j ++) {
+                    int t1 = triangle[i + 1][j];
+                    int t2 = triangle[i + 1][j + 1];
+                    triangle[i][j] += t1 < t2 ? t1 : t2;
+                }
+            }
+            return triangle[0][0];
+        }
+        
+    };
+
+----------------------------------------------------------------------------------------------------
+5 python solutions, one achieved fastest 44 ms in python
+    class Solution:
+    # @param triangle, a list of lists of integers
+    # @return an integer
+
+
+    # this is a one liner for fun :)  Node that this creates a new triangle [::-1] was used, so unfortunately space was not k. 
+    def minimumTotal(self, triangle):
+
+        return reduce(lambda x, y: [min(x[b], x[b+1])+y[b] for b in xrange(len(y))], triangle[::-1], [0]*(len(triangle)+1))[0]
+
+
+    # this is my original expended version of that one liner, somehow faster than that, achieved 44ms, but I guess the running time varies enough each time you submit, 
+    # so that the real difference is not significant
+    def minimumTotalExpended(self, triangle):
+
+        triangle.append([0]*(len(triangle)+1))
+        return reduce(lambda x, y: [min(x[b], x[b+1])+y[b] for b in xrange(len(y))], triangle[::-1])[0]
+
+
+    # further expend, in this one, no extra triangle was created, only one line each time, so space is k.
+    def minimumTotalDP(self, triangle):
+        
+        base=[0]*(len(triangle)+1)
+        for i in xrange(len(triangle)-1, -1, -1):
+            base=[min(base[b], base[b+1])+triangle[i][b] for b in xrange(i+1)]
+        return base[0]
+
+
+
+    #recursive, top down, slower.  I think this is not well written, could be imporved much.
+    def minimumTotalRecurse(self, triangle):
+        self.triangle=triangle
+        self.cache=dict()
+        return self.recurse(0,0) if triangle else 0
+
+    def recurse(self, level, i):
+        if (level,i) in self.cache:
+            return self.cache[(level,i)]
+
+        if level==len(self.triangle)-1:
+            return self.triangle[level][i]
+
+        res=self.triangle[level][i]+min(self.recurse(level+1, i), self.recurse(level+1, i+1))
+        self.cache[(level, i)]=res
+
+        return res
+
+
+    # DP from top down, I wrote this one when I started learning programing.  Not a good piece for sure...speed was not bad though.
+    def minimumTotalTopDownDP(self, triangle):
+        minSum=float('inf')
+        if not triangle:
+            return 0
+        level1Sum=[triangle[0][0]]
+        level2Sum=[]
+        while len(triangle)>len(level1Sum):
+            level2Sum=[triangle[len(level1Sum)][i]+min((level1Sum[i] if i < len(level1Sum) else float('inf')),(level1Sum[i-1] if i>=1 else float('inf')) ) \
+            for i in xrange(len(level1Sum)+1)]
+            level1Sum=level2Sum
+            level2Sum=[]
+
+
+----------------------------------------------------------------------------------------------------

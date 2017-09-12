@@ -1,0 +1,848 @@
+Java Recursive and Iterative Solutions
+The idea is quite straight forward. Generate the first and second of the sequence, check if the rest of the string match the sum recursively. `i` and `j` are length of the first and second number. `i` should in the range of `[0, n/2]`. The length of their sum should `>= max(i,j)`
+
+**Java Recursive**
+
+    import java.math.BigInteger;
+
+    public class Solution {
+        public boolean isAdditiveNumber(String num) {
+            int n = num.length();
+            for (int i = 1; i <= n / 2; ++i) {
+                if (num.charAt(0) == '0' && i > 1) return false;
+                BigInteger x1 = new BigInteger(num.substring(0, i));
+                for (int j = 1; Math.max(j, i) <= n - i - j; ++j) {
+                    if (num.charAt(i) == '0' && j > 1) break;
+                    BigInteger x2 = new BigInteger(num.substring(i, i + j));
+                    if (isValid(x1, x2, j + i, num)) return true;
+                }
+            }
+            return false;
+        }
+        private boolean isValid(BigInteger x1, BigInteger x2, int start, String num) {
+            if (start == num.length()) return true;
+            x2 = x2.add(x1);
+            x1 = x2.subtract(x1);
+            String sum = x2.toString();
+            return num.startsWith(sum, start) && isValid(x1, x2, start + sum.length(), num);
+        }
+    }
+    // Runtime: 8ms
+
+Since `isValid` is a tail recursion it is very easy to turn it into a loop.
+
+**Java Iterative**
+
+    public class Solution {
+        public boolean isAdditiveNumber(String num) {
+            int n = num.length();
+            for (int i = 1; i <= n / 2; ++i)
+                for (int j = 1; Math.max(j, i) <= n - i - j; ++j)
+                    if (isValid(i, j, num)) return true;
+            return false;
+        }
+        private boolean isValid(int i, int j, String num) {
+            if (num.charAt(0) == '0' && i > 1) return false;
+            if (num.charAt(i) == '0' && j > 1) return false;
+            String sum;
+            BigInteger x1 = new BigInteger(num.substring(0, i));
+            BigInteger x2 = new BigInteger(num.substring(i, i + j));
+            for (int start = i + j; start != num.length(); start += sum.length()) {
+                x2 = x2.add(x1);
+                x1 = x2.subtract(x1);
+                sum = x2.toString();
+                if (!num.startsWith(sum, start)) return false;
+            }
+            return true;
+        }
+    }
+    // Runtime: 9ms
+
+
+If no overflow, instead of BigInteger we can consider to use Long which is a lot faster.
+
+**Java Iterative Using Long**
+
+    public class Solution {
+        public boolean isAdditiveNumber(String num) {
+            int n = num.length();
+            for (int i = 1; i <= n / 2; ++i)
+                for (int j = 1; Math.max(j, i) <= n - i - j; ++j)
+                    if (isValid(i, j, num)) return true;
+            return false;
+        }
+        private boolean isValid(int i, int j, String num) {
+            if (num.charAt(0) == '0' && i > 1) return false;
+            if (num.charAt(i) == '0' && j > 1) return false;
+            String sum;
+            Long x1 = Long.parseLong(num.substring(0, i));
+            Long x2 = Long.parseLong(num.substring(i, i + j));
+            for (int start = i + j; start != num.length(); start += sum.length()) {
+                x2 = x2 + x1;
+                x1 = x2 - x1;
+                sum = x2.toString();
+                if (!num.startsWith(sum, start)) return false;
+            }
+            return true;
+        }
+    }
+    // Runtime: 3ms
+
+
+
+----------------------------------------------------------------------------------------------------
+0ms concise C++ solution (perfectly handles the follow-up and leading 0s)
+use a helper function to add two strings. 
+
+Choose first two number then recursively check.
+
+**Note that the length of first two numbers can't be longer than half of the initial string, so the two loops in the first function will end when *i>num.size()/2*  and *j>(num.size()-i)/2*, this will actually save a lot of time.**
+
+
+**Update the case of heading 0s
+e.g. "100010" should return false**
+
+
+    class Solution {
+    public:
+            bool isAdditiveNumber(string num) {
+                for(int i=1; i<=num.size()/2; i++){
+                    for(int j=1; j<=(num.size()-i)/2; j++){
+                        if(check(num.substr(0,i), num.substr(i,j), num.substr(i+j))) return true;
+                    }
+                }
+                return false;
+            }
+            bool check(string num1, string num2, string num){
+                if(num1.size()>1 && num1[0]=='0' || num2.size()>1 && num2[0]=='0') return false;
+                string sum=add(num1, num2);
+                if(num==sum) return true;
+                if(num.size()<=sum.size() || sum.compare(num.substr(0,sum.size()))!=0) return false;
+                else return check(num2, sum, num.substr(sum.size()));
+            } 
+            string add(string n, string m){
+                string res;
+                int i=n.size()-1, j=m.size()-1, carry=0;
+                while(i>=0 || j>=0){
+                    int sum=carry+(i>=0 ? (n[i--]-'0') : 0) + (j>=0?  (m[j--]-'0') : 0);
+                    res.push_back(sum%10+'0');
+                    carry=sum/10;
+                }
+                if(carry) res.push_back(carry+'0');
+                reverse(res.begin(), res.end());
+                return res;
+            }
+        };
+
+----------------------------------------------------------------------------------------------------
+*Java* very straightforward solution with detailed explanation
+The idea is quite straightforward:
+
+1. Choose the first number `A`, it can be the leftmost `1` up to `i` digits. `i<=(L-1)/2` because the third number should be at least as long as the first number
+
+2. Choose the second number `B`, it can be the leftmost `1` up to `j` digits excluding the first number. the limit for `j` is a little bit tricky, because we don't know whether `A` or `B` is longer. The remaining string (with length `L-j`) after excluding `A` and `B` should have a length of at least max(length `A`, length `B`), where length `A` = `i` and length `B` = `j-i`, thus `L-j >= max(j-i, i)`
+
+3. Calls the recursive checker function and returns true if passes the checker function, or continue to the next choice of `B` (`A`) until there is no more choice for `B` or `A`, in which case returns a false.
+
+Here is the code in Java:
+
+        public boolean isAdditiveNumber(String num) {
+            int L = num.length();
+
+            // choose the first number A
+            for(int i=1; i<=(L-1)/2; i++) {
+                // A cannot start with a 0 if its length is more than 1
+                if(num.charAt(0) == '0' && i>=2) break; //previous code: continue;
+            
+                // choose the second number B
+                for(int j=i+1; L-j>=j-i && L-j>=i; j++) {
+                    // B cannot start with a 0 if its length is more than 1
+                    if(num.charAt(i) == '0' && j-i>=2) break; // previous: continue;
+                
+                    long num1 = Long.parseLong(num.substring(0, i)); // A
+                    long num2 = Long.parseLong(num.substring(i, j)); // B
+                    String substr = num.substring(j); // remaining string
+                
+                    if(isAdditive(substr, num1, num2)) return true; // return true if passes isAdditive test
+                    // else continue; // continue for loop if does not pass isAdditive test
+                }
+            }
+            return false; // does not pass isAdditive test, thus is not additive
+        }
+    
+        // Recursively checks if a string is additive
+        public boolean isAdditive(String str, long num1, long num2) {
+            if(str.equals("")) return true; // reaches the end of string means a yes
+        
+            long sum = num1+num2;
+            String s = ((Long)sum).toString();
+            if(!str.startsWith(s)) return false; // if string does not start with sum of num1 and num2, returns false
+        
+            return isAdditive(str.substring(s.length()), num2, sum); // recursively checks the remaining string
+        }
+
+If you are interested in my other posts, please feel free to check my Github page here: [https://github.com/F-L-A-G/Algorithms-in-Java][1]
+
+
+  [1]: https://github.com/F-L-A-G/Algorithms-in-Java
+
+----------------------------------------------------------------------------------------------------
+Python solution
+Just trying all possibilities for the first two numbers and checking whether the rest fits.
+
+    def isAdditiveNumber(self, num):
+        n = len(num)
+        for i, j in itertools.combinations(range(1, n), 2):
+            a, b = num[:i], num[i:j]
+            if b != str(int(b)):
+                continue
+            while j < n:
+                c = str(int(a) + int(b))
+                if not num.startswith(c, j):
+                    break
+                j += len(c)
+                a, b = b, c
+            if j == n:
+                return True
+        return False
+
+----------------------------------------------------------------------------------------------------
+Backtracking with Pruning: Java 3 ms Solution and Python 48 ms Solution
+Backtracking with Pruning.
+
+Java (3 ms):
+    
+    public class Solution {
+        public boolean isAdditiveNumber(String num) {
+            if (num == null || num.length() < 3) return false;
+            int n = num.length();
+            for (int i = 1; i < n; i++) {
+                if (i > 1 && num.charAt(0) == '0') break;
+                for (int j = i+1; j < n; j++) {
+                    int first = 0, second = i, third = j;
+                    if (num.charAt(second) == '0' && third > second+1) break;
+                    while (third < n) {
+                        Long result = (Long.parseLong(num.substring(first, second)) + 
+                                       Long.parseLong(num.substring(second, third)) );
+                        if (num.substring(third).startsWith(result.toString())) {
+                            first = second; second = third; third += result.toString().length();
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    if (third == n) return true;
+                }
+            }
+            return false;
+        }
+    }
+
+
+ Python (48 ms):
+
+    class Solution(object):
+        def isAdditiveNumber(self, num):
+            """
+            :type num: str
+            :rtype: bool
+            """
+            if num is None or len(num) < 3:
+                return False
+            n = len(num)
+            for i in range(1, n):
+                if i > 1 and num[0] == '0':
+                    break
+                for j in range(i+1, n):
+                    first, second, third = 0, i, j
+                    if num[second] == '0' and third > second + 1:
+                        break
+                    while third < n:
+                        result = str(int(num[first:second]) + int(num[second:third]))
+                        if num[third:].startswith(result):
+                            first, second, third = second, third, third + len(result)
+                        else:
+                            break
+                    if third == n:
+                        return True
+            return False
+            
+
+
+
+----------------------------------------------------------------------------------------------------
+Java Easy Understand DFS
+    public class Solution {
+        public boolean isAdditiveNumber(String s) {
+            int n = s.length();
+            for (int i=1; i<n; i++) {
+                for (int j=i+1; j<n; j++) {
+                    long a = parse(s.substring(0, i));
+                    long b = parse(s.substring(i, j));
+                    if (a == -1 || b == -1) continue;
+                    if (dfs(s.substring(j), a, b))   return true;
+                }
+            }
+            return false;
+        }
+        
+        boolean dfs(String s, long a, long b) {
+            if (s.length() == 0)    return true;
+            
+            for (int i=1; i<=s.length(); i++) {
+                long c = parse(s.substring(0, i));
+                if (c == -1)    continue;
+                if (c-a == b && dfs(s.substring(i), b, c)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        long parse(String s) {
+            if (!s.equals("0") && s.startsWith("0"))    return -1;
+            long result = 0;
+            try {
+                result = Long.parseLong(s);
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+            return result;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My Simple C++ Non-recursion Solution
+    class Solution {
+    public:
+        bool isAdditiveNumber(string num) {
+            for (int i = 1; i < num.size(); ++i) {
+                for (int j = i + 1; j < num.size(); ++j) {
+                    string s1 = num.substr(0, i);
+                    string s2 = num.substr(i, j - i);
+                    long long d1 = atoll(s1.c_str()), d2 = atoll(s2.c_str());
+    				if ((s1.size() > 1 && s1[0] == '0') || (s2.size() > 1 && s2[0] == '0')) continue;
+                    long long next = d1 + d2;
+                    string nexts = to_string(next);
+                    string now = s1 + s2 + nexts;
+                    while (now.size() < num.size()) {
+                        d1 = d2;
+                        d2 = next;
+                        next = d1 + d2;
+                        nexts = to_string(next);
+                        now += nexts;
+                    }
+                    if (now == num) return true;
+                }
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple java solution
+    public boolean isAdditiveNumber(String num) {
+        String a = "";
+        String b = "";
+        for (int i = 0; i < num.length()/3; i++) {
+            a = num.substring(0, i + 1);
+            if (a.length() > 1 && a.charAt(0) == '0') {
+                continue;
+            }
+            for (int j = i + 1; j < num.length(); j++) {
+                b = num.substring(i + 1, j + 1);
+                if (b.charAt(0) == '0' && b.length() > 1) {continue;}
+                if (valid(num.substring(j + 1), Long.parseLong(a), Long.parseLong(b))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public boolean valid(String str, long a, long b) {
+        long sum = a + b;
+        String tempStr = String.valueOf(sum);
+        int len = tempStr.length();
+        if (str.length() < len) {return false;}
+        if (str.length() == len && str.equals(tempStr)) {return true;}
+        if (str.substring(0, len).equals(tempStr)) {
+            return valid(str.substring(len), b, sum);
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+Best solution enclosed with detailed explanation in C++
+practical
+
+----------------------------------------------------------------------------------------------------
+C++ implementation, easy understanding.
+    bool isAdditiveNumber(string num) {
+      for(int i = 1; i <= num.size()/2; i++) {
+       for(int j = 1; j <= (num.size()-i)/2; j++) {
+         if (i >= 2 && num[0] == '0' || j >= 2 && num[i] == '0' || num[i+j] == '0') 
+             continue;
+         if (addNum(stol(num.substr(0,i)), stol(num.substr(i,j)), num.substr(i+j))) 
+             return true;
+        }
+      }
+      return false;
+    }
+    bool addNum(long num1, long num2, string num){
+       if (num.size() > 1 && num[0] == '0') return false;
+       long sum = num1 + num2, numI = stol(num);
+       long len = static_cast<long>(log10(sum)) + 1;
+       if (numI == sum) return true;
+       if (numI < sum || sum != stol(num.substr(0, len))) return false;
+       else return addNum(num2, sum, num.substr(len));
+    } 
+
+----------------------------------------------------------------------------------------------------
+My c++ code 0ms, non-recursive, using string to represent number to avoid overflow issue
+define addS to do addition of two numbers in string format. 
+
+    class Solution {
+    private:
+        string addS(string &s1, string &s2)
+        {
+            int i=s1.size()-1, j=s2.size()-1,k=max(i,j), carrier=0,temp;
+            string res(k+1,'0');
+            for(; i>=0 || j>=0; --i,--j)
+            {
+                temp = (i<0?0:(s1[i]-'0')) + (j<0?0:(s2[j]-'0')) + carrier;
+                res[k--] = (temp % 10 + '0');
+                carrier = temp>9;
+            }
+            return carrier>0?'1'+res:res;
+        }
+        
+    public:
+        bool isAdditiveNumber(string num) {
+            int i, j, curIdx, len = num.size();
+            string sum, op1, op2;
+            for(i=1; i<= (num[0] !='0'? (len-1)/2:1);++i)
+            {
+                for(j=1; j <= (num[i] !='0'? len-i*2:1);++j)
+                {
+                    if(len<i+j+max(i,j)) break;
+                    op1 = num.substr(0,i);
+                    op2 = num.substr(i,j);
+                    sum = addS(op1, op2);
+                    curIdx=i+j;
+                    while(curIdx<len && sum  == num.substr(curIdx,sum.size()) )
+                    {
+                        curIdx += sum.size();
+                        op1 = sum;
+                        sum = addS(sum, op2);
+                        op2 = op1;
+                    }
+                    if(curIdx==len) return true;
+                }
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Two missing test cases in Additive Number
+I posted [my solutions][1] last night. @steve.j.sun pointed out checking `num[0] == '0'` at the very beginning would make "011235" invalid, which actually is valid.  Then, I realized actually `num[0] == '0'` should still be checked at the beginning of the outer loop for being leading 0 so that "0235813" would be claimed as invalid.
+
+It seems like leetcode is missing these two test cases for now, though the expected answers would be right for both cases.
+
+
+  [1]: https://leetcode.com/discuss/70119/backtracking-with-pruning-java-solution-and-python-solution?show=70119
+
+----------------------------------------------------------------------------------------------------
+Share 1ms Java with no overflow limitation
+Although 112358 could be slit as 1+1=2, 1+2=3, ..., yet, it could also be 112+358=470. 
+
+Thus, I use the first iterative function to find the first two kick start integers. Then pass them to a recursive isValid function to keep validating. The third function is just another add-two-integers problem that handles large value.
+Hope you get the idea :) 
+Cheers!
+
+    public class Solution {
+        public boolean isAdditiveNumber(String num) {
+            int stop = num.length()/3;
+            String left, mid;
+            for (int leftE=1; leftE <= stop; leftE++) {
+                left = num.substring(0, leftE);
+                for (int midE=leftE+1; midE <= stop*2; midE++) {
+                    mid = num.substring(leftE, midE);
+                    if (isValid(num.substring(midE), left, mid))
+                        return true;
+                }
+            }
+            return false;
+        }
+        public boolean isValid(String num, String left, String mid) {
+            if (num.length() == 0)  return true;
+            String sum = add2(left, mid);
+            if (!num.startsWith(sum))
+                return false;
+            return isValid(num.substring(sum.length()), mid, sum);
+        }
+        public String add2(String l, String r) {
+            int carry = 0, lenL = l.length(), lenR = r.length();
+            int lenN = lenL > lenR ? lenL : lenR;
+            int[] n = new int[lenN];
+            for (int i=lenL-1; i>=0; i--)
+                n[lenN - lenL + i] = l.charAt(i) - '0';
+            for (int i=lenR-1; i>=0; i--) {
+                n[lenN - lenR + i] += r.charAt(i) - '0' + carry;
+                carry  = n[lenN - lenR + i] / 10;
+                n[lenN - lenR + i] = n[lenN - lenR + i] % 10;
+            }
+            StringBuilder sb = new StringBuilder();
+            if (carry != 0)
+                sb.append(carry);
+            for (int i=0; i<lenN; i++)
+                sb.append(n[i]);
+            return sb.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share a python solution not that fast but easy to understand
+    class Solution(object):
+        def isAdditiveNumber(self, num):
+            if len(num) < 3:
+                return False
+            for i in range(len(num) // 2):
+                for j in range(i+1, len(num) // 3 * 2):
+                    one = int(num[:i+1])
+                    two = int(num[i+1:j+1])
+                    if self.generate_fib_str(one, two, len(num)) == num:
+                        return True
+                    if num[j] == 0:
+                        break
+                if num[0] == '0':
+                    break
+            return False
+        
+        def generate_fib_str(self, a, b, n):
+            # type: int, int, int -> str
+            fib_str = str(a) + str(b)
+            while len(fib_str) < n:
+                fib_str += str(a + b)
+                a, b = b, a+b
+            return fib_str[:n]
+
+First we find the first two valid numbers and generate a fibonacci like string use these two numbers.
+Then compare the generated string with the given num string.
+
+----------------------------------------------------------------------------------------------------
+Java Solution with BigInteger
+import java.math.BigInteger;
+
+    public boolean isAdditiveNumber(String num) {
+    	int len = num.length();
+    	for(int i = 1 ; i < len ;i++){
+    		for(int j = i+1 ; j < len ; j++){
+    			if(helper(num,i,j-i)==true)
+    				return true;
+    		}
+    	}
+        return false;
+    }
+    
+    public boolean helper(String s, int len1 , int len2 ){
+    	if(s.length()<len1+len2) return false;
+    	
+    	String snum1 = s.substring(0,len1);
+    	String snum2 = s.substring(len1,len1+len2);
+    	
+    	if(snum1.length()!=1&&snum1.charAt(0)=='0'  || 
+                   snum2.length()!=1&&snum2.charAt(0)=='0') 
+            return false;
+    	BigInteger bsum =new BigInteger(snum1).add(new BigInteger(snum2)) ;
+    	
+    	String ssum = bsum.toString();
+    	if(len1+len2+ssum.length()>s.length()) return false;
+    	
+    	if(s.substring(len1+len2,len1+len2+ssum.length()).equals(ssum)){
+    		if(len1+len2+ssum.length()==s.length()) return true;
+    		return helper(s.substring(len1),len2,ssum.length());
+    	} else{
+    		return false;
+    	}
+    }
+
+you can try to use long instead of BigInteger.
+
+----------------------------------------------------------------------------------------------------
+0ms  C++ easy understand solution
+    class Solution {
+    public:
+        bool isAdditiveNumber(string num) {
+        for(int i=1;i<=(num.size()/2);i++)
+        {
+            string s2=num.substr(0,i);
+            if(isnonlegal(s2)) break;
+            for(int j=1;j<=(num.size()-i)/2;j++)
+            {
+                string s1=num.substr(i,j);
+                if(isnonlegal(s1)) break;
+                if( dfs(num,i+j,s1,s2) )
+                    return true;
+            }
+        }
+        return false;
+        }
+        
+        bool dfs(string& s, int start,string s1,string s2)  //s1 is pre, s2 is pre pre.
+        {
+            if(start==s.size()) return true;
+            for(int i=start;i<s.size();i++)
+            {
+                string curstr=s.substr(start,i-start+1);
+                if(isnonlegal(curstr)) break;
+                long long curnum=stoll(curstr);
+                long long num1=stoll(s1);
+                long long num2=stoll(s2);
+                if(curnum==num1+num2&&dfs(s,i+1,curstr,s1))
+                    return true;
+            }
+            return false;
+        }
+        
+        bool isnonlegal(string s)
+        {
+            return s[0]=='0'&&s.size()!=1?true:false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple, short Java 2ms Recursive and Iterative
+basic idea is: once the first two number is determined, the additivity of a string is defined. So try all combinations of num1, num2 and test them.
+
+I'd love to know how to improve on coding, please help improving the code
+
+Recursive version
+
+
+    public boolean isAdditiveNumber(String num) {
+            if (num == null || num.length() <= 2) return false;
+    
+            //[0,i] is first number, [i+1,j] is second number,[j+1 any end is remaining]
+            for (int i = 0; i < (num.length() - 1) / 2; i++) {
+                for (int j = i + 1; num.length() - j - 1 >= Math.max(i + 1, j - i); j++) {
+                    if (isValid(num.substring(0, i + 1), num.substring(i + 1, j + 1), num.substring(j + 1)))
+                        return true;
+                }
+            }
+            return false;
+        }
+    
+        public boolean isValid(String num1, String num2, String remain) {
+            if (remain.isEmpty()) return true;
+            if (num1.charAt(0) == '0' && num1.length() > 1) return false;
+            if (num2.charAt(0) == '0' && num2.length() > 1) return false;
+            String sum = String.valueOf(Long.parseLong(num1) + Long.parseLong(num2));
+            if (!remain.startsWith(sum)) return false;
+            return isValid(num2, sum, remain.substring(sum.length()));
+        }
+
+
+Iterative Version
+
+
+    public boolean isAdditiveNumber(String num) {
+        if (num == null || num.length() <= 2) return false;
+    
+        //[0,i] is first number, [i+1,j] is second number,[j+1 any end is remaining]
+        for (int i = 0; i < (num.length() - 1) / 2; i++) {
+            for (int j = i + 1; num.length() - j - 1 >= Math.max(i + 1, j - i); j++) {
+                int offset = j + 1;
+                String num1 = num.substring(0, i + 1), num2 = num.substring(i + 1, j + 1);
+    
+                while (offset < num.length()) {
+                    if (num1.charAt(0) == '0' && num1.length() > 1) break;
+                    if (num2.charAt(0) == '0' && num2.length() > 1) break;
+                    String sum = String.valueOf(Long.parseLong(num1) + Long.parseLong(num2));
+                    if (!num.startsWith(sum, offset)) break;
+    
+                    num1 = num2;
+                    num2 = sum;
+                    offset += sum.length();
+                }
+                if (offset == num.length()) return true;
+            }
+        }
+        return false;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 0ms, string addition
+Once the first two numbers are determined, the rest sequence is determined. So we can check all the possible choices of first two numbers to see whether the rest sequence is valid or not. 
+
+    string add(string s1, string s2){
+    string res;
+    int sz1=s1.size(),sz2=s2.size();
+    int sz = sz1>sz2?sz1:sz2;
+    s1 = string(sz-sz1,'0')+s1;
+    s2 = string(sz-sz2,'0')+s2;
+    res = s2;
+    int flag = 0,temp;
+    for (int i=sz-1;i>=0;i--){
+        temp = s1[i]-'0'+s2[i]-'0'+flag;
+        flag = (temp>9);
+        res[i]=temp-10*flag+'0';
+    }
+    if (flag) res='1'+res;
+    return res;
+    }
+
+    class Solution {
+    public:
+    bool isAdditiveNumber(string num) {
+        int sz=num.size();
+        if (sz<3) return false;
+        string num1,num2,num3;
+        int rL;
+        for(int i=1;i<=sz-2 && i<=10;i++){
+            if (num[0]=='0' && i>1) break;
+            for(int j=1;j<=sz-i-1 && j<=10;j++){
+                rL = sz-i-j;
+                num1=num.substr(0,i);
+                num2=num.substr(i,j);
+                num3=add(num1,num2);
+                if (num[i]=='0' && j>1) break;
+                while (1){
+                    if (num3.size()>rL) break;
+                    if (num.substr(sz-rL,num3.size())!=num3) break;
+                    rL-= num3.size();
+                    if (rL==0) return true;
+                    num1=num2;
+                    num2=num3;
+                    num3=add(num1,num2);
+                }
+            }
+        }
+        return false;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution that handles large integers
+Idea is simple: keep track of the additive sequence (path) using a list. In every recursive call try all combinations of all prefixes of the remaining string. Return true if the entire string is added to the sequence.
+
+public class Solution {
+
+    public boolean isAdditiveNumber(String num) {
+        if (num == null) return false;
+        return findAdditive(new ArrayList<>(), num, 0);
+    }
+    
+    private boolean findAdditive(List<String> path, String num, int pos) {
+        if (pos == num.length() && path.size() > 2) return true;
+        
+        for (int i = pos; i < num.length(); ++i) {
+            String next = num.substring(pos, i+1);
+            /** next must be a valid number and if EITHER we don't have an additive 
+            sequence yet OR string forms an additive sequence with the previous two strings*/
+            if (isValid(next) && (path.size() < 2 || isAddable(path, next))) {
+                path.add(next);
+                if (findAdditive(path, num, i+1)) return true;
+                path.remove(path.size()-1);
+            }
+        }
+        return false;
+    }
+    
+    // checks if the string is a valid number
+    private boolean isValid(String num) {
+        if (num == null || num.length() == 0) return false;
+        return (num.length() == 1 || num.charAt(0) != '0');
+    }
+    
+    // checks if the last two numbers in path adds up to sum
+    private boolean isAddable(List<String> path, String sum) {
+        if (path.size() < 2) return false;
+        return isSumEqual(path.get(path.size()-2), path.get(path.size()-1), sum);
+    }
+    
+    // checks if a and b adds up to sum
+    private boolean isSumEqual(String a, String b, String sum) {
+        if (Math.max(a.length(), b.length()) + 1 < sum.length()) return false;
+        if (Math.min(a.length(), b.length()) > sum.length()) return false;
+        
+        int carry = 0, sumI = sum.length() - 1;
+        for (int aI = a.length()-1, bI = b.length()-1; aI > -1 || bI > -1; aI--, bI--) {
+            if (sumI < 0) return false;
+            
+            int dA = (aI > -1) ? (a.charAt(aI) - '0') : 0;
+            int dB = (bI > -1) ? (b.charAt(bI) - '0') : 0;
+            int digit = dA + dB + carry, sumD = sum.charAt(sumI--) - '0';
+            
+            if (sumD != digit%10) return false;
+            carry = digit/10;
+        }
+        
+        if (sumI == -1 && carry == 1) return false;
+        if (sumI == 0 && sum.charAt(0) != '1') return false;
+        return true;
+     }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ DFS overflow avoided
+Simple idea, using string to represent number so we can avoid overflow. Then go with DFS.
+
+    class Solution 
+    {
+    private:
+       //using string to represent number so we can avoid overflow
+        string addTwoString(const string &s1, const string &s2)
+        {
+            int end1 = s1.size() - 1, end2 = s2.size() - 1;
+            string res = "";
+            int sum = 0, carry = 0;
+            while(end1 >= 0 || end2 >= 0)
+            {
+                sum = 0;
+                if(end1 >= 0)
+                    sum += (s1[end1--] - '0'); 
+                if(end2 >= 0)
+                    sum += (s2[end2--] - '0');
+                sum += carry;
+                carry = sum / 10;
+                sum = sum % 10;
+                res += char(sum + '0');
+            }
+            if(carry) res += char(carry + '0');
+            return {res.rbegin(), res.rend()};
+        }
+    public:
+        bool isAdditiveNumber(string num) 
+        {
+            for(int i = 1; i < num.size(); ++i)
+            {
+                for(int j = i + 1; j < num.size(); ++j)
+                {
+                    if(isAdditiveNumber(num, 0, i, j))
+                        return true;
+                }
+            }
+            return false;
+        }
+        //DFS. The end is exclusive.
+        bool isAdditiveNumber(string num, int b1, int e1, int e2)
+        {
+            if(e2 == num.size()) return true;
+    
+            string s1 = num.substr(b1, e1 - b1), s2 = num.substr(e1, e2 - e1);
+            //avoid leading '0'
+            if((s1.size() > 1 && s1[0] == '0') || (s2.size() > 1 && s2[0] == '0')) return false;
+    
+            for(int e3 = e2 + 1; e3 <= num.size(); ++e3)
+            {
+                string s3 = num.substr(e2, e3 - e2);
+                if(addTwoString(s1, s2) == s3 && isAdditiveNumber(num, e1, e2, e3))
+                    return true;
+            }
+            return false;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

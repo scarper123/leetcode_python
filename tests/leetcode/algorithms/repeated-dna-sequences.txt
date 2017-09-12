@@ -1,0 +1,695 @@
+10-lines 28ms O(n)-space DP solution in C++ with Explanations
+This is a typical DP problem. Suppose the minimum path sum of arriving at point `(i, j)` is `S[i][j]`, then the state equation is `S[i][j] = min(S[i - 1][j], S[i][j - 1]) + grid[i][j]`.
+
+Well, some boundary conditions need to be handled. The boundary conditions happen on the topmost row (`S[i - 1][j]` does not exist) and the leftmost column (`S[i][j - 1]` does not exist). Suppose `grid` is like `[1, 1, 1, 1]`, then the minimum sum to arrive at each point is simply an accumulation of previous points and the result is `[1, 2, 3, 4]`.
+
+Now we can write down the following (unoptimized) code.
+
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int>>& grid) {
+            int m = grid.size();
+            int n = grid[0].size(); 
+            vector<vector<int> > sum(m, vector<int>(n, grid[0][0]));
+            for (int i = 1; i < m; i++)
+                sum[i][0] = sum[i - 1][0] + grid[i][0];
+            for (int j = 1; j < n; j++)
+                sum[0][j] = sum[0][j - 1] + grid[0][j];
+            for (int i = 1; i < m; i++)
+                for (int j = 1; j < n; j++)
+                    sum[i][j]  = min(sum[i - 1][j], sum[i][j - 1]) + grid[i][j];
+            return sum[m - 1][n - 1];
+        }
+    };
+
+As can be seen, each time when we update `sum[i][j]`, we only need `sum[i - 1][j]` (at the current column) and `sum[i][j - 1]` (at the left column). So we need not maintain the full `m*n` matrix. Maintaining two columns is enough and now we have the following code.
+
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int>>& grid) {
+            int m = grid.size();
+            int n = grid[0].size();
+            vector<int> pre(m, grid[0][0]);
+            vector<int> cur(m, 0);
+            for (int i = 1; i < m; i++)
+                pre[i] = pre[i - 1] + grid[i][0];
+            for (int j = 1; j < n; j++) { 
+                cur[0] = pre[0] + grid[0][j]; 
+                for (int i = 1; i < m; i++)
+                    cur[i] = min(cur[i - 1], pre[i]) + grid[i][j];
+                swap(pre, cur); 
+            }
+            return pre[m - 1];
+        }
+    };
+
+Further inspecting the above code, it can be seen that maintaining `pre` is for recovering `pre[i]`, which is simply `cur[i]` before its update. So it is enough to use only one vector. Now the space is further optimized and the code also gets shorter.
+
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int>>& grid) {
+            int m = grid.size();
+            int n = grid[0].size();
+            vector<int> cur(m, grid[0][0]);
+            for (int i = 1; i < m; i++)
+                cur[i] = cur[i - 1] + grid[i][0]; 
+            for (int j = 1; j < n; j++) {
+                cur[0] += grid[0][j]; 
+                for (int i = 1; i < m; i++)
+                    cur[i] = min(cur[i - 1], cur[i]) + grid[i][j];
+            }
+            return cur[m - 1];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My java solution using DP and no extra space
+	public int minPathSum(int[][] grid) {
+		int m = grid.length;// row
+		int n = grid[0].length; // column
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < n; j++) {
+				if (i == 0 && j != 0) {
+					grid[i][j] = grid[i][j] + grid[i][j - 1];
+				} else if (i != 0 && j == 0) {
+					grid[i][j] = grid[i][j] + grid[i - 1][j];
+				} else if (i == 0 && j == 0) {
+					grid[i][j] = grid[i][j];
+				} else {
+					grid[i][j] = Math.min(grid[i][j - 1], grid[i - 1][j])
+							+ grid[i][j];
+				}
+			}
+		}
+
+		return grid[m - 1][n - 1];
+	}
+
+----------------------------------------------------------------------------------------------------
+DP Solution, Linear space
+You can only reach a cell by going from its left or top neighbor.
+
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int> > &grid) {
+            if(!grid.size())return 0;
+            const int rows=grid.size(),cols=grid[0].size();
+            // r[i] == min path sum to previous row's column i.
+            vector<int> r(cols,0);
+            int i,j;
+            r[0]=grid[0][0];
+            for(j=1;j<cols;j++){
+                r[j]=grid[0][j]+r[j-1];       
+            }
+            for(i=1;i<rows;i++){
+                r[0]+=grid[i][0];
+                for(j=1;j<cols;j++){
+                    r[j]=min(r[j-1],r[j])+grid[i][j];
+                }
+            }
+            return r[cols-1];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple python dp 70ms
+
+
+    def minPathSum(self, grid):
+        m = len(grid)
+        n = len(grid[0])
+        for i in range(1, n):
+            grid[0][i] += grid[0][i-1]
+        for i in range(1, m):
+            grid[i][0] += grid[i-1][0]
+        for i in range(1, m):
+            for j in range(1, n):
+                grid[i][j] += min(grid[i-1][j], grid[i][j-1])
+        return grid[-1][-1]
+
+----------------------------------------------------------------------------------------------------
+My 8 lines simple solution
+    int m = grid.length, n = grid[0].length;
+    for(int i = 0; i < m; i++){
+    	for(int j = 0; j < n; j++){
+    	if(i == 0 && j != 0) grid[i][j] += grid[i][j-1];
+    	if(i != 0 && j == 0) grid[i][j] += grid[i-1][j];
+    	if (i != 0 && j != 0) grid[i][j] += Math.min(grid[i-1][j], grid[i][j-1]);
+    	}
+    }
+    return grid[m-1][n-1];
+
+----------------------------------------------------------------------------------------------------
+Minimum Path Sum ---------How can I reduce the memory.
+Here is the idea:
+
+ 1. f[m][n] is a matrix store the min value of every location we can
+    get.
+ 2. f[0][0] =grid[0][0], f[i][0]=f[i-1][0]+grid[i][0],
+    f[0][j]=f[0][j-1]+grid[0][j]
+ 3. f[i][j]=min(f[i-1][j],f[i][j-1])+grid[i][j].
+ 4. at last return the f[m-1][n-1]
+
+----------
+
+
+    class Solution {
+            public:
+                int minPathSum(vector<vector<int> > &grid) {
+                    // IMPORTANT: Please reset any member data you declared, as
+                    // the same Solution instance will be reused for each test case.
+                    int m=grid.size();
+                    int n=grid[0].size();
+                    int** f;
+                    f=new int*[m];
+                    for(int i=0;i<m;i){
+                        f[i]=new int[n];
+                    }
+                    f[0][0]=grid[0][0];
+                    for(int i=1;i<m;i++){
+                        f[i][0]=f[i-1][0]+grid[i][0];
+                    }
+                    for(int i=1;i<n;i++){
+                        f[0][i]=f[0][i-1]+grid[0][i];
+                    }
+                    for(int i=1;i<m;i++){
+                        for(int j=1;j<n;j++)
+                            f[i][j]=min(f[i-1][j],f[i][j-1])+grid[i][j];
+                    }
+                    return f[m-1][n-1];
+                }
+                int min(int a,int b){
+                    if(a>b)
+                        return b;
+                    else
+                        return a;
+                }
+            };
+
+----------------------------------------------------------------------------------------------------
+AC Java DP solution v.s. TLE Dijstra solution
+When I looked at this question, the first thought was the Dijkstra solution, which is a very fast algorithm to calculate the shortest path. But this solution got TLE in this question, while DP solution worked fine.
+
+I will talk about the Dijkstra solution first, as it's the first though came into my mind, and there is already discussions on the DP solution. If you are not interested in the Dijkstra solution, you can jump to the latter part of this post, which is about the DP solution, which is accepted.
+
+**Dijkstra**
+The idea of Dijkstra algorithm is to divide the graph into 2 parts, visited and unvisited. 
+For every node in the visited part has a *dist* value. Then we need to exam every edges across the visited part and the unvisited parts, which are edges that its start node is in the visited part, while its end node is in the unvisited part. What we are looking for is one edge, which has the minimum value of (dist(start node) + the edge's value). Then we put this node into the visited part and exam the edges again.
+
+Following is the code. It uses a Java Heap, PriorityQueue to keep track of the minimum (dist(start node) + the edge's value), but in this question, the edge value is in the node itself, which is the same for every edges ending to it, so actually the heap just keeps track of the mimimum dist(start node) of every unvisited nodes around the boarder between visited and unvisited.
+
+    public class Solution_dijkstra {
+	
+	class PointComparator implements Comparator<int[]>{
+    	int[][] dist;
+    	public PointComparator(int[][] dist){
+    		this.dist = dist;
+    	}
+    	@Override
+    	public int compare(int[] o1, int[] o2) {
+    		int[] point1 = (int[])o1;
+            int[] point2 = (int[])o2;
+            return Integer.valueOf(dist[point1[0]][point1[1]])
+                .compareTo(Integer.valueOf(dist[point2[0]][point2[1]]));
+        }
+    }
+    	
+    public int minPathSum(int[][] grid) {
+        if(grid == null || grid.length == 0) return 0;
+        int m = grid.length;
+        int n = grid[0].length;
+        
+        boolean[][] visited = new boolean[m][n];
+        int[][] dist = new int[m][n];
+        
+        for(int x = 0; x < m; x++){
+            for(int y = 0; y < n; y++){
+                dist[x][y] = Integer.MAX_VALUE;
+            }
+        }
+        
+        dist[0][0] = grid[0][0];
+        
+        PriorityQueue<int[]> pq = new PriorityQueue<int[]>( m*n, new PointComparator(dist));
+        
+        pq.add(new int[]{0, 0});
+        
+        while(!pq.isEmpty()){
+            
+            int[] point = pq.poll();
+            int x = point[0];
+            int y = point[1];
+            int d = dist[x][y];
+            
+            if(x == n-1 && y == m-1){
+                return d;
+            }
+            
+            visited[x][y] = true;
+            
+            if((y+1 < n) && !visited[x][y+1]){
+                dist[x][y+1] = min(
+                    dist[x][y+1],
+                    d + grid[x][y+1]);
+                pq.add(new int[]{x, y+1});
+            }
+            
+            if((x+1 < m ) && !visited[x+1][y]){
+                dist[x+1][y] = min(
+                    dist[x+1][y],
+                    d + grid[x+1][y]);
+                pq.add(new int[]{x+1, y});
+            }
+        }
+        return 0;
+        
+    }
+    
+    private int min(int i1, int i2){
+    	return i1 < i2 ? i1 : i2;
+    }
+
+
+} 
+
+
+This solution got LTE error, mostly because of the priority queue and doesn't consider the special condition here that it's a grid and directed, which means a node can only be accessed from it's left and upper nodes. Put all these into consideration, we have the DP solution. It's essentially formula is
+
+dist(node) = min( dist(upper node), dist(left node)) + node's value
+
+**DP**
+here is the code:
+
+    public class Solution_dp {
+	
+	private int getDist(int[][] dist, int x, int y){
+		if(x < 0 || y < 0){
+			return Integer.MAX_VALUE;
+		}
+		
+		return dist[x][y];		
+	}
+	
+	private int min(int i1, int i2){
+		return i1 < i2 ? i1 : i2;
+	}
+	
+	
+	public int minPathSum(int[][] grid) {
+
+		if(grid == null || grid.length == 0) return 0;
+		
+		int m = grid.length;
+		int n = grid[0].length;
+		
+		int[][] dist = new int[m][n];
+		
+				
+		
+		for(int x = 0; x < m; x++){
+			for(int y = 0; y < n; y++){
+				
+				if(x == 0 && y == 0){
+					dist[0][0] = grid[0][0];
+				}else{
+					dist[x][y] = min(getDist(dist, x-1, y), getDist(dist, x, y-1))  + grid[x][y];					
+				}
+			}			
+		}
+	
+		return dist[m-1][n-1];
+				
+	}
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+C++  easy solution using dp.  space compexity : O(1)
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int>>& a) {
+            int m=a.size();
+            if(m==0) return 0;
+            int n= a[0].size();
+            
+            for(int i = 0 ; i<m; i++  ){
+                for(int j=0; j<n ; j++){
+                    int left= (j==0) ? INT_MAX : a[i][j-1];
+                    int up = (i==0) ? INT_MAX : a[i-1][j];
+                    if(i==0 && j==0) continue;
+                    a[i][j] += min(left, up );
+                }
+            }
+            return a[m-1][n-1];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Passed c++ code, only need O(n) extra space and don&#x27;t change the original data
+    int minPathSum(vector<vector<int> > &grid) {
+        int rows = grid.size();
+        if (rows==0) return 0;
+        int cols = grid[0].size();
+        vector<int> vi(cols, INT_MAX);
+
+        int i, j;
+        vi[0] = 0;
+        for (i=0; i<rows; i++) {
+            vi[0] += grid[i][0];
+            for (j=1; j<cols; j++) {
+                vi[j] = min(vi[j-1], vi[j])+grid[i][j];
+            }
+        }
+        return vi[cols-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (O(m*n), O(n) space).
+        
+    # O(m*n) space
+    def minPathSum(self, grid):
+        if not grid:
+            return 
+        r, c = len(grid), len(grid[0])
+        dp = [[0 for _ in xrange(c)] for _ in xrange(r)]
+        dp[0][0] = grid[0][0]
+        for i in xrange(1, r):
+            dp[i][0] = dp[i-1][0] + grid[i][0]
+        for i in xrange(1, c):
+            dp[0][i] = dp[0][i-1] + grid[0][i]
+        for i in xrange(1, len(grid)):
+            for j in xrange(1, len(grid[0])):
+                dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]
+        return dp[-1][-1]
+                
+    # O(2*n) space
+    def minPathSum2(self, grid):
+        if not grid:
+            return 
+        r, c = len(grid), len(grid[0])
+        pre = cur = [0] * c
+        pre[0] = grid[0][0] 
+        for i in xrange(1, c):
+            pre[i] = pre[i-1] + grid[0][i]
+        for i in xrange(1, r):
+            cur[0] = pre[0] + grid[i][0]
+            for j in xrange(1, c):
+                cur[j] = min(cur[j-1], pre[j]) + grid[i][j]
+            pre = cur
+        return cur[-1]
+        
+    # O(n) space
+    def minPathSum(self, grid):
+        if not grid:
+            return 
+        r, c = len(grid), len(grid[0])
+        cur = [0] * c
+        cur[0] = grid[0][0] 
+        for i in xrange(1, c):
+            cur[i] = cur[i-1] + grid[0][i]
+        for i in xrange(1, r):
+            cur[0] += grid[i][0]
+            for j in xrange(1, c):
+                cur[j] = min(cur[j-1], cur[j]) + grid[i][j]
+        return cur[-1]
+    
+    # change the grid itself  
+    def minPathSum4(self, grid):
+        if not grid:
+            return 
+        r, c = len(grid), len(grid[0])
+        for i in xrange(1, c):
+            grid[0][i] += grid[0][i-1]
+        for i in xrange(1, r):
+            grid[i][0] += grid[i-1][0]
+        for i in xrange(1, r):
+            for j in xrange(1, c):
+                grid[i][j] += min(grid[i-1][j], grid[i][j-1])
+        return grid[-1][-1]
+
+----------------------------------------------------------------------------------------------------
+My Java clean code, DP, no extra space
+
+    public int minPathSum(int[][] grid) {
+        if(grid.length == 0 || grid[0].length == 0)
+            return 0;
+        for(int i = 0; i < grid.length; i++){
+            for(int j = 0; j < grid[0].length; j++){
+                if(i == 0 && j == 0) continue;
+                if(i == 0) grid[i][j] += grid[i][j - 1];
+                else if(j == 0) grid[i][j] += grid[i - 1][j];
+                else grid[i][j] += Math.min(grid[i - 1][j], grid[i][j - 1]);
+            }
+        }
+        return grid[grid.length - 1][grid[0].length - 1];
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution, beat 98.59%
+    int minPathSum(vector<vector<int>>& grid) {
+        if(grid.empty())
+            return 0;
+        
+        vector<int> res(grid[0].size(),INT_MAX);
+        res[0] = 0;
+        
+        for(int i=0;i<grid.size();i++)
+            for(int j=0;j<grid[0].size();j++)
+                if(j > 0)
+                    res[j] = min(res[j-1],res[j]) + grid[i][j];
+                else
+                    res[j] = res[j] + grid[i][j];
+        
+        return res[grid[0].size()-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution beats 100% java solutions
+    public class Solution {
+        public int minPathSum(int[][] grid) {
+            if(grid.length == 0)  return 0;
+            
+            int r = grid.length;
+            int c = grid[0].length;
+            
+            for(int i=0;i<r; i++) {
+                for(int j=0; j<c; j++) {
+                    int leftSum = (j>0) ? grid[i][j-1] : Integer.MAX_VALUE;
+                    int topSum = (i>0) ? grid[i-1][j] : Integer.MAX_VALUE;
+                    if(i==0 && j==0) continue;
+                    
+                    grid[i][j] += Math.min(leftSum, topSum);
+                }
+            }
+            return grid[r-1][c-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My accepted solution in Java
+In order to get the minimum sum to get to grid(m-1,n-1);
+
+So we should get the minimum sum both  grid(m-1,n-1-1) and grid(m-1-1,n-1),
+
+So that could convert to(I using every space in grid to hold the minimum sum get to grid(i,j))
+
+                               min( grid(i-1,j) , grid(i,j-1) ) + grid(i,j)                 i>0 && j>0
+                       /  
+          grid(i,j)=   |       grid(i,j-1)+grid(i,j)                                        i=0 && j>0
+                       |  
+                       |       grid(i-1,j)+grid(i,j)                                        i>0 && j=0 
+                       \  
+                               grid(0,0)                                                    i=0 && j=0
+                          
+
+Finally, the grid(m-1,n-1) is the result
+
+Hope you can get my point :)
+
+
+
+    public class Solution {
+        
+        public int min(int a,int b)
+        {
+            return a>b?b:a;
+        }
+        
+        public int minPathSum(int[][] grid) {
+            if(grid.length==0) return 0;
+            int m=grid.length;
+            int n=grid[0].length;
+            int[][] res=new int[grid.length][];
+            for(int i=0;i<res.length;i++)
+            {
+                res[i]=Arrays.copyOf(grid[i],grid[i].length);
+            }
+            for(int i=1;i<n;i++)
+            {
+                res[0][i]+=res[0][i-1];
+            }
+            for(int i=1;i<m;i++)
+            {
+                res[i][0]+=res[i-1][0];
+            }
+            for(int i=1;i<m;i++)
+            {
+                for(int j=1;j<n;j++)
+                {
+                    res[i][j]+=min(res[i][j-1],res[i-1][j]);
+                }
+            }
+            return res[m-1][n-1];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My c++ program of o(mn) time
+    int minPathSum(vector<vector<int> > &grid) {
+    	int m = grid.size();
+    	int n = grid[0].size();
+    	for (int i = 0; i<m; i++)
+    	{
+    		for (int j = 0; j<n; j++)
+    		{
+    			if (i == 0 && j == 0) continue;
+    			else if (i == 0) grid[i][j] += grid[i][j - 1];
+    			else if (j == 0) grid[i][j] += grid[i - 1][j];
+    			else
+    			{
+    				if (grid[i][j - 1]<grid[i - 1][j]) grid[i][j] += grid[i][j - 1];
+    				else grid[i][j] += grid[i - 1][j];
+    			}
+    		}
+    	}
+    	return grid[m - 1][n - 1];
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ dp solutions (O(m*n) and O(n) space).
+       
+    // O(m*n) space
+    int minPathSum1(vector<vector<int>>& grid) {
+        vector<vector<int>> dp = grid;
+        int row = dp.size(), col = dp[0].size();
+        for (unsigned int i = 1; i < row; i++)
+            dp[i][0] += dp[i-1][0];
+        for (unsigned int j = 1; j < col;  j++) 
+            dp[0][j] += dp[0][j-1];
+        for (unsigned int i = 1; i < row; i++) 
+            for (unsigned int j = 1; j < col; j++) 
+                dp[i][j] += min(dp[i-1][j], dp[i][j-1]);
+        return dp[row-1][col-1];
+    }
+    
+    // O(n) space
+    int minPathSum(vector<vector<int>>& grid) {
+        int row = grid.size(), col = grid[0].size();
+        vector<int> dp = grid[0];
+        for (unsigned int j = 1; j < col; j++)
+            dp[j] += dp[j-1];
+        for (unsigned int i = 1; i < row; i++) {
+            dp[0] += grid[i][0];
+            for (unsigned int j = 1; j < col; j++)
+                dp[j] = grid[i][j] + min(dp[j-1], dp[j]);
+        }
+        return dp[col-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+My Java solution using DP with memorization (beats about 98% submissions)
+    public int minPathSum(int[][] grid) {
+        int[][] memo = new int[grid.length][grid[0].length];
+        return minPathSumHelper(grid, 0, 0, memo);
+    }
+    
+    public int minPathSumHelper(int[][] grid, int row, int col, int[][] memo) {
+        if(row == grid.length-1 && col == grid[0].length-1) return grid[row][col];
+        if(memo[row][col] != 0) return memo[row][col];
+
+        int rowInc = Integer.MAX_VALUE, colInc = Integer.MAX_VALUE;
+        if(row < grid.length-1) rowInc = minPathSumHelper(grid, row+1, col, memo);
+        if(col < grid[0].length-1) colInc = minPathSumHelper(grid, row, col+1, memo);
+        memo[row][col] = Math.min(rowInc, colInc) + grid[row][col];
+        return memo[row][col];
+    }
+
+Use a 2D array named memo to remember value which is calculated before to speed up.
+
+----------------------------------------------------------------------------------------------------
+11 line DP in Java using 4ms
+        public int minPathSum(int[][] grid) {
+        int m=grid.length, n=grid[0].length;
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(i==0 || j==0){
+                    if(i==0 && j==0) grid[i][j] = grid[i][j];
+                    if(i>0 && j==0) grid[i][j] = grid[i][j]+grid[i-1][j];
+                    if(i==0 && j>0) grid[i][j] = grid[i][j] + grid[i][j-1];
+                } else grid[i][j] = grid[i][j] + Math.min(grid[i][j-1], grid[i-1][j]);
+            }
+        }
+        return grid[m-1][n-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Beats 100% with O(n) space
+    class Solution {
+    public:
+        int minPathSum(vector<vector<int>>& grid) {
+            int m = grid.size();
+            int n = grid[0].size();
+            vector<int> dp(n);
+            
+            dp[0] = grid[0][0];
+            for (int j = 1; j < n; j++) {   // init
+                dp[j] = dp[j-1] + grid[0][j];
+            }
+            
+            for (int i = 1; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    dp[j] = (j == 0 ? dp[j] : min(dp[j], dp[j-1])) + grid[i][j];
+                }   
+            }
+            return dp[n-1];
+        }
+    };
+
+
+In usual provide O(mn) solution first, then try to optimize it. From dp[i][j] = min(dp[i][j-1], dp[i-1][j]) + grid[i][j], you can see it only depends on previous row and current row value, we waste a lot space if use mn space. 
+
+dp[i][j] is row i, column j; 
+dp[i][j-1] is row i, column j-1; 
+dp[i-1][j] is row i-1, column j;
+
+if we just use row to represent dp[i], then it should be 
+
+row[j] = min(row[j-1], row[j]) + grid[i][j]; 
+
+why dp[i-1][j] is row[j], because before we set new value for row[j], it saves old value, which is dp[i-1][j].
+
+So the new transition formula is:
+
+row[j] = min(row[j-1], row[j]) + grid[i][j];
+
+still use dp variable to replace row, it is:
+
+dp[j] = min(dp[j-1], dp[j]) + grid[i][j];
+
+variable j is from 0 to n, same as before. But the i is not used in two dimension row number, just use iteration number. We need do m-1 iterations, because we don't need do it for first row, which is init value.
+
+----------------------------------------------------------------------------------------------------
+What if the path can go up and left in the middle?
+Such as:
+
+    1, 9, 1, 1, 1
+    1, 1, 1, 9, 1
+
+All the 1's form the minimum path.
+
+
+
+----------------------------------------------------------------------------------------------------

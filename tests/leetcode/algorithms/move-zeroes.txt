@@ -1,0 +1,467 @@
+Compact and clean C++ solution
+Classic binary search problem. 
+
+Looking at subarray with index [start,end]. We can find out that if the first member is less than the last member, there's no rotation in the array. So we could directly return the first element in this subarray.
+
+If the first element is larger than the last one, then we compute the element in the middle, and compare it with the first element. If  value of the element in the middle is larger than the first element, we know the rotation is at the second half of this array. Else, it is in the first half in the array.
+ 
+Welcome to put your comments and suggestions.
+ 
+
+     int findMin(vector<int> &num) {
+            int start=0,end=num.size()-1;
+            
+            while (start<end) {
+                if (num[start]<num[end])
+                    return num[start];
+                
+                int mid = (start+end)/2;
+                
+                if (num[mid]>=num[start]) {
+                    start = mid+1;
+                } else {
+                    end = mid;
+                }
+            }
+            
+            return num[start];
+        }
+
+Some corner cases will be discussed  [here][1]
+
+
+ 
+
+
+  [1]: http://changhaz.wordpress.com/2014/10/15/leetcode-find-minimum-in-rotated-sorted-array/
+
+----------------------------------------------------------------------------------------------------
+4ms simple C++ code with explanation
+In this problem, we have only three cases. 
+
+Case 1. The leftmost value is less than the rightmost value in the list: This means that the list is not rotated. 
+e.g>  [1 2 3 4 5 6 7 ]
+
+Case 2. The value in the middle of the list is greater than the leftmost and rightmost values in the list. 
+e.g>  [ 4 5 6 7 0 1 2 3 ]
+
+Case 3. The value in the middle of the list is less than the leftmost and rightmost values in the list. 
+e.g>  [ 5 6 7 0 1 2 3 4 ]
+
+As you see in the examples above, if we have case 1, we just return the leftmost value in the list. If we have case 2, we just move to the right side of the list. If we have case 3 we need to move to the left side of the list. 
+
+Following is the code that implements the concept described above.
+
+    int findMin(vector<int>& nums) {
+        int left = 0,  right = nums.size() - 1;
+        while(left < right) {
+            if(nums[left] < nums[right]) 
+                return nums[left];
+                
+            int mid = (left + right)/2;
+            if(nums[mid] > nums[right])
+                left = mid + 1;
+            else
+                right = mid;
+        }
+        
+        return nums[left];
+    }
+
+
+
+
+----------------------------------------------------------------------------------------------------
+A concise solution with proof in the comment
+    class Solution {
+    public:
+        int findMin(vector<int> &num) {
+            int low = 0, high = num.size() - 1;
+            // loop invariant: 1. low < high
+            //                 2. mid != high and thus A[mid] != A[high] (no duplicate exists)
+            //                 3. minimum is between [low, high]
+            // The proof that the loop will exit: after each iteration either the 'high' decreases
+            // or the 'low' increases, so the interval [low, high] will always shrink.
+            while (low < high) {
+                auto mid = low + (high - low) / 2;
+                if (num[mid] < num[high])
+                    // the mininum is in the left part
+                    high = mid;
+                else if (num[mid] > num[high])
+                    // the mininum is in the right part
+                    low = mid + 1;
+            }
+    
+            return num[low];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simplest and fastest C++ solution O(lg N), you can&#x27;t beat this!
+Binary search: basically eliminate the impossible elements by half each time by exploiting the sorted property.
+
+        int findMin(vector<int> &num) {
+            int lo =0, hi = num.size()-1;
+            while(lo<hi){
+                  int mid=(lo+hi)/2;
+                  if(num[mid]>num[hi]) lo=mid+1;
+                  else hi=mid;
+            }
+            return num[lo];
+        }
+    
+
+----------------------------------------------------------------------------------------------------
+Java solution with binary search
+The minimum element must satisfy one of two conditions: 1) If rotate, A[min] < A[min - 1]; 2) If not, A[0]. Therefore, we can use binary search: check the middle element, if it is less than previous one, then it is minimum. If not, there are 2 conditions as well: If it is greater than both left and right element, then minimum element should be on its right, otherwise on its left.
+
+    public class Solution {
+        public int findMin(int[] num) {
+            if (num == null || num.length == 0) {
+                return 0;
+            }
+            if (num.length == 1) {
+                return num[0];
+            }
+            int start = 0, end = num.length - 1;
+            while (start < end) {
+                int mid = (start + end) / 2;
+                if (mid > 0 && num[mid] < num[mid - 1]) {
+                    return num[mid];
+                }
+                if (num[start] <= num[mid] && num[mid] > num[end]) {
+                    start = mid + 1;
+                } else {
+                    end = mid - 1;
+                }
+            }
+            return num[start];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+9-line java code, beats 95.14% run times
+if the array is indeed rotated by some pivot, there are only 2 possibilities
+
+> 1. a[mid] > a[left] && a[mid] > a[right], meaning we are on the bigger part, the smaller part is on our right, so go right
+
+> 2. a[mid] < a[left] && a[mid] < a[right], meaning we are on the smaller part, to find the smallest element, go left
+
+if the array is not rotated (actually one rotating cycle completed), we just need to go left, in this case a[mid] < a[right] always holds.
+
+combining the cases above, we conclude that
+> if a[mid] > a[right], go right; if a[mid] < a[right], go left.
+
+    public class Solution {
+        public int findMin(int[] nums) {
+            if (nums==null || nums.length==0) { return Integer.MIN_VALUE; } 
+            int left = 0, right = nums.length-1;
+            while (left < right-1) {  // while (left < right-1) is a useful technique
+                int mid = left + (right-left)/2;
+                if (nums[mid] > nums[right]) { left = mid; }
+                else { right = mid; }
+            }
+            if (nums[left] > nums[right]) { return nums[right]; }
+            return nums[left];
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+7-Line O(LogN) Solution
+    public int FindMin(int[] nums) {
+        int left = 0, right = nums.Length - 1, mid = 0;
+        while(left < right){
+            mid = (left + right) >> 1;
+            if(nums[mid] > nums[right]) left = mid + 1;
+            else right = mid;
+        }
+        return nums[right];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+9-line python clean code
+Just use binary search
+
+    class Solution(object):
+        def findMin(self, nums):
+            """
+            :type nums: List[int]
+            :rtype: int
+            """
+            i = 0
+            j = len(nums) - 1
+            while i < j:
+                m = i + (j - i) / 2
+                if nums[m] > nums[j]:
+                    i = m + 1
+                else:
+                    j = m
+            return nums[i]
+
+----------------------------------------------------------------------------------------------------
+1-2 lines Ruby&#x2F;Python
+Use binary search to find the first number that's less than or equal to the last.
+
+---
+
+**Ruby**
+
+Direct translation of the above sentence into Ruby.
+
+    def find_min(nums)
+      nums.bsearch { |num| num <= nums.last }
+    end
+
+---
+
+**Python**
+
+A little hack.
+
+    class Solution:
+        def findMin(self, nums):
+            self.__getitem__ = lambda i: nums[i] <= nums[-1]
+            return nums[bisect.bisect(self, False, 0, len(nums))]
+
+----------------------------------------------------------------------------------------------------
+Very Simple Java Binary Search
+    public class Solution {
+    public int findMin(int[] num) {
+        int low = 0;
+        int high = num.length - 1;
+        while(low < high){
+            int mid = (low + high) / 2;
+            if(num[high] < num[mid]){
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+        return num[high];
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ two-pointer solution.
+        
+    int findMin(vector<int>& nums) {
+        int l = 0, r = nums.size()-1;
+        while (l < r) {
+            int mid = (r-l)/2 + l;
+            if (nums[mid] < nums[r])
+                r = mid;
+            else
+                l = mid + 1;
+        }
+        return nums[l];
+    }
+
+----------------------------------------------------------------------------------------------------
+5 lines C++ implementation
+    class Solution {
+    public:
+        int findMin(vector<int>& nums) {
+            int start=0, end=nums.size()-1;
+            while(end>start){
+                int mid=start+(end-start)/2;
+                if(nums[mid]<nums[end]) end=mid;
+                else start=mid+1;
+            }
+            return nums[start];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution
+    public int findMin(int[] nums) {
+        
+        	int start = 0, end = nums.length - 1, mid;
+        	while (start  <  end) {
+        		mid = (start + end) / 2;
+        		if (nums[mid]  > nums[end])
+        			start = mid + 1;
+        		else
+        			end = mid;
+        	}
+        	return nums[start];
+    }
+
+----------------------------------------------------------------------------------------------------
+My java solution (logN)
+    public int findMin(int[] num) {
+        int i = 0;
+        int j = num.length - 1;
+        
+        int res = 0;
+        
+        while (j >= i) {
+            
+            if (num[i] <= num[j]) {
+                res = num[i];
+                break;
+            }
+            
+            int m = i + (j - i) / 2;
+            
+            if (num[i] <= num[m]) {
+                i = m + 1;
+            }
+            else {
+                j = m;
+            }
+        }
+        
+        return res;
+    }
+
+Just use binary search. When found the subarray is from low to high, simply return the first value.
+
+If the length of the array is 0, the return value is 0 or we can set any value we want to res.
+
+----------------------------------------------------------------------------------------------------
+My binary-search solution in Python with disscussing
+    class Solution:
+        # @param num, a list of integer
+        # @return an integer
+        def findMin(self, num):
+            first, last = 0, len(num) - 1
+            while first < last:
+                midpoint = (first + last) // 2
+                if num[midpoint] > num[last]:
+                    first = midpoint + 1
+                else:
+                    last = midpoint
+            return num[first]
+
+This solution has a time complexity of O(log(n)) and takes about 50 ms to run.
+In python, things are little bit different from the ones in C++ or Java. I am told that each python statement will be translated into one or several c function invocations. So less statements almost always means higher performance. I tried the one line solution "return min(num)" in this subject. It is really a system cheating and has a complexity of O(n). But it yields the identical running time as the binary-search solution. I am not sure about the test inputs. However I think we should have some large ones to make the difference (O(n) VS O(log(n))) visible. I guess we need some inputs which have 100 k or even more numbers.
+
+----------------------------------------------------------------------------------------------------
+C++ 4ms binary search with some comments
+    // Lets represent rotated array 4567890123 as:
+    //             9
+    //           8    <--- top middle
+    //         7         
+    //       6
+    //     5
+    //   4
+    //  -0-1-2-3-4-5-6-7-8-9- [index] in array  
+    //                     3
+    //                   2
+    //                 1    <--- bottom middle
+    //               0
+    // When you do binary search your middle index is either on the "top" or "bottom" index
+    // when l == 0 and r == 9 then mid == 4, mid_number == nums[mid] == 8 
+    // I call it "top middle", since it always > than both nums[l] and nums[r] (4 < 8 > 3)
+    // so the min value is on the right side of it
+    // when l == 4 and r == 9 then mid == 7, mid_number == nums[mid] == 1 
+    // I call it "bottom middle" since it always < than both nums[l] and nums[r] (8 > 1 < 3)
+    // so the min value is somewhere on the left side of it
+    int findMin(vector<int>& nums) 
+    {
+       int l = 0, r = nums.size() - 1;
+       while(r - l > 1)
+       {
+           int mid = (l + r) / 2;
+           if(nums[l] < nums[mid] && nums[mid] > nums[r])
+           {
+               l = mid; // top middle, min value is somewhere on the right
+           }
+           else
+           {
+               r = mid; // bottom middle, min value is somewhere on the left
+           }
+       }
+       
+       return min(nums[l], nums[r]);
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;Java solution&#93; &#91;Binary Search&#93; &#91;logn&#93;
+
+public class Solution {
+
+    public int findMin(int[] num) {
+    
+        int start = 0;
+        int end = num.length-1;
+
+        if (num[start]<num[end]) return num[0];
+        
+        while(end-start>1){
+        	int mid = (end+start)/2;
+            if (num[start]<num[mid]) start = mid;
+            else end = mid;
+        }
+        
+        return num[end];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java version Bisearch solution
+       
+    //This is my Bisearch solution in java.
+    
+     public class Solution {
+            public int findMin(int[] num) {
+                int left = 0, right = num.length - 1;
+                while(left < right){
+                    int mid = (left + right) / 2;
+                    if(num[left] > num[right]){
+                        if(num[left] <= num[mid]){
+                            left = mid + 1;
+                        }else{
+                            right = mid;
+                        }
+                    }else{
+                        return num[left];
+                    }
+                }
+                return num[left];
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+10 lines C++ binary search solution easy to understand
+    class Solution {
+    public:
+        int findMin(vector<int>& nums) {
+            int e = nums.size()-1;
+            int b = 0;
+            while (b<e) {
+                int mid = b + (e-b)/2;
+                if (nums[mid] > nums[e]) 
+                    b = mid+1;
+                else if (nums[mid] < nums[e])
+                    e = mid;
+            }
+            return nums[b];
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Shortest logn answer
+ We can just compare the beginning and end of the array, and update the low and high indices accordingly. 
+ 
+
+    class Solution {
+        public:
+            int findMin(vector<int> &num) {
+                int n = num.size();
+                int low = 0, high = n-1;
+                while(num[low] > num[high]) {
+                    int mid = (low+high) >> 1;
+                    if(num[low] <= num[mid])
+                        low = mid+1;
+                    else if(num[mid] < num[high])
+                        high = mid;
+                }
+                return num[low];
+            }
+        };
+
+----------------------------------------------------------------------------------------------------

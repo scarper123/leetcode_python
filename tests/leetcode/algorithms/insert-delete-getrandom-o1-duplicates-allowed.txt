@@ -1,0 +1,798 @@
+A short O(n) recursive greedy solution
+Given the string s, the greedy choice (i.e., the leftmost letter in the answer) is the smallest s[i], s.t.
+the suffix s[i .. ] contains all the unique letters. (Note that, when there are more than one smallest s[i]'s, we choose the leftmost one. Why? Simply consider the example: "abcacb".)
+
+After determining the greedy choice s[i], we get a new string s' from s by 
+
+ 1. removing all letters to the left of s[i],
+ 2. removing all s[i]'s from s.
+
+We then recursively solve the problem w.r.t. s'. 
+
+The runtime is O(26 * n) = O(n).
+
+    public class Solution {
+        public String removeDuplicateLetters(String s) {
+            int[] cnt = new int[26];
+            int pos = 0; // the position for the smallest s[i]
+            for (int i = 0; i < s.length(); i++) cnt[s.charAt(i) - 'a']++;
+            for (int i = 0; i < s.length(); i++) {
+                if (s.charAt(i) < s.charAt(pos)) pos = i;
+                if (--cnt[s.charAt(i) - 'a'] == 0) break;
+            }
+            return s.length() == 0 ? "" : s.charAt(pos) + removeDuplicateLetters(s.substring(pos + 1).replaceAll("" + s.charAt(pos), ""));
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Easy to understand iterative Java solution
+The basic idea is to find out the smallest result letter by letter (one letter at a time). Here is the thinking process for input "cbacdcbc":
+
+1. find out the last appeared position for each letter;
+    c - 7
+    b - 6
+    a - 2
+    d - 4
+2. find out the smallest index from the map in step 1 (a - 2);
+3. the first letter in the final result must be the smallest letter from index 0 to index 2;
+4. repeat step 2 to 3 to find out remaining letters.
+
+- the smallest letter from index 0 to index 2: a
+- the smallest letter from index 3 to index 4: c
+- the smallest letter from index 4 to index 4: d
+- the smallest letter from index 5 to index 6: b
+
+so the result is "acdb"
+
+Notes:
+
+- after one letter is determined in step 3, it need to be removed from the "last appeared position map", and the same letter should be ignored in the following steps
+- in step 3, the beginning index of the search range should be the index of previous determined letter plus one
+
+----
+
+    public class Solution {
+    
+        public String removeDuplicateLetters(String s) {
+            if (s == null || s.length() <= 1) return s;
+    
+            Map<Character, Integer> lastPosMap = new HashMap<>();
+            for (int i = 0; i < s.length(); i++) {
+                lastPosMap.put(s.charAt(i), i);
+            }
+    
+            char[] result = new char[lastPosMap.size()];
+            int begin = 0, end = findMinLastPos(lastPosMap);
+    
+            for (int i = 0; i < result.length; i++) {
+                char minChar = 'z' + 1;
+                for (int k = begin; k <= end; k++) {
+                    if (lastPosMap.containsKey(s.charAt(k)) && s.charAt(k) < minChar) {
+                        minChar = s.charAt(k);
+                        begin = k+1;
+                    }
+                }
+    
+                result[i] = minChar;
+                if (i == result.length-1) break;
+    
+                lastPosMap.remove(minChar);
+                if (s.charAt(end) == minChar) end = findMinLastPos(lastPosMap);
+            }
+    
+            return new String(result);
+        }
+    
+        private int findMinLastPos(Map<Character, Integer> lastPosMap) {
+            if (lastPosMap == null || lastPosMap.isEmpty()) return -1;
+            int minLastPos = Integer.MAX_VALUE;
+            for (int lastPos : lastPosMap.values()) {
+                 minLastPos = Math.min(minLastPos, lastPos);
+            }
+            return minLastPos;
+        }
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+Java solution using Stack with comments
+    public String removeDuplicateLetters(String sr) {
+    
+        int[] res = new int[26]; //will contain number of occurences of character (i+'a')
+        boolean[] visited = new boolean[26]; //will contain if character (i+'a') is present in current result Stack
+        char[] ch = sr.toCharArray();
+        for(char c: ch){  //count number of occurences of character 
+            res[c-'a']++;
+        }
+        Stack<Character> st = new Stack<>(); // answer stack
+        int index;
+        for(char s:ch){ 
+            index= s-'a';
+            res[index]--;   //decrement number of characters remaining in the string to be analysed
+            if(visited[index]) //if character is already present in stack, dont bother
+                continue;
+            //if current character is smaller than last character in stack which occurs later in the string again
+            //it can be removed and  added later e.g stack = bc remaining string abc then a can pop b and then c
+            while(!st.isEmpty() && s<st.peek() && res[st.peek()-'a']!=0){ 
+                visited[st.pop()-'a']=false;
+            }
+            st.push(s); //add current character and mark it as visited
+            visited[index]=true;
+        }
+    
+        StringBuilder sb = new StringBuilder();
+        //pop character from stack and build answer string from back
+        while(!st.isEmpty()){
+            sb.insert(0,st.pop());
+        }
+        return sb.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution easy understanding
+    string removeDuplicateLetters(string s) {
+        vector<int> cand(256, 0);
+        vector<bool> visited(256, false);
+        for (char c : s)
+            cand[c]++;
+        string result = "0";
+        for (char c : s) {
+            cand[c]--;
+            if (visited[c]) continue;
+            while (c < result.back() && cand[result.back()]) {
+                visited[result.back()] = false;
+                result.pop_back();
+            }
+            result += c;
+            visited[c] = true;
+        }
+        return result.substr(1);
+    }
+
+----------------------------------------------------------------------------------------------------
+15 ms Java solution
+for "cbacdcbc", we counts each letter's index:
+
+    a----2
+    b----1,6
+    c----0,3,5,7
+    d----4
+
+we go from a to d, to find the first letter who has a index smaller than the largest index of the rest. Here, index 2 of letter a is smaller than 6, 7, 4, so we first pick a; then we remove all index smaller than 2, and we have:
+
+    b----6
+    c----3,5,7
+    d----4
+
+the next round we pick c not b, why ? cuz  6 of b is larger than 4, but 3 of c is smaller than 4 and 6.
+
+    b---6
+    d---4
+
+then we pick d and b to form "acdb"
+
+O(n) time to count index, and as we only have 26 letters, it's about O(26 * 26) to find a candidate letter and O(n) time to remove all index. So I think the running time is O(n).
+
+    public class Solution {
+        public String removeDuplicateLetters(String s) {
+            HashMap<Character, ArrayList<Integer>> counts = new HashMap<Character, ArrayList<Integer>>();
+            ArrayList<Character> keys = new ArrayList<Character>();
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                if (!counts.containsKey(c)) {
+                    counts.put(c, new ArrayList<Integer>());
+                    keys.add(c);
+                }
+                counts.get(c).add(i);
+            }
+            Collections.sort(keys);
+            StringBuilder sb = new StringBuilder();
+            while (!counts.isEmpty()) {
+                boolean found = true;
+                for (int i = 0; i < keys.size(); i++) {
+                    int index = counts.get(keys.get(i)).get(0);
+                    for (int j = 0; j < keys.size(); j++) {
+                        ArrayList<Integer> count = counts.get(keys.get(j));
+                        if (count.get(count.size() - 1) < index) {
+                            found = false;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        sb.append(keys.get(i));
+                        counts.remove(keys.get(i));
+                        keys.remove(i);
+                        for (int j = 0; j < keys.size(); j++) {
+                            ArrayList<Integer> count = counts.get(keys.get(j));
+                            while (count.get(0) < index) {
+                                count.remove(0);
+                            }
+                        }
+                        break;
+                    }
+                    found = true;
+                }
+            }
+            return sb.toString();
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) solution using stack with detail explanation
+First, given `"bcabc"`, the solution should be `"abc"`.  If we think about this problem intuitively, you would sort of go from the beginning of the string and start removing one if there is still the same character left and a smaller character is after it.  Given `"bcabc"`, when you see a `'b'`, keep it and continue with the search, then keep the following `'c'`, then we see an `'a'`.  Now we get a chance to get a smaller lexi order, you can check if after `'a'`, there is still `'b'` and `'c'` or not.  We indeed have them and `"abc"` will be our result.  
+
+Come to the implementation, we need some data structure to store the previous characters `'b'` and `'c'`, and we need to compare the current character with previous saved ones, and if there are multiple same characters, we prefer left ones.  This calls for a stack.  
+
+After we decided to use stack, the implementation becomes clearer.  From the intuition, we know that we need to know if there are still remaining characters left or not.  So we need to iterate the array and save how many each characters are there.  A visited array is also required since we want unique character in the solution.  The line `while(!stack.isEmpty() && stack.peek() > c && count[stack.peek()-'a'] > 0)` checks that the queued character should be removed or not, like the `'b'` and `'c'` in the previous example.  After removing the previous characters, push in the new char and mark the visited array. 
+
+Time complexity:  O(n), n is the number of chars in string.
+
+Space complexity:  O(n) worst case.
+
+
+    public String removeDuplicateLetters(String s) {
+        Stack<Character> stack = new Stack<>();
+        int[] count = new int[26];
+        char[] arr = s.toCharArray();
+        for(char c : arr) {
+            count[c-'a']++;
+        }
+        boolean[] visited = new boolean[26];
+        for(char c : arr) {
+            count[c-'a']--;
+            if(visited[c-'a']) {
+                continue;
+            }
+            while(!stack.isEmpty() && stack.peek() > c && count[stack.peek()-'a'] > 0) {
+                visited[stack.peek()-'a'] = false;
+                stack.pop();
+            }
+            stack.push(c);
+            visited[c-'a'] = true;
+        }
+        StringBuilder sb = new StringBuilder();
+        for(char c : stack) {
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+----------------------------------------------------------------------------------------------------
+Some Python solutions
+Solutions inspired by those of others. Simpler but less efficient (all still get accepted, of course, in about 50 to 100 ms, normal for Python).
+
+---
+
+**Solution 1**
+
+Inspired by [lixx2100's explanation](https://leetcode.com/discuss/73761/a-short-o-n-recursive-greedy-solution).
+
+    def removeDuplicateLetters(self, s):
+        for c in sorted(set(s)):
+            suffix = s[s.index(c):]
+            if set(suffix) == set(s):
+                return c + self.removeDuplicateLetters(suffix.replace(c, ''))
+        return ''
+
+---
+
+**Solution 2**
+
+Inspired by [WHJ425's explanation](https://leetcode.com/discuss/73777/easy-to-understand-iterative-java-solution).
+
+    def removeDuplicateLetters(self, s):
+        result = ''
+        while s:
+            i = min(map(s.rindex, set(s)))
+            c = min(s[:i+1])
+            result += c
+            s = s[s.index(c):].replace(c, '')
+        return result
+
+---
+
+**Solution 3**
+
+Inspired by [halibut735's solution](https://leetcode.com/discuss/73824/short-16ms-solution-using-stack-which-can-optimized-down-4ms).
+
+    def removeDuplicateLetters(self, s):
+        rindex = {c: i for i, c in enumerate(s)}
+        result = ''
+        for i, c in enumerate(s):
+            if c not in result:
+                while c < result[-1:] and i < rindex[result[-1]]:
+                    result = result[:-1]
+                result += c
+        return result
+
+----------------------------------------------------------------------------------------------------
+Short 16ms O(n) c++ solution using stack which can be optimized down to 4ms
+    class Solution {
+    public:
+        string removeDuplicateLetters(string s) {
+            unordered_map<char, int> cnts;
+            string ret;
+            stack<char> stk;
+            vector<bool> isVisited(26, false);
+            for (char each : s) cnts[each] ++;
+            for (int i = 0; i < s.size(); cnts[s[i]] --, ++ i) {
+                if (isVisited[s[i] - 'a'] || (!stk.empty() && stk.top() == s[i])) continue;
+                while (!stk.empty() && stk.top() > s[i] && cnts[stk.top()] > 0) {
+                    isVisited[stk.top() - 'a'] = false;
+                    stk.pop();
+                }
+                stk.push(s[i]);
+                isVisited[s[i] - 'a'] = true;
+            }
+            while (!stk.empty()) {
+                ret.push_back(stk.top());
+                stk.pop();
+            }
+            reverse(ret.begin(), ret.end());
+            return ret;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+4ms C++ solution, use return string as a stack
+
+    string removeDuplicateLetters(string s) {
+        vector<unsigned int> cnt(26,0); //only consider lowercase letters
+        vector<bool> inRes(26, false); //true if the letter has been added to res 
+        for(char ch:s) cnt[ ch-'a' ]++;
+        string res = ""; //use res as a stack
+        for(char ch:s){
+           cnt[ ch-'a' ]--;
+           if(res.empty()){ 
+               res.push_back(ch);
+               inRes[ ch-'a' ] = true;
+               continue;
+           }
+           if(inRes[ch-'a']) continue;
+           while(ch<res.back() && !res.empty() && cnt[ res.back()-'a' ]>0){
+               inRes[ res.back()-'a' ] = false;
+               res.pop_back();
+               
+           }
+           res.push_back(ch);
+           inRes[ ch-'a' ] = true;
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean and Easy Understand Java Stack Solution with Explanation
+The basic idea is to go through the given string char by char. If the current char has been used in the solution string, continue our loop to next char; If not, keep replacing the last char of current solution string with our current char being considered if the current character is smaller, then add current char to solution string.
+
+The process requires an int array and a Boolean array to store the appearances and status(used or not) of each letter. And a stack is used to conveniently push and pop chars.
+
+    public String removeDuplicateLetters(String s) {
+
+		Stack<Character> stack = new Stack<Character>();
+
+         // appearance count
+		int[] count = new int[26];
+        // used or not;
+		boolean[] added = new boolean[26];
+
+        // count appearances
+		for (char ch : s.toCharArray())
+			count[ch - 'a']++;
+
+        // go through each char
+		for (char ch : s.toCharArray()) {
+			
+			count[ch - 'a']--;
+			
+			if (added[ch - 'a'])
+				continue;
+
+            // poping out the char which is bigger and still has some left in behind
+			while (!stack.isEmpty() && stack.peek() > ch
+					&& count[stack.peek() - 'a'] > 0)
+				added[stack.pop() - 'a'] = false;
+
+           // add current one
+			stack.push(ch);
+			added[ch - 'a'] = true;
+		}
+
+           // move from stack to string
+		StringBuilder sb = new StringBuilder();
+		while (!stack.isEmpty()) {
+			sb.append(stack.pop());
+		}
+
+		return sb.reverse().toString();
+
+	}
+
+----------------------------------------------------------------------------------------------------
+Java 2ms two pointers solution (or stack simulation) beats 99.72%
+    public String removeDuplicateLetters(String s) {
+			/**
+			 * First loop: use an array cnt[] to count the number of times
+			 * appeared for each letter in s.
+			 * 
+			 * Second loop (Greedy): use a stack, pop() while (!stack.isEmpty()
+			 * && (sc = stack.peek()) >= c && cnt[sc] > 0)
+			 */
+
+			int i, n = s.length();
+			int[] cnt = new int[128];
+			boolean[] inRes = new boolean[128]; // whether a char is in res[]
+			char[] res = s.toCharArray(); // simulate a stack
+
+			for (i = 0; i < n; i++)
+				cnt[res[i]]++;
+
+			char c, sc;
+			int end = -1;
+			// now cnt[c] means the remaining count of the char c
+			for (i = 0; i < n; i++) {
+				c = res[i];
+				if (inRes[c]) {
+					cnt[c]--;
+					continue;
+				}
+
+				while (end >= 0 && (sc = res[end]) >= c && cnt[sc] > 0) {
+					end--;
+					inRes[sc] = false;
+				}
+
+				res[++end] = c;
+				cnt[c]--;
+				inRes[c] = true;
+			}
+			return String.valueOf(res).substring(0, end + 1);
+		}
+
+----------------------------------------------------------------------------------------------------
+Why the expected result for &quot;bbcaac&quot; is &quot;bca&quot;, not &quot;bac&quot;?
+Input:
+"bbcaac"
+Output:
+"bac"
+Expected:
+"bca"
+
+----------------------------------------------------------------------------------------------------
+Java O(n) iterative greedy solution
+I used StringBuilder to build the solution.  First we count all the characters in the string, and then when we iterate the string, when we see a smaller char than the previous one, we greedily remove the previous ones as long as there are still same chars later.  A visited array is used to make sure than we only take same character to the left because we want the lexi smallest sequence.
+
+    public class Solution {
+        public String removeDuplicateLetters(String s) {
+            int[] count = new int[26];
+            char[] chars = s.toCharArray();
+            for(char c : chars) {
+                count[c-'a']++;
+            }
+            StringBuilder sb = new StringBuilder();
+            boolean[] visited = new boolean[26];
+            for(char c : chars) {
+                count[c-'a']--;
+                if(visited[c-'a']) {
+                    continue;
+                }
+                while(sb.length() > 0 && c <= sb.charAt(sb.length() - 1) && count[sb.charAt(sb.length() - 1)-'a'] > 0) {
+                    visited[sb.charAt(sb.length() - 1)-'a'] = false;
+                    sb.deleteCharAt(sb.length() - 1);
+                }
+                sb.append(c);
+                visited[c-'a'] = true;
+            }
+            return sb.toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+What a tricky problem!
+Anyone think this problem should be hard?  To me it is really unnatural to get the word count first and every time when seeing the new character go backward of current solution to check if they could be at later.  Sure, given algorithm, I could understand it and see why it works, but I doubt I could come up such a solution in an interview.  Anyone with me?  Or how people could think of this direction without any hints?
+
+----------------------------------------------------------------------------------------------------
+O(n) c++ solution
+    class Solution {
+    public:
+        string removeDuplicateLetters(string s) {
+            int counts[26] = {};
+            bool inresult[26] = {};
+            for(char c: s) counts[c-'a']++;
+            string result = "";
+            for(char c: s) {
+                counts[c-'a']--;
+                if(inresult[c-'a']) continue;
+                while(!result.empty() && counts[result.back()-'a']>0 && result.back()>c){
+                    inresult[result.back()-'a'] = false;
+                    result.pop_back();
+                }
+                inresult[c-'a'] =true;
+                result.push_back(c);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+What is the smallest in lexicographical order?
+I don't quite understand this sentence. "You must make sure your result is the smallest in lexicographical order among all possible results.", Can anyone give more examples about this?
+
+Thanks!
+
+----------------------------------------------------------------------------------------------------
+From an intuitive recursive solution (4ms) to an optimized backtracking solution (0ms) in C, both are well-explained
+Because we are required to remove the duplicates and still search for the lexicographical smallest, we can then follow the following steps to solve it: 
+
+ - first use a counter array to count the frequency for each letter that appears in the string; 
+ - in this recursive method, we will search for the smallest valid letter in each recursion - validity here means that selecting this letter will not exclude others which can be ensured by the counter we initialized before;
+ - after selecting the current valid smallest letter, we then need to prepare a substring for the recursion - removing all the letters before this selected letter and remove all the same letter after this selected letter; why? since we have already get the valid smallest letter without excluding any other letter, the letters before this is useless and invalid now and since we have store this selected letter, the selected letter should also not be allowed to appear in the next recursion, right? Solved simply and directly! 
+
+To save space cost, I used an assistant method to store the result string using a int pointer to record its size.
+ 
+ - Space cost O(1)
+ - Time cost O(n) - since there are at most 26 different letters, the recursions will be limited to O(1).
+
+----------
+
+    //selecting the valid smallest, remove the invalid
+    //and then select the next smallest valid;
+    void helper(char* s, char* t, int* returnSize)
+    {
+        int len = strlen(s);
+        if(!len) return ;
+        int count[26] = {0};
+        int index = 0;
+        for(int i = 0; i < len; i++) count[s[i]-'a']++;
+        for(int i = 0; i < len; i++)
+        {
+            if(s[i] < s[index]) //search for the smallest;
+                index = i;
+            if(!(--count[s[i]-'a'])) //ensure every letter appears at least once, do not exclude any letter;
+                break;
+        }
+        char c = s[index];
+        *returnSize += 1;
+        t[*returnSize-1] = c;
+        int newIndex = 0;
+        for(int i = index+1; i < len; i++) //reconstructing the left substring by removing the collected character and the letters before the selected since they are invalid after selecting the letter in 'index' position;
+            if(s[i] != c)
+                s[newIndex++] = s[i];
+        s[newIndex] = '\0';
+        helper(s, t, returnSize);
+    }
+    
+    //AC - 4ms - quite intuitive solution selecting the smallest one by one;
+    char* removeDuplicateLetters(char* s)
+    {
+        char* t = (char*)malloc(sizeof(char)*27);
+        int size = 0;
+        helper(s, t, &size);
+        t[size] = '\0';
+        return t;
+    }
+    
+Apart from the above recursion solution, there is also a backtracking one which comparably more efficient eliminating redundant traversal for counter or something like that. Also there is a counter for avoiding removing essential letters, an array used to record the status (stored or not - in stack or not) and a char stack to store the valid letter which will be returned as the result. The steps are as follows:
+
+ - initialize the array counter;
+ - decrease the count for each corresponding letter while traversing the string ensure the unknowingly exclusion will not happen;
+ - if the current letter is already stored in the stack, we just continue the loop letting the follow-up letters to handle it if there is something wrong with the position;
+ - if the current letter is not stored then we have to where it should be placed in the stack - checking the value of the letter and counter at the same time - we have to ensure the lexicographical order, remember? but at the same time we have to ensure every unique letter is included that's why we need to check the counter - if the counter is bigger than zero, then there will others of the letter in the un-traversed part, right?
+ - store the letter and update its status (stored now).
+
+Compared with the above recursive solution, this one is so economic - almost waste nothing in space and time! Though pitifully they share the same representation of cost ##
+
+ - Space cost O(n)
+ - Time cost O(n)
+
+----------
+    
+    //AC - 0ms - using counter to ensure including each letter
+    //using visited to accelerate the checking process;
+    char* removeDuplicateLetters0(char* s)
+    {
+        int count[26] = {0};
+        bool visited[26] = {0};
+        int len = strlen(s);
+        for(int i = 0; i < len ;i++) count[s[i]-'a']++; //count the frequency of each character;
+        char *t = (char*)malloc(sizeof(char)*27); //used to store the result string;
+        int size = 0; //used to indicate the length of the result string;
+        for(int i = 0; i < len; i++)
+        {
+            int index = s[i]-'a';
+            count[index]--;
+            if(visited[index]) continue; //stored already, needless to check the result string;
+            int j = size-1; //not visited before, check it in the result string;
+            for(; j > -1; j--)
+            {
+                int index = t[j]-'a';
+                if(s[i] < t[j] && count[index]) visited[index] = false; //if the character t[j] is bigger and there is still such character in the remaining substring, to keep lexicographical order, we have to remove it from the result string and meantime reset visited records;
+                else break;
+            }
+            size = j+1; //update the size of the result string;
+            t[size++] = s[i];
+            visited[index] = true;
+        }
+        t[size] = '\0';
+        return t;
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple C++ O(N) solution, 4ms
+The key is to get an auxiliary array to save the index of the last occurence of each letter in S. Then we do greedy algorithm: scan the string from left to right, for the current letter s[i], if it is already included then move on, if not, check if the previously included letter in res (from back to begin) if larger than s[i], if yes and such res.back() letter has occurence after the current position i, then drop it from res and reset the included flag (since it can reduce res and res.back() can still be added back later on), and repeat to check the new res.back(). If s[i]> res.back() or res.back() has no occurence after i, then, just add s[i] to res.
+Two key arrays are used in the following code
+lastIdx[i]: the last occurence index of letter 'a'+i in s 
+included[i]: if 'a'+i is already included in res
+
+     
+       class Solution {
+        public:
+            string removeDuplicateLetters(string s) {
+                int sLen = s.size(), i, lastIdx[26]={0},resLen=0, included[26]={0};
+                string res;
+                for(i=sLen-1; i>=0 && resLen<26;--i) //generate lastIdx array
+                       if(!lastIdx[s[i]-'a']) {
+                        lastIdx[s[i]-'a'] = i; 
+                        ++resLen;
+                      }  
+                for(i=0; i<sLen;++i) 
+                { //scan s from left to right
+                    if(!included[s[i]-'a'])
+                    { // if s[i] is not included in s[i]
+                        while(!res.empty() && s[i]<res.back() && lastIdx[res.back()-'a']>i)
+                        { // pop res as much as possible to reduce res
+                            included[res.back()-'a'] = 0;
+                            res.pop_back();
+                        }
+                        included[s[i]-'a'] = 1; // add s[i] to res
+                        res.push_back(s[i]);
+                    }
+                }
+                return res;
+            }
+    };
+
+My first ugly version, 8ms, a little bit different auxilliary info used, less efficient and concise, 8ms
+
+    class Solution {
+    public:
+        string removeDuplicateLetters(string s) {
+            if(s.size() <= 1) return s;
+            string res;
+            int sLen =s.size(), i, resL, inS[26]={0}, start=0, count[sLen+1] = {0};
+            char curC = 'z'+1;
+            for(i=sLen-1; i>=0; --i)
+            {
+                count[i] = count[i+1];
+                if(inS[s[i]-'a']==0) 
+                {
+                    inS[s[i]-'a'] = 1;
+                    ++count[i];
+                }
+            }
+            resL = count[0];
+            while(resL)
+            {
+                for(i=start, curC='z'+1;i==0 || count[i]==count[i-1] || inS[s[i-1]-'a']== 0;++i)
+                    if(inS[s[i]-'a'] && s[i]<curC) {
+                        curC=s[i]; 
+                        start=i;
+                    }
+    
+                inS[s[start]-'a']= 0;
+                res.push_back(s[start++]);
+                --resL;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy understanding 10m stack java solution
+    public class Solution {
+       
+        public static String removeDuplicateLetters(String s) {
+            if (s == null || s.length() == 0){
+                return "";
+            }
+            int[] dict = new int[26];
+            // initialize
+            for(int i = 0; i < s.length(); i ++){
+                dict[s.charAt(i)-'a'] += 1;
+            }
+            Stack<Character> stack = new Stack<Character>();
+            int i = 0;
+            
+            // maintain the sequence, if the next character is better, push it into stack
+            while(i < s.length()){
+                char current = s.charAt(i);
+                int index = current - 'a';
+                // only take care of new characters that are not in the stack
+                if(!stack.contains(current)) {
+                    while (!stack.isEmpty() && current <= stack.peek() && dict[stack.peek()-'a'] >= 1){
+                        stack.pop();
+                    }
+                    if(!stack.contains(current)) {
+                        stack.push(current);
+                    }
+                }
+                dict[index]--;
+                i++;
+            }
+            
+            // convert stack to result
+            StringBuilder result = new StringBuilder();
+            while(!stack.isEmpty()){
+                result.append(stack.pop());
+            }
+            return result.reverse().toString();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; Easy Understanding Solution - 9ms - Greedy with Deque
+Greedy algorithm with deque. 
+
+We always want the smaller character appears before the bigger character. 
+
+For example, "cbacdcbc", when we traverse through the string, the first one is c, we store it, because we don't know whether the latter character is bigger than c or not.  [result = "c"]
+
+When go to b, we know c will appear in latter part, so we discard the first c. [result = "b"]
+
+Now a, cause a is less than b, b will appear in latter part, so we discard b, and then store a. [result ="a"]
+
+Now c, c is bigger than a, we store it. Now d, same reason, c is bigger than c store it.[result = "acd"]
+
+Now c again, we already has c, so ignore it. Now b, we compare b with d, because d won't appear latter, so we store b. [result = "acdb"]
+
+Use a stack or deque to imitate the process until finish traversing the string.
+
+Traverse the string to get the appearance times of each character. And then traverse through the string to decide whether to store current character or not.
+
+ 1.If the deque is empty, add current character
+
+ 2.Otherwise, check the last element t of the deque with current character c, if c is less than t and
+t will appear in latter string, poll out t. Continue this process until there is no t meet the requirement, then add c into the deque.
+
+    public String removeDuplicateLetters(String s) {
+		if(s.length() == 0)return "";
+		int[] count = new int[26];
+		for(int i =0;i<s.length();i++)
+		{
+			count[s.charAt(i)-'a']++;
+		}
+		String res = "";
+		Deque<Character> deque = new ArrayDeque<Character>();
+
+		for(int i = 0; i<s.length();i++)
+		{
+			if(deque.isEmpty())
+			{
+				deque.addLast(s.charAt(i));
+			}
+			else if(!deque.contains(s.charAt(i)))
+			{
+				char t = deque.peekLast();
+				while(s.charAt(i)<t && count[t-'a']>0)
+				{
+					t = deque.pollLast();
+					if(deque.isEmpty())break;
+					t = deque.peekLast();
+				}
+				deque.addLast(s.charAt(i));
+			}
+			count[s.charAt(i)-'a']--;			
+		}
+		int size = deque.size();
+		for(int i = 0; i<size;i++)
+		{
+			res += String.valueOf(deque.pollFirst());
+		}
+		return res;
+  }
+
+
+----------------------------------------------------------------------------------------------------

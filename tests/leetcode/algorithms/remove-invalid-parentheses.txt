@@ -1,0 +1,794 @@
+Easy to read Java solution
+I really don't like those _*something little*_ line solutions as they are incredibly hard to read. Below is my solution.
+
+    public void rotate(int[] nums, int k) {
+        k %= nums.length;
+        reverse(nums, 0, nums.length - 1);
+        reverse(nums, 0, k - 1);
+        reverse(nums, k, nums.length - 1);
+    }
+    
+    public void reverse(int[] nums, int start, int end) {
+        while (start < end) {
+            int temp = nums[start];
+            nums[start] = nums[end];
+            nums[end] = temp;
+            start++;
+            end--;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Summary of C++ solutions
+#1. Make an extra copy and then rotate. 
+Time complexity: O(n). Space complexity: O(n).
+    
+        class Solution 
+        {
+        public:
+            void rotate(int nums[], int n, int k) 
+            {
+                if ((n == 0) || (k <= 0))
+                {
+                    return;
+                }
+                
+                // Make a copy of nums
+                vector<int> numsCopy(n);
+                for (int i = 0; i < n; i++)
+                {
+                    numsCopy[i] = nums[i];
+                }
+                
+                // Rotate the elements.
+                for (int i = 0; i < n; i++)
+                {
+                    nums[(i + k)%n] = numsCopy[i];
+                }
+            }
+        };
+
+#2. Start from one element and keep rotating until we have rotated n different elements.
+Time complexity: O(n). Space complexity: O(1).
+    
+        class Solution 
+        {
+        public:
+            void rotate(int nums[], int n, int k) 
+            {
+                if ((n == 0) || (k <= 0))
+                {
+                    return;
+                }
+                
+                int cntRotated = 0;
+                int start = 0;
+                int curr = 0;
+                int numToBeRotated = nums[0];
+                int tmp = 0;
+                // Keep rotating the elements until we have rotated n 
+                // different elements.
+                while (cntRotated < n)
+                {
+                    do
+                    {
+                        tmp = nums[(curr + k)%n];
+                        nums[(curr+k)%n] = numToBeRotated;
+                        numToBeRotated = tmp;
+                        curr = (curr + k)%n;
+                        cntRotated++;
+                    } while (curr != start);
+                    // Stop rotating the elements when we finish one cycle, 
+                    // i.e., we return to start.
+                    
+                    // Move to next element to start a new cycle.
+                    start++;
+                    curr = start;
+                    numToBeRotated = nums[curr];
+                }
+            }
+        };
+    
+#3. Reverse the first n - k elements, the last k elements, and then all the n elements.
+Time complexity: O(n). Space complexity: O(1).
+        
+        class Solution 
+        {
+        public:
+            void rotate(int nums[], int n, int k) 
+            {
+                k = k%n;
+        
+                // Reverse the first n - k numbers.
+                // Index i (0 <= i < n - k) becomes n - k - i.
+                reverse(nums, nums + n - k);
+                
+                // Reverse tha last k numbers.
+                // Index n - k + i (0 <= i < k) becomes n - i.
+                reverse(nums + n - k, nums + n);
+                
+                // Reverse all the numbers.
+                // Index i (0 <= i < n - k) becomes n - (n - k - i) = i + k.
+                // Index n - k + i (0 <= i < k) becomes n - (n - i) = i.
+                reverse(nums, nums + n);
+            }
+        };
+
+#4. Swap the last k elements with the first k elements.
+Time complexity: O(n). Space complexity: O(1).
+
+    class Solution 
+    {
+    public:
+        void rotate(int nums[], int n, int k) 
+        {
+            for (; k = k%n; n -= k, nums += k)
+            {
+                // Swap the last k elements with the first k elements. 
+                // The last k elements will be in the correct positions
+                // but we need to rotate the remaining (n - k) elements 
+                // to the right by k steps.
+                for (int i = 0; i < k; i++)
+                {
+                    swap(nums[i], nums[n - k + i]);
+                }
+            }
+        }
+    };
+
+#5. Keep swapping two subarrays.
+Time complexity: O(n). Space complexity: O(1).
+    
+    class Solution 
+    {
+    public:
+        void rotate(int nums[], int n, int k) 
+        {
+            if ((n == 0) || (k <= 0) || (k%n == 0))
+            {
+                return;
+            }
+            
+            k = k%n;
+            // Rotation to the right by k steps is equivalent to swapping 
+            // the two subarrays nums[0,...,n - k - 1] and nums[n - k,...,n - 1].
+            int start = 0;
+            int tmp = 0;
+            while (k > 0)
+            {
+                if (n - k >= k)
+                {
+                    // The left subarray with size n - k is longer than 
+                    // the right subarray with size k. Exchange 
+                    // nums[n - 2*k,...,n - k - 1] with nums[n - k,...,n - 1].
+                    for (int i = 0; i < k; i++)
+                    {
+                        tmp = nums[start + n - 2*k + i];
+                        nums[start + n - 2*k + i] = nums[start + n - k + i];
+                        nums[start + n - k + i] = tmp;
+                    }
+                    
+                    // nums[n - 2*k,...,n - k - 1] are in their correct positions now.
+                    // Need to rotate the elements of nums[0,...,n - k - 1] to the right 
+                    // by k%n steps.
+                    n = n - k;
+                    k = k%n;
+                }
+                else
+                {
+                    // The left subarray with size n - k is shorter than 
+                    // the right subarray with size k. Exchange 
+                    // nums[0,...,n - k - 1] with nums[n - k,...,2*(n - k) - 1].
+                    for (int i = 0; i < n - k; i++)
+                    {
+                        tmp = nums[start + i];
+                        nums[start + i] = nums[start + n - k + i];
+                        nums[start + n - k + i] = tmp;
+                    }
+                    
+                    // nums[n - k,...,2*(n - k) - 1] are in their correct positions now.
+                    // Need to rotate the elements of nums[n - k,...,n - 1] to the right 
+                    // by k - (n - k) steps.
+                    tmp = n - k;
+                    n = k;
+                    k -= tmp;
+                    start += tmp;
+                }
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+3-line using reverse
+    void rotate(int nums[], int n, int k) {
+        reverse(nums,nums+n);
+        reverse(nums,nums+k%n);
+        reverse(nums+k%n,nums+n);
+    }
+
+----------------------------------------------------------------------------------------------------
+Java O(1) space solution of Rotate Array.
+The basic idea is that, for example, nums = [1,2,3,4,5,6,7] and k = 3, first we reverse [1,2,3,4], it becomes[4,3,2,1]; then we reverse[5,6,7], it becomes[7,6,5], finally we reverse the array as a whole, it becomes[4,3,2,1,7,6,5] ---> [5,6,7,1,2,3,4].
+
+Reverse is done by using two pointers, one point at the head and the other point at the tail, after switch these two, these two pointers move one position towards the middle. 
+
+
+public class Solution {
+
+    public void rotate(int[] nums, int k) {
+
+        if(nums == null || nums.length < 2){
+            return;
+        }
+        
+        k = k % nums.length;
+        reverse(nums, 0, nums.length - k - 1);
+        reverse(nums, nums.length - k, nums.length - 1);
+        reverse(nums, 0, nums.length - 1);
+        
+    }
+    
+    private void reverse(int[] nums, int i, int j){
+        int tmp = 0;       
+        while(i < j){
+            tmp = nums[i];
+            nums[i] = nums[j];
+            nums[j] = tmp;
+            i++;
+            j--;
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My three way to solve this problem, the first way is interesting(JAVA)
+Method 1: ( Interesting way, O(n) time cost, O(1) space cost)
+
+    public class Solution {
+        public void rotate(int[] nums, int k) {
+            if(nums.length <= 1){
+                return;
+            }
+            //step each time to move
+            int step = k % nums.length;
+            //find GCD between nums length and step
+            int gcd = findGcd(nums.length, step);
+            int position, count;
+            
+            //gcd path to finish movie
+            for(int i = 0; i < gcd; i++){
+                //beginning position of each path
+                position = i;
+                //count is the number we need swap each path
+                count = nums.length / gcd - 1;
+                for(int j = 0; j < count; j++){
+                    position = (position + step) % nums.length;
+                    //swap index value in index i and position
+                    nums[i] ^= nums[position];
+                    nums[position] ^= nums[i];
+                    nums[i] ^= nums[position];
+                }
+            }
+        }
+        
+        public int findGcd(int a, int b){
+            return (a == 0 || b == 0) ? a + b : findGcd(b, a % b);
+        }
+        
+    }
+
+Method 2:( 3 reverse thinking, O(n) time cost, O(1) space cost)
+
+    public class Solution {
+        public void rotate(int[] nums, int k) {
+            if(nums.length <= 1){
+                return;
+            }
+            //step each time to move
+            int step = k % nums.length;
+            reverse(nums,0,nums.length - 1);
+            reverse(nums,0,step - 1);
+            reverse(nums,step,nums.length - 1);
+        }
+        
+        //reverse int array from n to m
+        public void reverse(int[] nums, int n, int m){
+            while(n < m){
+                nums[n] ^= nums[m];
+                nums[m] ^= nums[n];
+                nums[n] ^= nums[m];
+                n++;
+                m--;
+            }
+        }
+    }
+
+Method 3:( Normal way, O(n) time cost, O(k % nums.length) space cost)
+
+    public class Solution {
+        public void rotate(int[] nums, int k) {
+            if(nums.length <= 1){
+                return;
+            }
+            //step each time to move
+            int step = k % nums.length;
+            int[] tmp = new int[step];
+            for(int i = 0; i < step; i++){
+                tmp[i] = nums[nums.length - step + i];
+            }
+            for(int i = nums.length - step - 1; i >= 0; i--){
+                nums[i + step] = nums[i];
+            }
+            for(int i = 0; i < step; i++){
+                nums[i] = tmp[i];
+            }
+            
+        }
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+3 lines of C++ in one pass using swap
+Every swap will put one number into its correct position, so the running time is O(n)
+
+For example,
+
+at first, `nums[]` is `[1,2,3,4,5,6,7]`, n is 7, k is 3
+
+after first outer loop, `nums[]` is `[4,1,2,3]`, n is 4, k is 3
+
+after second outer loop, `nums[]` is `[4]`, n is 1, k is 0
+
+loop ends.
+
+    void rotate(int nums[], int n, int k) {
+        for (; k %= n; n -= k)
+            for (int i = 0; i < k; i++)
+                swap(*nums++, nums[n - k]);
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple and Most elegant logic
+Let the array be - 123456789 and k = 4
+
+
+*Step 1* -  **12345** 6789  --->  **54321** 6789
+
+*Step 2* -  54321 **6789**  --->  54321 **9876**
+
+*Step 3* -  **543219876**    --->   **678912345**
+
+
+> 678912345 !!
+
+----------------------------------------------------------------------------------------------------
+My solution by using Python
+    class Solution:
+        # @param nums, a list of integer
+        # @param k, num of steps
+        # @return nothing, please modify the nums list in-place.
+        def rotate(self, nums, k):
+            n = len(nums)
+            k = k % n
+            nums[:] = nums[n-k:] + nums[:n-k]
+        
+
+A little important thing to be cautious:  
+
+    nums[:] = nums[n-k:] + nums[:n-k] 
+can't be written as:
+
+    nums = nums[n-k:] + nums[:n-k]
+
+on the OJ. 
+    
+The previous one can truly change the value of **old** *nums*, but the following one just changes its reference to a **new** *nums* not the value of **old** *nums*.
+
+----------------------------------------------------------------------------------------------------
+My c++ solution, o(n)time &amp;&amp; o(1)space
+    class Solution {
+    public:
+        void rotate(int nums[], int n, int k) {
+            int nowIndex = 0, nextIndex;
+    		int tmp1, tmp2 = nums[0];
+    		for(int j=0,i=0; j<n; j++){
+    			tmp1 = tmp2;
+    			nowIndex = (k + nowIndex) % (n);
+    			tmp2 = nums[nowIndex];
+    			nums[nowIndex] = tmp1;
+    			if(nowIndex == i) {
+    				nowIndex = ++i;
+    				tmp2 = nums[nowIndex];
+    			}
+    		}
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java solution in one pass, O(1) space, O(n) time
+I got the idea from this C++ solution: [3 lines of C++ in one pass using swap][1]
+
+
+  [1]: https://oj.leetcode.com/discuss/26501/3-lines-of-c-in-one-pass-using-swap
+
+
+But since Java doesn't have all those nice trick of swap() and pointer operations, I modified it to store the processed section at the end, and then handle the rest at the beginning of the array.
+
+The idea is: for a given K, I can put (n - k) elements to their final locations at the end of the array in a single pass; after that, the problem is reduced to a sub-problem of processing the remaining elements.
+
+For example, [1,2,3,4,5,6,7] k = 3, in the first iteration in the while loop, put n-k=4 elements to the final places at the end. Will have to start from the last element, so that the other elements will be bubbled down correctly. It will look like this after the first iteration: [7, 5, 6, 1, 2, 3, 4]
+
+The 2nd iteration will handle the remaining 3 elements: [7, 5, 6]; to determine the new k, we first observe that the # of out-of-order elements being put to the beginning of the array are (range % k), and in this example, only one element (7) is out of order. then to move the out-of-order elements back in order, we just need to rotate the remaining 3 elements to the right by k' = n - (range % k) = 2.
+
+therefore, after 2nd iteration in while loop, we will get [6, 5, 7], then n <- 2, k <- 1;
+
+the 3rd iteration starts with sub array [6,5], k =1, and we will get [5,6] after it,  and then n <- 1.
+
+
+        if (nums.length == 0) return;
+        int n = nums.length;
+        while ((k %= n) > 0 && n > 1) {
+            int range = n - k;
+            for (int i = 1; i <= range; i++) {
+                int val = nums[n - i];
+                nums[n - i] = nums[n - i - k];
+                nums[n - i - k] = val;
+            }
+            n = k;
+            k = n - (range % k);
+        }
+
+Hope this helps.
+
+----------------------------------------------------------------------------------------------------
+My perfect Java code O(1) 1ms use reverse
+    public class Solution {
+        public void reverse(int[] nums, int l, int r) {
+    		while (l < r) {
+    			int temp = nums[l];
+    			nums[l++] = nums[--r];
+    			nums[r] = temp;
+    		}
+    	}
+    
+    	public void rotate(int[] nums, int k) {
+    		int n = nums.length;
+    		k = (n == 0 ? 0 : k % n);
+    		reverse(nums, 0    , n - k);
+    		reverse(nums, n - k, n    );
+    		reverse(nums, 0    , n    );
+    	}
+    }
+
+----------------------------------------------------------------------------------------------------
+Java O(n) in-place solution.
+    
+    public void rotate(int[] nums, int k) {
+        k %= nums.length;
+        reverse(nums, 0, nums.length-1);  // reverse the whole array
+        reverse(nums, 0, k-1);  // reverse the first part
+        reverse(nums, k, nums.length-1);  // reverse the second part
+    }
+    
+    public void reverse(int[] nums, int l, int r) {
+        while (l < r) {
+            int tmp = nums[l];
+            nums[l++] = nums[r];
+            nums[r--] = tmp;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++,3 lines, easy to understand
+    /*****
+    ****author: cxq
+    ****weibo: http://weibo.com/chenxq1992
+    ****/
+    class Solution {
+    public:
+        void rotate(int nums[], int n, int k) {
+            k = k % n;
+            reverse(nums, nums + n);
+            reverse(nums, nums + k);
+            reverse(nums + k, nums + n);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A 7-Line Time O(n) In-Place Solution (No Reversing)
+The concise 7-line version.
+
+    Sample [1,2,3,4,5,6,7,8,9] 3    
+    The replacing process is as follow:
+    1) 1->4->7->1
+    2) 2->5->8->2
+    3) 3->6->9->3
+    public void Rotate(int[] nums, int k) {
+        if(nums.Length == 0 || k % nums.Length == 0) return;
+        int start = 0, i = start, curNum = nums[i], count = 0;
+        while(count++ < nums.Length){
+            int tmp = nums[i = (i + k) % nums.Length];
+            nums[i] = curNum;
+            curNum = i == start ? nums[i = ++start] : tmp;
+        }
+    }
+
+
+Below is the elaborated version easier to understand
+
+    public void Rotate(int[] nums, int k) {
+        if(nums.Length == 0 || k % nums.Length == 0) return;
+        int start = 0, i = start, curNum = nums[i], count = 0;
+        while(count < nums.Length){
+            i = (i + k) % nums.Length;
+            int tmp = nums[i];
+            nums[i] = curNum;
+            if(i == start){
+                start++;
+                i = start;
+                curNum = nums[i];
+            }
+            else curNum = tmp;
+            count++;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+O(n) time and O(1) space solution
+The idea is to rotate using reversal.
+1. divide the array into two parts.
+2. reverse first part
+3. reverse second part
+4. reverse whole array
+
+    /**
+     * rotate right an array
+     * nums      : pointer to array to be rotated
+     * numsSize  : length of array
+     * k         : distance of rotation
+     */ 
+    void rotate(int* nums, int numsSize, int k) {
+        k = k % numsSize;
+        if (k == 0) return;
+        if (numsSize <= 1) return;
+        
+        //divide the array into 2 part
+        int lengthFirstPart = numsSize - k;
+        //reverse first part
+        reverse(nums, lengthFirstPart);
+        //reverse second part
+        reverse(&nums[lengthFirstPart], numsSize - lengthFirstPart);
+        //reverse everything
+        reverse(nums, numsSize);
+    }
+    
+    /**
+     * reverse array
+     * nums      : pointer to array to be reversed
+     * numsSize  : length of array
+     */ 
+    void reverse(int* nums, int numsSize){
+        int mid = numsSize / 2;
+        int temp;
+        for(int i = 0; i < mid; i++){
+            temp = nums[i];
+            nums[i] = nums[numsSize - 1 - i];
+            nums[numsSize - 1 - i] = temp;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Three simple solutions using C++
+    void rotate(int nums[], int n, int k) {
+        while(k>0) {
+        int tmp = nums[n-1];
+            for(int i=n-1; i>0; i--) {
+                nums[i] = nums[i-1];
+            }
+            nums[0] = tmp;
+            k--;
+        }
+    }
+    
+    void rotate(int nums[], int n, int k) {
+        if (k<=0) {
+            return;
+        }
+        int tmp = nums[n-1];
+        for(int i=n-1; i>0; i--) {
+            nums[i] = nums[i-1];
+        }
+        nums[0] = tmp;
+        rotate(nums, n, k-1);
+    }
+    
+    void strReverse(int nums[], int bgn, int end) {
+        int lst = end-1;
+        while(bgn<lst) {
+            int tmp = nums[bgn];
+            nums[bgn] = nums[lst];
+            nums[lst] = tmp;
+            bgn++;
+            lst--;
+        }
+    }
+    
+    void rotate(int nums[], int n, int k) {
+        if (k<=0) {
+            return;
+        }
+        k = k%n;
+        strReverse(nums, 0, n-k);
+        strReverse(nums, n-k, n);
+        strReverse(nums, 0, n);
+    }
+
+----------------------------------------------------------------------------------------------------
+Summary of solutions in Python
+## **Classical 3-step array rotation:**
+> 
+> 1. reverse the first n - k elements
+> 
+> 2. reverse the rest of them
+> 
+> 3. reverse the entire array
+
+    class Solution(object):
+        def rotate(self, nums, k):
+            if k is None or k <= 0:
+                return
+            k, end = k % len(nums), len(nums) - 1
+            self.reverse(nums, 0, end - k)
+            self.reverse(nums, end - k + 1, end)
+            self.reverse(nums, 0, end)
+            
+        def reverse(self, nums, start, end):
+            while start < end:
+                nums[start], nums[end] = nums[end], nums[start]
+                start, end = start + 1, end - 1
+
+**O(n) in time, O(1) in space**
+
+
+## **Rotate `k` times**:
+
+Each rotation, we move the `n - 1` to the back of the array one by one and we do rotation `k` times.
+
+    class Solution(object):
+        def rotate(self, nums, k):
+            k = k % len(nums)
+            for i in xrange(0, k):
+                tmp = nums[-1]
+                for j in xrange(0, len(nums) - 1):
+                    nums[len(nums) - 1 - j] = nums[len(nums) - 2 - j]
+                nums[0] = tmp
+
+**O(n^2) in  time, O(1) in space**
+
+**It can't pass the OJ due to TLE.**
+
+## **Recursive solution** 
+
+put the shorter part in the correct position then do the rest of them iteratively. This is not necessarily to be a recursive solution. 
+
+    class Solution(object):
+        def rotate(self, nums, k):
+            self.helper(0, len(nums) - 1 - (k % len(nums)), len(nums) - 1, nums) # mid belongs to left part
+    
+        def helper(self, start, mid, end, nums):
+            left, right = mid - start, end - mid - 1
+            if left < 0 or right < 0:
+                return
+            if left > right:
+                for j in xrange(mid + 1, end + 1):
+                    nums[j], nums[start] = nums[start], nums[j]
+                    start += 1
+                self.helper(start, mid, end, nums)
+            elif right >= left:
+                i = mid
+                while i >= start:
+                    nums[i], nums[end] = nums[end], nums[i]
+                    i, end = i - 1, end - 1
+                if left != right:
+                    self.helper(start, mid, end, nums)
+
+**O(n) in time, O(n) in space**
+
+## **Iterative and improved solution:** 
+
+put the last `k` elements in correct position (ahead) and do the remaining `n - k`. Once finish swap, the `n` and k decrease.
+
+    class Solution(object):
+        def rotate(self, nums, k):
+            """
+            :type nums: List[int]
+            :type k: int
+            :rtype: void Do not return anything, modify nums in-place instead.
+            """
+            n, k, j = len(nums), k % len(nums), 0
+            while n > 0 and k % n != 0:
+                for i in xrange(0, k):
+                    nums[j + i], nums[len(nums) - k + i] = nums[len(nums) - k + i], nums[j + i] # swap
+                n, j = n - k, j + k
+                k = k % n
+
+**O(n) in time, O(1) in space**
+
+
+----------------------------------------------------------------------------------------------------
+Java solution with O(1) space
+    public class Solution {
+        public void rotate(int[] nums, int k) {
+            if (nums == null || nums.length == 0) {
+                return;
+            }
+            k = k % nums.length;
+            reverse(nums, 0, nums.length-k-1);
+            reverse(nums, nums.length-k, nums.length-1);
+            reverse(nums, 0, nums.length-1);
+        }
+        private void reverse(int[] num, int left, int right) {
+            while (left < right) {
+                int t = num[left];
+                num[left] = num[right];
+                num[right] = t;
+                left++;
+                right--;
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+One concise solution with constant space, O(n) time (Java)
+    public class Solution {
+        public void rotate(int[] nums, int k) {
+            int n = nums.length;
+            k %= n;
+            reverse(nums, 0, n);
+            reverse(nums, 0, k);
+            reverse(nums, k, n);
+        }
+        
+        private void reverse(int[] nums, int s, int e) {
+            while (s < --e) {
+                int temp = nums[s];
+                nums[s] = nums[e];
+                nums[e] = temp;
+                ++s;
+            }
+        }
+    }
+
+Any suggestions? Thanks. 
+
+----------------------------------------------------------------------------------------------------
+Simple c++ solution with detail explain and O(1) extra space
+     /**
+     * this solution is so-called three times rotate method
+     * because (X^TY^T)^T = YX, so we can perform rotate operation three times to get the result
+     * obviously, the algorithm consumes O(1) space and O(n) time
+     **/
+    class Solution {
+    public:
+        void rotate(int nums[], int n, int k) {
+            k %= n; // if k > n then the final result is the same as k%n
+            reverseArray(nums, n-k, n-1);
+            reverseArray(nums, 0, n-k-1);
+            reverseArray(nums, 0, n-1);
+            
+        }
+        /**
+         * rotate the array nums from start to end
+        **/
+        void reverseArray(int nums[],int start, int end){
+            while(start < end){
+                int temp = nums[start];
+                nums[start++] = nums[end];
+                nums[end--] = temp;
+                // or you can simply code as "std::swap(nums[start++], nums[end--])" to replace above three lines
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

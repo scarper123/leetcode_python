@@ -1,0 +1,125 @@
+4 line solution using if statement
+<p>select<br/>
+if(id &lt; (select count(*) from seat), if(id mod 2=0, id-1, id+1), if(id mod 2=0, id-1, id)) as id, student<br/>
+from seat<br/>
+order by id asc;</p>
+
+
+----------------------------------------------------------------------------------------------------
+not pretty but it works
+SELECT id - 1 as id, student FROM seat
+        WHERE id % 2 = 0
+UNION
+    SELECT id + 1 as id, student FROM seat
+        WHERE id % 2 = 1 AND
+         id NOT IN
+            (SELECT max(id) as id FROM seat) 
+UNION 
+    SELECT S1.id as id, S1.student 
+    FROM seat as S1 join (SELECT max(id) as id FROM seat) as S2
+        WHERE S1.id % 2 = 1 and S1.id = S2.id
+ORDER BY id
+
+----------------------------------------------------------------------------------------------------
+simple case solution
+SELECT (CASE 
+    WHEN mod(id, 2) != 0 and records != id THEN id + 1
+    WHEN mod(id, 2) != 0 and records = id THEN id
+    ELSE id - 1
+END) AS id, student
+FROM seat, (select count(*) as records from seat) as seat_records
+ORDER BY id asc;
+
+
+
+----------------------------------------------------------------------------------------------------
+4 lines solution using bit manipulation and coalesce
+<p>select <a href="http://s1.id" rel="nofollow">s1.id</a>, coalesce(s2.student, s1.student) as student<br/>
+from seat s1 left join seat s2<br/>
+on ((s1.id+1)^1)-1 = <a href="http://s2.id" rel="nofollow">s2.id</a><br/>
+order by <a href="http://s1.id" rel="nofollow">s1.id</a>;</p>
+<p>Description: bit manipulation calculates the pair to swap, coalesce function allow the last one with no pair</p>
+
+
+----------------------------------------------------------------------------------------------------
+here is SQL code
+SELECT
+  (CASE
+      WHEN id%2 = 0 THEN id-1
+      WHEN id%2 = 1
+    AND id <> (
+    SELECT
+      COUNT(*)
+    FROM
+      seat) THEN id+1
+      ELSE id END) AS id,
+  student
+FROM
+  seat
+ORDER BY
+  id ASC;
+
+
+----------------------------------------------------------------------------------------------------
+what&#x27;s wrong with mysql?
+<p>Interesting. exactly same solution, 1 work, 2 not work. what&#39;s wrong there?<br/>
+1:<br/>
+&#39;&#39;&#39;<br/>
+select case id%2<br/>
+when  0 then id-1<br/>
+when  1 &amp;&amp;  (id = (select max(id) from seat) )then id<br/>
+when  1 &amp;&amp;  ( id &lt; (select max(id) from seat) )then id+1<br/>
+end as id, student<br/>
+from seat<br/>
+order by id asc<br/>
+&#39;&#39;&#39;</p>
+<p>2:<br/>
+&#39;&#39;&#39;<br/>
+select case id%2<br/>
+when  1 &amp;&amp;  (id = (select max(id) from seat) )then id<br/>
+when  1 &amp;&amp;  ( id &lt; (select max(id) from seat) )then id+1<br/>
+when  0 then id-1<br/>
+end as id, student<br/>
+from seat<br/>
+order by id asc<br/>
+&#39;&#39;&#39;</p>
+
+
+----------------------------------------------------------------------------------------------------
+MySql Case and Select
+select q.id,
+case 
+      when q.id%2 = 0 then (select e.student from seat e where e.id = q.id-1)
+      when (select count(g.id) from seat g where g.id=q.id+1) > 0 then (select f.student 
+      from seat f where f.id = q.id+1)
+      else q.student
+end as 'student' from seat q order by q.id asc;
+
+
+----------------------------------------------------------------------------------------------------
+Using two UNION operators
+/* get all the even numbered rows as odd numbered rows */
+SELECT s1.id - 1 as id, s1.student
+FROM Seat s1
+WHERE s1.id MOD 2 = 0
+
+UNION
+
+/* get all the odd numbered rows as even numbered rows */
+SELECT s2.id + 1 as id, s2.student
+FROM Seat s2
+WHERE s2.id MOD 2 = 1 AND s2.id != (SELECT MAX(id) FROM Seat)
+/* Just don't get the last row as we will handle it in the next UNION */
+
+UNION
+
+/* get the last row if odd and don't change the id value */
+SELECT s3.id, s3.student
+FROM Seat s3
+WHERE s3.id MOD 2 = 1 AND s3.id = (SELECT MAX(id) FROM Seat)
+
+/* Order the result by id */
+ORDER BY id ASC;
+
+
+----------------------------------------------------------------------------------------------------

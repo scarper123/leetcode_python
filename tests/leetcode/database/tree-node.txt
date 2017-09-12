@@ -1,0 +1,124 @@
+Three accpeted solutions
+    SELECT D.Name AS Department ,E.Name AS Employee ,E.Salary 
+    FROM
+    	Employee E,
+    	(SELECT DepartmentId,max(Salary) as max FROM Employee GROUP BY DepartmentId) T,
+    	Department D
+    WHERE E.DepartmentId = T.DepartmentId 
+      AND E.Salary = T.max
+      AND E.DepartmentId = D.id
+
+    SELECT D.Name,A.Name,A.Salary 
+    FROM 
+    	Employee A,
+    	Department D   
+    WHERE A.DepartmentId = D.Id 
+      AND NOT EXISTS 
+      (SELECT 1 FROM Employee B WHERE B.Salary > A.Salary AND A.DepartmentId = B.DepartmentId) 
+
+    SELECT D.Name AS Department ,E.Name AS Employee ,E.Salary 
+    from 
+    	Employee E,
+    	Department D 
+    WHERE E.DepartmentId = D.id 
+      AND (DepartmentId,Salary) in 
+      (SELECT DepartmentId,max(Salary) as max FROM Employee GROUP BY DepartmentId) 
+
+----------------------------------------------------------------------------------------------------
+Simple solution, easy to understand
+    SELECT dep.Name as Department, emp.Name as Employee, emp.Salary 
+    from Department dep, Employee emp 
+    where emp.DepartmentId=dep.Id 
+    and emp.Salary=(Select max(Salary) from Employee e2 where e2.DepartmentId=dep.Id)
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple solution
+    Select Department.Name, emp1.Name, emp1.Salary from 
+    Employee emp1 join Department on emp1.DepartmentId = Department.Id
+    where emp1.Salary = (Select Max(Salary) from Employee emp2 where emp2.DepartmentId = emp1.DepartmentId); 
+
+----------------------------------------------------------------------------------------------------
+GROUP BY HAVING not working for multiple highest salary, why?
+`SELECT b.Name as Department, a.Name as Employee, a.Salary
+FROM Employee a
+JOIN Department b
+ON a.DepartmentId = b.Id
+GROUP BY Department
+HAVING a.Salary = max(a.Salary)`
+
+This way it was not able to return multiple rows with same highest salary. I can't figure why, please help!
+
+----------------------------------------------------------------------------------------------------
+Share my simple query using &gt;= ALL
+<PRE><CODE>
+select Department.Name as Department, e1.Name as Employee, Salary
+from Employee e1, Department
+where e1.DepartmentId = Department.Id 
+and
+Salary >= ALL (select Salary from Employee e2 where e2.DepartmentId = e1.DepartmentId);
+</CODE></PRE>
+
+----------------------------------------------------------------------------------------------------
+Easy Solution. No joins. GROUP BY is enough. 916ms
+    select
+    d.Name, e.Name, e.Salary
+    from
+    Department d,
+    Employee e,
+    (select MAX(Salary) as Salary,  DepartmentId as DepartmentId from Employee GROUP BY DepartmentId) h
+    where
+    e.Salary = h.Salary and
+    e.DepartmentId = h.DepartmentId and
+    e.DepartmentId = d.Id;
+
+
+ 
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Why cannot we just use max() with group by?
+    select D.name as Department, E.name as Employee, max(salary) as Salary 
+        from Employee E , Department D 
+        where E.DepartmentId = D.Id  
+        group by D.id
+
+I tried to use something like this, but it did not pass. When two departments has the same max salary, it only outputs one row.
+
+However, this is not how it works in my local mysql.
+
+Why is this wrong?
+
+----------------------------------------------------------------------------------------------------
+A simple solution use one join
+select d.Name Department, e.Name Employee, Salary
+from Department d join Employee e on d.Id=e.DepartmentId
+where (Salary,d.id) in (select max(Salary),DepartmentId from Employee group by DepartmentId);
+
+----------------------------------------------------------------------------------------------------
+Accepted Solution without using Max() function
+    select b.Name Department, a.Name Employee, a.Salary from
+    (
+        select a.Name, a.Salary, a.DepartmentId 
+        from Employee a left outer join Employee b
+        on a.DepartmentId = b.DepartmentId 
+        and a.Salary < b.Salary
+        where b.Id is null
+    ) a join Department b
+    on a.DepartmentId = b.Id;
+
+----------------------------------------------------------------------------------------------------
+657 ms
+<p>SELECT <a href="http://d.Name" rel="nofollow">d.Name</a> Department, <a href="http://e.Name" rel="nofollow">e.Name</a> Employee, e.Salary Salary FROM Department d INNER JOIN (<br/>
+SELECT Name, e.Salary, e.DepartmentId FROM Employee e INNER JOIN (SELECT MAX(Salary) Salary, DepartmentId FROM Employee GROUP BY DepartmentId) s ON e.Salary = s.Salary AND e.DepartmentId = s.DepartmentId<br/>
+) AS e ON <a href="http://d.Id" rel="nofollow">d.Id</a> = e.DepartmentId</p>
+
+
+----------------------------------------------------------------------------------------------------
+Simple Solution
+<p>select <a href="http://D.Name" rel="nofollow">D.Name</a> as Department, <a href="http://E.Name" rel="nofollow">E.Name</a> as Employee, E.Salary from Department D, Employee E, (select DepartmentId, max(Salary) as Salary from Employee group by DepartmentId) S where E.DepartmentId = S.DepartmentId and E.Salary = S.Salary and <a href="http://D.Id" rel="nofollow">D.Id</a> = E.DepartmentId</p>
+
+
+----------------------------------------------------------------------------------------------------
+There are same highest Salary in a department!

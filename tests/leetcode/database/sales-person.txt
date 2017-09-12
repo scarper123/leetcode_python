@@ -1,0 +1,169 @@
+Three accepted solutions
+    SELECT A.Name from Customers A
+    WHERE NOT EXISTS (SELECT 1 FROM Orders B WHERE A.Id = B.CustomerId)
+
+    SELECT A.Name from Customers A
+    LEFT JOIN Orders B on  a.Id = B.CustomerId
+    WHERE b.CustomerId is NULL
+
+    SELECT A.Name from Customers A
+    WHERE A.Id NOT IN (SELECT B.CustomerId from Orders B)
+
+
+
+----------------------------------------------------------------------------------------------------
+A solution using NOT IN and another one using LEFT JOIN
+605 ms
+
+    SELECT Name as Customers from Customers
+    LEFT JOIN Orders
+    ON Customers.Id = Orders.CustomerId
+    WHERE Orders.CustomerId IS NULL;
+
+675ms
+
+    SELECT Name as Customers from Customers
+    WHERE Id NOT IN (SELECT CustomerId from Orders);
+
+----------------------------------------------------------------------------------------------------
+Here are 3 solutions
+select c.Name from Customers c
+where c.Id not in (select customerId from Orders)
+
+select c.Name from Customers c
+where (select count(*) from Orders o where o.customerId=c.id)=0 
+
+select c.Name from Customers c
+where not exists (select * from Orders o where o.customerId=c.id)
+
+
+----------------------------------------------------------------------------------------------------
+Share My first DB Answer
+I learn database from  a Standford tutorial.
+
+https://www.youtube.com/watch?v=D-k-h0GuFmE&list=PL6hGtHedy2Z4EkgY76QOcueU8lAC4o6c3
+
+    select Name as Customers
+    from Customers
+    where Id not in
+    (select CustomerId as Id from Orders);
+
+
+
+----------------------------------------------------------------------------------------------------
+Just a solution
+    select Name as Customers from Customers where Customers.id not in (select CustomerId from Orders);
+
+----------------------------------------------------------------------------------------------------
+Using &quot;distinct&quot; beats 99% of the solutions
+    select 
+    Name 
+    from 
+    (
+        select 
+        c.Name, 
+        o.CustomerId
+        from Customers c 
+        left join (select distinct CustomerId from Orders) o 
+        on c.Id=o.CustomerId 
+    ) t 
+    where t.CustomerId is null
+    ;
+
+----------------------------------------------------------------------------------------------------
+A very simple solutions (Beats 100%&#x2F;Runtime: 474 ms )
+<p>select Name as Customers from Customers where id not in(select CustomerId from Orders);</p>
+
+
+----------------------------------------------------------------------------------------------------
+Another solution.
+    SELECT Name
+    FROM Customers
+    WHERE NOT EXISTS (
+            SELECT * FROM Orders
+            WHERE Customers.id = Orders.CustomerId);
+
+----------------------------------------------------------------------------------------------------
+My solution with subquery
+    SELECT Name FROM Customers WHERE Customers.Id NOT IN (SELECT c.Id FROM Customers as c INNER JOIN Orders as o ON c.Id = o.CustomerId) 
+
+----------------------------------------------------------------------------------------------------
+My simple way with left outer join
+    SELECT C.Name
+    FROM Customers  AS C LEFT OUTER JOIN Orders AS O
+    ON C.Id = O.CustomerId
+    WHERE O.CustomerId IS NULL;
+
+----------------------------------------------------------------------------------------------------
+My simple solusion with time 600ms using left outer join
+    select a.Name as Customers from Customers a left outer join (select distinct CustomerId from Orders) b on a.Id=b.CustomerId where b.CustomerId is null;
+
+----------------------------------------------------------------------------------------------------
+SQL solution using subquery
+    SELECT Customers.Name
+    FROM Customers
+    WHERE Customers.Id NOT IN
+      (SELECT Orders.CustomerId
+      FROM Orders);
+
+----------------------------------------------------------------------------------------------------
+Getting an internal error, without any error message
+# Write your MySQL query statement below
+select Name as Customers from Customers where Id is not in (select distinct CustomerId from Orders);
+
+Here is my query.
+
+----------------------------------------------------------------------------------------------------
+How does this not work?
+    select C.Name
+    from Customers C, Orders O
+    where C.Id<>O.CustomerId
+
+----------------------------------------------------------------------------------------------------
+Internal Errors even wrong answers
+I keep got internal error messages without details with right coding (from myself or discussion board) or wrong coding.
+And I am not able to use feedback to ask system operator what happened.
+Is it normal?
+
+
+----------------------------------------------------------------------------------------------------
+My Solution ____
+    SELECT c.Name AS Customers FROM Customers AS c
+    WHERE c.Id NOT IN (
+    SELECT CustomerId FROM Orders
+    )
+
+----------------------------------------------------------------------------------------------------
+My simple solution
+    select Name as Customers from Customers
+    where Id not in(select distinct(CustomerId) from Orders);
+
+----------------------------------------------------------------------------------------------------
+INNER JOIN not working?
+Seems like this query should work since an INNER JOIN should require an entry in both tables, no?
+
+    SELECT Customers.Name as Customers
+    FROM Customers
+    INNER JOIN Orders ON Customers.Id = Orders.CustomerId;
+
+However it fails when I run it.
+
+----------------------------------------------------------------------------------------------------
+A simple straightforward solution
+    select Name as Customers from Customers where Id not in (select CustomerId from Orders)
+
+----------------------------------------------------------------------------------------------------
+Newbie question: Why MINUS not working?
+I used code like this, but I got a runtime error near line 5. Does anyone know where is wrong? Thanks!
+
+
+    SELECT Name
+    FROM Customers
+    MINUS
+    SELECT Customers.Name
+    FROM Customers, Orders
+    WHERE Customers.Id = Orders.CustomerId
+
+
+
+----------------------------------------------------------------------------------------------------

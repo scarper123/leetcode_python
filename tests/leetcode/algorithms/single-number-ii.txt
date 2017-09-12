@@ -1,0 +1,430 @@
+My accepted java code. used recursion.
+    public class Solution {
+        public ListNode swapPairs(ListNode head) {
+            if ((head == null)||(head.next == null))
+                return head;
+            ListNode n = head.next;
+            head.next = swapPairs(head.next.next);
+            n.next = head;
+            return n;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple JAVA solution for share
+    public ListNode swapPairs(ListNode head) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode current = dummy;
+        while (current.next != null && current.next.next != null) {
+            ListNode first = current.next;
+            ListNode second = current.next.next;
+            first.next = second.next;
+            current.next = second;
+            current.next.next = first;
+            current = current.next.next;
+        }
+        return dummy.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+7-8 lines C++ &#x2F; Python &#x2F; Ruby
+Three different implementations of the same algorithm, taking advantage of different strengths of the three languages. I suggest reading all three, even if you don't know all three languages.
+
+All three of course work swap the current node with the next node by rearranging pointers, then move on to the next pair, and repeat until the end of the list.
+
+---
+
+**C++**
+
+Pointer-pointer `pp`  points to the pointer to the current node. So at first, `pp` points to `head`, and later it points to the `next` field of ListNodes. Additionally, for convenience and clarity, pointers `a` and `b` point to the current node and the next node.
+
+We need to go from `*pp == a -> b -> (b->next)` to `*pp == b -> a -> (b->next)`. The first three lines inside the loop do that, setting those three pointers (from right to left). The fourth line moves `pp` to the next pair.
+
+    ListNode* swapPairs(ListNode* head) {
+        ListNode **pp = &head, *a, *b;
+        while ((a = *pp) && (b = a->next)) {
+            a->next = b->next;
+            b->next = a;
+            *pp = b;
+            pp = &(a->next);
+        }
+        return head;
+    }
+
+---
+
+**Python**
+
+Here, `pre` is the previous node. Since the head doesn't have a previous node, I just use `self` instead. Again, `a` is the current node and `b` is the next node.
+
+To go from `pre -> a -> b -> b.next` to `pre -> b -> a -> b.next`, we need to change those three references. Instead of thinking about in what order I change them, I just change all three at once.
+
+    def swapPairs(self, head):
+        pre, pre.next = self, head
+        while pre.next and pre.next.next:
+            a = pre.next
+            b = a.next
+            pre.next, b.next, a.next = b, a, b.next
+            pre = a
+        return self.next
+
+---
+
+**Ruby**
+
+Again, `pre` is the previous node, but here I create a dummy as previous node of the head. And again, `a` is the current node and `b` is the next node. This time I go one node further and call it `c`.
+
+To go from `pre -> a -> b -> c` to `pre -> b -> a -> c`, we need to change those three references. Here I chain the assignments, pretty much directly saying "`pre` points to `b`, which points to `a`, which points to `c`".
+
+    def swap_pairs(head)
+        pre = dummy = ListNode.new 0
+        pre.next = head
+        while a = pre.next and b = a.next
+            c = b.next
+            ((pre.next = b).next = a).next = c
+            pre = a
+        end
+        dummy.next
+    end
+
+
+----------------------------------------------------------------------------------------------------
+Java simple recursive solution
+Starting to see that recursion is the perfect tool for (many) linked list problems (this one + merging list problem).
+
+    /**
+     * Definition for singly-linked list.
+     * public class ListNode {
+     *     int val;
+     *     ListNode next;
+     *     ListNode(int x) { val = x; }
+     * }
+     */
+    public class Solution {
+        public ListNode swapPairs(ListNode head) {
+            if (head == null || head.next == null) return head;
+            ListNode second = head.next;
+            ListNode third = second.next;
+            
+            second.next = head;
+            head.next = swapPairs(third);
+            
+            return second;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple recursive solution
+My solution is quite simple. Just find the reverse job is the same for every 2 nodes.
+
+    public ListNode swapPairs(ListNode head) {
+            if (head == null || head.next == null) {
+                return head;
+            }
+            
+            ListNode newhd = head.next;
+            head.next = swapPairs(newhd.next);
+            newhd.next = head;
+            return newhd;
+    }
+
+----------------------------------------------------------------------------------------------------
+My straight-forward Java solution without recursion or dummy nodes (0ms)
+- The idea is straightforward: use two pointers and swap
+ - `a.next = b.next`, `b.next = a`.
+ - Then continue the next pair, `b = a.next.next`, `a=a.next`
+ - Remember to check `null`
+ - Remember to track new `head`
+ - Remember to link the new pair after the prior nodes. 
+
+Attached is the accepted code.
+
+
+    public class Solution {
+      public ListNode swapPairs(ListNode head) {
+        if(head==null || head.next==null) return head;
+        ListNode newHead = head.next, a=head,b=a.next,pre = null;
+        while(a!=null && b!=null){
+          a.next = b.next;
+          b.next = a;
+          if(pre!=null) pre.next = b;
+          if(a.next==null) break;
+          b = a.next.next;
+          pre = a;
+          a = a.next;
+        }
+        return newHead;
+      }
+    }
+
+- AC, 0ms
+
+----------------------------------------------------------------------------------------------------
+Simple implementation with C++
+    class Solution {
+    public:
+        ListNode* swapPairs(ListNode* head) {
+            if(head == NULL)
+                return NULL;
+            if(head->next == NULL)
+                return head;
+            
+            ListNode* next = head->next;
+            head->next = swapPairs(next->next);
+            next->next = head;
+            
+            return next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Seeking for a better solution
+Is someone has a better solution? My code can get AC, but I don't think it's good enough. Thanks~~
+ 
+   
+
+    public class Solution {
+            public ListNode swapPairs(ListNode head) {
+                ListNode cur = head, next1, next2;
+                if(head == null) return null;
+                if(head.next == null) return head;
+                
+                //head change with next is a special case, so we deal with it first
+                ListNode temp = cur.next;
+                cur.next = temp.next;
+                temp.next = cur;
+                head = temp;
+                
+            	while(cur.next != null && cur.next.next != null) {
+            		next1 = cur.next;
+            		next2 = cur.next.next;
+            		swap(cur,next1,next2);
+            		cur = cur.next.next;
+            	}
+            	return head;
+            }
+            
+            private void swap(ListNode cur, ListNode next1, ListNode next2) {
+            	cur.next = next2;
+            	next1.next = next2.next;
+            	next2.next = next1;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+My accepted solution in Python, quite fast
+    class Solution:
+        # @param a ListNode
+        # @return a ListNode
+        def swapPairs(self, head):
+            p1 = guard = ListNode(0)
+            guard.next = head
+            
+            try:
+                while True:
+                    p0, p1, p2 = p1, p1.next, p1.next.next
+                    p0.next, p1.next, p2.next = p2, p2.next, p1
+            except:
+                return guard.next
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my accepted Java solution
+    public class Solution {
+        public ListNode swapPairs(ListNode head) {
+            if (head == null || head.next == null) {
+                return head;
+            }
+            ListNode first = head, last = head.next;
+            first.next = swapPairs(last.next);
+            last.next = first;
+            return last;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very easy solution
+    class Solution {
+    public:
+        ListNode* swapPairs(ListNode* head) {
+            ListNode *l=head;
+            if(head&&head->next){
+                l=head->next;
+                head->next=swapPairs(l->next);
+                l->next=head;
+            }
+            return l;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Very simple C++ recursive solution.
+    class Solution {
+    public:
+        ListNode* swapPairs(ListNode* head) {
+            if (head == NULL || head->next == NULL) return head;
+            ListNode *grandChild = swapPairs(head->next->next);
+            ListNode *child = head->next;
+            child->next = head;
+            head->next = grandChild;
+            return child;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C++ recursive and iterative solutions.
+    
+    // recursively
+    ListNode* swapPairs1(ListNode* head) {
+        if (!head || !(head->next))
+            return head;
+        ListNode *res = head->next;
+        head->next = swapPairs(res->next);
+        res->next = head;
+        return res;
+    }
+    
+    // iteratively
+    ListNode *swapPairs(ListNode *head) {
+        ListNode *dummy = new ListNode(0), *node;
+        node = dummy;
+        dummy->next = head;
+        while (head && head->next) {
+            ListNode *nxt = head->next;
+            head->next = nxt->next;
+            nxt->next = head;
+            node->next = nxt;
+            node = head;
+            head = node->next;
+        }
+        return dummy->next;
+    }
+
+----------------------------------------------------------------------------------------------------
+My simple recursive C++ solution in 6 lines(4ms)
+    ListNode* swapPairs(ListNode* head) {
+        if (head == NULL) { return NULL; }
+        if (head ->next == NULL) { return head; }
+        
+        ListNode *newHead = head->next;
+        head->next = swapPairs(head->next->next);
+        newHead->next = head;
+        return newHead;
+    }
+
+----------------------------------------------------------------------------------------------------
+Is there any grantee that there will always be even number of nodes?
+Is there any grantee that there will always be even number of nodes?
+
+----------------------------------------------------------------------------------------------------
+AC JAVA solution
+    public ListNode swapPairs(ListNode head) {
+        if (head == null || head.next == null) return head;
+        
+        ListNode n1 = head;
+        ListNode n2 = head.next;
+        
+        n1.next = n2.next;
+        n2.next = n1;
+        
+        n1.next = swapPairs(n1.next);
+        
+        return n2;
+    }
+
+----------------------------------------------------------------------------------------------------
+My solution  C++
+        ListNode* swapPairs(ListNode* head) {
+            ListNode* p1;       
+            if(head && head->next){  
+                p1 = head->next; 
+                head->next = swapPairs(head->next->next);
+                p1->next = head;
+                head = p1; 
+           }
+           return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java, 0ms, using recusion
+    public ListNode swapPairs(ListNode head) {
+		if(head == null || head.next == null)
+			return head;
+		
+		ListNode p1 = head, p2 = head.next, p3 = null;
+		p3 = p2.next;
+		p2.next = null;
+		p1.next.next = p1;
+		p1.next = p3;
+		
+		if(p3 != null)
+			p1.next = swapPairs(p3);
+		
+		return p2;
+	}
+
+----------------------------------------------------------------------------------------------------
+Simple 0ms c++ solution(beats 98.08%)
+ ListNode* swapPairs(ListNode* head) {
+        ListNode* dummy=new ListNode(0);
+        dummy->next=head;
+        ListNode* prev=dummy;
+        while(head &&head->next)
+        {
+            ListNode* nn=head->next->next;
+            prev->next=head->next;
+            head->next->next=head;
+            head->next=nn;
+            prev=head;
+            head=nn;
+           
+        }
+        return dummy->next;
+        
+    }
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution Easy to understand with comments and explanations.
+<h1>Renewed Solution</h1>
+
+The main point is that if there are 2 more nodes (which is a pair) following, then swap them, otherwise, end the process.
+
+    bool SwapHelper(ListNode *p)
+    {
+        if (p->next and p->next->next)
+        {
+            ListNode *n1 = p->next;
+            ListNode *n2 = p->next->next;
+            
+            p->next = n2;
+            n1->next = n2->next;
+            n2->next = n1;
+            
+            return true;
+        }
+        
+        return false;
+    }
+
+    ListNode *swapPairs(ListNode *head) 
+    {
+        if (!head) 
+            return nullptr;
+        
+        // Create a head Node
+        ListNode new_head(-1);
+        new_head.next = head;
+        
+        ListNode *p = &new_head;
+        
+        // While has two more node and swap succeeded
+        while (SwapHelper(p)) 
+            p = p->next->next;
+        
+        return new_head.next;
+    }
+
+----------------------------------------------------------------------------------------------------

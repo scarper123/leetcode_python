@@ -1,0 +1,1062 @@
+Java solution using TreeMap, real O(logN) per adding.
+Use TreeMap to easily find the lower and higher keys, the key is the start of the interval. 
+Merge the lower and higher intervals when necessary. The time complexity for adding is O(logN) since lowerKey(), higherKey(), put() and remove() are all O(logN). It would be O(N) if you use an ArrayList and remove an interval from it. 
+
+    public class SummaryRanges {
+        TreeMap<Integer, Interval> tree;
+    
+        public SummaryRanges() {
+            tree = new TreeMap<>();
+        }
+    
+        public void addNum(int val) {
+            if(tree.containsKey(val)) return;
+            Integer l = tree.lowerKey(val);
+            Integer h = tree.higherKey(val);
+            if(l != null && h != null && tree.get(l).end + 1 == val && h == val + 1) {
+                tree.get(l).end = tree.get(h).end;
+                tree.remove(h);
+            } else if(l != null && tree.get(l).end + 1 >= val) {
+                tree.get(l).end = Math.max(tree.get(l).end, val);
+            } else if(h != null && h == val + 1) {
+                tree.put(val, new Interval(val, tree.get(h).end));
+                tree.remove(h);
+            } else {
+                tree.put(val, new Interval(val, val));
+            }
+        }
+    
+        public List<Interval> getIntervals() {
+            return new ArrayList<>(tree.values());
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Very concise c++ solution.
+In general case, vector is OK, it will take O(n) time in each add, and O(1) in get result. But if there are lots of merges and the number of disjoint intervals are small compared to the data stream's size, we'd better use another data structure "set", because the insert operation in vector will cost O(n) time, but it only cost O(log n) in binary search tree, but it will cost O(n) time in getInterval. So use which data structure will depends. 
+
+first one is the solution use vector
+
+    class SummaryRanges {
+    public:
+        void addNum(int val) {
+            auto Cmp = [](Interval a, Interval b) { return a.start < b.start; };
+            auto it = lower_bound(vec.begin(), vec.end(), Interval(val, val), Cmp);
+            int start = val, end = val;
+            if(it != vec.begin() && (it-1)->end+1 >= val) it--;
+            while(it != vec.end() && val+1 >= it->start && val-1 <= it->end)
+            {
+                start = min(start, it->start);
+                end = max(end, it->end);
+                it = vec.erase(it);
+            }
+            vec.insert(it,Interval(start, end));
+        }
+        
+        vector<Interval> getIntervals() {
+            return vec;
+        }
+    private:
+        vector<Interval> vec;
+    };
+
+and below is another solution use binary search tree.
+
+    class SummaryRanges {
+    public:
+        /** Initialize your data structure here. */
+        void addNum(int val) {
+            auto it = st.lower_bound(Interval(val, val));
+            int start = val, end = val;
+            if(it != st.begin() && (--it)->end+1 < val) it++;
+            while(it != st.end() && val+1 >= it->start && val-1 <= it->end)
+            {
+                start = min(start, it->start);
+                end = max(end, it->end);
+                it = st.erase(it);
+            }
+            st.insert(it,Interval(start, end));
+        }
+        
+        vector<Interval> getIntervals() {
+            vector<Interval> result;
+            for(auto val: st) result.push_back(val);
+            return result;
+        }
+    private:
+        struct Cmp{
+            bool operator()(Interval a, Interval b){ return a.start < b.start; }
+        };
+        set<Interval, Cmp> st;
+    };
+
+----------------------------------------------------------------------------------------------------
+Java fast log (N) solution (186ms) without using the TreeMap but a customized BST
+    public class SummaryRanges {
+        class BSTNode {
+            Interval interval;
+            BSTNode left;
+            BSTNode right;
+            BSTNode(Interval in){
+                interval = in;
+            }
+        }
+        
+        BSTNode findMin(BSTNode root) {
+            if (root == null) return null;
+            if (root.left == null ) return root;
+            else return findMin(root.left);
+        }
+        
+        BSTNode remove(Interval x, BSTNode root) {
+            if (root == null) return null;
+            else if ( x == null ) return root;
+            else if (x.start > root.interval.end ) {
+                root.right = remove(x, root.right);
+            } else if (x.end < root.interval.start ) {
+                root.left = remove(x, root.left);
+            } else if ( root.left != null && root.right != null) {
+                root.interval = findMin(root.right).interval;
+                root.right = remove( root.interval, root.right);
+            } else {
+                root = ( root.left != null ) ? root.left : root.right;
+            }
+            return root;
+        }
+        
+        BSTNode findKey(int val, BSTNode root) {
+            if (root == null) return null;
+            if (root.interval.start > val) {
+                return findKey(val, root.left);
+            } else if (root.interval.end < val) {
+                return findKey(val, root.right);
+            } else return root;
+        }
+        
+        BSTNode addKey(int val, BSTNode root) {
+            if (root == null) {
+                root = new BSTNode( new Interval(val, val) ); 
+            } else if (root.interval.start > val) {
+                root.left = addKey(val, root.left);
+            } else if (root.interval.end < val) {
+                root.right = addKey(val, root.right);
+            }  
+            return root;
+        }
+        void inOrder(BSTNode root) {
+            if (root != null) {
+                inOrder(root.left);
+                list.add(root.interval);
+                inOrder(root.right);
+            }
+        }
+        
+        /** Initialize your data structure here. */
+        BSTNode root;
+        List<Interval> list = new ArrayList();
+        public SummaryRanges() {
+            root = null;
+        }
+        
+        public void addNum(int val) {
+            if (root == null) {
+                root = addKey(val, root);
+            } else {
+                if ( findKey(val, root) != null) return;
+                BSTNode left = findKey(val-1, root);
+                BSTNode right = findKey(val+1, root);
+                if (left == null && right == null) {
+                    root = addKey(val, root);
+                } else if (left != null && right == null) {
+                    left.interval.end++;
+                } else if (left == null && right != null) {
+                    right.interval.start--;
+                } else {
+                    Interval l = left.interval;
+                    int e = right.interval.end;
+                    root = remove(right.interval, root);
+                    l.end = e;
+                }
+            }
+        }
+        
+        public List<Interval> getIntervals() {
+            list.clear();
+            inOrder(root);
+            return list;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my python solution using heap
+Since there is no standard TreeMap library for python, I am implementing this structure with a min heap.
+The idea is straight froward: 
+Append interval to heap when addNum called
+Merge intervals when getIntervals called
+
+  
+    class SummaryRanges(object):
+
+      def __init__(self):
+        self.intervals = []
+        
+      def addNum(self, val):
+        heapq.heappush(self.intervals, (val, Interval(val, val)))
+        
+      def getIntervals(self):
+        stack = []
+        while self.intervals:
+            idx, cur = heapq.heappop(self.intervals)
+            if not stack:
+                stack.append((idx, cur))
+            else:
+                _, prev = stack[-1]
+                if prev.end + 1 >= cur.start:
+                    prev.end = max(prev.end, cur.end)
+                else:
+                    stack.append((idx, cur))
+        self.intervals = stack
+        return list(map(lambda x: x[1], stack))
+
+----------------------------------------------------------------------------------------------------
+C++ solution using vector and binary search with explanation
+For a new number n, find and return the index of interval [s, t] such that s is the largest 'start' that is smaller than n. If no such interval exists, return -1. This is done using binary search.
+
+For example, 
+
+ - new number 5, intervals [[1,1], [4,6], [8,8]], binary search returns 1.
+
+ - new number 0, intervals [[1,1], [4,6], [8,8]], binary search returns -1.
+
+After we find this 'index', there are three circumstances:
+
+1. intervals[index] already contains val. Do nothing.
+
+2. val can be merged into intervals[index+1]. Modify intervals[index+1].start to val.
+
+3. val can be merged into intervals[index]. Modify intervals[index].end to val.
+
+4. val can't be merged into either interval. Insert Interval( val, val).
+
+Finally, after inserting val, we need to check whether intervals[index] and intervals[index+1] can be merged.
+
+
+
+    class SummaryRanges {
+    private:
+        vector<Interval> intervals = vector<Interval>();
+        
+        int binarySearch(vector<Interval> intervals, int val) {
+            return binarySearchHelper(intervals, 0, intervals.size(), val);
+        }
+        
+        int binarySearchHelper(vector<Interval> intervals, int start, int end, int val) {
+            if (start == end) return -1;
+            if (start+1 == end && intervals[start].start < val) return start;
+            
+            int mid = (start + end)/2;
+            if (intervals[mid].start == val) {
+                return mid;
+            } else if (intervals[mid].start < val) {
+                return binarySearchHelper(intervals, mid, end, val);
+            } else { //intervals[mid] > val
+                return binarySearchHelper(intervals, start, mid, val);
+            }
+        }
+        
+    public:
+        /** Initialize your data structure here. */
+        SummaryRanges() {
+            
+        }
+        
+        /** For a new number n, find the last(biggest) interval
+         *  [s,t], such that s < n. If no such interval exists, 
+         *  return -1.
+         */
+        void addNum(int val) {
+            int index = binarySearch(intervals, val);
+            
+            // intervals[index] contains val
+            if (index != -1 && intervals[index].end >= val) {
+                return;
+            }
+            
+            if (index != intervals.size()-1 && val + 1 == intervals[index+1].start) {
+                intervals[index+1].start = val;
+            } else if (index != -1 && val - 1 == intervals[index].end) {
+                intervals[index].end = val;
+            } else {
+                intervals.insert(intervals.begin() + index + 1, Interval(val, val));
+            }
+            
+            //merge intervals[index] with intervals[index+1]
+            if (index != -1 && intervals[index].end + 1 == intervals[index+1].start) {
+                intervals[index].end = intervals[index+1].end;
+                intervals.erase(intervals.begin()+index+1);
+            }
+            
+            return;
+        }
+        
+        vector<Interval> getIntervals() {
+            return this->intervals;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+I can not understand the question description, can any one explain it?
+I can not understand the question description, can any one explain it?
+
+----------------------------------------------------------------------------------------------------
+Can you add a C# definition?
+I have a C# solution and would like to make sure that it is correct.. could you add a C# code defintion
+
+----------------------------------------------------------------------------------------------------
+Java fast simple code using TreeMap with detailed explanation
+The idea is map all map all val to its left bond of containing interval for fast lookup.
+Store intervals in TreeMap as it seems to require output intervals in ascending order.(if ascending order is not required, I would use a hashmap for maximum performance)
+
+5 cases
+0: isolated val
+
+1: val already in existing interval
+e.g    [1,6]    3, do nothing
+
+2. val is connected to interval on its left
+e.g [1,2] 3
+
+3. val is connected to interval on its right
+e.g.  [4, 7] 3
+
+4. val is connected on both side
+e.g  [1,2] [4, 7]  3.
+
+The algorithm actually finds the possible left or right intervals to val, (or both). remove the old intervals,
+insert the new interval in the TreeMap. Update valueToBond hashmap to ensure the right bound val can find its correct left bound. Note that some val in the middle of the interval won't find correct left bound. But that is OK as we will not access to the middle values in the future! The left bound, right bound values must find their correct left bound.
+
+
+  
+
+     public class SummaryRanges {
+            private Map<Integer, Integer> valueToBond;//map val to containing interval left bound
+            private Map<Integer, Interval> bondToInterval; // store intervals in TreeMap <left bound, interval>
+            
+            public SummaryRanges() {
+                valueToBond = new HashMap<>();
+                bondToInterval = new TreeMap<>();
+            }
+            
+            public void addNum(int val) {
+                //contained in an existing interval
+                if (valueToBond.containsKey(val)) {
+                    return;
+                }
+                //isolated number, no connection to its left or right
+                if (!valueToBond.containsKey(val - 1) && !valueToBond.containsKey(val + 1)) {
+                    valueToBond.put(val, val);
+                    bondToInterval.put(val, new Interval(val, val));
+                    return;
+                }
+                //may connect to left, right or both
+                int left = valueToBond.containsKey(val - 1) ? valueToBond.get(val - 1) : val;
+                int right = valueToBond.containsKey(val + 1) ? bondToInterval.get(valueToBond.get(val + 1)).end : val;
+                valueToBond.put(val, left);
+                valueToBond.put(right, left);
+                bondToInterval.remove(val + 1);
+                bondToInterval.put(left, new Interval(left, right));
+            }
+            
+            public List<Interval> getIntervals() {
+                return new ArrayList<>(bondToInterval.values());
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+JAVA AC Union Find Solution
+public class SummaryRanges {
+
+    HashMap<Integer,Integer> map;
+    HashMap<Integer,Integer> Intervals;
+
+    /** Initialize your data structure here. */
+    public SummaryRanges() {
+        map = new HashMap<>();
+        Intervals = new HashMap<>();
+    }
+    
+    public void addNum(int val) {
+        if(map.containsKey(val))
+            return;
+        else{
+            map.put(val,1);
+            if(map.containsKey(val+1) && map.containsKey(val-1)){
+                int l = map.get(val+1);
+                int r = map.get(val-1);
+                map.put(val+l,l+r+1);
+                map.put(val-r,l+r+1);
+                Intervals.remove(val+1);
+                Intervals.put(val-r,l+r+1);
+            }
+            else if(map.containsKey(val+1)){
+                int l = map.get(val+1);
+                map.put(val+l,l+1);
+                map.put(val,l+1);
+                Intervals.remove(val+1);
+                Intervals.put(val,l+1);
+            }
+            else if(map.containsKey(val-1)){
+                int r = map.get(val-1);
+                map.put(val-r,r+1);
+                map.put(val,r+1);
+                Intervals.put(val-r,r+1);
+            }
+            else
+                Intervals.put(val,1);
+        }
+    }
+    
+    public List<Interval> getIntervals() {
+        List<Interval> list = new ArrayList<>();
+        for(Integer i: Intervals.keySet())
+            list.add(new Interval(i,i+Intervals.get(i)-1));
+        Collections.sort(list, new Comparator<Interval>(){
+            @Override
+            public int compare(Interval i1, Interval i2){
+                return i1.start-i2.start;
+            }
+        });
+        return list;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+simple python solution with binary search
+class SummaryRanges(object):
+    def __init__(self):
+        self.intervals = []
+
+    def addNum(self, val):
+        # find location
+        low, high = 0, len(self.intervals) - 1
+        while low <= high:
+            mid = (low + high) // 2
+            elem = self.intervals[mid]
+            if elem.start <= val <= elem.end:
+                return
+            elif elem.start > val:
+                high = mid - 1
+            else:
+                low = mid + 1
+
+        # insert the interval
+        pos = min(low, high) + 1
+        self.intervals[pos:pos] = [Interval(val, val)]
+
+        # merge with next interval
+        if pos + 1 < len(self.intervals) and val == self.intervals[pos + 1].start - 1:
+            self.intervals[pos].end = self.intervals[pos + 1].end
+            self.intervals[pos + 1:pos + 2] = []
+
+        # merge with prev interval
+        if pos - 1 >= 0 and val == self.intervals[pos - 1].end + 1:
+            self.intervals[pos - 1].end = self.intervals[pos].end
+            self.intervals[pos:pos + 1] = []
+
+    def getIntervals(self):
+        return self.intervals
+
+
+
+----------------------------------------------------------------------------------------------------
+Not very concise but easy to read Java solution O(logN) per input
+Java is not my primary languages. However, this question is not easy to implement in C++. I tried the pb_ds/tree, it solves the problem, but for sure not as convenient as Java TreeMap.
+
+    public class SummaryRanges {
+    
+        /** Initialize your data structure here. */
+        private TreeMap<Integer, Integer> tree;
+        
+        public SummaryRanges() {
+            tree = new TreeMap<>();
+        }
+        
+        public void addNum(int val) {
+            // Value existed as key
+            if (tree.get(val) != null)
+                return;
+    
+            // Value existed inside intervals
+            Map.Entry<Integer, Integer> low = tree.lowerEntry(val);
+            if (low != null && low.getValue() >= val)
+                return;
+    
+            // Value can merge to end
+            if (low != null && low.getValue() + 1 == val) {
+                if (tree.get(val + 1) != null) {
+                    int start = low.getKey();
+                    int end = tree.get(val + 1);
+                    tree.remove(val + 1);
+                    tree.remove(low.getKey());
+                    tree.put(start, end);
+                }
+                else
+                    tree.put(low.getKey(), val);
+                return;
+            }
+    
+            // Value can merge to start
+            Map.Entry<Integer, Integer> high = tree.higherEntry(val);
+            if (high != null && high.getKey() == val + 1) {
+                int end = high.getValue();
+                tree.remove(high.getKey());
+                tree.put(val, end);
+                return;
+            }
+    
+            // Isolated new value
+            tree.put(val, val);
+        }        
+        
+        public List<Interval> getIntervals() {
+            List<Interval> l = new LinkedList<>();
+    
+            for (Map.Entry<Integer, Integer> entry : tree.entrySet())
+                l.add(new Interval(entry.getKey(), entry.getValue()));
+    
+            return l;        
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java 194 ms using custom tree with merging nodes, O(#intervals) for space
+There are other solutions on the board that use TreeMap and binary search but I decided to try it by building my own binary search tree and merging nodes as I went to keep the tree as small as possible.  
+
+    public class SummaryRanges {
+    private class IntervalNode
+    {
+        Interval i;
+        IntervalNode left;
+        IntervalNode right;
+        
+        public IntervalNode(int begin, int end)
+        {
+            i = new Interval(begin, end);
+        }
+        
+        public boolean canMerge(int val)
+        {
+            return val >= i.start - 1 && val <= i.end + 1;
+        }
+        
+        public void merge(int val)
+        {
+            if (val > i.end) i.end = val;
+            if (val < i.start) i.start = val;
+        }
+        
+        public boolean canMerge(IntervalNode other)
+        {
+            if (other.i.start >= i.start - 1 && other.i.start <= i.end + 1 ||
+                i.start >= other.i.start - 1 && i.start <= other.i.end + 1) return true;
+                
+                return false;
+        }
+        
+        public void mergeNodes(IntervalNode other)
+        {
+            if (other.i.start < i.start) i.start = other.i.start;
+            if (other.i.end > i.end) i.end = other.i.end;
+        }
+    }
+    
+    private IntervalNode overallRoot;
+    
+    // pretty dumb rebalancing but whateva
+    private void rebalance(IntervalNode root, IntervalNode subTree)
+    {
+        if (root.left == null)
+        {
+            root.left = subTree;
+        }
+        else
+        {
+            rebalance(root.left, subTree);
+        }
+    }
+    
+    private IntervalNode updateTree(IntervalNode root, IntervalNode prevInterval, int val)
+    {
+        if (root == null && prevInterval == null)
+        {
+            return new IntervalNode(val, val);
+        }
+        else if (root == null)
+        {
+            return root;
+        }
+        
+        if (root.canMerge(val) && prevInterval == null)
+        {
+            root.merge(val);
+            prevInterval = root;
+        }
+        else if (prevInterval != null && root.canMerge(prevInterval))
+        {
+            prevInterval.mergeNodes(root);
+            if (root.right != null)
+            {
+                rebalance(root.right, root.left);
+                return root.right;
+            }
+            else
+            {
+                return root.left;
+            }
+        }
+        
+        if (val > root.i.start)
+        {
+            root.right = updateTree(root.right, prevInterval, val);
+        }
+        else
+        {
+            root.left = updateTree(root.left, prevInterval, val);
+        }
+        
+        return root;
+    }
+    
+    public void addNum(int val) {
+        if (overallRoot == null)
+        {
+            overallRoot = new IntervalNode(val, val);
+        }
+        else
+        {
+            overallRoot = updateTree(overallRoot, null, val);            
+        }
+    }
+    
+    private void inorder(IntervalNode root, List<Interval> results)
+    {
+        if (root != null)
+        {
+            inorder(root.left, results);
+            results.add(root.i);
+            inorder(root.right, results);
+        }
+    }
+    
+    public List<Interval> getIntervals() {
+        List<Interval> results = new ArrayList<Interval>();
+        inorder(overallRoot, results);
+        return results;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+&#91;Java&#93; Binary Search upon List
+Use a List to store the `Interval`. After adding a new number, apply binary search on the list to find the `Interval` to which the number is mostly close. 
+
+    public class SummaryRanges {
+        List<Interval> rangeList;
+
+        /** Initialize your data structure here. */
+        public SummaryRanges() {
+            rangeList=new LinkedList<Interval>();
+        }
+        
+        public void addNum(int val) {
+            if(rangeList.isEmpty()) rangeList.add(new Interval(val,val));
+            else{
+                int len=rangeList.size();
+                int lo=0, hi=len-1;
+                /*Search for the closest Interval:*/
+                while(lo<hi){
+                    int mid=lo+(hi-lo)/2;
+                    Interval tmp=rangeList.get(mid);
+                    if(val>=tmp.start && val<=tmp.end) return;
+                    if(val<tmp.start) hi=mid;
+                    else              lo=mid+1;
+                }
+                Interval target=rangeList.get(lo);
+                Interval targetLeft=(lo>=1)?rangeList.get(lo-1):null;
+                if(val>=target.start && val<=target.end) return;
+                
+                if(val<target.start){
+                    if(targetLeft==null){
+                        if(val+1==target.start) target.start=val;
+                        else rangeList.add(0,new Interval(val,val));
+                    }else{
+                        if(targetLeft.end+2==target.start) {
+                            targetLeft.end=target.end; 
+                            rangeList.remove(lo);
+                        }else{
+                            if(targetLeft.end+1==val) targetLeft.end=val;
+                            else if(target.start-1==val) target.start=val;
+                                 else rangeList.add(lo,new Interval(val,val));
+                        }
+                    }
+                }else{
+                    if(target.end+1==val) target.end=val;
+                    else rangeList.add(new Interval(val,val));
+                }
+            }
+        }
+        
+        public List<Interval> getIntervals() {
+            return rangeList;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Solution based on C++ set -- memory limit exceeded?
+My solution uses a C++ set, as shown below. To do so, I use a custom `SRInterval` class. Two `SRIntervals` compare equal if they overlap. This makes it easy to find existing intervals that need to be merged.
+
+This solution received a "memory limit exceeded" verdict, and I cannot understand why. Any hints?
+
+    struct SRInterval {
+        const int begin;
+        const int end;
+        SRInterval(int begin, int end) : begin(begin), end(end) {}
+        bool operator<(const SRInterval &other) const {
+            return end <= other.begin;
+        }
+    };
+
+    class SummaryRanges {
+        set<SRInterval> intervals;
+
+    public:
+        void addNum(int val) {
+            int b = val;
+            int e = val + 1;
+
+            auto left = intervals.find(SRInterval(val - 1, val));
+            if (left != intervals.end()) {
+                b = left->begin;
+                intervals.erase(*left);
+            }
+            auto right = intervals.find(SRInterval(val, val + 2));
+            if (right != intervals.end()) {
+                e = right->end;
+                intervals.erase(*right);
+            }
+
+            SRInterval sri(b, e);
+            assert(intervals.count(sri) == 0 && "sri already in intervals?");
+            intervals.insert(sri);
+        }
+        
+        vector<Interval> getIntervals() {
+            vector<Interval> result;
+            result.reserve(intervals.size());
+            for (auto &sri : intervals) {
+                result.emplace_back(sri.begin, sri.end - 1);
+            }
+            return result;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Share 152ms C++ solution using Segment tree
+The key point is how to merge intervals.
+
+    
+ 
+
+    struct MMTreeNode
+     {
+         Interval range;
+         MMTreeNode *left;
+         MMTreeNode *right;
+         MMTreeNode(int s, int e):range(s, e), left(NULL), right(NULL){}
+     };
+    class SummaryRanges {
+    private:
+        MMTreeNode *rt;
+    public:
+        /** Initialize your data structure here. */
+        SummaryRanges() {
+            rt = NULL;
+        }
+        
+        void addNum(int val) {
+            addNumHelper(val, rt);
+        }
+        
+        void addNumHelper(int val, MMTreeNode *&root)
+        {
+            if(root == NULL)
+            {
+                root = new MMTreeNode(val, val);
+                return;
+            }
+            if(root->range.start <= val && root->range.end >= val) return;
+            if(root->range.start == val + 1)
+            {
+                root->range.start = val;
+                //find the rightest node on the left subtree
+                if(root->left)
+                {
+                    MMTreeNode *node = root->left;
+                    if(node->right == NULL)
+                    {
+                        //node's right subtree doesn't exist
+                        if(node->range.end == val - 1)
+                        {
+                            root->range.start = node->range.start;
+                            root->left = node->left;
+                            delete node;
+                        }
+                        return;
+                    }
+                    //if right subtree exists, then find the rightest node
+                    MMTreeNode *parent;
+                    while(node->right)
+                    {
+                        parent = node;
+                        node = node->right;
+                    }
+                    if(node->range.end == val - 1)
+                    {
+                        parent->right = node->left;
+                        root->range.start = node->range.start;
+                        delete node;
+                    }
+                }
+                return;
+            }else if(root->range.end == val - 1)
+            {
+                root->range.end = val;
+                //find the leftest node on the right subtree
+                if(root->right)
+                {
+                    MMTreeNode *node = root->right;
+                    if(node->left == NULL)
+                    {
+                        //node's left subtree doesn't exist
+                        if(node->range.start == val + 1)
+                        {
+                            root->range.end = node->range.end;
+                            root->right = node->right;
+                            delete node;
+                        }
+                        return;
+                    }
+                    //if left subtree exists, then find the leftest node
+                    MMTreeNode *parent = root;
+                    while(node->left)
+                    {
+                        parent = node;
+                        node = node->left;
+                    }
+                    if(node->range.start == val + 1)
+                    {
+                        parent->left = node->right;
+                        root->range.end = node->range.end;
+                        delete node;
+                    }
+                }
+                return;
+            }else if(root->range.start > val)
+            {
+                addNumHelper(val, root->left);
+            }else
+            {
+                addNumHelper(val, root->right);
+            }
+        }
+        
+        vector<Interval> getIntervals() {
+            vector<Interval> result;
+            getIntervalsHelper(rt, result);
+            return result;
+        }
+        //middle order traversal
+        void getIntervalsHelper(MMTreeNode *root, vector<Interval> &result)
+        {
+            if(root == NULL) return;
+            getIntervalsHelper(root->left, result);
+            result.push_back(root->range);
+            getIntervalsHelper(root->right, result);
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using map. O(logN) per adding.
+map<int, Interval> m;
+void addNum(int val) {
+    if (m.count(val)) return;
+    
+    auto higher = m.lower_bound(val);
+    auto lower = (higher == m.begin()) ? m.end() : prev(higher);
+
+    if (lower != m.end() && higher != m.end() && lower->second.end + 1 == val && higher->first == val + 1) {
+        // merge two intervals. [1, 2] [4, 5] with val 3;
+        lower->second.end = higher->second.end;
+        m.erase(higher);
+    } else if (lower != m.end() && lower->second.end + 1 >= val) {
+        // [1, 5] with val 6
+        lower->second.end = max(lower->second.end, val);
+    } else if (higher != m.end() && higher->first == val + 1) {
+        // [4, 5] with 3
+        m[val] = {val, higher->second.end};
+        m.erase(higher);
+    } else {
+        m[val] = {val, val};
+    }
+}
+
+vector<Interval> getIntervals() {
+    vector<Interval> result;
+    for (const auto& p : m) {
+        result.push_back(p.second);
+    }
+    return result;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Share my solution using two map
+Trying to record intervals by left and right points. Complexity of 'addNum' is log(k), complexity of  'getIntervals' is klog(k), k is number of intervals.
+
+    ### 352. Data Stream as Disjoint Intervals ###
+    class SummaryRanges(object):
+    
+        # Initialize your data structure here.
+        def __init__(self):
+            self.have, self.left, self.right = set(), {}, {}
+    
+        # @param {integer} val
+        # @return {void}
+        def addNum(self, val):
+            if val in self.have: return
+    
+            self.have.add(val)
+            if val-1 in self.right and val+1 in self.left:
+                l, r = self.right.pop(val-1), self.left.pop(val+1)
+                self.left.pop(l.start)
+                self.right.pop(r.end)
+                interval = Interval(l.start, r.end)
+                self.left[l.start], self.right[r.end] = interval, interval
+            elif val-1 in self.right:
+                l = self.right.pop(val-1)
+                self.left.pop(l.start)
+                interval = Interval(l.start, val)
+                self.left[l.start], self.right[val] = interval, interval
+            elif val+1 in self.left:
+                r = self.left.pop(val+1)
+                self.right.pop(r.end)
+                interval = Interval(val, r.end)
+                self.left[val], self.right[r.end] = interval, interval
+            else:
+                interval = Interval(val, val)
+                self.left[val], self.right[val] = interval, interval
+    
+        # @return {Interval[]}
+        def getIntervals(self):
+            return [self.left[key] for key in sorted(self.left.keys())]
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ solution using std::set
+Using `std::set` (implemented with red-black tree generally), for every update (insertion), the time cost is O(lgn).
+
+    bool operator < (const Interval &i1, const Interval &i2) {
+        return i1.start < i2.start;
+    }
+    
+    void update_end(const Interval &i, int end) {
+        const_cast<Interval &>(i).end = end;
+    }
+    
+    class SummaryRanges {
+        set<Interval> data;
+    
+    public:
+        SummaryRanges() {}
+    
+        void addNum(int val) {
+            Interval i(val, val);
+    
+            auto &&next = upper_bound(data.begin(), data.end(), i);
+    
+            if (next != data.begin() && next != data.end()) {
+                auto prev = next; --prev;
+    
+                if (prev->end >= val) {
+                    return;
+                }
+            }
+    
+            if (next == data.end() && !data.empty()) {
+                if (data.rbegin()->end >= val) {
+                    return;
+                }
+            }
+    
+            auto &&curr = data.insert(next, i);
+            auto prev = data.end();
+    
+            bool erase_curr = false, erase_next = false;
+    
+            if (curr != data.begin()) {
+                prev = curr; --prev;
+    
+                if (prev->end == curr->start - 1) {
+                    update_end(*prev, curr->start);
+                    erase_curr = true;
+                }
+            }
+    
+            if (next != data.end()) {
+                if (next->start == curr->start + 1) {
+                    if (erase_curr) {
+                        update_end(*prev, next->end);
+                    } else {
+                        update_end(*curr, next->end);
+                    }
+    
+                    erase_next = true;
+                }
+            }
+    
+            if (erase_curr) {
+                data.erase(curr);
+            }
+    
+            if (erase_next) {
+                data.erase(next);
+            }
+        }
+    
+        vector<Interval> getIntervals() {
+            return vector<Interval>(data.begin(), data.end());
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Short but bad Python
+    def __init__(self):
+        vals = set()
+        self.addNum = vals.add
+        self.getIntervals = lambda: [[g[0][1], g[-1][1]] for g in
+                                     (list(g) for _, g in itertools.groupby(
+                                      enumerate(sorted(vals)), lambda (i, val): val - i))]
+
+----------------------------------------------------------------------------------------------------
+Output Limit Exceeded but the test case runs fine
+I'm doing *352. Data Stream as Disjoint Intervals* and get *Output Limit Exceeded* error. But running the test case that throws out this error gives the exact solution as the expected answer. I thought that unlike time limit exceeded or memory limit exceeded, *Output Limit Exceeded* happens only on individual test cases, not cumulatively. Then why would I get this error when the test case passes?
+
+----------------------------------------------------------------------------------------------------

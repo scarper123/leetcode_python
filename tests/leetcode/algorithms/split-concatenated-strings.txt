@@ -1,0 +1,523 @@
+Short Java Solutions - Sorting Dictionary and Without Sorting
+public String findLongestWord(String s, List<String> d) {
+    String longest = "";
+    for (String dictWord : d) {
+        int i = 0;
+        for (char c : s.toCharArray()) 
+            if (i < dictWord.length() && c == dictWord.charAt(i)) i++;
+
+        if (i == dictWord.length() && dictWord.length() >= longest.length()) 
+            if (dictWord.length() > longest.length() || dictWord.compareTo(longest) < 0)
+                longest = dictWord;
+    }
+    return longest;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python solutions
+def findLongestWord(self, s, d):
+    heap = [(-len(word), word) for word in d]
+    heapq.heapify(heap)
+    while heap:
+        word = heapq.heappop(heap)[1]
+        it = iter(s)
+        if all(c in it for c in word):
+            return word
+    return ''
+
+----------------------------------------------------------------------------------------------------
+Python Simple (Two pointer)
+def findLongestWord(self, S, D):
+    D.sort(key = lambda x: (-len(x), x))
+    for word in D:
+        i = 0
+        for c in S:
+            if i < len(word) and word[i] == c:
+                i += 1
+        if i == len(word):
+            return word
+    return ""
+
+
+----------------------------------------------------------------------------------------------------
+10 lines solutions for c++
+    string findLongestWord(string s, vector<string>& d) {
+        string ans;
+        for (int i = 0; i < d.size(); i++) {
+            int pi = 0, pj = 0;
+            for (; pi < s.size() && pj < d[i].size(); pi++) {
+                pj += s[pi] == d[i][pj];
+            }
+            if (pj == d[i].size() && (ans.size() < d[i].size() || (ans.size() == d[i].size() && ans > d[i])))
+                ans = d[i];
+        }
+        return ans;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Easy Java Solution, isSubSequence
+public class Solution {
+    public String findLongestWord(String s, List<String> d) {
+        if (s.length() == 0 || d.size() == 0) return "";
+        
+        Collections.sort(d, (a, b) -> {
+           if (a.length() != b.length()) return b.length() - a.length();
+           return a.compareTo(b);
+        });
+        
+        for (String p : d) {
+            if (s.length() < p.length()) continue;
+            if (isSubSeq(s, p)) return p;
+        }
+        
+        return "";
+    }
+    
+    private boolean isSubSeq(String s, String p) {
+        int i = 0, j = 0;
+        while (i < s.length() && j < p.length()) {
+            if (s.charAt(i) == p.charAt(j)) {
+                i++; j++;
+            }
+            else {
+                i++;
+            }
+        }
+        return j == p.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Fast java solution 19ms beats 97% using indexOf
+public class Solution {
+    public String findLongestWord(String s, List<String> d) {
+        String longest=null;
+        Iterator<String> itr=d.iterator();
+        while(itr.hasNext()){
+            String dd=itr.next();
+            int start=-1;
+            boolean flag=true;
+            for(int i=0;i<dd.length();i++){
+                start=s.indexOf(dd.charAt(i),start+1);
+                if(start<0){
+                    flag=false;
+                    break;
+                }
+            }
+            if(!flag)   continue;
+            if(longest==null)   longest=dd;
+            else{
+                if(dd.length()>longest.length())    longest=dd;
+                if(dd.length()==longest.length()&&dd.compareTo(longest)<0)   longest=dd;
+            }
+        }
+        return longest==null?"":longest;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+a test case error ??
+<p>Hello,</p>
+<p>I have a testcase that failed.</p>
+<p>The input:</p>
+<p>&#34;aewfafwafjlwajflwajflwafj&#34;<br/>
+&#91;&#34;apple&#34;,&#34;ewaf&#34;,&#34;awefawfwaf&#34;,&#34;awef&#34;,&#34;awefe&#34;,&#34;ewafeffewafewf&#34;&#93;</p>
+<p>The output for this one in the testcase is &#34;ewaf&#34;</p>
+<p>but I think it is &#34;awefawfwaf&#34;, which is the longest string.</p>
+<p>Is there anything wrong on my side?</p>
+
+
+----------------------------------------------------------------------------------------------------
+My AC approach using sorting and binary search
+class Solution {
+public:
+    struct order
+    {
+        bool operator()(const string& s1, const string& s2)
+        {
+            if(s1.size() == s2.size())
+            {
+                int j = 0;
+                while(s1[j] == s2[j] && j < s1.size())
+                    j++;
+                return (j == s1.size()) ? true : s1[j] < s2[j];
+            }
+            else
+                return s1.size() > s2.size();
+        }
+    };
+    string findLongestWord(string s, vector<string>& d)
+    {
+        sort(d.begin(), d.end(), order());
+        vector<vector<int>> dict(26, vector<int>());
+        int i = 0;
+        for(auto c : s)
+            dict[c - 'a'].push_back(i++);
+        string result;
+        for(auto ele : d)
+        {
+            int id = 0;
+            bool notPossible = false;
+            for(auto c : ele)
+            {
+                auto nextIt = lower_bound(dict[c - 'a'].begin(), dict[c - 'a'].end(), id);
+                if(nextIt == dict[c - 'a'].end())
+                {
+                    notPossible = true;
+                    break;
+                }
+                id = *nextIt + 1;
+            }
+            if(!notPossible)
+            {
+                result = ele;
+                break;
+            }
+        }
+        return result;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Java solution by sorting the list, easy to understand
+public class Solution {
+    public String findLongestWord(String s, List<String> d) {
+        if (d == null || d.size() == 0) return "";
+        Collections.sort(d, new Comparator<String>(){
+           public int compare(String a, String b) {
+               if (a.length() != b.length()) {
+                   return b.length() - a.length();
+               }
+               return a.compareTo(b);
+           } 
+        });
+        
+        for (int i = 0; i < d.size(); i++) {
+            if (canForm(s, d.get(i))) {
+                return d.get(i);
+            }
+        }
+        return "";
+    }
+    
+    private boolean canForm(String s1, String s2) {
+        if (s2.length() > s1.length())  return false;
+        
+        int i = 0, j = 0;
+        while (i < s1.length() && j < s2.length()) {
+            if (s1.charAt(i) == s2.charAt(j)) {
+                i++;
+                j++;
+            } else {
+                i++;
+            }
+        }
+        return j == s2.length();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+C# - sort and find - brute force - simple
+    public string FindLongestWord(string s, IList<string> d) 
+    {
+        foreach (string x in d.OrderByDescending(x => x.Length).ThenBy(x => x))
+        {
+            int i1 = 0;
+            int i2 = 0;
+            while (i1 < x.Length && i2 < s.Length)
+            {
+                if (x[i1] == s[i2])
+                {
+                    i1++;
+                    i2++;
+                }
+                else
+                {
+                    i2++;
+                }
+            }
+            
+            if (i1 == x.Length) return x;
+        }
+        
+        return "";
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python O(mn) Time, O(n) space, pointer based solution,122ms, beats 98%
+class Solution(object):
+    def findLongestWord(self, s, d):
+        waiting = {}
+        for c in 'abcdefghijklmnopqrstuvwxyz':
+            waiting[c] = []
+            
+        for word in d:
+            # add pointor to beginning of each word
+            waiting[word[0]].append((word, 0))
+        
+        max_len = (0, "")
+        for c in s:
+            words = waiting[c]
+            waiting[c] = [] # clean waiting words for that character
+            for word, idx in words:
+                if idx+1 >= len(word):
+                    # finished word
+                    # use min and negative length to get maximum length then min word
+                    max_len = min(max_len, (-len(word), word)) 
+                else:
+                    # move pointer to next word
+                    next_c = word[idx+1]
+                    waiting[next_c].append((word, idx+1))
+        return max_len[1]
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution
+    public String findLongestWord(String s, List<String> d) {
+        String longest = "";
+        for(String word:d){
+            if(word.length()>=longest.length()){
+                int curI = 0;
+                for(int i =0; i<s.length() && curI<word.length(); i++){
+                    char c = s.charAt(i);
+                    if(c==word.charAt(curI)){
+                        curI++;
+                    }
+                }
+                if(curI==word.length()){
+                    if(word.length()==longest.length()&&word.compareTo(longest)>=0){
+                        continue;
+                    }
+                    longest = word;
+                }
+            }
+        }
+        return longest;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Really simple Java one pass &#x2F; linear time solution (guaranteed easy)
+public class Solution {
+    public String findLongestWord(String s, List<String> d) {
+        String l = "";
+        for (String t: d)
+            if (isSub(s, t) && t.length() >= l.length())
+                if (t.length() > l.length() || t.compareTo(l) < 0)
+                    l = t;
+        return l;
+    }
+    
+    boolean isSub(String s, String t) {
+        int j = 0;
+        for (int i = 0; i < t.length(); i++)
+            while (j == s.length() || t.charAt(i) != s.charAt(j++))
+                if (j == s.length())
+                    return false;
+        return true;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java Two Point Solution after Sorting the Dictionary
+private class MyCompare implements Comparator<String> {
+	public int compare(String s1, String s2) {
+		return s2.length() == s1.length() ? s1.compareTo(s2)
+				: s2.length() - s1.length();
+	}
+}
+
+public String findLongestWord(String s, List<String> d) {
+	Collections.sort(d, new MyCompare());
+	for (String str : d) {
+		if (check(s, str))
+			return str;
+	}
+	return "";
+}
+
+private boolean check(String s1, String s2) {
+	char[] cs1 = s1.toCharArray();
+	char[] cs2 = s2.toCharArray();
+	int i = 0, j = 0;
+	while (i < cs1.length && j < cs2.length) {
+		if (cs1[i] == cs2[j]) 				
+			j++;
+		i++;			
+	}
+	if(j == cs2.length){
+		return true;
+	}
+	return false;
+}
+
+----------------------------------------------------------------------------------------------------
+Using PriorityQueue to solve this problem!
+public class Solution {
+    public String findLongestWord(String s, List<String> d) {
+         PriorityQueue<String> pq=new PriorityQueue<>(1,new Comparator<String>(){
+                 public int compare(String a,String b){
+                     if(a.length()!=b.length()){
+                         return b.length()-a.length();
+                     }else{
+                         return a.compareTo(b);
+                     }
+                 }
+         });
+         
+         
+         for(String str:d){
+             pq.offer(str);
+         }
+         
+         while(!pq.isEmpty()){
+             String t=pq.poll();
+             if(issubsequence(s,t)){
+                 return t;
+             }
+         }
+         
+         return "";
+         
+    }
+    
+    public boolean issubsequence(String a,String b){
+        char[] array_a=a.toCharArray();
+        char[] array_b=b.toCharArray();
+        
+        int start=0;
+        for(int i=0;i<array_a.length;i++){
+            if(array_b[start]==array_a[i]){
+                start++;
+            }
+            if(start==array_b.length){
+                return true;
+            }
+        }
+        
+        return false;
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------------
+Java solution
+    public String findLongestWord(String s, List<String> d) {
+        Collections.sort(d);
+        int longest = 0, len = s.length();
+        int len1;
+        String ans = "";
+        for (String str : d) {
+            len1 = str.length();
+            if (len1 <= longest || len1 > len)
+                continue;
+            if (canForm(s, str)) {
+                longest = len1;
+                ans = str;
+            }
+        }
+        return ans;
+    }
+    
+    public boolean canForm (String input, String part) {
+        int p1 = 0, p2 = 0;
+        int len1 = input.length(), len2 = part.length();
+        
+        while (p1 < len1 && p2 < len2) {
+            while (p1 < len1 && input.charAt(p1) != part.charAt(p2))
+                p1++;
+            if (p1 < len1)
+                p2++;
+            p1++;
+        }
+        if (p2 == len2)
+            return true;
+        else
+            return false;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Solution using binary search, c++, beats 96%
+class Solution {
+public:
+    bool isFormable(vector<vector<int>>& letterPositions, string& s) {
+        if (s.empty()) return true;
+        int lastSeen = -1;
+        for (auto& c : s) {
+            vector<int>& letterPosition = letterPositions[c - 'a'];
+            if (letterPosition.empty()) return false;
+            auto upperBound = std::upper_bound(letterPosition.begin(), letterPosition.end(), lastSeen);
+            if ( upperBound == letterPosition.end())
+                return false;
+            lastSeen = *upperBound;
+        }
+        return true;
+    }
+    string findLongestWord(string s, vector<string>& d) {
+        vector<vector<int>> letterPositions(26, vector<int>());
+        for (int i = 0; i < s.length(); i++) {
+            letterPositions[s[i] - 'a'].push_back(i);
+        }
+        int maxLength = -1;
+        int maxIndex = -1;
+        for (int i = 0; i < d.size(); i++ ) {
+            string& str = d[i];
+
+            if (isFormable(letterPositions, str) 
+                && ((int)str.length() > maxLength
+                    || (int)str.length() == maxLength && str.compare(d[maxIndex]) < 0)) 
+            {
+                maxLength = str.length();
+                maxIndex = i;
+            }
+        }
+        if (maxIndex == -1) return "";
+        return d[maxIndex];
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+c++ simple without sort solution
+class Solution {
+public:
+    string findLongestWord(string s, vector<string>& d) {
+        int len=d.size();
+        string ans="";
+        for(int i=0; i<len; i++)
+        {
+            string str=d[i];
+            int j=0;
+            int k=0;
+            while(j<s.length() && k<str.length())
+            {
+                if(str[k]==s[j])
+                {
+                    k++;
+                }
+                j++;
+            }
+            if(k==str.length())
+            {
+                if(ans=="" || ans.length()<str.length() || (ans.length() == str.length() && ans>str))
+                {
+                    ans=str;
+                }
+            }
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

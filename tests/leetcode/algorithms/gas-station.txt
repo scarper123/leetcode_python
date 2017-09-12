@@ -1,0 +1,459 @@
+A recursive solution
+    class Solution {
+    public:
+        ListNode *mergeTwoLists(ListNode *l1, ListNode *l2) {
+            if(l1 == NULL) return l2;
+            if(l2 == NULL) return l1;
+            
+            if(l1->val < l2->val) {
+                l1->next = mergeTwoLists(l1->next, l2);
+                return l1;
+            } else {
+                l2->next = mergeTwoLists(l2->next, l1);
+                return l2;
+            }
+        }
+    };
+
+
+This solution is not a tail-recursive, the stack will overflow while the list is too long :)
+http://en.wikipedia.org/wiki/Tail_call
+
+----------------------------------------------------------------------------------------------------
+14 line clean C++ Solution
+    class Solution {
+    public:
+        ListNode *mergeTwoLists(ListNode *l1, ListNode *l2) {
+            ListNode dummy(INT_MIN);
+            ListNode *tail = &dummy;
+            
+            while (l1 && l2) {
+                if (l1->val < l2->val) {
+                    tail->next = l1;
+                    l1 = l1->next;
+                } else {
+                    tail->next = l2;
+                    l2 = l2->next;
+                }
+                tail = tail->next;
+            }
+    
+            tail->next = l1 ? l1 : l2;
+            return dummy.next;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My recursive way to solve this problem(JAVA, easy understanding)
+Hello every one, here is my code, simple but works well:
+
+    public class Solution {
+        public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+            if(l1 == null){
+                return l2;
+            }
+            if(l2 == null){
+                return l1;
+            }
+            
+            ListNode mergeHead;
+            if(l1.val < l2.val){
+                mergeHead = l1;
+                mergeHead.next = mergeTwoLists(l1.next, l2);
+            }
+            else{
+                mergeHead = l2;
+                mergeHead.next = mergeTwoLists(l1, l2.next);
+            }
+            return mergeHead;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Java, 1 ms, 4 lines codes, using recursion
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2){
+    		if(l1 == null) return l2;
+    		if(l2 == null) return l1;
+    		if(l1.val < l2.val){
+    			l1.next = mergeTwoLists(l1.next, l2);
+    			return l1;
+    		} else{
+    			l2.next = mergeTwoLists(l1, l2.next);
+    			return l2;
+    		}
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solutions (iteratively, recursively, iteratively in-place).
+        
+    
+    # iteratively
+    def mergeTwoLists1(self, l1, l2):
+        dummy = cur = ListNode(0)
+        while l1 and l2:
+            if l1.val < l2.val:
+                cur.next = l1
+                l1 = l1.next
+            else:
+                cur.next = l2
+                l2 = l2.next
+            cur = cur.next
+        cur.next = l1 or l2
+        return dummy.next
+        
+    # recursively    
+    def mergeTwoLists2(self, l1, l2):
+        if not l1 or not l2:
+            return l1 or l2
+        if l1.val < l2.val:
+            l1.next = self.mergeTwoLists(l1.next, l2)
+            return l1
+        else:
+            l2.next = self.mergeTwoLists(l1, l2.next)
+            return l2
+            
+    # in-place, iteratively        
+    def mergeTwoLists(self, l1, l2):
+        if None in (l1, l2):
+            return l1 or l2
+        dummy = cur = ListNode(0)
+        dummy.next = l1
+        while l1 and l2:
+            if l1.val < l2.val:
+                l1 = l1.next
+            else:
+                nxt = cur.next
+                cur.next = l2
+                tmp = l2.next
+                l2.next = nxt
+                l2 = tmp
+            cur = cur.next
+        cur.next = l1 or l2
+        return dummy.next
+
+----------------------------------------------------------------------------------------------------
+Java solution for reference
+Similar to array, the difference is if any of two listnode is not null after first loop, we only need to add it as previous node's next and no need to add them one by one.
+
+
+    public class Solution {
+        public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+            if (l1 == null && l2 == null) {
+                return null;
+            }
+            if (l1 == null) {
+                return l2;
+            }
+            if (l2 == null) {
+                return l1;
+            }
+            ListNode result = new ListNode(0);
+            ListNode prev = result;
+            while (l1 != null && l2 != null) {
+                if (l1.val <= l2.val) {
+                    prev.next = l1;
+                    l1 = l1.next;
+                } else {
+                    prev.next = l2;
+                    l2 = l2.next;
+                }
+                prev = prev.next;
+            }
+            if (l1 != null) {
+                prev.next = l1;
+            }
+            if (l2 != null) {
+                prev.next = l2;
+            }
+            return result.next;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Clean, simple O(n+m) C++ Solution, without dummy head and recurtion
+Please refer to the comments inline.
+
+    ListNode *mergeTwoLists(ListNode *l1, ListNode *l2) {
+        
+        if(NULL == l1) return l2;
+        if(NULL == l2) return l1;
+        
+        ListNode* head=NULL;    // head of the list to return
+        
+        // find first element (can use dummy node to put this part inside of the loop)
+        if(l1->val < l2->val)       { head = l1; l1 = l1->next; }
+        else                        { head = l2; l2 = l2->next; }
+        
+        ListNode* p = head;     // pointer to form new list
+        
+        // I use && to remove extra IF from the loop
+        while(l1 && l2){
+            if(l1->val < l2->val)   { p->next = l1; l1 = l1->next; }
+            else                    { p->next = l2; l2 = l2->next; }
+            p=p->next;
+        }
+        
+        // add the rest of the tail, done!
+        if(l1)  p->next=l1;
+        else    p->next=l2;
+        
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution in 6 lines
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        if (l1 == null) return l2;
+        if (l2 == null) return l1;
+        ListNode head = l1.val < l2.val ? l1 : l2;
+        ListNode nonHead = l1.val < l2.val ? l2 : l1;
+        
+        head.next = mergeTwoLists(head.next, nonHead);
+        
+        return head;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple 5 lines Python
+**Solution 1**
+
+If both lists are non-empty, I first make sure `a` starts smaller, use its head as result, and merge the remainders behind it. Otherwise, i.e., if one or both are empty, I just return what's there.
+
+    class Solution:
+        def mergeTwoLists(self, a, b):
+            if a and b:
+                if a.val > b.val:
+                    a, b = b, a
+                a.next = self.mergeTwoLists(a.next, b)
+            return a or b
+
+---
+
+**Solution 2**
+
+First make sure that `a` is the "better" one (meaning `b` is None or has larger/equal value). Then merge the remainders behind `a`.
+
+    def mergeTwoLists(self, a, b):
+        if not a or b and a.val > b.val:
+            a, b = b, a
+        if a:
+            a.next = self.mergeTwoLists(a.next, b)
+        return a
+
+
+----------------------------------------------------------------------------------------------------
+Simple Recursive Java Solution
+    public class Solution {
+    
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        if(l1 == null) return l2;
+        if(l2 == null) return l1;
+        
+        if(l1.val < l2.val){
+            l1.next = mergeTwoLists(l1.next, l2);
+            return l1;
+        }else{
+            l2.next = mergeTwoLists(l1, l2.next);
+            return l2;
+        }
+        
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+My 10-line clean C++ code
+The basic idea is to use a dummy node to track the new header and move the cur pointer forward along the list with a smaller node value; and switch two lists when the current list has a larger value than the other one 
+
+    ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+        ListNode dummy(0);
+        dummy.next = l1;
+        ListNode *cur = &dummy;
+        
+        while(l2)
+        {
+            while(cur->next && cur->next->val<=l2->val) cur = cur->next; // if the current list, l1, has a smaller value, then move cur forward
+            l1 = cur->next; // otherwise, switch l1 and l2
+            cur->next = l2;
+            l2 = l1;
+        }
+        return dummy.next;
+    }
+
+----------------------------------------------------------------------------------------------------
+3 lines C++ (12ms) and C (4ms)
+**C++**
+
+The first line ensures that `a` is at least as good a list head as `b`, by swapping them if that's not already the case. The second line merges the remaining lists behind `a`.
+
+    ListNode* mergeTwoLists(ListNode* a, ListNode* b) {
+        if (!a || b && a->val > b->val) swap(a, b);
+        if (a) a->next = mergeTwoLists(a->next, b);
+        return a;
+    }
+
+---
+
+**C**
+
+Same solution, I just have to replace C++'s `swap`. I'm not sure whether evaluation order is standardized, but it worked and got accepted this way.
+
+    struct ListNode* mergeTwoLists(struct ListNode* a, struct ListNode* b) {
+        if (!a || b && a->val > b->val) a += b - (b = a);
+        if (a) a->next = mergeTwoLists(a->next, b);
+        return a;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ simple solution
+    ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+        if (l1 == NULL) return l2;
+        if (l2 == NULL) return l1;
+        if (l1->val <= l2->val) {
+            l1->next = mergeTwoLists(l1->next, l2);
+            return l1;
+        } else {
+            l2->next = mergeTwoLists(l1, l2->next);
+            return l2;
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My ac Java solution
+     public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+            ListNode returnNode = new ListNode(-1);
+            ListNode headNode = returnNode;
+            while (l1 != null && l2 != null) {
+                if (l1.val <= l2.val) {
+                    returnNode.next = l1;
+                    l1 = l1.next;
+                } else {
+                    returnNode.next = l2;
+                    l2 = l2.next;
+                }
+                returnNode = returnNode.next;
+            }
+            if (l1 == null) {
+                returnNode.next = l2;
+            } else if (l2 == null) {
+                returnNode.next = l1;
+            }
+            return headNode.next;
+        }
+
+----------------------------------------------------------------------------------------------------
+Recursive C solution, 4ms
+ 
+
+    struct ListNode* mergeTwoLists(struct ListNode* l1, struct ListNode* l2) {
+        if (l1 == NULL)
+            return l2;
+        if (l2 == NULL)
+            return l1;
+        if (l1->val <= l2->val) {
+            l1->next = mergeTwoLists(l1->next, l2);
+            return l1;
+        } else {
+            l2->next = mergeTwoLists(l1, l2->next);
+            return l2;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My java recursive solution
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+            if (l1==null) {
+    			return l2;
+    		}
+    		if (l2==null) {
+    			return l1;
+    		}
+    		if (l1.val <= l2.val) {
+    			l1.next = mergeTwoLists(l1.next, l2);
+    			return l1;
+    		}else {
+    			l2.next = mergeTwoLists(l1, l2.next);
+    			return l2;
+    			}
+    		}
+
+----------------------------------------------------------------------------------------------------
+My Python solution using a guard node
+    def mergeTwoLists(self, l1, l2):
+            if not l1 and not l2:
+                return None
+            
+            node = guard_node = ListNode(0)
+            
+            while l1 and l2:
+                if l1.val <= l2.val:
+                    node.next = l1
+                    l1 = l1.next
+                else:
+                    node.next = l2
+                    l2 = l2.next
+                node = node.next
+            
+            if l1 or l2:
+                node.next = l1 or l2
+            
+            return guard_node.next
+
+----------------------------------------------------------------------------------------------------
+Recursive JAVA solution using linkedlist
+     public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+
+        ListNode start;
+        if(l1 == null)
+        return l2;
+        if(l2 == null)
+        return l1;
+        if(l1.val < l2.val){
+            start = l1;
+            start.next = mergeTwoLists(l1.next, l2);
+        }
+        else{
+            start = l2;
+            start.next = mergeTwoLists(l1, l2.next);
+        }
+        return start;
+    }
+
+----------------------------------------------------------------------------------------------------
+8ms C++ simple recursion
+    class Solution {
+    public:
+        ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+            if (!l1) return l2;
+            if (!l2) return l1;
+            if (l1->val < l2->val) { l1 -> next = mergeTwoLists(l1->next,l2); return l1; }
+            else { l2 -> next = mergeTwoLists(l2->next,l1); return l2; }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+JAVA Easy to understand solution
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        ListNode ans = new ListNode(0);
+        ListNode prev = ans;
+        while(l1 != null && l2 != null){
+            if(l1.val > l2.val){
+                prev.next = l2;
+                l2 = l2.next;
+            } else{
+                prev.next = l1;
+                l1 = l1.next;
+            }
+            prev = prev.next;
+        }
+        if(l2 == null){
+            prev.next = l1;
+        } else {
+            prev.next = l2;
+        }
+        return ans.next;
+    }
+
+----------------------------------------------------------------------------------------------------

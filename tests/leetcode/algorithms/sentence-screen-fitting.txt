@@ -1,0 +1,400 @@
+The key point is to read the problem carefully.
+<p>-1 : My number is lower<br/>
+1 : My number is higher<br/>
+0 : Congrats! You got it!</p>
+<p>Here &#34;My&#34; means the number which is given for you to guess not the number you put into      <strong>guess(int num).</strong></p>
+
+
+----------------------------------------------------------------------------------------------------
+2 lines as usual
+    def guessNumber(self, n):
+        lo, hi = 1, n
+        while lo < hi:
+            mid = (lo + hi) / 2
+            lo, hi = ((mid, mid), (mid+1, hi), (lo, mid-1))[guess(mid)]
+        return lo
+
+
+----------------------------------------------------------------------------------------------------
+Short Java code using binary search
+public int guessNumber(int n) {
+    int i = 1, j = n;
+    while(i < j) {
+        int mid = i + (j - i) / 2;
+        if(guess(mid) == 0) {
+            return mid;
+        } else if(guess(mid) == 1) {
+            i = mid + 1;
+        } else {
+            j = mid;
+        }
+    }
+    return i;
+}
+
+----------------------------------------------------------------------------------------------------
+0ms c++ binary search
+int guessNumber(int n) {
+        int maxNumber = n, minNumber = 1;
+        while (true) {
+            int meanNumber = (maxNumber - minNumber) / 2 + minNumber;
+            // Do NOT use (maxNumber+minNumber)/2 in case of over flow
+            int res = guess(meanNumber);
+            if (res == 0) { 
+                return meanNumber;
+            } else if (res == 1) {
+                minNumber = meanNumber + 1;
+            } else {
+                maxNumber = meanNumber - 1;
+            }
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+c++ binary search
+class Solution {
+public:
+    int guessNumber(int n) {
+        //simple binary search : low = 1; high = n
+        int low = 1;
+        while(low <= n){
+            int mid = low + (n-low) / 2;
+            int res = guess(mid);
+            if(res == 0)
+                return mid;
+            else if(res == -1)
+                n = mid - 1;
+            else
+                low = mid + 1;
+        }
+        return -1;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+2ms Java
+/* The guess API is defined in the parent class GuessGame.
+   @param num, your guess
+   @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
+      int guess(int num); */
+
+public class Solution extends GuessGame {
+    public int guessNumber(int n) {
+        int l = 0, r = n;
+        while (l < r) {
+            int m = (l & r) + ((l ^ r) >> 1);
+            if (guess(m) == 0) return m;
+            else if (guess(m) == 1) l = m + 1;
+            else r = m - 1;
+        }
+        return l;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+I hope developers of Leetcode can make the question definition more clear.
+<p>For the part of &#34;My guess number&#34;</p>
+
+
+----------------------------------------------------------------------------------------------------
+What is the difference between (low + high) &#x2F; 2 and low + (high - low) &#x2F; 2?
+    public int guessNumber(int n) {
+        int low = 1, high = n;
+        int result = low + (high - low) / 2;
+        int guess = 0;
+        while ((guess = (guess(result))) != 0) {
+            if (guess > 0) {
+                low = result + 1;
+            } else {
+                high = result - 1;
+            }
+            result = low + (high - low) / 2;
+        }
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+My C++ solution using result of guess()
+int guessNumber(int n) {
+    int cur = (1 + n) >> 1;
+    int t;
+    int step = cur;
+    do{
+        t = guess(cur);
+        step = step >> 1 ? step  >> 1 : 1;
+        cur += t*step;
+    } while(t != 0);
+    
+    return cur;
+}
+
+----------------------------------------------------------------------------------------------------
+Easy binary search solution
+public:
+    int guessNumber(int n) {
+        if (guess(n) == 0) return n;
+        int left = 1, right = n;
+        while (left < right) {
+            int mid = left + (right - left) / 2, t = guess(mid);
+            if (t == 0) return mid;
+            else if (t == 1) left = mid;
+            else right = mid;
+        }
+        return left;
+    }
+};
+
+----------------------------------------------------------------------------------------------------
+Standard binary search in Python
+class Solution(object):
+    def guessNumber(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        l, r = 1, n
+        while l + 1 < r:
+            m = l + (r - l) / 2
+            res = guess(m)
+            if res < 0:
+                r = m
+            elif res > 0:
+                l = m
+            else:
+                return m
+                
+        if guess(l) == 0:
+            return l
+        if guess(r) == 0:
+            return r
+        return None
+
+
+----------------------------------------------------------------------------------------------------
+Standard binary search but got TLE
+class Solution {
+public:
+    int guessNumber(int n) {
+        int x = (1 + n) >> 1, l = 1, h = n;
+        int g = guess(x);
+        while(g != 0) {
+            if(g == -1) {
+                l = x + 1;
+                x = (l + h) >> 1;
+                g = guess(x);
+            } else {
+                h = x - 1;
+                x = (l + h) >> 1;
+                g = guess(x);
+            }
+        }
+        return x;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+one BinarySearch template to AC all the related problem
+
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int left = searchLeft(nums, target);
+        int right = searchRight(nums, target);
+        vector<int> result;
+        result.push_back(left);
+        result.push_back(right);
+        return result;
+    }
+    
+    int searchLeft(vector<int>& nums, int target) {
+        int start = 0, end = nums.size() - 1;
+        while (end > start) {
+            int mid = start + (end - start) / 2;
+            if (nums[mid] < target) start = mid + 1;
+            else end = mid;
+        }
+        if (nums[start] == target)
+            return start;
+        else 
+            return -1;
+    }
+    
+    int searchRight(vector<int>& nums, int target) {
+        int start = 0, end = nums.size() - 1;
+        while (end > start) {
+            int mid = start + (end - start) / 2 + 1;
+            if (nums[mid] > target) end = mid - 1;
+            else start = mid;
+        }
+        if (nums[start] == target)
+            return start;
+        else
+            return -1;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+java recursive solution
+    public int guessNumber(int n) {
+        return guessNumberRecursive(1,n);
+    }
+    private int guessNumberRecursive(int start,int end) {
+        if(start >= end) {
+            return start;
+        }
+        int mid = start+(end - start)/2;
+        if (guess(mid) == 0) {
+            return mid;
+        }else if(guess(mid) > 0) {
+            return guessNumberRecursive(mid+1,end);
+        }else {
+            return guessNumberRecursive(start,mid);
+        }
+    }
+
+
+----------------------------------------------------------------------------------------------------
+1ms java solution
+public class Solution extends GuessGame {
+    public int guessNumber(int n) {
+        return helper(1,n);
+    }
+    
+    public int helper(int start, int end){
+        if(start == end) return start;
+        int mid = Math.toIntExact(((long)start+(long)end)/2);
+        int r = 0;
+        if(guess(mid) == 0) r = mid;
+        else if(guess(mid) == 1) r = helper(mid+1, end);
+        else if(guess(mid) == -1) r = helper(start, mid-1);
+        return r;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Self-explained Solution #Java #binary-search
+/* The guess API is defined in the parent class GuessGame.
+   @param num, your guess
+   @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
+      int guess(int num); */
+
+public class Solution extends GuessGame {
+    public int guessNumber(int n) {
+        int l = 1;
+        int r = n;
+        
+        while (l <= r) {
+            int m = l + (r-l)/2;
+            int guessResult = guess(m);
+            
+            if (guessResult == 0) return m;
+            else if (guessResult == 1) l = m+1;
+            else r = m-1;
+        }
+        
+        // should never reach
+        // #1. Log warning messages
+        // #2. assert 0 == -1
+        return 0;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Any wrong with my Java solution?
+public int guessNumber(int n) {
+        int i = 1;
+        int j = n;
+        while (i <= j) {
+            int k = i + (j - i) / 2;
+            int r = guess(k);
+            if (r == 0) {
+                return k;
+            }
+
+            if (r < 0) {
+                i = k + 1;
+            } else {
+                j = k - 1;
+            }
+        }
+
+        return i;
+    }
+
+    private int guess(int k) {
+        return k - 6;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Straightforward binary search
+class Solution(object):
+    def guessNumber(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        l, r = 1, n
+        if not guess(r): return r
+        while l < r:
+            num = l + (r-l)/2
+            if guess(num) == -1:
+                r = num
+            elif guess(num) == 1:
+                l = num
+            else:
+                return num
+
+
+----------------------------------------------------------------------------------------------------
+&#91;C++&#93; code returns Wrong Answer on the judge why?
+int guessNumber(int n) {
+    long l=1,m,r = n;
+    int compare;
+    while(l<=r) {
+        m = l + (r-l) / 2;
+        compare = guess(m);
+        if(compare == 0)
+            return m;
+        else if(compare == 1)
+            r = m-1;
+        else
+            l = m+1;
+    }
+    return -1; // should never reach this point.
+}
+
+
+----------------------------------------------------------------------------------------------------
+O(lg n) Binary search
+public:
+    int guessNumber(int n) {
+        int hi = n;
+        int low = 0;
+        
+        while(hi != low){
+            int mid = (hi-low)/2 + low;
+            
+            int res = guess(mid);
+            if(!res){
+                return mid;
+            } else if( res > 0 ){
+                low = mid+1;
+            } else {
+                hi = mid-1;
+            }
+        }
+        
+        return hi;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

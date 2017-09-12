@@ -1,0 +1,641 @@
+My really simple Java O(n) solution - Accepted
+We will use HashMap. The key thing is to keep track of the sequence length and store that in the boundary points of the sequence. For example, as a result, for sequence {1, 2, 3, 4, 5}, map.get(1) and map.get(5) should both return 5.
+
+Whenever a new element **n** is inserted into the map, do two things:
+
+ 1. See if **n - 1** and **n + 1** exist in the map, and if so, it means there is an existing sequence next to **n**. Variables **left** and **right** will be the length of those two sequences, while **0** means there is no sequence and **n** will be the boundary point later. Store **(left + right + 1)** as the associated value to key **n** into the map.
+ 2. Use **left** and **right** to locate the other end of the sequences to the left and right of **n** respectively, and replace the value with the new length.
+
+
+Everything inside the **for** loop is O(1) so the total time is O(n). Please comment if you see something wrong. Thanks.
+
+    public int longestConsecutive(int[] num) {
+        int res = 0;
+        HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int n : num) {
+            if (!map.containsKey(n)) {
+                int left = (map.containsKey(n - 1)) ? map.get(n - 1) : 0;
+                int right = (map.containsKey(n + 1)) ? map.get(n + 1) : 0;
+                // sum: length of the sequence n is in
+                int sum = left + right + 1;
+                map.put(n, sum);
+                
+                // keep track of the max length 
+                res = Math.max(res, sum);
+                
+                // extend the length to the boundary(s)
+                // of the sequence
+                // will do nothing if n has no neighbors
+                map.put(n - left, sum);
+                map.put(n + right, sum);
+            }
+            else {
+                // duplicates
+                continue;
+            }
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple O(n) with Explanation - Just walk each streak
+First turn the input into a *set* of numbers. That takes O(n) and then we can ask in O(1) whether we have a certain number.
+
+Then go through the numbers. If the number n is the start of a streak (i.e., n-1 is not in the set), then test m = n+1, n+2, n+3, ... and stop at the first number m *not* in the set. The length of the streak is then simply m-n and we update our global best with that. Since we check each streak only once, this is overall O(n). This ran in 44 ms on the OJ, one of the fastest Python submissions.
+
+    class Solution:
+        def longestConsecutive(self, nums):
+            nums = set(nums)
+            best = 0
+            for n in nums:
+                if n - 1 not in nums:
+                    m = n + 1
+                    while m in nums:
+                        m += 1
+                    best = max(best, m - n)
+            return best
+
+----------------------------------------------------------------------------------------------------
+Possibly shortest cpp solution, only 6 lines.
+use a hash map to store boundary information of consecutive sequence for each element; there 4 cases when a new element i reached: 
+
+1) neither i+1 nor i-1 has been seen: m[i]=1;
+
+2) both i+1 and i-1 have been seen: extend m[i+m[i+1]] and m[i-m[i-1]] to each other;
+
+3) only i+1 has been seen: extend m[i+m[i+1]] and m[i] to each other;
+
+4) only i-1 has been seen: extend m[i-m[i-1]] and m[i] to each other.
+
+
+    int longestConsecutive(vector<int> &num) {
+    	unordered_map<int, int> m;
+    	int r = 0;
+    	for (int i : num) {
+    		if (m[i]) continue;
+    		r = max(r, m[i] = m[i + m[i + 1]] = m[i - m[i - 1]] = m[i + 1] + m[i - 1] + 1);
+    	}
+    	return r;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple fast Java solution using Set
+Using a set to collect all elements that hasn't been visited. search element will be O(1) and eliminates visiting element again.
+
+    public class Solution {
+    public int longestConsecutive(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        
+        Set<Integer> set = new HashSet<Integer>();
+        
+        for(int num: nums) set.add(num);
+        int max = 1;
+        for(int num: nums) {
+            if(set.remove(num)) {//num hasn't been visited
+                int val = num;
+                int sum = 1;
+                while(set.remove(val-1)) val--;
+                sum += num - val;
+                
+                val = num;
+                while(set.remove(val+1)) val++;
+                sum += val - num;
+                
+                max = Math.max(max, sum);
+            }
+        }
+        return max;
+    }
+    }
+
+----------------------------------------------------------------------------------------------------
+A simple C++,solution using unordered_set.And simple consideration about this problem
+I have seen a lot of discussion about this problem.In my opinion,it is not correct to use set(which is ordered),because very time we insert an element to a ordered set,it will cost O(n),so the total complexity is O(nlogn),which violates the request of the problem.So here we use an unordered_set,and one is enough.
+
+Besides,to think about this problem,one principle issue we should realize is that usually when we want to reduce the time complexity,we have to increase the space complexity.In this case,if we want to access an element within O(1),we have to use hash table.
+
+    class Solution {
+    public:
+        int longestConsecutive(vector<int> &num) {
+            unordered_set<int> record(num.begin(),num.end());
+            int res = 1;
+            for(int n : num){
+                if(record.find(n)==record.end()) continue;
+                record.erase(n);
+                int prev = n-1,next = n+1;
+                while(record.find(prev)!=record.end()) record.erase(prev--);
+                while(record.find(next)!=record.end()) record.erase(next++);
+                res = max(res,next-prev-1);
+            }
+            return res;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+Another accepted Java O(n) solution
+    public int longestConsecutive(int[] num) {
+      int max = 0;
+      
+      Set<Integer> set = new HashSet<Integer>();
+      for (int i = 0; i < nums.length; i++) {
+        set.add(nums[i]);
+      }
+      
+      for (int i = 0; i < nums.length; i++) {
+        int count = 1;
+        
+        // look left
+        int num = nums[i];
+        while (set.contains(--num)) {
+          count++;
+          set.remove(num);
+        }
+        
+        // look right
+        num = nums[i];
+        while (set.contains(++num)) {
+          count++;
+          set.remove(num);
+        }
+        
+        max = Math.max(max, count);
+      }
+      
+      return max;
+    }
+
+----------------------------------------------------------------------------------------------------
+My Java Solution using UnionFound
+        
+    public class Solution {
+            public int longestConsecutive(int[] nums) {
+                UF uf = new UF(nums.length);
+                Map<Integer,Integer> map = new HashMap<Integer,Integer>(); // <value,index>
+                for(int i=0; i<nums.length; i++){
+                    if(map.containsKey(nums[i])){
+                        continue;
+                    }
+                    map.put(nums[i],i);
+                    if(map.containsKey(nums[i]+1)){
+                        uf.union(i,map.get(nums[i]+1));
+                    }
+                    if(map.containsKey(nums[i]-1)){
+                        uf.union(i,map.get(nums[i]-1));
+                    }
+                }
+                return uf.maxUnion();
+            }
+        }
+        
+        class UF{
+            private int[] list;
+            public UF(int n){
+                list = new int[n];
+                for(int i=0; i<n; i++){
+                    list[i] = i;
+                }
+            }
+            
+            private int root(int i){
+                while(i!=list[i]){
+                    list[i] = list[list[i]];
+                    i = list[i];
+                }
+                return i;
+            }
+            
+            public boolean connected(int i, int j){
+                return root(i) == root(j);
+            }
+            
+            public void union(int p, int q){
+              int i = root(p);
+              int j = root(q);
+              list[i] = j;
+            }
+            
+            // returns the maxium size of union
+            public int maxUnion(){ // O(n)
+                int[] count = new int[list.length];
+                int max = 0;
+                for(int i=0; i<list.length; i++){
+                    count[root(i)] ++;
+                    max = Math.max(max, count[root(i)]);
+                }
+                return max;
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+O(n) HashMap Java Solution
+Use a hashmap to map a number to its longest consecutive sequence length, each time find a new consecutive sequence, only the begin number and end number need to be modified.
+
+    public class Solution {
+        public int longestConsecutive(int[] num) {
+            int longest = 0;
+            Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+            for(int i = 0;i < num.length;i++){
+                // if there is no duplicates, these two lines can be commented
+                if(map.containsKey(num[i])) continue;
+                map.put(num[i],1);
+                
+                int end = num[i];
+                int begin = num[i];
+                if(map.containsKey(num[i]+1))
+                    end = num[i] + map.get(num[i]+1);
+                if(map.containsKey(num[i]-1))
+                    begin = num[i] - map.get(num[i]-1);
+                longest = Math.max(longest, end-begin+1);
+                map.put(end, end-begin+1);
+                map.put(begin, end-begin+1);
+            }
+            return longest;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+13-line C++ solution
+Thought I would share it here. May be useful for some one. The algorithm itself is pretty straightforward. But it benefited quite much from the neat expression of C++ idioms. Comments are appreciated!
+
+    int longestConsecutive(const vector<int> &num) {
+        unordered_set<int> s(num.begin(), num.end()), searched;
+        int longest = 0;
+        for (int i: num) {
+            if (searched.find(i) != searched.end()) continue;
+            searched.insert(i);
+            int j = i - 1, k = i + 1;
+            while (s.find(j) != s.end()) searched.insert(j--);
+            while (s.find(k) != s.end()) searched.insert(k++);
+            longest = max(longest, k - 1 - j);
+        }
+        return longest;
+    }
+
+----------------------------------------------------------------------------------------------------
+One Java solution
+	public int longestConsecutive(int[] num) {
+        Set<Integer> set = new HashSet<Integer>(num.length);
+        for (int n: num) {
+        	set.add(n);
+        }
+        
+        int maxLength = 0;
+        for (int n: num) {
+        	if (set.contains(n)) {
+        		int length = 1;
+            	int next = n - 1;
+            	while (set.contains(next)) {
+            		length++;
+            		set.remove(next);
+            		next--;
+            	}
+            	next = n+1;
+            	while (set.contains(next)) {
+            		length++;
+            		set.remove(next);
+            		next++;
+            	}
+            	
+            	if (length > maxLength) {
+            		maxLength = length;
+            	}
+        	}
+        }
+        
+        return maxLength;
+	}
+
+The basic idea is put all integers into a set. Iterate all the integers and for every integer try to find its consecutive numbers in the set and accumulate the length. The trick is remove the integer whenever it has been visited, which makes the process O(n) because every integer will only be visited once.
+
+----------------------------------------------------------------------------------------------------
+Sharing my 20ms C++ solution using hash set
+    class Solution {
+    public:
+        int longestConsecutive(vector<int>& nums) {
+            unordered_set<int> mySet;
+            for(int i=0; i<nums.size(); i++)
+                mySet.insert(nums[i]);
+                
+            int result = 0;
+            while(mySet.size()>0)
+            {
+                int number = *mySet.begin();
+                int count = 1;
+                mySet.erase(number);
+                int smaller = number-1;
+                int bigger = number+1;
+                while(mySet.count(smaller)>0)
+                {
+                    mySet.erase(smaller);
+                    smaller--;
+                    count++;
+                }
+                while(mySet.count(bigger)>0)
+                {
+                    mySet.erase(bigger);
+                    bigger++;
+                    count++;
+                }
+                
+                result = max(result, count);
+            }
+            
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+9LOC Java O(n) solution
+    <pre>
+    public class Solution { <br/>
+        public int longestConsecutive(int[] nums) {<br/>
+          Set<Integer> set = new HashSet<>();
+          int max = 0;
+          for(int num : nums) set.add(num);
+          for(int num : nums) if (!set.contains(num-1)) {
+            int val = num;
+            while(set.remove(val++));
+            max = Math.max(max, val-num-1);
+          }
+          return max;
+        }
+    }
+    </pre>
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution using sets
+    class Solution:
+        # @param num, a list of integer
+        # @return an integer
+        def longestConsecutive(self, num):
+            num=set(num)
+            maxLen=0
+            while num:
+                n=num.pop()
+                i=n+1
+                l1=0
+                l2=0
+                while i in num:
+                    num.remove(i)
+                    i+=1
+                    l1+=1
+                i=n-1
+                while i in num:
+                    num.remove(i)
+                    i-=1
+                    l2+=1
+                maxLen=max(maxLen,l1+l2+1)
+            return maxLen
+
+----------------------------------------------------------------------------------------------------
+Accepted short C++ solution, 80 ms (1 scan + 1 hash map) with explanation
+1 scan solution with hash map
+
+Explanation:
+
+ 1. main idea is using hash map to check previous and next element in the sequence
+ 2. hash map holds length of consecutive sequence for start of sequence and end of sequence
+ 3. we updating that values when joining intervals
+ 4. longest sequence is calculated during joining intervals
+
+          
+        int longestConsecutive(vector<int> &num) {
+            if ( num.size() < 2 ) return num.size();
+            unordered_map<int,int> m;
+            int longest = 1;
+            for ( int i: num ){
+                if ( m.find(i) != m.end() ) continue;
+                m[i] = 1;
+                if ( m.find(i-1) != m.end() ){
+                    int len = m[i] + m[i-1];
+                    m[i] = len;                            // length of sequence
+                    m[i-len+1] ++;                      // update start of range by new length of sequence
+                    longest = max( longest, len );
+                }
+                if ( m.find(i+1) != m.end() ){
+                    int len   = m[i+m[i+1]] + m[i];
+                    int start = i-m[i]+1;
+                    int end   = i+m[i+1];
+                    m[start] = len;
+                    m[end]   = len;
+                    longest = max( longest, len );
+                }
+            }
+            return longest;
+       }
+            
+
+
+
+----------------------------------------------------------------------------------------------------
+Remove number from set consecutively, a dry python code
+    class Solution:
+    # @param num, a list of integer
+    # @return an integer
+    def longestConsecutive(self, num):
+        numbers = set(num)
+        max_len = 0
+        while numbers:
+            m = n = numbers.pop()
+            length = 1
+            while m-1 in numbers:
+                numbers.remove(m-1)
+                m -= 1
+                length += 1
+            while n+1 in numbers:
+                numbers.remove(n+1)
+                n += 1
+                length += 1
+            max_len = max(max_len, length)
+        return max_len
+
+keep trace of the max_len
+
+----------------------------------------------------------------------------------------------------
+C++ Union-Find amotrized O(n)
+    class Solution {
+        vector<int> id;
+        vector<int> size;
+    public:
+        int longestConsecutive(vector<int>& nums) {
+            int n = nums.size();
+            if(n < 2) return n;
+            size = vector<int>(n,1);
+            for(int i = 0; i < n; i++) {
+                id.push_back(i);
+            }
+            unordered_map<int,int> record;
+            for(int i = 0 ; i < n; i++) {
+                if(record.find(nums[i]) != record.end()) continue;
+                record[nums[i]] = i;
+                if(record.find(nums[i]-1) != record.end()) {
+                    unionSet(i,record[nums[i]-1]);
+                }
+                if(record.find(nums[i]+1) != record.end()) {
+                    unionSet(i,record[nums[i]+1]);
+                }
+            }
+            int res = *max_element(size.begin(),size.end());
+            return res;
+        }
+        
+        int find(int p) {
+            while(p != id[p]) {
+                id[p] = id[id[p]];
+                p = id[p];
+            }
+            return p;
+        }
+        void unionSet(int a, int b) {
+            int i = find(a);
+            int j = find(b);
+            if(i == j) return;
+            if(size[i] > size[j]) {
+                id[j] = i;
+                size[i] += size[j];
+            } else {
+                id[i] = j;
+                size[j] += size[i];
+            }
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Java Straightforward Solution
+> 1. Use a HashMap<Integer,Boolean>. Use every number in num[] as a key, mark them as not used.
+> 
+> 2. For each number in the hashmap, if the number is not used, select it as the center to grow a sequence on number++ and number--
+> directions. Mark used number as used.
+> 
+> 3. After each growth, update the longestSoFar. 
+> 
+> 4. Return the longestSoFar.  
+> 
+> 5. Since each number is used only once, the time complexity is O(n).
+
+    public class Solution {
+        public int longestConsecutive(int[] num) {
+            if(num.length<=1)
+                return num.length;
+            HashMap<Integer,Boolean> numberUsed=new HashMap<Integer,Boolean>();
+            for(int i:num)
+                numberUsed.put(i,false);
+            int longestSoFar=1;
+            for(int i:num)
+            {
+                if(numberUsed.get(i)==false)
+                {
+                    int localLongest=1;
+                    int tmp=i+1;
+                    numberUsed.put(i,true);
+                    while(numberUsed.containsKey(tmp)&&numberUsed.get(tmp)==false)
+                    {
+                        localLongest+=1;
+                        numberUsed.put(tmp,true);
+                        tmp+=1;
+                    }
+                    tmp=i-1;
+                    while(numberUsed.containsKey(tmp)&&numberUsed.get(tmp)==false)
+                    {
+                        localLongest+=1;
+                        numberUsed.put(tmp,true);
+                        tmp-=1;
+                    }
+                    longestSoFar=Math.max(longestSoFar,localLongest);
+                }
+            }
+            return longestSoFar;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution Using HashMap
+    public class Solution {
+        public int longestConsecutive(int[] nums) {
+            if(nums == null || nums.length == 0)
+                return 0;
+            
+            int longest = 1;
+            HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+            for (int i = 0;i < nums.length; i++)
+                map.put(nums[i],nums[i] + 1);
+        
+            for(int j = 0; j < nums.length; j++){
+                int current = 1;
+                int key = nums[j];
+                if (map.containsKey(key - 1))
+                    continue;
+                while (map.containsKey(map.get(key))){
+                    current++;
+                    key = map.get(key);
+                }
+                if (current > longest)
+                    longest = current;
+            }
+            return longest;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+My Short C++ solution using unordered map,so it&#x27;s O(n) time and O(n) space.
+    class Solution {
+    public:
+    int longestConsecutive(vector<int>& nums) {
+        unordered_map<int,bool> mp;
+        int ret = 0;
+        for(const auto x:nums)
+            mp[x] = true;
+        for(const auto x : mp)
+            if(x.second)
+            {
+                int left = x.first,right = x.first+1;
+                while(mp.count(left) && mp[left])
+                    mp[left--] = false;
+                while(mp.count(right) && mp[right])
+                    mp[right++] = false;
+                ret = max(ret,right - left  - 1);
+            }
+        return ret;
+    }
+    };
+
+----------------------------------------------------------------------------------------------------
+Solution of mine: O(n) complexity and O(n) space with single scan
+I find this is problem is a good practice of disjoint-set.
+
+I have two hash tables:
+
+vTable: v(x) = the max length of consecutive sequence starting from x
+
+aTable: a(x) = the ancestor of x (if x is the largest in the sequence, h(x) is the smallest of that sequence, and vice versa. For elements in the middle of sequence, h(x) will never be looked up)
+
+Basic idea is, we maintain the two ends of every sequence and update v(x). The rest is just about proper logic. Some other threads cover the same idea though. I put my code here for comparison. It's only 24 lines.
+
+    class Solution {
+    public:
+        int longestConsecutive(vector<int> &num) {
+            unordered_map<int,int> vTable;
+            unordered_map<int,vector<int>::iterator> aTable;
+            for (vector<int>::iterator i = num.begin(); i!=num.end(); i++) {
+                if(vTable.count(*i)) continue;      // Ignore same number
+                vTable[*i]=1;
+                aTable[*i]=i;                       // Initialization of new input
+                if(vTable.count(*i+1)) {            // If i+1 exists
+                    vTable[*i] += vTable[*i+1];     // Update v(x)
+                    aTable[*i] = aTable[*i+1];      // Update a(x)
+                }
+                if(vTable.count(*i-1)) {            // If i-1 exists, same idea
+                    vTable[*aTable[*i-1]] += vTable[*i];
+                    aTable[*aTable[*i]] = aTable[*i-1];
+                    aTable[*aTable[*i-1]] = (vTable.count(*i+1)) ? aTable[*i] : i;
+                }else aTable[*aTable[*i]] = i;
+            }
+            int max=0;                              // Find max in vTable
+            for (auto& x:vTable) if (x.second>max) max = x.second;
+            return max;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

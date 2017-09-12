@@ -1,0 +1,470 @@
+Possibly simplest solution with O(n) time complexity
+    int maxProduct(int A[], int n) {
+        // store the result that is the max we have found so far
+        int r = A[0];
+    
+        // imax/imin stores the max/min product of
+        // subarray that ends with the current number A[i]
+        for (int i = 1, imax = r, imin = r; i < n; i++) {
+            // multiplied by a negative makes big number smaller, small number bigger
+            // so we redefine the extremums by swapping them
+            if (A[i] < 0)
+                swap(imax, imin);
+    
+            // max/min product for the current number is either the current number itself
+            // or the max/min by the previous number times the current one
+            imax = max(A[i], imax * A[i]);
+            imin = min(A[i], imin * A[i]);
+    
+            // the newly computed max value is a candidate for our global result
+            r = max(r, imax);
+        }
+        return r;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my solution: O(1) space, O(n) running time
+    public int maxProduct(int[] A) {
+        if (A.length == 0) {
+            return 0;
+        }
+        
+        int maxherepre = A[0];
+        int minherepre = A[0];
+        int maxsofar = A[0];
+        int maxhere, minhere;
+        
+        for (int i = 1; i < A.length; i++) {
+            maxhere = Math.max(Math.max(maxherepre * A[i], minherepre * A[i]), A[i]);
+            minhere = Math.min(Math.min(maxherepre * A[i], minherepre * A[i]), A[i]);
+            maxsofar = Math.max(maxhere, maxsofar);
+            maxherepre = maxhere;
+            minherepre = minhere;
+        }
+        return maxsofar;
+    }
+
+
+
+Note:
+There's no need to use O(n) space, as all that you need is a minhere and maxhere. (local max and local min), then you can get maxsofar (which is global max) from them.
+
+There's a chapter in Programming Pearls 2 that discussed the MaxSubArray problem, the idea is similar.
+
+----------------------------------------------------------------------------------------------------
+Simple Java code
+Loop through the array, each time remember the max and min value for the previous product, the most important thing is to update the max and min value: we have to compare among max * A[i], min * A[i] as well as A[i], since this is product, a negative * negative could be positive.
+
+    public class Solution {
+        public int maxProduct(int[] A) {
+            if (A == null || A.length == 0) {
+                return 0;
+            }
+            int max = A[0], min = A[0], result = A[0];
+            for (int i = 1; i < A.length; i++) {
+                int temp = max;
+                max = Math.max(Math.max(max * A[i], min * A[i]), A[i]);
+                min = Math.min(Math.min(temp * A[i], min * A[i]), A[i]);
+                if (max > result) {
+                    result = max;
+                }
+            }
+            return result;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my C++ solution, maybe is the simplest solution
+    class Solution {
+     // author : s2003zy
+     // weibo : http://weibo.com/574433433
+     // blog : http://s2003zy.com
+     // Time : O(n)
+     // Space : O(1)
+     public:
+        int maxProduct(int A[], int n) {
+        	int frontProduct = 1;
+        	int backProduct = 1;
+      		int ans = INT_MIN;
+      		for (int i = 0; i < n; ++i) {
+      			frontProduct *= A[i];
+      			backProduct *= A[n - i - 1];
+      			ans = max(ans,max(frontProduct,backProduct));
+      		    frontProduct = frontProduct == 0 ? 1 : frontProduct;
+      		    backProduct = backProduct == 0 ? 1 : backProduct;
+            }
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my DP code that got AC
+    public class Solution {
+      public int maxProduct(int[] A) {
+        if (A == null || A.length == 0) {
+            return 0;
+        }
+        int[] f = new int[A.length];
+        int[] g = new int[A.length];
+        f[0] = A[0];
+        g[0] = A[0];
+        int res = A[0];
+        for (int i = 1; i < A.length; i++) {
+            f[i] = Math.max(Math.max(f[i - 1] * A[i], g[i - 1] * A[i]), A[i]);
+            g[i] = Math.min(Math.min(f[i - 1] * A[i], g[i - 1] * A[i]), A[i]);
+            res = Math.max(res, f[i]);
+        }
+        return res;
+      }
+    }
+
+> f[i] means maximum product that can be achieved ending with i
+> 
+> g[i] means minimum product that can be achieved ending with i
+
+
+----------------------------------------------------------------------------------------------------
+Share C++ code with DP O(1) space O(n) time
+    int maxProduct(int A[], int n) {
+        if(n==1) return A[0];
+        int pMax=0, nMax=0, m = 0;
+        for(int i=0; i<n; i++){
+            if(A[i]<0) swap(pMax, nMax);
+            pMax = max(pMax*A[i], A[i]);
+            nMax = min(nMax*A[i], A[i]);
+            m = max(m, pMax);
+        }
+        return m;
+    }
+
+----------------------------------------------------------------------------------------------------
+In Python, can it be more concise?
+    def maxProduct(nums):
+        maximum=big=small=nums[0]
+        for n in nums[1:]:
+            big, small=max(n, n*big, n*small), min(n, n*big, n*small)
+            maximum=max(maximum, big)
+        return maximum
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution
+    public int maxProduct(int[] a) {
+      if (a == null || a.length == 0)
+        return 0;
+    
+      int ans = a[0], min = ans, max = ans;
+      
+      for (int i = 1; i < a.length; i++) {
+        if (a[i] >= 0) {
+          max = Math.max(a[i], max * a[i]);
+          min = Math.min(a[i], min * a[i]);
+        } else {
+          int tmp = max;
+          max = Math.max(a[i], min * a[i]);
+          min = Math.min(a[i], tmp * a[i]);
+        }
+        
+        ans = Math.max(ans, max);
+      }
+      
+      return ans;
+    }
+
+----------------------------------------------------------------------------------------------------
+2 Passes scan, beats 99%
+public int maxProduct(int[] nums) {
+    int max = Integer.MIN_VALUE, product = 1;
+    int len = nums.length;
+
+    for(int i = 0; i < len; i++) {
+        max = Math.max(product *= nums[i], max);
+        if (nums[i] == 0) product = 1;
+    }
+
+    product = 1;
+    for(int i = len - 1; i >= 0; i--) {
+        max = Math.max(product *= nums[i], max);
+        if (nums[i] == 0) product = 1;
+    }
+
+    return max;
+}
+
+----------------------------------------------------------------------------------------------------
+Simple c++ solution in 8 lines.
+    class Solution {
+    public:
+        int maxProduct(vector<int>& nums) {
+            if(nums.size() == 0) return 0;
+            long long curmax = nums[0], curmin = nums[0], res = nums[0];
+            for(int i=1; i<nums.size(); ++i){
+                long long premax = curmax;
+                curmax = max(curmax*nums[i], max(curmin*nums[i], (long long)nums[i]));
+                curmin = min(premax*nums[i], min(curmin*nums[i], (long long)nums[i]));
+                res = max(res, curmax);
+            }
+            return int(res);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My Python Code for Maximum Product Subarray
+    class Solution:
+    # @param A, a list of integers
+    # @return an integer
+    def maxProduct(self, A):
+        MinTemp = A[0]
+        MaxTemp = A[0]
+        Max = A[0]
+        for i in xrange(1, len(A)):
+            MinTemp, MaxTemp = min(A[i], A[i] * MaxTemp, A[i] * MinTemp), max(A[i], A[i] * MaxTemp, A[i] * MinTemp)
+            Max = max(Max, MaxTemp)
+        return Max
+
+Save Min value and Max value at each node and the result works out. 
+
+----------------------------------------------------------------------------------------------------
+My concise DP O(n) JAVA solution with O(1) extra space
+    public int maxProduct(int[] A) {
+       int min;
+       int res = A[0], max = min = A[0]; // max, min means max and min product among the subarrays whose last element is A[i].
+       for (int i = 1; i < A.length; i++) {
+    	   if (A[i] > 0) {
+    		   max = Math.max(max * A[i], A[i]);
+    		   min = Math.min(min * A[i], A[i]);			   
+    	   }
+    	   else {
+    		   int lastMax = max;
+    		   max = Math.max(min * A[i], A[i]);
+    		   min = Math.min(lastMax * A[i], A[i]);			   			   
+    	   }
+    	   res = Math.max(res, max);
+       }
+       return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+A O(n) solution, though not as great as answer provided by Leetcode
+I feel this is a bit more intuitive way to approach; here is my thought:
+
+ 1. given an array of integers, the max product ignoring sign (i.e., absolute
+    value) is simply the product of all the elements, as long there is
+    no 0. put another way, the more elements, the bigger.
+ 2. but we have to consider the sign. so if product is negative, we have odd number of negatives; then
+    the max product is the bigger of: 
+
+    a) product of all excluding elements on the left, up to the first negative element.
+
+    b) product of all excluding elements on the right, up to the last negative element.
+
+
+so the solution is calculate product, first from left to right, then from right to left; during the process we are guaranteed to encounter the max product; and whenever 0 is encountered, reset product to 1 and continue.
+
+
+    public int maxProduct(int[] A) {
+        // edge case
+        if (A == null || A.length == 0)
+            return 0;
+            
+        int max = Integer.MIN_VALUE;
+        int product = 1;
+        // first go from left to right
+        for (int i = 0; i < A.length; i++) {
+            product *= A[i];
+            if (product > max)
+                max = product;
+            if (product == 0)
+                product = 1; // reset if encounter 0
+        }
+        
+        // then go from right to left
+        product = 1;
+        for (int i = A.length - 1; i >= 0; i--) {
+            product *= A[i];
+            if (product > max)
+                max = product;
+            if (product == 0)
+                product = 1; // reset if encounter 0
+        }
+    
+        return max;
+    }
+
+since this requires 2 iterations, it's not as optimal as solution provided by Leetcode, of course.
+
+----------------------------------------------------------------------------------------------------
+Simpler solution with 6 lines code, O(n) complexity
+    class Solution {
+    public:
+        int maxProduct(int A[], int n) {
+            int b=1, f=1, res=INT_MIN;
+            for(int i=0; i<n; i++){
+                res=max(res, max(b*=A[i],f*=A[n-1-i]));
+                if(b==0) b=1; if(f==0) f=1;
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy understand Java solution O(n)
+public int maxProduct(int[] nums) {
+        
+        if(nums == null || nums.length == 0)
+            return 0;
+            
+        int max_p = Integer.MIN_VALUE;
+        int p = 1;
+        
+        for(int i = 0; i < nums.length; i++){
+            p *= nums[i];
+            max_p = Math.max(max_p, p);
+            if(nums[i] == 0)
+                p = 1;
+            
+        }
+        p = 1;
+        for(int i = nums.length - 1; i >= 0; i--){
+            p *= nums[i];
+            max_p = Math.max(max_p, p);
+            if(nums[i] == 0)
+                p = 1;
+        } 
+        return max_p;
+        
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Share the easiest 4ms solution.
+    class Solution { public:
+        int maxProduct(vector<int>& nums) {
+            int cur=1;
+            int res=INT_MIN;
+            for(vector<int>::iterator it=nums.begin();it<nums.end();++it){
+                cur*=*it;
+                if(cur>res)res=cur;
+                if(cur==0)cur=1;
+            }
+            cur=1;
+            for(vector<int>::iterator it=nums.end()-1;it>=nums.begin();--it){
+                cur*=*it;
+                if(cur>res)res=cur;
+                if(cur==0)cur=1;
+            }
+            return res;
+        } };
+
+----------------------------------------------------------------------------------------------------
+Share simple Java solution with explanation
+Why do we need min value ? Because min value multiplies another min value will yield a possibly max value. That's why we need to keep track of min value as well. Otherwise, it will be no different than maximum subarray problem which we keep track of max value only. 
+
+    public int maxProduct(int[] A) {
+       if (A.length == 0) return 0;
+       int max = A[0], min = A[0], totalMax = A[0];
+       for (int i = 1; i < A.length; i++) {
+           int tempMax = A[i] * max;
+           int tempMin = A[i] * min;
+           max = Math.max(Math.max(tempMax,tempMin), A[i]);
+           min = Math.min(Math.min(tempMax,tempMin), A[i]);
+           totalMax = Math.max(totalMax, max);
+       }
+       return totalMax;
+    }
+
+----------------------------------------------------------------------------------------------------
+9 lines concise and easy understand C++ DP solution O(n) time, O(1) space,
+    class Solution {
+    public:
+        int maxProduct(vector<int>& nums) {
+            if(nums.size() == 1) return nums[0];
+            int minres = 0, maxres = 0, res = 0, tmp;
+            for(int i = 0; i < nums.size(); i++){
+                tmp = maxres;
+                maxres = max(nums[i],  max(maxres * nums[i], minres*nums[i]));
+                minres = min(nums[i],  min(minres * nums[i], tmp*nums[i]));
+                res = max(res, maxres);
+            }
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+A naive but straigtforward solution
+When encounter a 0, split the sequence and get the max of the left, right, and 0.
+If the accumulative result is negative, check two cases: 1. divide out the elements from left till the first
+negative element. 2. divide out the elements from right till the first negative element. Return the max result.
+
+    int helper(int A[], int l, int r) {
+        if (l > r) {
+            return INT_MIN;
+        }
+        
+        if (l == r) {
+            return A[l];
+        }
+        
+        int max_prod = INT_MIN;
+        int acc = 1;
+        for (int i = l; i <= r; ++i) {
+            if (A[i] == 0) {
+                return max(helper(A, l, i - 1), max(0, helper(A, i + 1, r)));
+            }
+            acc *= A[i];
+            max_prod = max(max_prod, acc);
+        }
+        
+        // find first negtive number from left and divide out elements before it (including itself).
+        if (acc < 0) {
+            for (int i = l; i <= r; ++i) {
+                acc /= A[i];
+                if (A[i] < 0) {
+                    break;
+                }
+            }
+        }
+        
+        return max(max_prod, acc);
+    }
+
+    int maxProduct(int A[], int n) {
+        return helper(A, 0, n - 1);
+    }
+
+----------------------------------------------------------------------------------------------------
+Share the First C++ Solution with Notes
+This question is pretty different from Maximum Sum of Subarray. The reason is that a negative value in array will revolute the previous **maximum** product to the **minimum** and vice versa. So both temporary results should be kept. 
+
+
+
+    class Solution {
+    public:
+        int maxProduct(int A[], int n) {
+            if (n==1) return A[0];
+            
+            int max_temp=0,min_temp=0,result=std::numeric_limits<int>::min();
+            
+            for (int i=0;i<n;i++){
+                if (A[i]>0){
+                    max_temp=max(max_temp*A[i],A[i]);//Assign the Temporary Maximum Product
+                    min_temp=min_temp*A[i];
+                }
+                else if (A[i]==0){
+                    max_temp=0;
+                    min_temp=0;
+                }
+                else{//Negative value, **maximum** and **minimum** products will be  revoluted. 
+                    int temp=max_temp;
+                    max_temp=min_temp*A[i];
+                    min_temp=min(temp*A[i],A[i]);//Assign the Temporary Minimum Product
+                }
+                result=max(max_temp,result);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

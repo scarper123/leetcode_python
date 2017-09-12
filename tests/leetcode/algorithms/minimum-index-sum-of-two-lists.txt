@@ -1,0 +1,583 @@
+&#91;C++&#93; &#91;Java&#93; Clean Code - O(N)
+public class Solution {
+    public int arrayNesting(int[] a) {
+        int maxsize = 0;
+        for (int i = 0; i < a.length; i++) {
+            int size = 0;
+            for (int k = i; a[k] >= 0; size++) {
+                int ak = a[k];
+                a[k] = -1; // mark a[k] as visited;
+                k = ak;
+            }
+            maxsize = Integer.max(maxsize, size);
+        }
+
+        return maxsize;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+This is actually DFS
+	/ ** 
+	 * This is actually a DFS.  Use a visited map to keep track of visited node. If a 
+number is visited before, then the set that starts at this number must be smaller then
+ previous max. So we can safely skip this number. In total it's O(n) complexity.
+	 */
+
+
+
+public int arrayNesting(int[] nums) {
+        int max = Integer.MIN_VALUE;
+        boolean[] visited = new boolean[nums.length];
+        for (int i = 0; i < nums.length; i++) {
+        	if (visited[i]) 
+        		continue;
+        	max = Math.max(max, calcLength(nums, i, visited));
+        }
+        return max;
+    }
+	
+	private int calcLength(int[] nums, int start, boolean[] visited) {
+		int i = start, count = 0;
+		while (count == 0 || i != start) {
+			visited[i] = true;
+			i = nums[i];
+			count++;
+		}
+		return count;
+	}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(n) Time O(1) Space
+public int arrayNesting(int[] nums) {
+    int res = 0;
+    for (int i=0;i<nums.length;i++) {
+        if (nums[i] < 0) continue;
+        int length = 1, val = nums[i];
+        while (Math.abs(val) != i) {
+            length++;
+            val = nums[Math.abs(val)];
+            nums[Math.abs(val)] *= -1;
+        }
+        res = Math.max(res, length);
+    }
+    return res;
+}
+
+
+----------------------------------------------------------------------------------------------------
+Short Python
+class Solution(object):
+    def arrayNesting(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        ans, step, n = 0, 0, len(nums)
+        seen = [False] * n
+        for i in range(n):
+            while not seen[i]:
+                seen[i] = True
+                i, step = nums[i], step + 1
+            ans = max(ans, step)
+            step = 0
+        return ans
+
+
+----------------------------------------------------------------------------------------------------
+Java Solution, Union Find
+public class Solution {
+    class UnionFind {
+        private int count = 0;
+        private int[] parent, rank;
+        
+        public UnionFind(int n) {
+            count = n;
+            parent = new int[n];
+            rank = new int[n];
+            for (int i = 0; i < n; i++) {
+                parent[i] = i;
+            }
+        }
+        
+        public int find(int p) {
+            int q = parent[p];
+            while (q != parent[q]) {
+                q = parent[q];
+            }
+            parent[p] = q;
+            return q;
+        }
+        
+        public void union(int p, int q) {
+            int rootP = find(p);
+            int rootQ = find(q);
+            if (rootP == rootQ) return;
+            if (rank[rootQ] > rank[rootP]) {
+                parent[rootP] = rootQ;
+            }
+            else {
+                parent[rootQ] = rootP;
+                if (rank[rootP] == rank[rootQ]) {
+                    rank[rootP]++;
+                }
+            }
+            count--;
+        }
+        
+        public int count() {
+            return count;
+        }
+        
+        public int getMaxUnion() {
+            Map<Integer, Integer> map = new HashMap<>();
+            int max = 1;
+            for (int i = 0; i < parent.length; i++) {
+                int p = find(i);
+                map.put(p, map.getOrDefault(p, 0) + 1);
+                max = Math.max(max, map.get(p));
+            }
+            return max;
+        }
+    }
+    
+    public int arrayNesting(int[] nums) {
+        int n = nums.length;
+        UnionFind uf = new UnionFind(n);
+        for (int i = 0; i < n; i++) {
+            uf.union(i, nums[i]);
+        }
+        return uf.getMaxUnion();
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java O(N) time O(1) space with Explanation and Proof
+k -> t
+
+----------------------------------------------------------------------------------------------------
+C++ DFS solution with memoization &#91;Explained&#93;
+int arrayNesting(vector<int>& nums) {
+        // dp - used for memoization, initialized to -1
+        // dp(i) = # of hops needed from ith val to get to end of cycle 
+        // Thus, dp(k) = #hops(k to i) + dp(i)
+        vector<int> dp(nums.size(), -1);
+        // max value to be returned
+        int mx = 0;
+        
+        // go through each of the element in nums
+        for(int k = 0; k < nums.size(); k++) {
+            // if already calculated then continue
+            if(dp[k] >= 0) continue;
+            // else calculate the hops needed starting from 'k'
+            int hops = recurse(nums, dp, k, mx, nums[k]);
+            dp[k] = hops+1;
+            // calc max
+            mx = max(mx, dp[k]);
+        }
+        return mx;
+    }
+    
+    int recurse(vector<int>& nums, vector<int>& dp, int st, int& mx, int k) {
+        // base cases
+        if(dp[k] >= 0) 
+            return dp[k];
+        // if reached the start
+        if(st == k) 
+            return 0;
+            
+        int hops = recurse(nums, dp, st, mx, nums[k]);
+        dp[k] = hops+1;
+        mx = max(mx, dp[k]);
+        return dp[k];
+    }
+
+
+----------------------------------------------------------------------------------------------------
+&#91;565. Array Nesting&#93; C++ - Unordered_set or Vector or in-place change (O(1) space)
+//O(1) space:
+class Solution {
+public:
+int arrayNesting(vector<int>& nums) {
+    if(nums.empty()) return 0;
+    int res = 0;
+    for(int i = 0; i < nums.size(); ++i){
+        if(nums[i] == -1){
+            continue;
+        }
+        int tmp = 0;
+        int k = i;
+        while(nums[k] != -1){
+            tmp++;
+            int tmp2 = nums[k];
+            nums[k] = -1;
+            k = tmp2;
+            
+        }
+        res = max(res, tmp);
+    }
+    return res;
+}
+};
+
+//vector
+class Solution {
+public:
+int arrayNesting(vector<int>& nums) {
+    if(nums.empty()) return 0;
+    int res = 0;
+    vector<bool> check(nums.size(), false);
+    for(int i = 0; i < nums.size(); ++i){
+        if(check[i]){
+            continue;
+        }
+        int tmp = 0;
+        int k = i;
+        while(!check[k]){
+            check[k] = true;
+            tmp++;
+            k = nums[k];
+        }
+        res = max(res, tmp);
+    }
+    return res;
+}
+};
+
+
+//Set
+class Solution {
+public:
+int arrayNesting(vector<int>& nums) {
+    if(nums.empty()) return 0;
+    int res = 0;
+    unordered_set<int> st;
+    for(int i = 0; i < nums.size(); ++i){
+        if(st.find(nums[i]) != st.end()){
+            continue;
+        }
+        int tmp = 0;
+        int k = i;
+        while(st.find(nums[k]) == st.end()){
+            st.insert(nums[k]);
+            tmp++;
+            k = nums[k];
+        }
+        res = max(res, tmp);
+    }
+    return res;
+}
+};
+
+----------------------------------------------------------------------------------------------------
+Java O(n) time with O(n) Space
+public int arrayNesting(int[] nums) {
+        Set<Integer> alreadyVisited = new HashSet<Integer>();
+        int maxSize = 0;
+        for(int i = 0; i < nums.length; i++) {
+            int j = nums[i];
+            if(alreadyVisited.contains(j)){
+                continue;
+            }else {
+                alreadyVisited.add(j);
+            }
+            int size = 1;
+            while(nums[j] != nums[i]) {
+                j = nums[j];
+                if(alreadyVisited.contains(j)){
+                    break;
+                }else {
+                    alreadyVisited.add(j);
+                }
+                size++;
+            }
+            if(size > maxSize) {
+                maxSize = size;
+            }
+            if(maxSize == nums.length) {
+                break;
+            }
+        }
+        return maxSize;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Python O(n)
+class Solution(object):
+    def arrayNesting(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        # find the size of all the isolated circles
+        visited = [False] * len(nums)
+        max_count = 0
+        for i, num in enumerate(nums):
+            count = 0
+            while not visited[i]:
+                visited[i] = True
+                count += 1
+                i = nums[i]
+            max_count = max(count, max_count)
+        return max_count
+
+----------------------------------------------------------------------------------------------------
+C++ easy and short O(n) solution
+    int arrayNesting(vector<int>& nums) {
+        unordered_set<int> visited;
+        int res=0, temp=0, cur=0;
+        for(int i=0;i<nums.size();i++) {
+            if(visited.find(nums[i])!=visited.end()) continue;
+            cur=i, temp=0;
+            while(visited.find(nums[cur])==visited.end()) { 
+                temp++;
+                visited.insert(nums[cur]);
+                cur=nums[cur];
+            }
+            res=max(res, temp);
+        }
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+c++ 26ms  simple solution
+class Solution {
+public:
+    
+    int arrayNesting(vector<int>& nums) {
+        int res=0,nsize=nums.size();
+        vector<int> record(nsize,0);
+        for(int i=0;i<nsize;i++){
+            helper(nums,nums[i],record);
+            res=max(res, record[nums[i]]);
+        }
+        return res;
+    }
+    void helper(vector<int>& nums,int n,vector<int>& record){
+        int cnt=0;
+        while(!record[n]){
+            cnt++;
+            record[n]=cnt;
+            n=nums[n];
+        }
+    }
+    
+};
+
+
+----------------------------------------------------------------------------------------------------
+35ms java simple solution
+public class Solution {
+    public int arrayNesting(int[] nums) {
+        int max=0;
+        for(int i=0; i<nums.length;i++){
+            int j=i,count=0;
+            while(nums[j]!=-1){
+                int temp=j;
+                j=nums[j];
+                nums[temp]=-1;
+                count++;
+            }
+            if(count>max) max=count;
+        }
+        return max;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python o(n) solution using dictionary
+class Solution(object):
+    def arrayNesting(self, nums):
+        max_l = 0
+        used = {}
+        for num in nums:
+            used[num] = 0
+        for num in nums:
+            if used[num]: continue
+            c_num = num
+            l = 0
+            while True:
+                if not used[c_num]:
+                    l += 1
+                    used[c_num] = 1
+                    c_num = nums[c_num]
+                else:
+                    if l > max_l:
+                        max_l = l
+                    break
+        return max_l
+
+
+----------------------------------------------------------------------------------------------------
+Golang, 32ms, 100%
+func arrayNesting(nums []int) int {
+    res := 0
+    for i := 0; i < len(nums); i++ {
+        if nums[i] < 0 {
+            continue
+        }
+        length, val := 1, nums[i]
+        for abs(val) != i {
+            length++
+            val = nums[abs(val)]
+            nums[abs(val)] *= -1
+        }
+        res = max(res, length)
+    }
+    return res
+}
+
+func abs(s int) int {
+    if s < 0 {
+        s = -s
+        return s
+    }
+    return s
+}
+
+func max(a, b int) int {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+
+----------------------------------------------------------------------------------------------------
+Simple Solution - Using Visited Arrays - Beats 85%
+int max_count = 0;
+public int ArrayNesting(int[] nums)
+{
+    int[] General_visited = new int[nums.Length];
+            
+    for(int i=0; i<nums.Length; i++)
+    {
+        if(General_visited[i]==0)
+        {
+            int[] Current_visited = new int[nums.Length];
+            ArrayNesting_helper(nums, General_visited, Current_visited, 0, i);
+        }
+    }
+    return max_count;
+}
+private void ArrayNesting_helper(int[] nums, int[] general_visited, int[] current_visited, int current_count, int current_index)
+{
+    while(current_visited[current_index]==0)
+    {
+        current_count++;
+        max_count = Math.Max(max_count, current_count);
+        current_visited[current_index] = 1;
+        general_visited[current_index] = 1;
+        current_index = nums[current_index];
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Java code with an example to illustrate
+public class Solution {
+    public int arrayNesting(int[] nums) {
+        // algorithm 2017/06/15: It is easy to translate this problem into splitting all given numbers into a number of 'islands'/sets. For numbers in each set, they are cycled based on A[K], A[A[K]], A[A[A[K]]], ... 
+        // Example 
+    /*
+              2 4 5 3 0 1 => two sets (2,5,1,4,0) and (3)
+        S[0]: 2 5 1 4 0
+        S[1]: 4 0 2 5 1
+        S[2]: 5 1 4 0 2
+        S[3]: 3
+        S[4]: 0 2 5 1 4
+        S[5]: 5 1 4 0 2
+    */
+        // we will need to find the island with most numbers
+
+        if (null == nums || 0 == nums.length) {
+            return 0;
+        }
+
+        boolean[] visited = new boolean[nums.length];
+        int maxSetSize  = 0;
+
+        for (int startK = 0; startK < nums.length; startK++) {
+            if (visited[startK]) {
+                continue;       // the number is already put into certain set before, skip it
+            }
+
+            // now let us start a new set
+            visited[startK]  = true;
+            Set<Integer> set = new HashSet<>();
+            int chainedNum   = nums[startK];
+            do {
+                if (!set.add(chainedNum)) {
+                    break;
+                } else {
+                    visited[chainedNum] = true;
+                }
+                chainedNum = nums[chainedNum];
+            } while (true);
+            maxSetSize = Math.max(maxSetSize, set.size());
+        }
+        return maxSetSize;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Python O(n) solution, simple
+class Solution(object):
+    def arrayNesting(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        mx = 0;
+        tested = [];
+        for i in range(len(nums)):
+            ct = 0;
+            used = [];
+            temp = nums[i];
+            if temp in used:
+                continue;
+                
+            if len(nums) - len(tested)+1 < mx:
+                break;
+                
+            temp0 = temp;
+            while temp0 != temp or ct == 0:
+                used.append(temp);
+                temp = nums[temp];
+                ct = ct+1;
+                
+            tested = tested+used;
+            mx = max(ct, mx);
+    
+        return mx;
+
+
+----------------------------------------------------------------------------------------------------
+C++ Iterative Solution
+class Solution {
+public:
+    int arrayNesting(vector<int>& nums) {
+        int ans = 0;
+        if(nums.size() == 0)
+            return ans;
+        for(int i = 0; i < nums.size(); ++ i){
+            int idx = i, cnt = 0, tmpidx = 0;
+            while(idx != -1 && nums[idx] != -1){
+                ++ cnt;
+                tmpidx = nums[idx];
+                nums[idx] = -1;
+                idx = tmpidx;
+            }
+            ans = max(cnt, ans);
+        }
+        return ans;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,972 @@
+Iterative Java solution with stack
+Simple iterative solution by identifying characters one by one. One important thing is that the input is valid, which means the parentheses are always paired and in order.
+Only 5 possible input we need to pay attention:
+
+ 1. digit: it should be one digit from the current number
+ 2. '+': number is over, we can add the previous number and start a new number
+ 3. '-': same as above
+ 4. '(': push the previous result and the sign into the stack, set result to 0, just calculate the new result within the parenthesis.
+ 5. ')': pop out the top two numbers from stack, first one is the sign before this pair of parenthesis, second is the temporary result before this pair of parenthesis. We add them together.
+ 
+ 
+Finally if there is only one number, from the above solution, we haven't add the number to the result, so we do a check see if the number is zero.
+
+----------
+
+
+    public int calculate(String s) {
+        Stack<Integer> stack = new Stack<Integer>();
+        int result = 0;
+        int number = 0;
+        int sign = 1;
+        for(int i = 0; i < s.length(); i++){
+            char c = s.charAt(i);
+            if(Character.isDigit(c)){
+                number = 10 * number + (int)(c - '0');
+            }else if(c == '+'){
+                result += sign * number;
+                number = 0;
+                sign = 1;
+            }else if(c == '-'){
+                result += sign * number;
+                number = 0;
+                sign = -1;
+            }else if(c == '('){
+                //we push the result first, then sign;
+                stack.push(result);
+                stack.push(sign);
+                //reset the sign and result for the value in the parenthesis
+                sign = 1;   
+                result = 0;
+            }else if(c == ')'){
+                result += sign * number;  
+                number = 0;
+                result *= stack.pop();    //stack.pop() is the sign before the parenthesis
+                result += stack.pop();   //stack.pop() now is the result calculated before the parenthesis
+                
+            }
+        }
+        if(number != 0) result += sign * number;
+        return result;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+JAVA-----------Easy Version To Understand!!!!!
+    public static int calculate(String s) {
+		int len = s.length(), sign = 1, result = 0;
+		Stack<Integer> stack = new Stack<Integer>();
+		for (int i = 0; i < len; i++) {
+			if (Character.isDigit(s.charAt(i))) {
+				int sum = s.charAt(i) - '0';
+				while (i + 1 < len && Character.isDigit(s.charAt(i + 1))) {
+					sum = sum * 10 + s.charAt(i + 1) - '0';
+					i++;
+				}
+				result += sum * sign;
+			} else if (s.charAt(i) == '+')
+				sign = 1;
+			else if (s.charAt(i) == '-')
+				sign = -1;
+			else if (s.charAt(i) == '(') {
+				stack.push(result);
+				stack.push(sign);
+				result = 0;
+				sign = 1;
+			} else if (s.charAt(i) == ')') {
+				result = result * stack.pop() + stack.pop();
+			}
+
+		}
+		return result;
+	}
+
+----------------------------------------------------------------------------------------------------
+16 ms solution in C++ with stacks
+    class Solution {
+    public:
+        int calculate(string s) {
+            stack <int> nums, ops;
+            int num = 0;
+            int rst = 0;
+            int sign = 1;
+            for (char c : s) { 
+                if (isdigit(c)) {
+                    num = num * 10 + c - '0';
+                }
+                else {
+                    rst += sign * num;
+                    num = 0;
+                    if (c == '+') sign = 1;
+                    if (c == '-') sign = -1;
+                    if (c == '(') {
+                        nums.push(rst);
+                        ops.push(sign);
+                        rst = 0;
+                        sign = 1;
+                    }
+                    if (c == ')' && ops.size()) {
+                        rst = ops.top() * rst + nums.top();
+                        ops.pop(); nums.pop();
+                    }
+                }
+            }
+            rst += sign * num;
+            return rst;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy 18 lines C++, 16 lines Python
+Keep a global running total and a stack of signs (+1 or -1), one for each open scope. The "global" outermost sign is +1.
+
+- Each number consumes a sign.
+- Each `+` and `-` causes a new sign.
+- Each `(` duplicates the current sign so it can be used for the first term inside the new scope. That's also why I start with `[1, 1]` - the global sign 1 and a duplicate to be used for the first term, since expressions start like `3...` or `(...`, not like `+3...` or `+(...`.
+- Each `)` closes the current scope and thus drops the current sign.
+
+Also see the example trace below my programs.
+
+**C++:**
+
+    int calculate(string s) {
+        int total = 0;
+        vector<int> signs(2, 1);
+        for (int i=0; i<s.size(); i++) {
+            char c = s[i];
+            if (c >= '0') {
+                int number = 0;
+                while (i < s.size()  &&  s[i] >= '0')
+                    number = 10 * number + s[i++] - '0';
+                total += signs.back() * number;
+                signs.pop_back();
+                i--;
+            }
+            else if (c == ')')
+                signs.pop_back();
+            else if (c != ' ')
+                signs.push_back(signs.back() * (c == '-' ? -1 : 1));
+        }
+        return total;
+    }
+
+**Python:**
+
+    def calculate(self, s):
+        total = 0
+        i, signs = 0, [1, 1]
+        while i < len(s):
+            c = s[i]
+            if c.isdigit():
+                start = i
+                while i < len(s) and s[i].isdigit():
+                    i += 1
+                total += signs.pop() * int(s[start:i])
+                continue
+            if c in '+-(':
+                signs += signs[-1] * (1, -1)[c == '-'],
+            elif c == ')':
+                signs.pop()
+            i += 1
+        return total
+
+**Example trace:**
+
+Here's an example trace for input `3-(2+(9-4))`.
+
+      remaining   sign stack      total
+    3-(2+(9-4))   [1, 1]            0
+     -(2+(9-4))   [1]               3
+      (2+(9-4))   [1, -1]           3
+       2+(9-4))   [1, -1, -1]       3
+        +(9-4))   [1, -1]           1
+         (9-4))   [1, -1, -1]       1
+          9-4))   [1, -1, -1, -1]   1
+           -4))   [1, -1, -1]      -8
+            4))   [1, -1, -1, 1]   -8
+             ))   [1, -1, -1]      -4
+              )   [1, -1]          -4
+                  [1]              -4
+
+If you want to see traces for other examples, you can add this at the start inside the loop and after the loop (that's for the Python solution, where it's all easier):
+
+    print '%11s   %-16s %2d' % (s[i:], signs, total)
+
+
+----------------------------------------------------------------------------------------------------
+Java solution&#x2F;Stack
+My approach is based on the fact that the final arithmetic operation on each number is not only depend on the sign directly operating on it, but all signs associated with each unmatched '(' before that number.
+
+e.g.
+5 - ( 6 + ( 4 - 7 ) ), if we remove all parentheses, the expression becomes 5 - 6 - 4 + 7.
+
+sign:
+
+6: (-1)(1) = -1
+
+4: (-1)(1)(1) = -1
+
+7: (-1)(1)(-1) = 1
+
+The effect of associated signs are cumulative, stack is builded based on this. Any improvement is welcome.
+
+    public int calculate(String s) {
+        Deque<Integer> stack = new LinkedList<>();
+        int rs = 0;
+        int sign = 1;
+        stack.push(1);
+        for (int i = 0; i < s.length(); i++){
+            if (s.charAt(i) == ' ') continue;
+            else if (s.charAt(i) == '('){
+                stack.push(stack.peekFirst() * sign);
+                sign = 1;
+            }
+            else if (s.charAt(i) == ')') stack.pop();
+            else if (s.charAt(i) == '+') sign = 1;
+            else if (s.charAt(i) == '-') sign = -1;
+            else{
+                int temp = s.charAt(i) - '0';
+                while (i + 1 < s.length() && Character.isDigit(s.charAt(i + 1)))
+                    temp = temp * 10 + s.charAt(++i) - '0';
+                rs += sign * stack.peekFirst() * temp;
+            }
+        }
+        return rs;
+    }
+
+ 
+
+----------------------------------------------------------------------------------------------------
+Simple c++ in 24 ms
+    class Solution {
+    public:
+        int calculate(string s) {
+            // the given expression is always valid!!!
+            // only + and - !!!
+            // every + and - can be flipped base on it's depth in ().
+            stack<int> signs;
+            int sign = 1;
+            int num = 0;
+            int ans = 0;
+            
+            // always transform s into ( s )
+            signs.push(1);
+            
+            for (auto c : s) {
+                if (c >= '0' && c <= '9') {
+                    num = 10 * num + c - '0';
+                } else if (c == '+' || c == '-') {
+                    ans = ans + signs.top() * sign * num;
+                    num = 0;
+                    sign = (c == '+' ? 1 : -1);
+                } else if (c == '(') {
+                    signs.push(sign * signs.top());
+                    sign = 1;
+                } else if (c == ')') {
+                    ans = ans + signs.top() * sign * num;
+                    num = 0;
+                    signs.pop();
+                    sign = 1;
+                }
+            }
+            
+            if (num) {
+                ans = ans + signs.top() * sign * num;
+            }
+            
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Accepted Java Infix to Postfix based solution with explaination &#91;600ms&#93;
+The solution has 2 steps:
+
+  1. parse the input string and convert it to postfix notation.
+  2. evaluate the postfix string from step 1.
+
+**Infix to postfix conversion** 
+
+converting a simple expression string that doesn't contain brackets to postfix is explained [here][1]. You can imagine the expression between brackets as a new simple expression (which we know how to convert to postfix). So when we encounter opening bracket "(" push it to the top stack. When we encounter a closing bracket ")" keep popping from stack until we find the matching "(", here we are removing all operators that belong to the expression between brackets. Then pop the "(" from the stack.
+
+One more thing to take into consideration, we don't want any operator to pop the "(" from the stack except the ")". We can handle this be assigning the "(" the lowest rank such that no operator can pop it.
+
+
+**Evaluate postfix expression**
+
+postfix evaluation is explained [here][2]
+
+If you have any ideas how to cut down the run time, please share your ideas :D.
+
+Disclaimer: I didn't write the included links, however I find them simple and neat.
+
+
+    public class Solution {
+    	int rank(char op){
+    	    // the bigger the number, the higher the rank
+    	    switch(op){
+    	        case '+':return 1;
+    	        case '-':return 1;
+    	        case '*':return 2;
+    	        case '/':return 2;
+    	        default :return 0; // '(' 
+    	    }
+    	}
+    	List<Object> infixToPostfix(String s) {
+    		Stack<Character> operators = new Stack<Character>();
+    		List<Object> postfix = new LinkedList<Object>();
+    
+    		int numberBuffer = 0;
+    		boolean bufferingOperand = false;
+    		for (char c : s.toCharArray()) {
+    			if (c >= '0' && c <= '9') {
+    				numberBuffer = numberBuffer * 10 + c - '0';
+    				bufferingOperand = true;
+    			} else {
+    				if(bufferingOperand)
+    					postfix.add(numberBuffer);
+    				numberBuffer = 0;
+    				bufferingOperand = false;
+    				
+    				if (c == ' '|| c == '\t')
+    					continue;
+    				
+    				if (c == '(') {
+    					operators.push('(');
+    				} else if (c == ')') {
+    					while (operators.peek() != '(')
+    						postfix.add(operators.pop());
+    					operators.pop(); // popping "("
+    				} else { // operator
+    					while (!operators.isEmpty() && rank(c) <= rank(operators.peek()))
+    						postfix.add(operators.pop());
+    					operators.push(c);
+    				}
+    			}
+    
+    		}
+    		if (bufferingOperand)
+    			postfix.add(numberBuffer);
+    
+    		while (!operators.isEmpty())
+    			postfix.add(operators.pop());
+    
+    		return postfix;
+    	}
+    
+    	int evaluatePostfix(List<Object> postfix) {
+    		Stack<Integer> operands = new Stack<Integer>();
+    		int a = 0, b = 0;
+    		for (Object s : postfix) {
+    			if(s instanceof Character){
+    				char c = (Character) s;
+    				b = operands.pop();
+    				a = operands.pop();
+    				switch (c) {
+    					case '+': operands.push(a + b); break;
+    					case '-': operands.push(a - b); break;
+    					case '*': operands.push(a * b); break;
+    					default : operands.push(a / b); 
+    				}
+    			}else { // instanceof Integer
+    				operands.push((Integer)s);
+    			}
+    		}
+    		return operands.pop();
+    	}
+    
+    	public int calculate(String s) {
+    		return evaluatePostfix(infixToPostfix(s));
+    	}
+    
+    }
+
+
+  [1]: http://scriptasylum.com/tutorials/infix_postfix/algorithms/infix-postfix/
+  [2]: http://scriptasylum.com/tutorials/infix_postfix/algorithms/postfix-evaluation/
+
+----------------------------------------------------------------------------------------------------
+64 ms c++ easy solution
+    class Solution {
+    public:
+        int calculate(string s) {
+            int n = s.size();
+            stack<int> s1;
+            stack<char> s2;
+            string v;
+            for(int i = n - 1; i >= 0; i--){
+                if(s[i] == ')' || s[i] == '+' || s[i] == '-') s2.push(s[i]);
+                else if(s[i] >= '0' && s[i] <= '9'){
+                    v = s[i] + v;
+                    if(i == 0 || s[i - 1] < '0' || s[i - 1] > '9'){
+                        s1.push(stoi(v)); 
+                        v = "";
+                    }
+                } else if(s[i] == '('){
+                    while(s2.top() != ')') cal(s1, s2);
+                    s2.pop();
+                }
+            }
+            while(!s2.empty()) cal(s1, s2);
+            return s1.top();
+        }
+    
+        void cal(stack<int> &s1, stack<char> &s2){
+            int v1 = s1.top(); s1.pop();
+            int v2 = s1.top(); s1.pop();
+            char c = s2.top(); s2.pop();
+            if(c == '+') s1.push(v1 + v2);
+            if(c == '-') s1.push(v1 - v2);
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+24-line C++ O(n) Recursive Solution, 20ms and Intuitive
+Each invocation of evaluate() evaluates whatever inside a pair of parenthese. Nested parenthese will be handled by recursive calls.
+
+So "(1+(4+5+2)-3)+(6+8)"
+
+->
+
+(1+(9+2)-3)+(6+8)
+
+->
+
+(1+11-3)+(6+8)
+
+->
+
+(12-3)+(6+8)
+
+->
+
+9+(6+8)
+
+->
+
+9+14
+
+->
+
+23
+
+
+    class Solution {
+    public:
+        int calculate(string s) {
+            int pos=0;
+            return evaluate(s,pos);
+        }
+        
+        int evaluate(string& s, int& i) {
+            int res = 0;
+            bool negFlag=false;
+            while(i<s.size()&&s[i]!=')') {
+                if(s[i]=='+'||s[i]==' ') 
+                    i++;
+                else if(s[i]=='-') {
+                    i++;
+                    negFlag=true;
+                }
+                else if(s[i]=='(') {
+                    i++;
+                    res+=negFlag?-evaluate(s,i):evaluate(s,i);
+                    negFlag=false;
+                }
+                else {// numeric chars
+                    int num=0;
+                    while(i<s.size()&&isdigit(s[i]))
+                        num = num*10 + s[i++]-'0';
+                    res+=negFlag?-num:num;
+                    negFlag=false;
+                }
+            }
+            i++; // skip the current ')'
+            return res;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+3ms java concise and fast recursive solution with comments(beats 99.61%)
+    public int calculate(String s) {
+        if (s.length() == 0) return 0;
+        s = "(" + s + ")";
+        int[] p = {0};
+        return eval(s, p);
+    }
+    // calculate value between parentheses
+    private int eval(String s, int[] p){
+        int val = 0;
+        int i = p[0]; 
+        int oper = 1; //1:+ -1:-
+        int num = 0;
+        while(i < s.length()){
+            char c = s.charAt(i);
+            switch(c){
+                case '+': val = val + oper * num; num = 0; oper = 1; i++; break;// end of number and set operator
+                case '-': val = val + oper * num; num = 0; oper = -1; i++; break;// end of number and set operator
+                case '(': p[0] = i + 1; val = val + oper * eval(s, p); i = p[0]; break; // start a new eval
+                case ')': p[0] = i + 1; return val + oper * num; // end current eval and return. Note that we need to deal with the last num
+                case ' ': i++; continue;
+                default : num = num * 10 + c - '0'; i++;
+            }
+        }
+        return val;
+    }
+
+----------------------------------------------------------------------------------------------------
+Python concise solution with stack.
+        
+    def calculate(self, s):
+        res, num, sign, stack = 0, 0, 1, []
+        for ss in s:
+            if ss.isdigit():
+                num = 10*num + int(ss)
+            elif ss in ["-", "+"]:
+                res += sign*num
+                num = 0
+                sign = [-1, 1][ss=="+"]
+            elif ss == "(":
+                stack.append(res)
+                stack.append(sign)
+                sign, res = 1, 0
+            elif ss == ")":
+                res += sign*num
+                res *= stack.pop()
+                res += stack.pop()
+                num = 0
+        return res + num*sign
+
+----------------------------------------------------------------------------------------------------
+AC C++ solution with two stacks.
+Yet another stack-based solution. Very similar to the solution given by @jiannan [here][1] with a few minor differences.
+
+The basic idea is to scan from left to right. Push every (, + and - to an 'operator' stack, and every number to an 'number' stack. In this process, whenever a RIGHT operand is added to the 'number' stack, we can do a computation using the top two numbers in the 'number' stack with the operation specified by the top of the operator stack. 
+
+There are only two situations when a RIGHT operand appears in the number stack: 
+1. A number that is the RIGHT operand, .e.g 4 as in 3 + 4, is pushed;
+2. A braced block that is the RIGHT operand, e.g. (4+5) as in 3 + (4 + 5), is terminated and its result is added to the number stack.
+
+How do we know if a number added is the RIGHT or LEFT operand? The idea is, whenever a RIGHT operand appears, there must be an unused '+' or '-' left in the 'operator' stack.
+
+    int calculate(string s) {
+        stack<char> ops;
+        stack<int> nums;
+        int curnum = 0;
+         
+        for (int i = 0; i < s.size(); ++i) {
+            char c = s[i];
+            if (c == ' ') continue;   // Skip spaces
+            if (c == '(' || c == '+' || c == '-') {ops.push(c); continue;}  // Store these operators for later
+            
+            // Only do calculation when 1. a braced block is terminated, 2. When the second operand isn added
+            if (c == ')') ops.pop(); 
+            else if (isdigit(c)) {
+                curnum = curnum * 10 + c -'0';
+                if (i+1<s.size() && isdigit(s[i+1])) continue;    //This number is not finished
+                nums.push(curnum);      // Otherwise, this number is ready and must be pushed to stack
+                curnum = 0;             // Reset cursum;
+            }
+            
+            if (ops.empty() || ops.top()=='(') continue;    // If, however, there is no more computational operators in stack
+            // then either we have just added the LEFT operand, or if the braced block just terminated is a LEFT operand.
+            // Either way, we cannot do computation yet.
+            // Otherwise, it is safe to do the computation, assuming the expression is always valid:
+            
+            int n2 = nums.top(); nums.pop();                
+            if (ops.top() == '+') nums.top() += n2;
+            else if (ops.top() == '-') nums.top() -= n2;
+            ops.pop();
+        }
+        return nums.top();
+    }
+
+  [1]: https://leetcode.com/discuss/39458/64-ms-c-easy-solution
+
+----------------------------------------------------------------------------------------------------
+Java solution use stack
+    public int calculate(String s) {
+        int res =0,val=0;
+        int sign = 1;
+        Stack<Integer> st = new Stack<Integer>();
+        s.trim();
+        for(int i=0;i<s.length();i++){
+            if(s.charAt(i) == '('){
+                st.push(sign);
+            }else if(s.charAt(i) == ')'){
+                st.pop();
+            }else if(s.charAt(i) == '+' || s.charAt(i) == '-'){
+                res += sign*val;
+                val = 0;
+                if(!st.isEmpty()) {
+                    sign = s.charAt(i) =='-'?st.peek()*(-1):st.peek();
+                }else {
+                    sign = s.charAt(i) =='-'?-1:1;
+                }
+            }else if(s.charAt(i) !=' '){
+                val = val*10 + (s.charAt(i)-'0');
+            }
+        }
+        res += val*sign;
+        return res;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple java solution with recursion.
+        import java.util.*;
+    
+    public class Solution {
+        public int calculate(String s) {
+            return calc(new StringTokenizer(s, " ()+-", true));
+        }
+        
+        int calc(StringTokenizer st){
+            int sofar = 0;
+            boolean plus = true; // last seen operator.
+            while(st.hasMoreTokens()){
+                int val =0;
+                String next = st.nextToken();
+                switch(next){
+                    case "(":
+                        val = calc(st);
+                        sofar += (plus ?  val : -val);
+                        break;
+                    case ")":
+                        return sofar;
+                    case "+":
+                        plus = true;
+                        break;
+                    case "-":
+                        plus = false;
+                        break;
+                    case " ": // no-op
+                        break;
+                    default:
+                        val = Integer.parseInt(next);
+                        sofar += (plus ?  val : -val);
+                        break;
+                }
+                
+            }
+            
+            return sofar;
+        }
+    }
+
+
+Explained: 
+calc(), the working horse, is using a simple strategy: if "(" spotted, dive one level deeper in recursion. when it sees matching ")", return with an integer value of expression between "(...)" . Each call of calc() handles expression within one pair of "(...)".
+
+Within one pair of "(..)", generally there are only two cases: operator and operand. It's easy to handle them respectively. Slightly tricky thing is remembering last seen operator which is + or -.
+
+----------------------------------------------------------------------------------------------------
+Python with stack
+This [solution][1] uses stack to store previous result and sign when encounter a "("
+
+For this problem storing sign is enough, and will be faster.
+
+    def calculate(self, s):
+        res, num, sign, stack = 0, 0, 1, [1]
+        for i in s+"+":
+            if i.isdigit():
+                num = 10*num + int(i)
+            elif i in "+-":
+                res += num * sign * stack[-1]
+                sign = 1 if i=="+" else -1
+                num = 0
+            elif i == "(":
+                stack.append(sign * stack[-1])
+                sign = 1
+            elif i == ")":
+                res += num * sign * stack[-1]
+                num = 0
+                stack.pop()
+        return res
+
+
+  [1]: https://leetcode.com/discuss/61237/python-concise-solution-with-stack
+
+----------------------------------------------------------------------------------------------------
+Java One Pass Recursion Method (3ms, beat 99%)
+public class Solution {
+    public int calculate(String s) {
+        if (s.length() == 0) return 0;
+        return calculateHelper(s, 0, new int[]{s.length()});
+    }
+        
+    private int calculateHelper(String s, int start, int[] end) {
+        int sum = 0;
+        int res = 0;
+        char sign = '+';
+        for (int i = start; i < end[0]; i++) {
+            char temp = s.charAt(i);
+            if (temp >= '0' && temp <= '9') {
+                sum = sum * 10 + (temp - '0');
+            }
+            if (temp == '+' || temp == '-' || temp == ')' || i == end[0] - 1) {
+                res = (sign == '+') ? res + sum : res - sum; 
+                if (temp != ')') sign = temp;
+                sum = 0;
+            }
+            // Return condition for recursion
+            if (temp == ')' || i == end[0] - 1) {
+                end[0] = i;
+                return res;
+            }
+            if (temp == '(') {
+                int[] newEnd = {end[0]};
+                sum = calculateHelper(s, i + 1, newEnd);
+                if (newEnd[0] == end[0] - 1) {
+                    res = (sign == '+') ? res + sum : res - sum; 
+                }
+                i = newEnd[0]; // Set i to the last recursion end point
+            }
+        }
+        return res;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+AC Python Solution
+    class Solution:
+    def calculate(self, s):
+        s = '+(+' + s + ')'
+        s = s.replace('+-', '-').replace('++', '+') # for the corner case '-5', '+5'
+        stack = []
+        for i in s:
+            if i == ')':
+                total = 0
+                while stack[-1] != '(':
+                    total += int(stack.pop())
+                stack.pop()
+                sign = 1 if stack.pop() == '+' else -1
+                stack.append(sign * total)
+            elif i.isdigit() and stack[-1][-1] in '+-0123456789':
+                stack[-1] += i
+            elif i != ' ':
+                stack.append(i)
+        return stack[0]
+
+----------------------------------------------------------------------------------------------------
+1 pass, O(n) C++ solution
+A plus sign can be ignored since it has no effect.
+A minus sign negates the signs contained within a pair of parentheses. 
+
+A ')' matches the nearest '(', so we can use a stack structure to keep track of the negation context.
+When we encounter '(', save the current context and negate it.
+When ')', restore the previous context.
+
+    #include<cstdlib>
+    #include<string>
+    #include<vector>
+    using namespace std;
+    class Solution {
+    public:
+        int calculate(string s) {
+            typedef long long ll;
+            vector<int> ctx;
+            int contextNumberMult = 1;
+            int localNumberMult = 1;
+            int ans=0;
+            for (const char *x = s.c_str();*x;x++){
+                switch(*x){
+                case '-':
+                    localNumberMult = -1;
+                    break;
+                case '(':
+                    contextNumberMult *= localNumberMult;
+                    ctx.push_back(localNumberMult);
+                    localNumberMult = 1;
+                    break;
+                case ')':
+                    contextNumberMult *= ctx.back();
+                    ctx.pop_back();
+                case ' ':
+                case '+':
+                    break;
+                default:{
+                    char *end;
+                    ll n=strtol(x,&end,10);
+                    ans += n * contextNumberMult  * localNumberMult ;
+                    localNumberMult = 1;
+                    x = end-1;
+                }}
+            }
+            return ans;
+        }
+    };
+
+
+----------------------------------------------------------------------------------------------------
+Accepted Java solution.  Easy understood. With explanations. No Need To Convert To PostFix.(RNP)
+Explanations are in lines. 
+No need to convert to RNP.
+Clear logic, easy to follow.
+
+
+    public class Solution {
+        public static int calculate(String expression)
+        {
+            char[] tokens = expression.toCharArray();
+     
+             // Stack for numbers: 'values'
+            Stack<Integer> values = new Stack<Integer>();
+     
+            // Stack for Operators: 'ops'
+            Stack<Character> ops = new Stack<Character>();
+     
+            for (int i = 0; i < tokens.length; i++)
+            {
+                 // Current token is a whitespace, skip it
+                if (tokens[i] == ' ')
+                    continue;
+     
+                // Current token is a number, push it to stack for numbers
+                if (tokens[i] >= '0' && tokens[i] <= '9')
+                {
+                    StringBuffer sbuf = new StringBuffer();
+                    // There may be more than one digits in number
+                    while (i < tokens.length && tokens[i] >= '0' && tokens[i] <= '9')
+                        sbuf.append(tokens[i++]);
+                    values.push(Integer.parseInt(sbuf.toString()));
+                    i--;
+                    
+                }
+     
+                // Current token is an opening brace, push it to 'ops'
+                else if (tokens[i] == '(')
+                    ops.push(tokens[i]);
+     
+                // Closing brace encountered, solve entire brace
+                else if (tokens[i] == ')')
+                {
+                	
+                    while (ops.peek() != '('){
+                    	values.push(applyOp(ops.pop(), values.pop(), values.pop()));
+                    }
+                    if(ops.size()!=0){
+                    	ops.pop();
+                    }
+                    
+                }
+     
+                // Current token is an operator.
+                else if (tokens[i] == '+' || tokens[i] == '-' ||
+                         tokens[i] == '*' || tokens[i] == '/')
+                {
+                    // While top of 'ops' has same or greater precedence to current
+                    // token, which is an operator. Apply operator on top of 'ops'
+                    // to top two elements in values stack
+                    while (!ops.empty() && hasPrecedence(tokens[i], ops.peek()))
+                      values.push(applyOp(ops.pop(), values.pop(), values.pop()));
+     
+                    // Push current token to 'ops'.
+                    ops.push(tokens[i]);
+                }
+            }
+     
+            // Entire expression has been parsed at this point, apply remaining
+            // ops to remaining values
+            
+            while (!ops.empty())
+            {	if(values.size()==1)
+                return values.pop();
+                values.push(applyOp(ops.pop(), values.pop(), values.pop()));
+            }
+     
+            // Top of 'values' contains result, return it
+            return values.pop();
+        }
+     
+        // Returns true if 'op2' has higher or same precedence as 'op1',
+        // otherwise returns false.
+        public static boolean hasPrecedence(char op1, char op2)
+        {
+            if (op2 == '(' || op2 == ')')
+                return false;
+            if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+                return false;
+            else
+                return true;
+        }
+     
+        // A utility method to apply an operator 'op' on operands 'a'
+        // and 'b'. Return the result.
+        public static int applyOp(char op, int b, int a)
+        {
+            switch (op)
+            {
+            case '+':
+                return a + b;
+            case '-':
+                return a - b;
+            case '*':
+                return a * b;
+            case '/':
+                if (b == 0)
+                    throw new
+                    UnsupportedOperationException("Cannot divide by zero");
+                return a / b;
+            }
+            return 0;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++, O(n) with two bool signs and one stack
+Use one bool "sign" to get the operator before current number;
+use another bool "presign" to trace the actual operator of the nearest "(" before current number;
+(actual operator means transfer operator inside "( )"  into global by virtually "removing" outer parenthesis)
+
+If sign and presign are the same, means "+" and "+", or "-" and "-", so add it to result
+else reduce it from result.
+
+For multiple layers parenthesis, use a stack as a buffer to recognize corresponding layer.
+
+    class Solution {
+    public:
+    	int calculate(string s)
+    	{
+        	int len = s.length();
+        	int sum = 0;
+        	bool presign = true, sign = true;
+        	stack<int> stk;
+        	
+        	for(int ii=0; ii<len; ++ii)
+        	{
+        		char cc = s[ii];
+        		
+        		if(' ' == cc)
+        			continue;
+        		if('+' == cc)
+        			sign = true;
+        		else if('-' == cc)
+        			sign = false;
+        		else if('(' == cc)
+        		{
+        			stk.push(presign);
+        			presign = (true == sign)?presign:(!presign);
+        			sign = true;
+        		}
+        		else if(')' == cc)
+        		{
+        			presign = stk.top();
+        			stk.pop();
+        			sign = true;
+        		}
+        		else
+        		{
+        			int num = s[ii] - '0';
+        			while(isdigit(s[++ii]))
+        				num = 10*num + s[ii] - '0';
+        			ii--;	
+    
+        			sum += (sign==presign)? num : (0-num);
+        		}
+        	}
+    		return sum;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------

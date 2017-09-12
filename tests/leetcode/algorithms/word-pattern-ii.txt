@@ -1,0 +1,351 @@
+Share my java AC solution.
+Without HashMap, just have two pointers, A points to index 0, B points to index len - 1, shrink the scope based on the value and target comparison.
+
+    public int[] twoSum(int[] num, int target) {
+        int[] indice = new int[2];
+        if (num == null || num.length < 2) return indice;
+        int left = 0, right = num.length - 1;
+        while (left < right) {
+            int v = num[left] + num[right];
+            if (v == target) {
+                indice[0] = left + 1;
+                indice[1] = right + 1;
+                break;
+            } else if (v > target) {
+                right --;
+            } else {
+                left ++;
+            }
+        }
+        return indice;
+    }
+
+----------------------------------------------------------------------------------------------------
+A simple O(n) solution
+We only have to shrink the range to find the pair:
+
+class Solution {
+
+public:
+
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        int lo=0, hi=numbers.size()-1;
+        while (numbers[lo]+numbers[hi]!=target){
+            if (numbers[lo]+numbers[hi]<target){
+                lo++;
+            } else {
+                hi--;
+            }
+        }
+        return vector<int>({lo+1,hi+1});
+    }
+
+};
+
+----------------------------------------------------------------------------------------------------
+Python different solutions (two-pointer, dictionary, binary search).
+        
+    # two-pointer
+    def twoSum1(self, numbers, target):
+        l, r = 0, len(numbers)-1
+        while l < r:
+            s = numbers[l] + numbers[r]
+            if s == target:
+                return [l+1, r+1]
+            elif s < target:
+                l += 1
+            else:
+                r -= 1
+     
+    # dictionary           
+    def twoSum2(self, numbers, target):
+        dic = {}
+        for i, num in enumerate(numbers):
+            if target-num in dic:
+                return [dic[target-num]+1, i+1]
+            dic[num] = i
+     
+    # binary search        
+    def twoSum(self, numbers, target):
+        for i in xrange(len(numbers)):
+            l, r = i+1, len(numbers)-1
+            tmp = target - numbers[i]
+            while l <= r:
+                mid = l + (r-l)//2
+                if numbers[mid] == tmp:
+                    return [i+1, mid+1]
+                elif numbers[mid] < tmp:
+                    l = mid+1
+                else:
+                    r = mid-1
+
+----------------------------------------------------------------------------------------------------
+A less efficient way (binary search)
+I know that the best solution is using two pointers like what is done in the previous solution sharing. However, I see the tag contains "binary search". I do not know if I misunderstand but is binary search a less efficient way for this problem.
+
+Say, fix the first element A[0] and do binary search on the remaining n-1 elements. If cannot find any element which equals target-A[0], Try A[1]. That is, fix A[1] and do binary search on A[2]~A[n-1]. Continue this process until we have the last two elements A[n-2] and A[n-1]. 
+
+Does this gives a time complexity lg(n-1) + lg(n-2) + ... + lg(1) ~ O(lg(n!)) ~ O(nlgn). So it is less efficient than the O(n) solution. Am I missing something here?
+
+The code also passes OJ.
+
+    vector<int> twoSum(vector<int> &numbers, int target) {
+        if(numbers.empty()) return {};
+        for(int i=0; i<numbers.size()-1; i++) {
+            int start=i+1, end=numbers.size()-1, gap=target-numbers[i];
+            while(start <= end) {
+                int m = start+(end-start)/2;
+                if(numbers[m] == gap) return {i+1,m+1};
+                else if(numbers[m] > gap) end=m-1;
+                else start=m+1;
+            }
+        }
+    }
+
+    
+
+----------------------------------------------------------------------------------------------------
+Simple 8 line Java solution with explanation. O(n)
+    public int[] twoSum(int[] numbers, int target) {
+        int l = 0, r = numbers.length - 1;
+        while (numbers[l] + numbers[r] != target) {
+            if (numbers[l] + numbers[r] > target) r--;
+            else l++;
+        }
+        return new int[]{l + 1, r + 1};
+    }
+
+we use `l` and `r` to denote the first index and second index respectively. 
+
+When the sum is:<br>
+1. smaller than the target:<br>
+    we move `l` to the right by 1. we can't make `r` smaller because that's gonna make the sum even smaller.<br>
+2. bigger than target:<br>
+    move `r` to the left by 1. we can't make `l` bigger because that's gonna make the sum even bigger.<br>
+3. equal to the target:<br>
+    we found the answer and return.
+
+Since the question said there is EXACTLY one solution and didn't provide any info about when there is no valid answer, so we can always assume there is one and only one answer, which means `l` and `r` never across each other.
+
+Another thing to notice is that this array is sorted.
+
+----------------------------------------------------------------------------------------------------
+C++ solution simple and sweet
+    vector<int> twoSum(vector<int>& numbers, int target) {
+            
+            int l = 0;
+            int r = numbers.size() -1;
+            while(l < r){
+                if(numbers[l] + numbers[r] == target){
+                    vector<int> res{l+1,r+1};
+                    return res;
+                }
+                else if(numbers[l] + numbers[r] > target){
+                    r--;
+                }
+                else{
+                    l++;
+                }
+            }
+        }
+
+----------------------------------------------------------------------------------------------------
+Java 7 line simple solution
+    public int[] twoSum(int[] numbers, int target) {
+            int start = 0, end = numbers.length - 1;
+            while(start < end){
+                if(numbers[start] + numbers[end] == target) break;
+                if(numbers[start] + numbers[end] < target) start++;
+                else end--;
+            }
+            return new int[]{start + 1, end + 1};
+        }
+
+----------------------------------------------------------------------------------------------------
+A O(logN) binary search Java Solution - 0ms, beat 98%
+    public int[] twoSum(int[] numbers, int target) {
+        if (numbers == null || numbers.length == 0) {
+            return new int[2];
+        }
+        int start = 0;
+        int end = numbers.length - 1;
+        while (start < end) {
+            if (numbers[start] + numbers[end] == target) {
+                return new int[]{start + 1, end + 1};
+            } else if (numbers[start] + numbers[end] > target) {
+                // move end forward to the last value that numbers[end] <= target - numbers[start]
+                end = largestSmallerOrLastEqual(numbers, start, end, target - numbers[start]);
+            } else {
+                // move start backword to the first value that numbers[start] >= target - numbers[end]
+                start = smallestLargerOrFirstEqual(numbers, start, end, target - numbers[end]);
+            }
+        }
+        return new int[2];
+    }
+    private int largestSmallerOrLastEqual(int[] numbers, int start, int end, int target) {
+        int left = start;
+        int right = end;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (numbers[mid] > target) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return right;
+    }
+    private int smallestLargerOrFirstEqual(int[] numbers, int start, int end, int target) {
+        int left = start;
+        int right = end;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (numbers[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return left;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+What is the algorithm that runs 4ms for C++?
+ My algorithm is O(n), but runs 8ms, I am just wondering whether there is more efficient algorithm?
+
+----------------------------------------------------------------------------------------------------
+What does AC stand for in &quot;AC solutions&quot;
+Hello,
+
+ I am not an english native speaker and I wonder what is an AC solution. I have seen that on several problem already and Google was not useful.
+
+thanks 
+
+
+----------------------------------------------------------------------------------------------------
+Asking about O(logN) solution.
+I have seen some discussions in the discussion session about the binary search idea. Even though, they all look better ideas than two pointers, they still need O(N) in the worse case.
+
+I am asking is there any idea to solve this question in completely O(logN)?
+
+----------------------------------------------------------------------------------------------------
+0ms, Java Solution, Binary Search with detailed comment, share you opinion
+public class Solution {
+    /*
+     Idea: keep updating boundaries using binary search.
+     
+     Method: 
+     1) fix lower number and find the target upper number
+        e.g. intilize lower = numbers[0], then our goal is to find the "right" index of upper bound which value 
+        is <= (target - lower)
+        i) if lower + upper = target, we got the answer
+        ii) if not, assign the "upper" number to numbers[right], go to step 2;
+     2) fix the upper number and find the target lower number 
+        e.g. lower = target - upper, our goal is to find the "left" index of lower bound which value is >= (target - upper)
+        i) if lower + upper = target, we got the answer
+        ii) if not, assign lower to the number[left], repeat step 1 and 2, because we are guranteed to have an answer
+    
+    remark:
+        Every time we update the upper value, it will be smaller than its previous value
+        Every time we update the lower value, it will be bigger than its previous value
+        Since this array is sorted in ascending order, the range of binary search is getting smaller each time.
+        
+    performance: O(logn)
+                 real time: 0 ms
+     */
+    public int[] twoSum(int[] numbers, int target) {
+        boolean isSmall = false;
+        long small = numbers[0];
+        long big = target - small;
+        int left = 0;
+        int right = numbers.length - 1;
+        while (true) {
+            if (isSmall) {
+                isSmall = false;
+                left = binarySearch(numbers, left, right - 1, small);
+                if (numbers[left] + numbers[right] == target) {
+                    break;
+                } else {
+                    small = numbers[++left];
+                    big = target - small;
+                }
+            } else {
+                isSmall = true;
+                right = binarySearch(numbers, left + 1, right, big);
+                if (numbers[left] + numbers[right] == target) {
+                    break;
+                } else {
+                    big = numbers[right];
+                    small = target - big;
+                }
+            }
+        }
+        return new int[]{left + 1, right + 1};
+    }
+    
+    public int binarySearch(int[] nums, int l, int r, long target) {
+        int left = l;
+        int right = r;
+        while (left < right) {
+            int mid = right + (left - right) / 2;
+            if (nums[mid] > target) {
+                right = mid - 1;
+            } else {
+                left = mid;
+            }
+        }
+        return left;
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+Another Binary Search idea
+This idea is to use alternative binary search rather than simply search the target - number[i] each time.
+Although the worst case will also result in O(n) time complexity, but the overall performance is much better if the input is very sparse.
+
+    var twoSum = function(numbers, target) {
+    
+        var i=0, j=numbers.length-1;
+        var sum;
+        
+        while (i<j){
+            //move j using binary search to find largest nums[j] that nums[i] + nums[j] <= target   
+            var tmpi = i+1, tmpj = j;
+            var first = numbers[i];
+            while (tmpi <= tmpj){
+                var m = Math.floor((tmpi+tmpj)/2);
+                if (numbers[m] + first === target){
+                    return [i+1, m+1];
+                }
+                else if (numbers[m] + first > target){
+                    tmpj = m-1;
+                }
+                else {
+                    tmpi = m+1;
+                }
+            }
+            j = tmpj;
+            
+            //move i using binary search to find smallest nums[i] that nums[i] + nums[j] >= target   
+            var last = numbers[j];
+            tmpi = i+1, tmpj = j-1;
+            while (tmpi <= tmpj){
+                var m = Math.floor((tmpi+tmpj)/2);
+                if (numbers[m] + last === target){
+                    return [m+1, j+1];
+                }
+                else if (numbers[m] + last > target){
+                    tmpj = m-1;
+                }
+                else {
+                    tmpi = m+1;
+                }
+            }
+            i = tmpi;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+0 ms Binary Search Solution

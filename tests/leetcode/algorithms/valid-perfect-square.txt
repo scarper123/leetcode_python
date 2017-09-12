@@ -1,0 +1,1169 @@
+Short simple Java&#x2F;C++&#x2F;Python, O(log n) + O(1)
+I keep two heaps (or priority queues):
+
+- Max-heap `small` has the smaller half of the numbers.
+- Min-heap `large` has the larger half of the numbers.
+
+This gives me direct access to the one or two middle values (they're the tops of the heaps), so getting the median takes O(1) time. And adding a number takes O(log n) time.
+
+Supporting both min- and max-heap is more or less cumbersome, depending on the language, so I simply negate the numbers in the heap in which I want the reverse of the default order. To prevent this from causing a bug with -2<sup>31</sup> (which negated is itself, when using 32-bit ints), I use integer types larger than 32 bits.
+
+Using larger integer types also prevents an overflow error when taking the mean of the two middle numbers. I think almost all solutions posted previously have that bug.
+
+**Update:** These are pretty short already, but by now I wrote [even shorter ones](https://leetcode.com/discuss/64910/very-short-o-log-n-o-1).
+
+---
+
+**Java**
+
+    class MedianFinder {
+    
+        private Queue<Long> small = new PriorityQueue(),
+                            large = new PriorityQueue();
+    
+        public void addNum(int num) {
+            large.add((long) num);
+            small.add(-large.poll());
+            if (large.size() < small.size())
+                large.add(-small.poll());
+        }
+    
+        public double findMedian() {
+            return large.size() > small.size()
+                   ? large.peek()
+                   : (large.peek() - small.peek()) / 2.0;
+        }
+    };
+
+Props to [larrywang2014's solution](https://leetcode.com/discuss/64842/32ms-easy-to-understand-java-solution) for making me aware that I can use Queue in the declaration instead of PriorityQueue (that's all I got from him, though (just saying because I just saw he changed his previously longer addNum and it's now equivalent to mine)).
+
+---
+
+**C++**
+
+    class MedianFinder {
+        priority_queue<long> small, large;
+    public:
+    
+        void addNum(int num) {
+            small.push(num);
+            large.push(-small.top());
+            small.pop();
+            if (small.size() < large.size()) {
+                small.push(-large.top());
+                large.pop();
+            }
+        }
+    
+        double findMedian() {
+            return small.size() > large.size()
+                   ? small.top()
+                   : (small.top() - large.top()) / 2.0;
+        }
+    };
+
+Big thanks to jianchao.li.fighter for telling me that C++'s priority_queue is a max-queue (see comments below).
+
+---
+
+**Python**
+
+    from heapq import *
+    
+    class MedianFinder:
+    
+        def __init__(self):
+            self.heaps = [], []
+    
+        def addNum(self, num):
+            small, large = self.heaps
+            heappush(small, -heappushpop(large, num))
+            if len(large) < len(small):
+                heappush(large, -heappop(small))
+    
+        def findMedian(self):
+            small, large = self.heaps
+            if len(large) > len(small):
+                return float(large[0])
+            return (large[0] - small[0]) / 2.0
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Share my java solution logn to insert, O(1) to query
+Not sure why it is marked as hard, i think this is one of the easiest questions on leetcode.
+
+    class MedianFinder {
+        // max queue is always larger or equal to min queue
+        PriorityQueue<Integer> min = new PriorityQueue();
+        PriorityQueue<Integer> max = new PriorityQueue(1000, Collections.reverseOrder());
+        // Adds a number into the data structure.
+        public void addNum(int num) {
+            max.offer(num);
+            min.offer(max.poll());
+            if (max.size() < min.size()){
+                max.offer(min.poll());
+            }
+        }
+    
+        // Returns the median of current data stream
+        public double findMedian() {
+            if (max.size() == min.size()) return (max.peek() + min.peek()) /  2.0;
+            else return max.peek();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy to understand double-heap solution in Java
+The basic idea is to maintain two heaps: a max-heap and a min-heap. **The max heap stores the smaller half of all numbers while the min heap stores the larger half.** The sizes of two heaps need to be balanced each time when a new number is inserted so that their size will not be different by more than 1. Therefore each time when findMedian() is called we check if two heaps have the same size. If they do, we should return the average of the two top values of heaps. Otherwise we return the top of the heap which has one more element.
+
+To do that, we first need to add two PriorityQueues to the class as the max-heap and min-heap:
+
+        private PriorityQueue<Integer> minH;
+        private PriorityQueue<Integer> maxH;
+
+We then define the constructor of the class so that the PriorityQueues get initialized. By default, the sorting order of a PriorityQueue is natural order which means it is a min-heap by default. Hence we need to provide a new Comparator to the constructor of the max heap to specify the reversed order.
+
+        MedianFinder(){
+            minH = new PriorityQueue<Integer>();
+            maxH = new PriorityQueue<Integer>(1, new Comparator<Integer>(){
+                public int compare(Integer o1, Integer o2) {
+                    if (o1.intValue()>o2.intValue()) return -1;
+                    if (o1.intValue()<o2.intValue()) return 1;
+                    return 0;
+                }
+            });
+        }
+
+Now we have the data structure properly built. Let's write the addNum() function next.
+
+        public void addNum(int num) {
+            if ((minH.size()==0)&&(maxH.size()==0)) minH.add(num);
+            else if ((minH.size())>(maxH.size())) {
+                if (num>minH.peek()) {
+                    maxH.add(minH.poll());
+                    minH.add(num);
+                } else maxH.add(num);
+            } else if ((minH.size())<(maxH.size())) {
+                if (num<maxH.peek()) {
+                    minH.add(maxH.poll());
+                    maxH.add(num);
+                } else minH.add(num);            
+            } else {
+                if (num<maxH.peek()) maxH.add(num);
+                else minH.add(num);             
+            }
+        }
+
+There are several possible situations when a new number is inserted: 
+
+1)If both heap are empty, meaning that we are inserting the first number, we just arbitrarily inserted it into a heap, let's say, the min-heap. 
+
+2)If min-heap has more elements (later we will argue that the size won't be different by more than 1), we need to compare the new number with the top of the min-heap. If it is larger than that, then the new number belongs to the larger half and it should be added to the min-heap. But since we have to balance the heap, we should move the top element of the min-heap to the max-heap. For the min-heap, we inserted a new number but removed the original top, its size won't change. For the max-heap, we inserted a new element (the top of the min-heap) so its size will increase by 1.
+
+3)If max-heap has more elements, we did the similar thing as 2).
+
+4)If they have the same size, we just compare the new number with one of the top to determine which heap the new number should be inserted. We just simply inserted it there.
+
+It can be seen that for each insertion if it was in situation 1) and 4), then after insertion the heap size difference will be 1. For 2) and 3), the size of the heap with fewer element will increase by 1 to catch up with the heap with more elements. Hence their sizes are well-balanced and the difference will never exceeds 1.
+
+Obviously, the median will be the top element of the heap which has one more element (if max-heap and min-heap have different sizes), or the average of the two tops (if max-heap and min-heap have equal sizes). So the findMedian() function is very straightforward:
+
+        // Returns the median of current data stream
+        public double findMedian() {
+            if ((minH.size()==0)&&(maxH.size()==0)) return 0.0;
+            if ((minH.size())>(maxH.size())) return (double)(minH.peek());
+            if ((minH.size())<(maxH.size())) return (double)(maxH.peek());
+            return ((double)(maxH.peek()+minH.peek()))/2.0;
+        }
+
+
+
+The entire codes are here:
+
+    class MedianFinder {
+        private PriorityQueue<Integer> minH;
+        private PriorityQueue<Integer> maxH;
+        
+        MedianFinder(){
+            minH = new PriorityQueue<Integer>();
+            maxH = new PriorityQueue<Integer>(1, new Comparator<Integer>(){
+                public int compare(Integer o1, Integer o2) {
+                    if (o1.intValue()>o2.intValue()) return -1;
+                    if (o1.intValue()<o2.intValue()) return 1;
+                    return 0;
+                }
+            });
+        }
+        
+        
+        // Adds a number into the data structure.
+        public void addNum(int num) {
+            if ((minH.size()==0)&&(maxH.size()==0)) minH.add(num);
+            else if ((minH.size())>(maxH.size())) {
+                if (num>minH.peek()) {
+                    maxH.add(minH.poll());
+                    minH.add(num);
+                } else maxH.add(num);
+            } else if ((minH.size())<(maxH.size())) {
+                if (num<maxH.peek()) {
+                    minH.add(maxH.poll());
+                    maxH.add(num);
+                } else minH.add(num);            
+            } else {
+                if (num<maxH.peek()) maxH.add(num);
+                else minH.add(num);             
+            }
+        }
+    
+        // Returns the median of current data stream
+        public double findMedian() {
+            if ((minH.size()==0)&&(maxH.size()==0)) return 0.0;
+            if ((minH.size())>(maxH.size())) return (double)(minH.peek());
+            if ((minH.size())<(maxH.size())) return (double)(maxH.peek());
+            return ((double)(maxH.peek()+minH.peek()))/2.0;
+        }
+    };
+    
+    // Your MedianFinder object will be instantiated and called as such:
+    // MedianFinder mf = new MedianFinder();
+    // mf.addNum(1);
+    // mf.findMedian();
+
+----------------------------------------------------------------------------------------------------
+Java&#x2F;Python two heap solution, O(log n) add, O(1) find
+The invariant of the algorithm is two heaps, small and large, each represent half of the current list. The length of smaller half is kept to be n / 2 at all time and the length of the larger half is either n / 2 or n / 2 + 1 depend on n's parity. 
+
+This way we only need to peek the two heaps' top number to calculate median.
+
+Any time before we add a new number, there are two scenarios, (total n numbers, k = n / 2):
+
+    (1) length of (small, large) == (k, k)
+    (2) length of (small, large) == (k, k + 1)
+
+After adding the number, total (n + 1) numbers, they will become:
+
+    (1) length of (small, large) == (k, k + 1)
+    (2) length of (small, large) == (k + 1, k + 1)
+
+Here we take the first scenario for example, we know the large will gain one more item and small will remain the same size, but we cannot just push the item into large. What we should do is we push the new number into small and pop the maximum item from small then push it into large (all the pop and push here are heappop and heappush). By doing this kind of operations for the two scenarios we can keep our invariant.
+
+Therefore to add a number, we have 3 O(log n) heap operations. Luckily the heapq provided us a function "heappushpop" which saves some time by combine two into one. The document says:
+
+<blockquote>Push item on the heap, then pop and return the smallest item from the heap. The combined action runs more efficiently than heappush() followed by a separate call to heappop().</blockquote>
+
+Alltogether, the add operation is O(logn), The findMedian operation is O(1). 
+
+Note that the heapq in python is a min heap, thus we need to invert the values in the smaller half to mimic a "max heap".
+
+A further observation is that the two scenarios take turns when adding numbers, thus it is possible to combine the two into one. For this please see [stefan's post][1]
+
+
+**Java**
+
+    private PriorityQueue<Integer> small = new PriorityQueue<>(Collections.reverseOrder());
+    private PriorityQueue<Integer> large = new PriorityQueue<>();
+    private boolean even = true;
+
+    public double findMedian() {
+        if (even)
+            return (small.peek() + large.peek()) / 2.0;
+        else
+            return small.peek();
+    }
+
+    public void addNum(int num) {
+        if (even) {
+            large.offer(num);
+            small.offer(large.poll());
+        } else {
+            small.offer(num);
+            large.offer(small.poll());
+        }
+        even = !even;
+    }
+
+
+**Python**
+
+    from heapq import *
+    
+    
+    class MedianFinder:
+        def __init__(self):
+            self.small = []  # the smaller half of the list, max heap (invert min-heap)
+            self.large = []  # the larger half of the list, min heap
+    
+        def addNum(self, num):
+            if len(self.small) == len(self.large):
+                heappush(self.large, -heappushpop(self.small, -num))
+            else:
+                heappush(self.small, -heappushpop(self.large, num))
+    
+        def findMedian(self):
+            if len(self.small) == len(self.large):
+                return float(self.large[0] - self.small[0]) / 2.0
+            else:
+                return float(self.large[0])
+
+    # 18 / 18 test cases passed.
+    # Status: Accepted
+    # Runtime: 388 ms
+
+
+
+
+  [1]: https://leetcode.com/discuss/64910/very-short-o-log-n-o-1
+
+----------------------------------------------------------------------------------------------------
+Very Short, O(log n) + O(1)
+Same idea [as before](https://leetcode.com/discuss/64850/short-simple-java-c-python-o-log-n-o-1), but really exploiting the symmetry of the two heaps by switching them whenever a number is added. Still O(log n) for adding and O(1) for median. Partially inspired by [peisi's updated solution](https://leetcode.com/discuss/64852/ac-python-two-heap-solution-o-log-n-add-o-1-find-388-ms).
+
+**Update:** Added a new Java version (the first one).
+
+---
+
+**Java**
+
+    class MedianFinder {
+        
+        Queue<Integer> q = new PriorityQueue(), z = q, t,
+                       Q = new PriorityQueue(Collections.reverseOrder()); 
+    
+        public void addNum(int num) {
+            (t=Q).add(num);
+            (Q=q).add((q=t).poll());
+        }
+    
+        public double findMedian() {
+            return (Q.peek() + z.peek()) / 2.;
+        }
+    };
+
+Or:
+
+    class MedianFinder {
+    
+        Queue[] q = {new PriorityQueue(), new PriorityQueue(Collections.reverseOrder())};
+        int i = 0;
+    
+        public void addNum(int num) {
+            q[i].add(num);
+            q[i^=1].add(q[i^1].poll());
+        }
+    
+        public double findMedian() {
+            return ((int)(q[1].peek()) + (int)(q[i].peek())) / 2.0;
+        }
+    };
+
+---
+
+**Python**
+
+    from heapq import *
+
+    class MedianFinder:
+    
+        def __init__(self):
+            self.heaps = None, [], []
+            self.i = 1
+    
+        def addNum(self, num):
+            heappush(self.heaps[-self.i], -heappushpop(self.heaps[self.i], num * self.i))
+            self.i *= -1
+    
+        def findMedian(self):
+            return (self.heaps[self.i][0] * self.i - self.heaps[-1][0]) / 2.0
+
+Or:
+
+    from heapq import *
+
+    class MedianFinder:
+    
+        def __init__(self):
+            self.data = 1, [], []
+    
+        def addNum(self, num):
+            sign, h1, h2 = self.data
+            heappush(h2, -heappushpop(h1, num * sign))
+            self.data = -sign, h2, h1
+    
+        def findMedian(self):
+            sign, h1, h2 = d = self.data
+            return (h1[0] * sign - d[-sign][0]) / 2.0
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+My C++ priority_queue based solution (140 ms)
+The idea is to use two heaps  (one max heap, one mn heap) to save the input data. firstQ is a max_heap to save the first half of the data with smaller values,  and secQ is a min_heap to save the second half of the data with bigger values. Everytime when inserting a new value, we first compare if it is smaller than the top of firstQ (the largest value of the first half), if so, insert into firstQ. Otherwise, it belongs to the second half.  After inserting, we have to balance the first half and the second half to make sure either they have the same length or the length difference is only 1. 
+The median will be the mean of two top elements (when they have the same length) or the top element of the queue with a larger length. 
+
+    class MedianFinder {
+    private:
+        priority_queue<int> firstQ; // max_heap for the first half
+        priority_queue<int, std::vector<int>, std::greater<int> > secQ; // min_heap for the second half
+    public:
+        // Adds a number into the data structure.
+        void addNum(int num) {
+            if(firstQ.empty() || (firstQ.top()>num)) firstQ.push(num); // if it belongs to the smaller half
+            else secQ.push(num); 
+            
+            // rebalance the two halfs to make sure the length difference is no larger than 1
+            if(firstQ.size() > (secQ.size()+1))
+            {
+                secQ.push(firstQ.top());
+                firstQ.pop();
+            }
+            else if(firstQ.size()+1<secQ.size())
+            {
+                firstQ.push(secQ.top());
+                secQ.pop();
+            }
+        }
+    
+        // Returns the median of current data stream
+        double findMedian() {
+            if(firstQ.size() == secQ.size()) return firstQ.empty()?0:( (firstQ.top()+secQ.top())/2.0);
+            else return (firstQ.size() > secQ.size())? firstQ.top():secQ.top(); 
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+JAVA-----------Easy Version To Understand!!!!!
+    	PriorityQueue<Integer> minHeap = new PriorityQueue<>();//heap is a minimal heap by default
+	PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());//change to a maximum heap
+
+	// Adds a number into the data structure.
+	public void addNum(int num) {
+		maxHeap.offer(num);
+		minHeap.offer(maxHeap.poll());
+		if (maxHeap.size() < minHeap.size())
+			maxHeap.offer(minHeap.poll());
+	}
+
+	// Returns the median of current data stream
+	public double findMedian() {
+		if (maxHeap.size() == minHeap.size())
+			return (maxHeap.peek() + minHeap.peek()) / 2.0;
+		else
+			return maxHeap.peek();
+	}
+
+----------------------------------------------------------------------------------------------------
+32ms easy-to-understand java solution
+    class MedianFinder {
+    private Queue<Integer> maxHeap = new PriorityQueue(new Comparator<Integer>(){
+       @Override
+       public int compare(Integer i1, Integer i2){
+           return Integer.compare(i2, i1);
+       }
+    });
+    private Queue<Integer> minHeap = new PriorityQueue(new Comparator<Integer>(){
+       @Override
+       public int compare(Integer i1, Integer i2){
+           return Integer.compare(i1, i2);
+       }
+    });
+    
+    // Adds a number into the data structure.
+    public void addNum(int num) {
+        minHeap.offer(num);
+        maxHeap.offer(minHeap.poll());
+        
+        //if(maxHeap.size() > minHeap.size())
+        if(maxHeap.size() - minHeap.size() == 1){
+            minHeap.offer(maxHeap.poll());
+        }
+    }
+
+    // Returns the median of current data stream
+    public double findMedian() {
+        return minHeap.size() > maxHeap.size()
+             ? (double)minHeap.peek()
+             : (minHeap.peek() + maxHeap.peek())/2.0;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Solution using Binary Search Tree
+As the input numbers are random, so the height of the binary search tree is O(logN)
+
+We maintain every single node's children's size and it's easy to implement because it just has add operation.
+
+    struct BST {
+        struct node {
+            int val;
+            int size;
+            node* left, *right;
+            node(int v) : size(1), val(v) {};
+        } *Null, *root;
+        
+        BST() {
+            Null = new node(0);
+            Null -> size = 0;
+            root = Null;
+        }
+        
+        void add(int val, node*& R) {
+            if(R == Null) {
+                R = new node(val);
+                R -> left = R -> right = Null;
+                return;
+            }
+            if(R->val <= val) add(val, R->left);
+            else add(val, R->right);
+            R->size = R->left->size + R->right->size + 1;
+            
+        }
+        
+        int rank(int k) {
+            node* t = root;
+            while(true) {
+                int leftSize =  t -> left -> size;
+                if(leftSize == k) return t -> val;
+                if(leftSize > k) {
+                    t = t -> left;
+                } else {
+                    k = k - leftSize - 1;
+                    t = t -> right;
+                }
+            }
+            return -1;
+        }
+    };
+    
+    
+    
+    
+    class MedianFinder {
+    public:
+        BST* bst;
+        MedianFinder() {
+            bst = new BST();
+        }
+        // Adds a number into the data structure.
+        void addNum(int num) {
+            bst->add(num, bst->root);
+        }
+        
+        // Returns the median of current data stream
+        double findMedian() {
+            int sz = bst -> root -> size;
+            if(sz % 2 == 0) {
+                return 1.0 * (bst -> rank(sz / 2) + bst -> rank(sz / 2 - 1)) / 2;
+            } else return bst->rank(sz / 2);
+            
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Simple Java Solution with 2 Heaps and Explanation
+        class MedianFinder {
+        PriorityQueue<Integer> min = null;
+        PriorityQueue<Integer> max = null;
+        int len = 0;
+        
+        public MedianFinder(){
+            min = new PriorityQueue<>();
+            max = new PriorityQueue<>(Collections.reverseOrder());
+        }
+        
+        //Understanding is we will be maintain 2 heaps max and min. The max heap will store the smaller half
+        //and the min heap will store the larger half of the incoming numbers. Basically we are trying to mimic a 
+        //balanced tree with this model of representation, which means the max heap at the most can have only one extra
+        //element than the min heap. We need to maintain the ordering that the root of the max heap < root of min heap
+        
+        // Adds a number into the data structure.
+        public void addNum(int num) {
+            //if the number of elements is even then we need to add the new element to the max heap
+            if(len%2==0){
+                max.offer(num);
+            }else{
+                //if the number of elements is odd then we need to add the new element to the maxheap
+                //then transfer the root of the max heap to the min heap
+                max.offer(num);
+                min.offer(max.poll());
+            }    
+            
+            //increment the size
+            len++;
+            
+            //if the root of max heap > root of min heap, then it conficts our order rule
+            //so we shift the max heap's root to min heap and add the minimum element of our
+            //min heap to max heap
+            if(len > 1 && max.peek() > min.peek()){
+                min.offer(max.poll());
+                max.offer(min.poll());
+            }
+        }
+    
+        // Returns the median of current data stream
+        public double findMedian() {
+            return (len%2==0)?((double)((max.peek()+min.peek())/2.0)):((double)max.peek());
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+18ms beats 100% Java Solution with BST
+    class MedianFinder {
+        class TreeNode{
+            int val;
+            TreeNode parent,left,right;
+            TreeNode(int val, TreeNode p){
+                this.val=val;
+                this.parent=p;
+                left=null;
+                right=null;
+            }
+            void add(int num){
+                if(num>=val){
+                    if(right==null)
+                        right=new TreeNode(num,this);
+                    else
+                        right.add(num);
+                }else{
+                    if(left==null)
+                        left=new TreeNode(num,this);
+                    else
+                        left.add(num);
+                }
+            }
+            TreeNode next(){
+                TreeNode ret;
+                if(right!=null){
+                    ret=right;
+                    while(ret.left!=null)
+                        ret=ret.left;
+                }else{
+                    ret=this;
+                    while(ret.parent.right==ret)
+                        ret=ret.parent;
+                    ret=ret.parent;
+                }
+                return ret;
+            }
+            TreeNode prev(){
+                TreeNode ret;
+                if(left!=null){
+                    ret=left;
+                    while(ret.right!=null)
+                        ret=ret.right;
+                }else{
+                    ret=this;
+                    while(ret.parent.left==ret)
+                        ret=ret.parent;
+                    ret=ret.parent;
+                }
+                return ret;
+            }
+        }
+        int n;
+        TreeNode root, curr;
+        // Adds a number into the data structure.
+        public void addNum(int num) {
+            if(root==null){
+                root = new TreeNode(num,null);
+                curr=root;
+                n=1;
+            }else{
+                root.add(num);
+                n++;
+                if(n%2==1){
+                    if(curr.val<=num)
+                        curr=curr.next();
+                }else
+                    if(curr.val>num)
+                        curr=curr.prev();
+            }
+        }
+    
+        // Returns the median of current data stream
+        public double findMedian() {
+            if(n%2==0){
+                return ((double)curr.next().val+curr.val)/2;
+            }else
+                return curr.val;
+        }
+    };
+    
+    // Your MedianFinder object will be instantiated and called as such:
+    // MedianFinder mf = new MedianFinder();
+    // mf.addNum(1);
+    // mf.findMedian();
+
+----------------------------------------------------------------------------------------------------
+A clean solution using multiset in C++
+class MedianFinder {
+private:
+    int size; 
+    multiset<int> numsSet;
+    multiset<int>::iterator midIter;
+public:
+
+    // Adds a number into the data structure.
+    void addNum(int num) 
+    {
+        if(numsSet.empty())
+        {
+            midIter = numsSet.insert(num);
+            size++;
+            return ; 
+        }
+        numsSet.insert(num);
+        if((size&1) && num<*midIter) --midIter; 
+        else if(!(size&1) && num>=*midIter) ++midIter;
+        size++;
+    }
+
+    // Returns the median of current data stream
+    double findMedian() 
+    {
+        if(size & 1) return *midIter;   
+        else return (double)(*midIter+*next(midIter))/2;
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+22ms Java solution using binary tree, beats 99.82% of submissions
+public class MedianFinder {
+    private Node root;
+    private Node medianLeft;
+    private Node medianRight;
+    private int size;
+    
+    public MedianFinder() {
+    }
+
+    // Adds a number into the data structure.
+    public void addNum(int num) {
+        if (root == null) {
+            root = new Node(num);
+            medianLeft = root;
+            medianRight = root;
+        }
+        else {
+            root.addNode(num);
+            if (size % 2 == 0) {
+                if (num < medianLeft.data) {
+                    medianRight = medianLeft;
+                }
+                else if (medianLeft.data <= num && num < medianRight.data) {
+                    medianLeft = medianLeft.successor();
+                    medianRight = medianRight.predecessor();
+                }
+                else if (medianRight.data <= num) {
+                    medianLeft = medianRight;
+                }
+            }
+            else {
+                if (num < medianLeft.data) {
+                    medianLeft = medianLeft.predecessor();
+                }
+                else {
+                    medianRight = medianRight.successor();
+                }
+            }
+        }
+        size++;
+    }
+
+    // Returns the median of current data stream
+    public double findMedian() {
+        return (medianLeft.data + medianRight.data) / 2.0;
+    }
+    
+    class Node {
+        private Node parent;
+        private Node left;
+        private Node right;
+        private int data;
+        
+        public Node(int data) {
+            this.data = data;
+        }
+        
+        public void addNode(int data) {
+            if (data >= this.data) {
+              if (right == null) {
+                right = new Node(data);
+                right.parent = this;
+              }
+              else
+                right.addNode(data);
+            }
+            else {
+              if (left == null) {
+                left = new Node(data);
+                left.parent = this;
+              }
+              else
+                left.addNode(data);
+            }
+        }
+        
+        public Node predecessor() {
+            if (left != null)
+                return left.rightMost();
+            
+            Node predecessor = parent;
+            Node child = this;
+            
+            while (predecessor != null && child != predecessor.right) {
+                child = predecessor;
+                predecessor = predecessor.parent;
+            }
+            
+            return predecessor;
+        }
+        
+        public Node successor() {
+            if (right != null)
+                return right.leftMost();
+            
+            Node successor = parent;
+            Node child = this;
+            
+            while (successor != null && child != successor.left) {
+                child = successor;
+                successor = successor.parent;
+            }
+            
+            return successor;
+        }
+        
+        public Node leftMost(){
+            if (left == null)
+                return this;
+            return left.leftMost();
+        }
+        
+        private Node rightMost() {
+            if (right == null)
+                return this;
+            return right.rightMost();
+        }
+        
+    }
+};
+
+
+----------------------------------------------------------------------------------------------------
+Tired of TWO HEAP&#x2F;SET solutions? See this segment dividing solution (c++)
+
+    class MedianFinder {    
+    
+    /* The idea of dividing existing numbers into several ranges:
+    
+       Say we already have 10k numbers in vector, 
+       each time adding a number requires sorting all 10k numbers, which is slow.
+    
+       To optimize, we can store 10k numbers in several (say 10) vectors, 
+       and nums in each vector are sorted.
+       
+       Then each time we add a number, just need to find one vector with correct range,
+       insert the number and sort this vector only. Since its size is relatively small, it's fast.
+       
+       When we have a vector's size greater than a threshold, just split it into two halfs.
+       
+    */
+    
+    public:
+        vector<vector<int>*> raid; // store all ranges
+        int total_size;
+
+        MedianFinder() {
+            total_size=0;
+            raid.push_back(new vector<int> ());
+        }
+        
+        void addNum(int num) {
+            vector<int>* correctRange=NULL;
+            int targetIndex;
+            
+            // find the correct range to insert given num
+            for (int i=0; i<raid.size(); i++)
+                if ( raid.size()==1 ||
+                     (i==0 && num<=raid[i]->back()) || 
+                     (i==raid.size()-1 && num>=raid[i]->at(0)) ||
+                     (raid[i]->at(0)<=num && num<=raid[i]->back()) ||
+                     (num > raid[i]->back() && num < raid[i+1]->front()) )
+                {
+                    correctRange = raid[i];
+                    targetIndex = i;
+                    break;
+                }
+            
+            // put num at back of correct range, and sort it to keep increasing sequence
+            total_size++;
+            correctRange->push_back(num);
+            sort(correctRange->begin(), correctRange->end());
+                    
+            // if current range's size > threshold, split it into two halfs and add them back to this.raid
+            const int max_size = 30;
+            int len = correctRange->size();
+            if (len > max_size) {
+                vector<int> *half1 = new vector<int>(correctRange->begin(), correctRange->begin()+len/2);
+                vector<int> *half2 = new vector<int>(correctRange->begin()+len/2, correctRange->end());
+                
+                delete correctRange;
+                raid[targetIndex]=half2;
+                raid.insert(raid.begin() + targetIndex, half1);
+            }
+            
+        }
+    
+        // iterate thru all ranges in this.raid to find median value
+        double findMedian() {
+            if (total_size==0)
+                return 0;
+            
+            int mid1 = total_size/2;
+            int mid2 = mid1 + 1;
+            
+            int leftCount=0;
+            double first, second;
+            for (auto r : raid) {
+                if (leftCount<mid1 && mid1<=leftCount+r->size())
+                    first = r->at(mid1 - leftCount - 1);
+                    
+                if (leftCount<mid2 && mid2<=leftCount+r->size()) {
+                    second = r->at(mid2 - leftCount - 1);
+                    break;
+                }
+                leftCount += r->size();
+            }
+            
+            if (total_size % 2)
+                return second;
+            else
+                return (first + second)/2;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+C++ two heaps solution
+    class MedianFinder {
+    private:
+        priority_queue<int, vector<int>, greater<int>> min_heap;
+        priority_queue<int, vector<int>, less<int>> max_heap;
+    public:
+    
+        // Adds a number into the data structure.
+        void addNum(int num) {
+            if (min_heap.empty() || (num >= min_heap.top())) {
+                min_heap.emplace(num);
+            } else {
+                max_heap.emplace(num);
+            }
+            
+            if (min_heap.size() > max_heap.size() + 1) {
+                max_heap.emplace(min_heap.top());
+                min_heap.pop();
+            } else if (max_heap.size() > min_heap.size()) {
+                min_heap.emplace(max_heap.top());
+                max_heap.pop();
+            }
+        }
+    
+        // Returns the median of current data stream
+        double findMedian() {
+            return min_heap.size() == max_heap.size() 
+            ? 0.5 * (min_heap.top() + max_heap.top())
+            :  min_heap.top();
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Concise 21-Line C# by using 2 Sorted Sets
+    public class MedianFinder {
+        private int counter = 0;
+        private SortedSet<int[]> setLow = new SortedSet<int[]>(Comparer<int[]>.Create((a, b) => a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]));
+        private SortedSet<int[]> setHigh = new SortedSet<int[]>(Comparer<int[]>.Create((a, b) => a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]));
+        public void AddNum(int num) {
+            int[] newNum = new int[2]{num, counter++};
+            if(setLow.Count == setHigh.Count){
+                if(setLow.Count == 0 || newNum[0] <= setLow.Max[0]) setLow.Add(newNum);
+                else{
+                    setHigh.Add(newNum);
+                    setLow.Add(setHigh.Min);
+                    setHigh.Remove(setHigh.Min);
+                }
+            }
+            else if(newNum[0] <= setLow.Max[0]){
+                setLow.Add(newNum);
+                setHigh.Add(setLow.Max);
+                setLow.Remove(setLow.Max);
+            }
+            else setHigh.Add(newNum);
+        }
+        // return the median of current data stream
+        public double FindMedian() {
+            if(setLow.Count == 0) return 0;
+            if(setLow.Count == setHigh.Count) return (setLow.Max[0] + setHigh.Min[0]) / 2d;
+            else return setLow.Max[0];
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+Easy to understand C++ solution beats 97%
+// Adds a number into the data structure.
+void addNum(int num) {
+    if(left.empty()){
+        left.push(num);
+        return;
+    }
+    if(num <= left.top()){
+        left.push(num);
+        if(left.size()-right.size() > 1){
+            right.push(left.top());
+            left.pop();
+        }
+    }
+    else{
+        right.push(num);
+        if(right.size()-left.size() > 1){
+            left.push(right.top());
+            right.pop();
+        }
+    }
+}
+
+// Returns the median of current data stream
+double findMedian() {
+    if(left.size() == right.size()){
+        return (left.top()+right.top())/2.0;
+    }
+    else if(left.size() > right.size()) return left.top();
+    else return right.top();
+}
+
+
+----------------------------------------------------------------------------------------------------
+Python O(lgn) using two heapq data sturctures
+    class MedianFinder:
+    import heapq
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self.small = [] # store the small half, top is the largest in the small part
+        self.large = [] # store the large half, top is the smallest in the large part
+
+    def addNum(self, num):
+        """
+        Adds a num into the data structure.
+        :type num: int
+        :rtype: void
+        """
+        if len(self.small) == 0:
+            heapq.heappush(self.small, -num)
+            return
+        if num <= -self.small[0]:
+            # push to small part
+            heapq.heappush(self.small, -num)
+        else:
+            # push to large part
+            heapq.heappush(self.large, num)
+        # adjust small and large balance
+        if len(self.small) - len(self.large) == 2:
+            heapq.heappush(self.large, -heapq.heappop(self.small))
+        elif len(self.small) - len(self.large) == -2:
+            heapq.heappush(self.small, -heapq.heappop(self.large))
+
+    def findMedian(self):
+        """
+        Returns the median of current data stream
+        :rtype: float
+        """
+        if len(self.small) == len(self.large):
+            return (self.large[0] - self.small[0])/2.0
+        return -float(self.small[0]) if len(self.small) > len(self.large) else float(self.large[0])
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+The key idea is to use two priority_queue to store the small half and big half. 
+
+       the big half should store numbers reversely 
+ 
+      always keep small.size()=large.size()  or  small.size()=large.size()+1
+
+Code
+
+    class MedianFinder {
+        /*** the small stores the smaller half number ***/
+        /*** the large stores the bigger half reversly ***/
+        priority_queue<long> small, large;
+        
+    public:
+    
+        // Adds a number into the data structure.
+        /*** always keep the small size >= big size ***/
+        void addNum(int num) {
+            /** move the max-value-from-small-to-large-one-by-one **/
+            small.push(num);
+            large.push(-small.top());
+            small.pop();
+            if(small.size() < large.size()){
+                small.push(-large.top());
+                large.pop();
+            }
+        }
+    
+        // Returns the median of current data stream
+        double findMedian() {
+            return small.size()>large.size() ? small.top() : (small.top()-large.top())/2.0;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+C# solution with BinarySearch
+    private List<double> m_listNum = new List<double>();
+    
+    public void AddNum(double num) {
+    
+        int lintPos = m_listNum.BinarySearch( num ) ;
+        if (lintPos >= 0) {
+            m_listNum.Insert(lintPos, num);
+        } else {
+            lintPos = ~lintPos;
+            if (lintPos == m_listNum.Count) {
+                m_listNum.Add(num);
+            } else {
+                m_listNum.Insert(lintPos, num);
+            }
+        }
+    }
+    
+    // return the median of current data stream
+    
+    public double FindMedian() {
+    
+        int lintCount = m_listNum.Count ;
+    
+        if (lintCount == 0 ) throw new Exception("array is empty");
+    
+        if (lintCount % 2 == 0)
+            return (m_listNum[lintCount / 2 - 1] + m_listNum[lintCount / 2]) / 2;
+        else 
+            return m_listNum[lintCount / 2];
+    }
+
+
+
+----------------------------------------------------------------------------------------------------

@@ -1,0 +1,877 @@
+A recursive Java solution (284 ms)
+    public class Solution {
+        public List<Integer> diffWaysToCompute(String input) {
+            List<Integer> ret = new LinkedList<Integer>();
+            for (int i=0; i<input.length(); i++) {
+                if (input.charAt(i) == '-' ||
+                    input.charAt(i) == '*' ||
+                    input.charAt(i) == '+' ) {
+                    String part1 = input.substring(0, i);
+                    String part2 = input.substring(i+1);
+                    List<Integer> part1Ret = diffWaysToCompute(part1);
+                    List<Integer> part2Ret = diffWaysToCompute(part2);
+                    for (Integer p1 :   part1Ret) {
+                        for (Integer p2 :   part2Ret) {
+                            int c = 0;
+                            switch (input.charAt(i)) {
+                                case '+': c = p1+p2;
+                                    break;
+                                case '-': c = p1-p2;
+                                    break;
+                                case '*': c = p1*p2;
+                                    break;
+                            }
+                            ret.add(c);
+                        }
+                    }
+                }
+            }
+            if (ret.size() == 0) {
+                ret.add(Integer.valueOf(input));
+            }
+            return ret;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ 4ms Recursive &amp; DP solution with brief explanation
+Here is the basic recursive solution
+
+    class Solution {
+    public:
+        vector<int> diffWaysToCompute(string input) {
+            vector<int> result;
+            int size = input.size();
+            for (int i = 0; i < size; i++) {
+                char cur = input[i];
+                if (cur == '+' || cur == '-' || cur == '*') {
+                    // Split input string into two parts and solve them recursively
+                    vector<int> result1 = diffWaysToCompute(input.substr(0, i));
+                    vector<int> result2 = diffWaysToCompute(input.substr(i+1));
+                    for (auto n1 : result1) {
+                        for (auto n2 : result2) {
+                            if (cur == '+')
+                                result.push_back(n1 + n2);
+                            else if (cur == '-')
+                                result.push_back(n1 - n2);
+                            else
+                                result.push_back(n1 * n2);    
+                        }
+                    }
+                }
+            }
+            // if the input string contains only number
+            if (result.empty())
+                result.push_back(atoi(input.c_str()));
+            return result;
+        }
+    };
+
+There are many repeating subquestions in this recursive method, therefore, we could use dynamic programming to avoid this situation by saving the results for subquestions. Here is the DP solution.
+
+    class Solution {
+    public:
+    	vector<int> diffWaysToCompute(string input) {
+    		unordered_map<string, vector<int>> dpMap;
+    		return computeWithDP(input, dpMap);
+    	}
+    
+    	vector<int> computeWithDP(string input, unordered_map<string, vector<int>> &dpMap) {
+    		vector<int> result;
+    		int size = input.size();
+    		for (int i = 0; i < size; i++) {
+    			char cur = input[i];
+    			if (cur == '+' || cur == '-' || cur == '*') {
+    				// Split input string into two parts and solve them recursively
+    				vector<int> result1, result2;
+    				string substr = input.substr(0, i);
+    				// check if dpMap has the result for substr
+    				if (dpMap.find(substr) != dpMap.end())
+    					result1 = dpMap[substr];
+    				else
+    					result1 = computeWithDP(substr, dpMap);
+    
+    				substr = input.substr(i + 1);
+    				if (dpMap.find(substr) != dpMap.end())
+    					result2 = dpMap[substr];
+    				else
+    					result2 = computeWithDP(substr, dpMap);
+    				
+    				for (auto n1 : result1) {
+    					for (auto n2 : result2) {
+    						if (cur == '+')
+    							result.push_back(n1 + n2);
+    						else if (cur == '-')
+    							result.push_back(n1 - n2);
+    						else
+    							result.push_back(n1 * n2);
+    					}
+    				}
+    			}
+    		}
+    		// if the input string contains only number
+    		if (result.empty())
+    			result.push_back(atoi(input.c_str()));
+    		// save to dpMap
+    		dpMap[input] = result;
+    		return result;
+    	}
+    };
+
+----------------------------------------------------------------------------------------------------
+1-11 lines Python, 9 lines C++
+Just doing it...
+
+---
+
+**Solution 1** ... 48 ms
+
+    def diffWaysToCompute(self, input):
+       tokens = re.split('(\D)', input)
+       nums = map(int, tokens[::2])
+       ops = map({'+': operator.add, '-': operator.sub, '*': operator.mul}.get, tokens[1::2])
+       def build(lo, hi):
+           if lo == hi:
+               return [nums[lo]]
+           return [ops[i](a, b)
+                   for i in xrange(lo, hi)
+                   for a in build(lo, i)
+                   for b in build(i + 1, hi)]
+       return build(0, len(nums) - 1)
+
+---
+
+**Solution 2** ... 168 ms
+
+One-liner inspired by [Soba](https://leetcode.com/discuss/48410/python-solution-52ms-with-simple-interpretation?show=48432#a48432).
+
+    def diffWaysToCompute(self, input):
+        return [eval(`a`+c+`b`)
+                for i, c in enumerate(input) if c in '+-*'
+                for a in self.diffWaysToCompute(input[:i])
+                for b in self.diffWaysToCompute(input[i+1:])] or [int(input)]
+
+---
+
+**Solution 3** ... 64 ms
+
+Faster version of solution 2.
+
+    def diffWaysToCompute(self, input):
+        return [a+b if c == '+' else a-b if c == '-' else a*b
+                for i, c in enumerate(input) if c in '+-*'
+                for a in self.diffWaysToCompute(input[:i])
+                for b in self.diffWaysToCompute(input[i+1:])] or [int(input)]
+
+---
+
+**Solution 4** ... 188 ms
+
+A code golf version of solution 2.
+
+    diffWaysToCompute=d=lambda s,t:[eval(`a`+c+`b`)for i,c in enumerate(t)if
+    c<'0'for a in s.d(t[:i])for b in s.d(t[i+1:])]or[int(t)]
+
+---
+
+**C++** ... 8 ms
+
+C++ version of solution 3.
+
+    vector<int> diffWaysToCompute(string input) {
+        vector<int> output;
+        for (int i=0; i<input.size(); i++) {
+            char c = input[i];
+            if (ispunct(c))
+                for (int a : diffWaysToCompute(input.substr(0, i)))
+                    for (int b : diffWaysToCompute(input.substr(i+1)))
+                        output.push_back(c=='+' ? a+b : c=='-' ? a-b : a*b);
+        }
+        return output.size() ? output : vector<int>{stoi(input)};
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Share a clean and short JAVA solution
+    public class Solution {
+        public List<Integer> diffWaysToCompute(String input) {
+            List<Integer> res = new ArrayList<Integer>();
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c == '-' || c == '+' || c == '*') {
+                    String a = input.substring(0, i);
+                    String b = input.substring(i + 1);
+                    List<Integer> al = diffWaysToCompute(a);
+                    List<Integer> bl = diffWaysToCompute(b);
+                    for (int x : al) {
+                        for (int y : bl) {
+                            if (c == '-') {
+                                res.add(x - y);
+                            } else if (c == '+') {
+                                res.add(x + y);
+                            } else if (c == '*') {
+                                res.add(x * y);
+                            }
+                        }
+                    }
+                }
+            }
+            if (res.size() == 0) res.add(Integer.valueOf(input));
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Python easy to understand solution (divide and conquer).
+        
+   
+    def diffWaysToCompute(self, input):
+        if input.isdigit():
+            return [int(input)]
+        res = []
+        for i in xrange(len(input)):
+            if input[i] in "-+*":
+                res1 = self.diffWaysToCompute(input[:i])
+                res2 = self.diffWaysToCompute(input[i+1:])
+                for j in res1:
+                    for k in res2:
+                        res.append(self.helper(j, k, input[i]))
+        return res
+        
+    def helper(self, m, n, op):
+        if op == "+":
+            return m+n
+        elif op == "-":
+            return m-n
+        else:
+            return m*n
+
+----------------------------------------------------------------------------------------------------
+Java recursive (9ms) and dp (4ms) solution
+I think it's more efficient to pre-parse the string because String.substring() is costly. I store the parsed string in a list, for example, if the string is 1+2+3+4, then the list will contain:
+
+    "1", "+", "2", "+", "3", "+", "4"
+
+Personally I feel this is also more convenient because all integers occurs at even indices (0, 2, 4, 6) and all operators are at odd indices (1, 3, 5).
+
+Then the problem is very similar to "Unique Binary Search Trees II". For each operator in the list, we compute all possible results for entries to the left of that operator, which is `List<Integer> left`, and also all possible results for entries to the right of that operator, namely `List<Integer> right`, and combine the results. It can be achieved by recursion or more efficiently by dp.
+
+Recursion:
+
+    public List<Integer> diffWaysToCompute(String input) {
+        List<Integer> result=new ArrayList<>();
+        if(input==null||input.length()==0)  return result;
+        List<String> ops=new ArrayList<>();
+        for(int i=0; i<input.length(); i++){
+            int j=i;
+            while(j<input.length()&&Character.isDigit(input.charAt(j)))
+                j++;
+            String num=input.substring(i, j);
+            ops.add(num);
+            if(j!=input.length())   ops.add(input.substring(j, j+1));
+            i=j;
+        }
+        result=compute(ops, 0, ops.size()-1);
+        return result;
+    }
+    private List<Integer> compute(List<String> ops, int lo, int hi){
+        List<Integer> result=new ArrayList<>();
+        if(lo==hi){
+            Integer num=Integer.valueOf(ops.get(lo));
+            result.add(num);
+            return result;
+        }
+        for(int i=lo+1; i<=hi-1; i=i+2){
+            String operator=ops.get(i);
+            List<Integer> left=compute(ops,lo, i-1), right=compute(ops, i+1, hi);
+            for(int leftNum:left)
+                for(int rightNum: right){
+                    if(operator.equals("+"))
+                        result.add(leftNum+rightNum);
+                    else if(operator.equals("-"))
+                        result.add(leftNum-rightNum);
+                    else
+                        result.add(leftNum*rightNum);
+                }
+        }
+        return result;
+    }
+
+
+And DP, where dp[i][j] stores all possible results from the i-th integer to the j-th integer (inclusive) in the list.
+
+    public List<Integer> diffWaysToCompute(String input) {
+        List<Integer> result=new ArrayList<>();
+        if(input==null||input.length()==0)  return result;
+        List<String> ops=new ArrayList<>();
+        for(int i=0; i<input.length(); i++){
+            int j=i;
+            while(j<input.length()&&Character.isDigit(input.charAt(j)))
+                j++;
+            ops.add(input.substring(i, j));
+            if(j!=input.length())   ops.add(input.substring(j, j+1));
+            i=j;
+        }
+        int N=(ops.size()+1)/2; //num of integers
+        ArrayList<Integer>[][] dp=(ArrayList<Integer>[][]) new ArrayList[N][N];
+        for(int d=0; d<N; d++){
+            if(d==0){
+                for(int i=0; i<N; i++){
+                    dp[i][i]=new ArrayList<>();
+                    dp[i][i].add(Integer.valueOf(ops.get(i*2)));
+                }
+                continue;
+            }
+            for(int i=0; i<N-d; i++){
+                dp[i][i+d]=new ArrayList<>();
+                for(int j=i; j<i+d; j++){
+                    ArrayList<Integer> left=dp[i][j], right=dp[j+1][i+d];
+                    String operator=ops.get(j*2+1);
+                    for(int leftNum:left)
+                        for(int rightNum:right){
+                            if(operator.equals("+"))
+                                dp[i][i+d].add(leftNum+rightNum);
+                            else if(operator.equals("-"))
+                                dp[i][i+d].add(leftNum-rightNum);
+                            else
+                                dp[i][i+d].add(leftNum*rightNum);
+                        }
+                }
+            }
+        }
+        return dp[0][N-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Java recursive solution with memorization
+    public class Solution {
+    public List<Integer> diffWaysToCompute(String input) {
+        //cache for memorization
+        HashMap<String,List<Integer>> cache = new HashMap<String,List<Integer>>();
+        return this.helper(input,cache);
+    }
+    
+    List<Integer>helper(String s, HashMap<String,List<Integer>> cache) {
+        if (cache.get(s)!=null) {
+            return cache.get(s);
+        }
+        boolean expression = false;
+        ArrayList<Integer> result = new ArrayList<Integer>();
+        for(int i=0; i<s.length(); i++) {
+            if("+-*".indexOf(s.charAt(i))!=-1) {
+                List<Integer> left = helper(s.substring(0,i),cache);
+                List<Integer> right = helper(s.substring(i+1),cache);
+                for(Integer l: left) {
+                    for(Integer r: right) {
+                        result.add(cal(l,r,s.charAt(i)));
+                    }
+                }
+                expression = true;
+            }
+        }
+        if (!expression) {
+            result.add(Integer.parseInt(s));
+        }
+        cache.put(s, result);
+        return result;
+    }
+    int cal(int l, int r, char op) {
+        int result = 0;
+        switch (op) {
+            case '+': result= l+r; break;
+            case '-': result = l-r; break;
+            case '*': result= l*r; break;
+            default: break;
+        }
+        return result;
+    }
+    }
+
+We first split the string by operators and recursively calculate left and right side, then combine the result. The only improvement is to use memorization to cache previously calculated expressions.
+
+----------------------------------------------------------------------------------------------------
+Java Simple Solution beats 95%
+    public class Solution {
+        Map<String, List<Integer>> map = new HashMap<>();
+        public List<Integer> diffWaysToCompute(String input) {
+            if(map.containsKey(input))
+                return map.get(input);
+            List<Integer> res = new ArrayList<>();
+            for(int i=0;i<input.length();++i){
+                char c=input.charAt(i);
+                if(c=='+'|| c=='-' || c=='*'){
+                    List<Integer> list1 = diffWaysToCompute(input.substring(0,i));
+                    List<Integer> list2 = diffWaysToCompute(input.substring(i+1));
+                    for(int v1:list1){
+                        for(int v2: list2){
+                            if(c=='+')
+                                res.add(v1+v2);
+                            if(c=='-')
+                                res.add(v1-v2);
+                            if(c=='*')
+                                res.add(v1*v2);
+                        }
+                    }
+                }
+            }
+            if(res.isEmpty())
+                res.add(Integer.parseInt(input));
+            map.put(input, res);
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+14-line c++ solution
+    class Solution {
+    public:
+        
+        vector<int> diffWaysToCompute(string input) {
+            vector<int> ans;
+            bool pureNum=true;
+            for (int i=0; i<input.length(); i++) 
+                if (input[i]<'0' || input[i]>'9') {
+                    pureNum=false;
+                    vector<int> L=diffWaysToCompute(input.substr(0, i)), R=diffWaysToCompute(input.substr(i+1, input.length()-i-1));
+                    for (auto l : L)
+                        for (auto r : R)
+                            if (input[i]=='+') ans.push_back(l+r);
+                            else if (input[i]=='-') ans.push_back(l-r);
+                            else if (input[i]=='*') ans.push_back(l*r);
+                }
+            
+            if (pureNum)
+                ans.push_back(atoi(input.c_str()));
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+My recursive java solution
+    public class Solution {
+    public List<Integer> diffWaysToCompute(String input) {
+        List<Integer> list=new ArrayList();
+        if(input==null||input.length()==0) return list;
+        if(!input.contains("+")&&!input.contains("-")&&!input.contains("*")) {
+            list.add(Integer.valueOf(input));
+            return list;
+        }
+        for(int i=0;i<input.length();i++){
+             char ops=input.charAt(i);
+             if(ops=='+'||ops=='-'||ops=='*'){
+                List<Integer> leftList=diffWaysToCompute(input.substring(0,i));
+                List<Integer> rightList=diffWaysToCompute(input.substring(i+1,input.length()));
+                for(int leftValue:leftList){
+                    for(int rightValue:rightList){
+                        switch(ops){
+                            case '+': list.add(leftValue+rightValue); break;
+                            case '-': list.add(leftValue-rightValue); break;
+                            case '*': list.add(leftValue*rightValue); break;
+                        }
+                    }
+                }
+             }
+          }
+        return list;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+C++ solution, using dp, easy understanding
+  
+
+    vector<int> diffWaysToCompute(string input) {
+       vector<int> data;
+       vector<char> ops;
+      int num = 0;
+      char op = ' ';
+       istringstream ss(input + "+");
+       while(ss >> num && ss >> op) {
+           data.push_back(num);
+           ops.push_back(op);
+       }
+       const int size_i = data.size();
+        vector<vector<vector<int>>> dp(size_i, vector<vector<int>>(size_i, vector<int>()));
+        for (int i = 0; i < size_i; i += 1)
+         for (int j = i; j >= 0; j -= 1) {
+             if (i == j) {dp[j][i].push_back(data[i]); continue;}
+             for (int k = j; k < i; k += 1) {
+                 for (auto left : dp[j][k]) 
+                   for (auto right : dp[k+1][i]) {
+                       int val = 0;
+                       switch(ops[k]) {
+                           case '+': val = left + right; break;
+                           case '-': val = left - right; break;
+                           case '*': val = left * right; break;
+                       }
+                       dp[j][i].push_back(val);
+                   }
+             }
+         }
+       return dp[0][size_i-1];
+    }
+
+----------------------------------------------------------------------------------------------------
+Extreme concise c++ solution
+    class Solution {
+    public:
+        vector<int> diffWaysToCompute(string input) {
+            if(input.size() ==0) return {};
+            vector<int> result;
+            for(int i = 0; i < input.size(); i++)
+            {
+                if(input[i]!='+' &&input[i]!= '-' &&input[i]!= '*') continue;
+                auto vec1 = diffWaysToCompute(input.substr(0, i));
+                auto vec2 = diffWaysToCompute(input.substr(i+1));
+                for(auto val1: vec1)
+                {
+                    for(auto val2: vec2)
+                    {
+                        if(input[i]=='+') result.push_back(val1+ val2);
+                        else if(input[i]=='-') result.push_back(val1 - val2);
+                        else if(input[i]== '*') result.push_back(val1 * val2);
+                    }
+                }
+            }
+            return result.empty()?vector<int>{stoi(input)}:result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Clean AC C++ solution with explanation
+The idea is that you just search through the string, and find the operators position, then recursively solve the results of the left and right of the operator, and once having the left and right results, compute the final result with the operator.
+
+    class Solution {
+    public:
+        vector<int> diffWaysToCompute(string input) {
+            map<string, vector<int>> cache;
+            return diffWaysToCompute(input, 0, input.size()-1, cache);
+        }
+    private:
+        vector<int> diffWaysToCompute(string& input, int start, int end, map<string, vector<int>>& cache) {
+            string key=to_string(start)+to_string(end);
+            if(cache.count(key)) return cache[key];
+            vector<int> result;
+            int num=0;
+    	    for(int i=start; i<=end; ++i) {
+    	        if(input[i]!='+' && input[i]!='-' && input[i]!='*')
+    	            num=num*10+(input[i]-'0');
+    		    else{ 
+        		    vector<int> left=diffWaysToCompute(input, start, i-1, cache);
+        		    vector<int> right=diffWaysToCompute(input, i+1, end, cache);
+        		    for(int l=0; l<left.size(); ++l){
+        		        for(int r=0; r<right.size(); ++r){
+        		            if(input[i]=='+'){
+        		                result.push_back(left[l]+right[r]);
+        		            }else if(input[i]=='-'){
+        		                result.push_back(left[l]-right[r]);
+        		            }else if(input[i]=='*'){
+        		                result.push_back(left[l]*right[r]);
+        		            }               
+        		        }
+        		    }
+    		    }    
+            }
+            if(result.size()==0) result.push_back(num); //only single number
+            return cache[key]=result;
+        }
+    };
+
+
+
+----------------------------------------------------------------------------------------------------
+&#91;recommend for beginners&#93;clean C++ implementation with detailed explanation
+    class Solution {
+    public:
+        vector<int> diffWaysToCompute(string input) {
+            int size=input.size();
+            vector<int> result;
+            for(int i=0; i<size; i++){
+                if(ispunct(input[i])){
+                    for(int a : diffWaysToCompute(input.substr(0, i)))
+                        for(int b : diffWaysToCompute(input.substr(i+1))){
+                            if(input[i]=='+')  result.push_back(a+b);
+                            if(input[i]=='-')  result.push_back(a-b);
+                            if(input[i]=='*')  result.push_back(a*b);
+                        }
+                }
+            }
+            /*** the base case is that there are no operator-char ***/
+            /*** we return vector<int>{stoi(input)} when this happens ***/
+            return result.size() ? result : vector<int>{stoi(input)};
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+An intuitive solution accepted as best in C along with detailed explanation
+A recursive solution is quite straight-forward for this kind of problem; then find the recursive equation is the first thing we should do:
+
+- according to the string we need to return an array of the different results from diverse parentheses adding;
+- the parentheses actually changed the operators' execution sequence;
+- traverse the string and once we found an operator then we can just split the string into left and right; as a result we will execute this operator in the last calculation operation -> as for the left and the right string we can just use this same method selecting each operator as the last recursively and so on till no operator -> when there is no operator in the string, we should just return the number via the string.
+
+Bang! End of Story!
+
+> time and space complexity is determined by the amount of operators in the string
+
+Suppose there are k operators in the string, then the time and space cost will approximately be 
+
+    k*(k/2)^2*(k/4)^4...1 which is derived from this equation T(k)=k*T(k/2)*T(k/2) 
+
+Simple and intuitive enough along with nice space and time cost just used for searching the results, though some repeated search does happen but that's not a burden compared with the conciseness of this kind of method. So DP or Memoization might not be a good choice if you want to keep it simple and clean.
+
+
+----------
+
+
+    int* compute(char* s, int len, int* size)
+    {
+        int *arr = (int*)malloc(sizeof(int));
+        *size = 0;
+        int *arr0, *arr1; //prepared for storing the array of different results from left and right side of a operator;
+        int size0=0, size1=0; //used to cooperate with arr0 and arr1 respectively;
+        for(int i = 0; i < len; i++)
+        {
+            if(!isdigit(s[i]))
+            {
+                arr0 = compute(s, i, &size0); //compute the left part of the string and store it in arr0;
+                arr1 = compute(s+i+1, len-i-1, &size1); //compute the right part;
+                for(int j = 0; j < size0; j++)
+                {
+                    for(int k = 0; k < size1; k++)
+                    {
+                        switch(s[i])
+                        {
+                            case '-': arr[*size] = arr0[j]-arr1[k]; break;
+                            case '+': arr[*size] = arr0[j]+arr1[k]; break;
+                            case '*': arr[*size] = arr0[j]*arr1[k]; break;
+                            default: break;
+                        }
+                        *size += 1;
+                        arr = (int*)realloc(arr, sizeof(int)*(*size+1)); //dynamically allocate space for arr;
+                    }//end of arr1
+                }//end of arr0;
+            }
+        }
+        if(*size == 0) //there is no operator in s[0] - s[len-1], so just collect the number;
+        {
+            int t = 0;
+            for(int i = 0; i < len; i++)
+                t = 10*t + (s[i]-'0');
+            arr[*size] = t;
+            *size += 1;
+        }
+        return arr;
+    }
+    int* diffWaysToCompute(char* s, int* returnSize)
+    {
+        return compute(s, strlen(s), returnSize);
+    }
+
+----------------------------------------------------------------------------------------------------
+Python solution use dp
+First I extracted the numbers and operators in the expression. Assume there are d numbers and d-1 operators.
+dp[ i ][ j ] is all possible results of expression contains num[ i : j+1 ].
+So the first loop we calculate expressions only have 2 numbers, then 3 numbers, then 4 numbers....
+Let's say we want to get the result of expression contains L numbers started from num[ j ] , we divide it by two half, the first one contains k numbers, and the second half contains L-k numbers. The result of the first half is dp[ j ][ j+k-1 ] and the second half is dp[j+k-1][ j+l-1]. dp[ i ][ j ] contains all combinations of x from dp[ j ][ j+k-1 ] and y from dp[ j+k-1: j+l-1 ], and k is from 1 to l-1.
+
+
+    import re
+    class Solution:
+        # @param {string} input
+        # @return {integer[]}
+        def diffWaysToCompute(self, input):
+            num=re.split('\+|-|\*',input)
+            opr=re.findall(r'\+|-|\*',input)
+            d=len(num)
+            dp=[[[]for i in range(d)] for j in range(d)]
+            op={'+':lambda x,y:x+y, '-':lambda x,y:x-y, '*':lambda x,y:x*y}
+            for i in range(d):
+                dp[i][i].append(int(num[i]))
+            for l in range(2,d+1):
+                for j in range(d+1-l):
+                        dp[j][j+l-1]=[op[opr[j+k-1]](x,y)
+                                          for k in range(1,l) for x in dp[j][j+k-1] for y in dp[j+k][j+l-1]]
+            return dp[0][d-1]
+
+----------------------------------------------------------------------------------------------------
+Divide and conquer + cache ___Java__260ms
+Thanks @2guotou , he is really a smart guy who shared the elegant solution. I have some improvements based on his idea.
+https://leetcode.com/discuss/48477/a-recursive-java-solution-284-ms
+
+    // Divide and conquer + cache, recursive
+    public class Solution {
+        private static Map<String, List<Integer>> cache = new HashMap<>();
+        private static Set<Character> operators = new HashSet<>();
+        static { operators.add('+');  operators.add('-');  operators.add('*'); }
+        
+        public List<Integer> diffWaysToCompute(String input) {
+            if (cache.containsKey(input))  return cache.get(input);
+            
+            List<Integer> res = new LinkedList<>();
+            int N = input.length();
+            
+            // general case
+            for (int i = 0; i < N; i++) {
+                char c = input.charAt(i);
+                if (operators.contains(c)) {
+                    // divide into two parts
+                    String leftPart  = input.substring(0, i);
+                    String rightPart = input.substring(i + 1);
+                    List<Integer> leftList  = diffWaysToCompute(leftPart);
+                    List<Integer> rightList = diffWaysToCompute(rightPart);
+                    
+                    // merge the result
+                    int sum = 0;
+                    for (int le : leftList) {
+                        for (int ri : rightList) {
+                            switch (c) {
+                                case '+': sum = le + ri; break;
+                                case '-': sum = le - ri; break;
+                                case '*': sum = le * ri; break;
+                            }
+                            res.add(sum);
+                        }
+                    }
+                }
+            }
+            
+            // base case
+            if (res.isEmpty()) res.add(Integer.valueOf(input));
+            
+            cache.put(input, res);
+            return res;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Divide and Conquer + Memorization, Python
+There are two factors I modified to speedup the process, one would be memorization/DP-like techniques, the other is directly compute instead of using `eval()` to compute string.
+
+    
+
+    def diffWaysToCompute(self, input):
+        return self.helper(input, {})
+        
+    def helper(self, input, seen):
+        if input in seen:
+            return seen[input]
+        if input.isnumeric():
+            return [int(input)]
+        res = []
+        for i, c in enumerate(input):
+            if c in "+-*":
+                res += [l+r if c == "+" else l-r if c == "-" else l*r 
+                            for l in self.helper(input[:i], seen) 
+                            for r in self.helper(input[i+1:], seen)]
+        seen[input] = res
+        return res
+
+
+
+----------------------------------------------------------------------------------------------------
+Clean c++ solution with explanation
+ The problem can be visualized as a binary tree and the problem is equivalent to finding all possible different binary trees with all values as leaves and operators as non-leaf nodes. As a example 1*3-4 can be visualized as following:
+
+          *                                  -
+        /   \                              /   \
+       1     -                or          *     4
+           /   \                        /   \
+           3    4                       1    3
+
+Therefore,  we can write out an recursive solution as follows.
+
+    class Solution {
+    public:
+        vector<int> diffWaysToCompute(string input) {
+            if (input.empty()) return vector<int>();
+            return helper(input, 0, input.size() -1);
+        }
+        
+        vector<int> helper(string& input, int startIdx, int endIdx) {
+            vector<int> result;
+            for (int i = startIdx; i < endIdx; i++) {
+                if (input[i] =='+'|| input[i] == '-' || input[i] == '*') {
+                    vector<int> left = helper(input, startIdx, i-1);
+                    vector<int> right = helper(input, i+1, endIdx);
+                    for (int val1 : left) {
+                        for (int val2 : right) {
+                            switch(input[i]) {
+                                case '+': result.push_back(val1 + val2); break;
+                                case '-': result.push_back(val1 - val2); break;
+                                case '*': result.push_back(val1 * val2); break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (result.empty()){
+                int operand = 0;
+                int i = startIdx;
+                while(i < input.size() && isdigit(input[i])) {
+                    operand = 10 * operand + (input[i]-'0');
+                    i++;
+                }
+                result.push_back(operand);
+            }
+            return result;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Easy to understand java solution using divide and conquer
+    public class Solution {
+        public List<Integer> diffWaysToCompute(String input) {
+           if (input == null) {
+               return new ArrayList<Integer>();
+           }
+           
+           return helper(input, 0, input.length() - 1);
+        }
+        
+        
+        private List<Integer> helper(String input, int start, int end) {
+            List<Integer> result = new ArrayList<Integer>();
+            
+            //if the currrent substring is a number, return
+            try {
+                    result.add(Integer.parseInt(input.substring(start, end + 1)));
+                    return result;
+            }
+            //if not, do the parsing by the following
+            catch (NumberFormatException e) {
+                
+            }
+            
+            for (int operatorIndex = start; operatorIndex <= end; operatorIndex++) {
+                char currChar = input.charAt(operatorIndex);
+                if (currChar == '+' || currChar == '-' || currChar == '*') {
+                    //recursively compute all possible results from other sides of current operator
+                    List<Integer> left = helper(input, start, operatorIndex - 1);
+                    List<Integer> right = helper(input, operatorIndex + 1, end);
+                    
+                    //combine all possible results
+                    for (int leftValue : left) {
+                        for (int rightValue : right) {
+                            int newValue;
+                            char operator = input.charAt(operatorIndex);
+                            if (operator == '+') {
+                                newValue = leftValue + rightValue;
+                            }
+                            else if (operator == '-') {
+                                newValue = leftValue - rightValue;
+                            }
+                            else {
+                                newValue = leftValue * rightValue;
+                            }
+                            result.add(newValue);
+                        }
+                    }
+                }
+            }
+            return result;
+            
+        }
+    }
+
+----------------------------------------------------------------------------------------------------

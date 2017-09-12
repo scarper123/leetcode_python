@@ -1,0 +1,862 @@
+My clean Java solution, very easy to understand
+    private final String[] LESS_THAN_20 = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+	private final String[] TENS = {"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+	private final String[] THOUSANDS = {"", "Thousand", "Million", "Billion"};
+	
+    public String numberToWords(int num) {
+        if (num == 0) return "Zero";
+
+        int i = 0;
+        String words = "";
+        
+        while (num > 0) {
+            if (num % 1000 != 0)
+        	    words = helper(num % 1000) +THOUSANDS[i] + " " + words;
+        	num /= 1000;
+        	i++;
+        }
+        
+        return words.trim();
+    }
+    
+    private String helper(int num) {
+    	if (num == 0)
+    	    return "";
+    	else if (num < 20)
+    		return LESS_THAN_20[num] + " ";
+    	else if (num < 100)
+    		return TENS[num / 10] + " " + helper(num % 10);
+    	else
+    		return LESS_THAN_20[num / 100] + " Hundred " + helper(num % 100);
+    }
+
+----------------------------------------------------------------------------------------------------
+Short clean Java solution
+    public class Solution {
+        private final String[] belowTen = new String[] {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
+        private final String[] belowTwenty = new String[] {"Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+        private final String[] belowHundred = new String[] {"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+        
+        public String numberToWords(int num) {
+            if (num == 0) return "Zero";
+            return helper(num); 
+        }
+        
+        private String helper(int num) {
+            String result = new String();
+            if (num < 10) result = belowTen[num];
+            else if (num < 20) result = belowTwenty[num -10];
+            else if (num < 100) result = belowHundred[num/10] + " " + helper(num % 10);
+            else if (num < 1000) result = helper(num/100) + " Hundred " +  helper(num % 100);
+            else if (num < 1000000) result = helper(num/1000) + " Thousand " +  helper(num % 1000);
+            else if (num < 1000000000) result = helper(num/1000000) + " Million " +  helper(num % 1000000);
+            else result = helper(num/1000000000) + " Billion " + helper(num % 1000000000);
+            return result.trim();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Fairly Clear 4ms C++ solution
+    class Solution {
+    public:
+        static string numberToWords(int n) {
+            if(n == 0) return "Zero";
+            else return int_string(n).substr(1);
+        }
+    private:
+        static const char * const below_20[];
+        static const char * const below_100[];
+        static string int_string(int n) {
+            if(n >= 1000000000)   return int_string(n / 1000000000) + " Billion" + int_string(n - 1000000000 * (n / 1000000000));
+            else if(n >= 1000000) return int_string(n / 1000000) + " Million" + int_string(n - 1000000 * (n / 1000000));
+            else if(n >= 1000)    return int_string(n / 1000) + " Thousand" + int_string(n - 1000 * (n / 1000));
+            else if(n >= 100)     return int_string(n / 100) + " Hundred" + int_string(n - 100 * (n / 100));
+            else if(n >= 20)      return string(" ") + below_100[n / 10 - 2] + int_string(n - 10 * (n / 10));
+            else if(n >= 1)       return string(" ") + below_20[n - 1];
+            else return "";
+            }
+        }
+    };
+
+    const char * const Solution::below_20[] =  {"One", "Two", "Three", "Four","Five","Six","Seven","Eight","Nine","Ten", "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"};
+    const char * const Solution::below_100[] = {"Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+
+----------------------------------------------------------------------------------------------------
+Recursive Python
+    def numberToWords(self, num):
+        to19 = 'One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve ' \
+               'Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen'.split()
+        tens = 'Twenty Thirty Forty Fifty Sixty Seventy Eighty Ninety'.split()
+        def words(n):
+            if n < 20:
+                return to19[n-1:n]
+            if n < 100:
+                return [tens[n/10-2]] + words(n%10)
+            if n < 1000:
+                return [to19[n/100-1]] + ['Hundred'] + words(n%100)
+            for p, w in enumerate(('Thousand', 'Million', 'Billion'), 1):
+                if n < 1000**(p+1):
+                    return words(n/1000**p) + [w] + words(n%1000**p)
+        return ' '.join(words(num)) or 'Zero'
+
+
+----------------------------------------------------------------------------------------------------
+My Java Solution
+    public String numberToWords(int num) {
+        if(num == 0)
+            return "Zero";
+        String[] bigString = new String[]{"Thousand","Million","Billion"};
+        String result =  numberToWordsHelper(num%1000);
+        num = num/1000;
+        if(num > 0 && num%1000>0){
+            result = numberToWordsHelper(num%1000) + "Thousand " + result;
+        }
+        num = num/1000;
+        if(num > 0 && num%1000>0){
+            result = numberToWordsHelper(num%1000) + "Million " + result;
+        }
+        num = num/1000;
+        if(num > 0){
+            result = numberToWordsHelper(num%1000) + "Billion " + result;
+        }
+        return result.trim();
+    }
+    
+    public String numberToWordsHelper(int num){
+        String[] digitString = new String[]{"Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
+        String[] teenString = new String[]{"Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen","Eighteen", "Nineteen"};
+        String[] tenString = new String[]{"","","Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+        String result = "";
+        if(num > 99){
+            result += digitString[num/100] + " Hundred ";
+        }
+        num = num % 100;
+        if(num < 20 && num > 9){
+            result += teenString[num%10]+" ";
+        }else{
+            if(num > 19){
+                result += tenString[num/10]+" ";
+            }
+            num = num % 10;
+            if(num > 0)
+                result += digitString[num]+" ";
+        }
+        return result;
+    }
+
+----------------------------------------------------------------------------------------------------
+C++ solution 4ms
+//8ms	
+
+    string helper(int& num){
+    		const static char* less_ten[] =
+    		{ "", " One", " Two", " Three", " Four", " Five", " Six", " Seven", " Eight", " Nine" };
+    		const static char* less_twenty[] =
+    		{ " Ten", " Eleven", " Twelve", " Thirteen", " Fourteen", " Fifteen", " Sixteen", " Seventeen", " Eighteen", " Nineteen" };
+    		const static char* less_hundred[] =
+    		{ "", "", " Twenty", " Thirty", " Forty", " Fifty", " Sixty", " Seventy", " Eighty", " Ninety" };
+    
+    		int less_thousand = num % 1000;
+    		num /= 1000;
+    		string s; 
+    		
+    		if (less_thousand != 0){
+    			int hundred = less_thousand / 100;
+    			less_thousand %= 100; 
+    			int tenth = less_thousand / 10; 
+    			int single = less_thousand % 10; 
+    			
+    			if (hundred) s = s + less_ten[hundred] + " Hundred";
+    			
+    			if (tenth){
+    				if (tenth == 1){
+    		            s += less_twenty[single];
+    					return s;
+    				}
+    				else  s += less_hundred[tenth];
+    
+    			}
+    			if (single) s += less_ten[single];
+    		}
+    		return s;
+    	}
+    	string numberToWords(int num) {
+    		const static char* unit[] = 
+    		    { "", " Thousand", " Million", " Billion", " Triliion" };
+    		    
+    		string s;
+    		int i = 0;
+    		while (num){
+    			string part = helper(num);
+    			if(i++ == 0){
+    			    s = part; 
+    			} 
+    			else if (part.size()) s = part + unit[i] + s;
+    		}
+    		s = s.size() ? s.substr(1) : "Zero";
+    		return s;
+    	}
+
+
+A faster version and maybe easier to understand (4ms):
+
+    string helper(int num){
+    	const static char* less_ten[] =
+    	{ "", " One", " Two", " Three", " Four", " Five", " Six", " Seven", " Eight", " Nine" };
+    	const static char* less_twenty[] =
+    	{ " Ten", " Eleven", " Twelve", " Thirteen", " Fourteen", " Fifteen", " Sixteen", " Seventeen", " Eighteen", " Nineteen" };
+    	const static char* less_hundred[] =
+    	{ "", "", " Twenty", " Thirty", " Forty", " Fifty", " Sixty", " Seventy", " Eighty", " Ninety" };
+    
+    	string s; 
+    	
+    	if (num != 0){
+    	    //get hundredth, tenth, and single digit
+    		int hundred = num / 100;
+    		num %= 100; 
+    		int tenth = num / 10; 
+    		int single = num % 10; 
+    		
+    		if (hundred) s = s + less_ten[hundred] + " Hundred";
+    		
+    		if (tenth){
+    			if (tenth == 1){ //special handling, choose from less_twenty based on value of single
+    	            s += less_twenty[single];
+    				return s;
+    			}
+    			else  s += less_hundred[tenth];
+    
+    		}
+    		if (single) s += less_ten[single];
+    	}
+    	return s;
+    }
+    string numberToWords(int num) {
+    	const static char* unit[] = 
+    	    { "", " Thousand", " Million", " Billion" };
+    	int parts[4] = {0};
+    	for(int i  = 0; i < 4; ++i){
+    	    parts[i] = num % 1000;
+    	    num /= 1000; 
+    	}
+    	string s; 
+    	for(int i = 0; i < 4; ++i){
+    	    if(parts[i] == 0) continue; 
+    	    s = helper(parts[i]) + unit[i] + s;  
+    	}
+    	s = s.size() ? s.substr(1) : "Zero";
+    	return s;
+    }
+
+----------------------------------------------------------------------------------------------------
+Short clean C++ code, with explanation
+Function hundredStr() produces a string from integer less than 100.
+
+And in numberToWords() it uses a for loop to set "Thousand","Million","Billion".
+
+    class Solution {
+    public:
+        string hundredStr(int num){
+            vector<string> arr1={"","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+            "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"};
+            vector<string> arr2={"","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"};
+            string ret;
+            ret=num%100<20?arr1[num%100]:arr2[(num%100)/10]+(num%10?" "+arr1[num%10]:"");
+            if(num>99)ret=arr1[num/100]+" Hundred"+(num%100?" "+ret:"");
+            return ret;
+        }
+        string numberToWords(int num) {
+            string ret;
+            vector<string> strarr={"Thousand","Million","Billion"};
+            ret=hundredStr(num%1000);
+            for(int i=0;i<3;i++){
+                num/=1000;
+                ret=num%1000?hundredStr(num%1000)+" "+strarr[i]+" "+ ret:ret;
+            }
+            while(ret.back()==' ')ret.pop_back();
+            return ret.empty()?"Zero":ret;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Python Clean Solution
+    def __init__(self):
+        self.lessThan20 = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"]
+        self.tens = ["","Ten","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"]
+        self.thousands = ["","Thousand","Million","Billion"]
+    
+    def numberToWords(self, num):
+        if num == 0:
+            return "Zero"
+        res = ""
+        for i in range(len(self.thousands)):
+            if num % 1000 != 0:
+                res = self.helper(num%1000) + self.thousands[i] + " " + res
+            num /= 1000
+        return res.strip()
+    
+    def helper(self, num):
+        if num == 0:
+            return ""
+        elif num < 20:
+            return self.lessThan20[num] + " "
+        elif num < 100:
+            return self.tens[num/10] + " " + self.helper(num%10)
+        else:
+            return self.lessThan20[num/100] + " Hundred " + self.helper(num%100)
+
+----------------------------------------------------------------------------------------------------
+Share my clean Java Solution
+    public String numberToWords(int num) {
+        if (num == 0) return "Zero";
+        String[] big= {"", "Thousand", "Million", "Billion"};
+        String[] small = {"Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+        String[] tens = {"Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+        String[] ones = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
+        StringBuilder res = new StringBuilder();
+        int count = 0;
+        while (num != 0) {
+            int cur = num % 1000;
+            int o = cur % 10, t = (cur / 10) % 10, h = cur / 100;
+            StringBuilder tmp = new StringBuilder();
+            if (h != 0) tmp.append(ones[h] + " Hundred ");
+            if (t == 1) tmp.append(small[o] + " ");
+            else {
+                if (t > 1) tmp.append(tens[t-2] + " ");
+                if (o > 0) tmp.append(ones[o] + " ");
+            }
+            if(tmp.length() != 0) tmp.append(big[count] + " ");
+            res.insert(0, tmp);
+            num /= 1000;
+            count++;
+        }
+        return res.toString().trim();
+    }
+
+----------------------------------------------------------------------------------------------------
+4ms Clean Java Solution
+    public class Solution {
+        public String[] oneToNineteen = new String[]{
+            "",
+            "One",
+            "Two",
+            "Three",
+            "Four",
+            "Five",
+            "Six",
+            "Seven",
+            "Eight",
+            "Nine",
+            "Ten",
+            "Eleven",
+            "Twelve",
+            "Thirteen",
+            "Fourteen",
+            "Fifteen",
+            "Sixteen",
+            "Seventeen",
+            "Eighteen",
+            "Nineteen"
+        };
+        
+        public String[] twentyToNinety = new String[]{
+            "",
+            "Ten",
+            "Twenty",
+            "Thirty",
+            "Forty",
+            "Fifty",
+            "Sixty",
+            "Seventy",
+            "Eighty",
+            "Ninety"
+        };
+        
+        public String[] hunderedToBillion = new String[]{
+            "Hundred",
+            "Thousand",
+            "Million",
+            "Billion"
+        };
+        
+        public String numberToWords(int num) {
+            if(num == 0){
+                return "Zero";
+            }
+            
+            StringBuilder builder = new StringBuilder();
+            convert(num, builder);
+            return builder.toString().trim();
+        }
+        
+        public void convert(int n, StringBuilder builder){
+            if(n == 0){
+            	return;
+            }
+            	
+            if(n < 20){
+                builder.append(oneToNineteen[n]);
+                builder.append(" ");
+            }else if(n < 100){
+                builder.append(twentyToNinety[n/10]);
+                builder.append(" ");
+                convert(n%10, builder);
+            }else if(n<1000){
+                convert(n/100, builder);
+                builder.append(hunderedToBillion[0]);
+                builder.append(" ");
+                convert(n%100, builder);
+            }else if(n<1000000){
+                convert(n/1000, builder);
+                builder.append(hunderedToBillion[1]);
+                builder.append(" ");
+                convert(n%1000, builder);
+            }else if(n<1000000000){
+                convert(n/1000000, builder);
+                builder.append(hunderedToBillion[2]);
+                builder.append(" ");
+                convert(n%1000000, builder);
+            }else{
+                convert(n/1000000000, builder);
+                builder.append(hunderedToBillion[3]);
+                builder.append(" ");
+                convert(n%1000000000, builder);
+            }
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A simple 8ms recursive method
+    class Solution {
+    public:
+        string digits[19] = {"One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight","Nine",
+                           "Ten","Eleven", "Twelve", "Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"};
+        string tens[8] = {"Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+        
+        string int2english(int num){
+            if(num >= 1000000000){
+                return int2english(num / 1000000000) + " Billion" + int2english(num % 1000000000);
+            }
+            if(num >= 1000000){
+                return int2english(num / 1000000) + " Million" + int2english(num % 1000000);
+            }
+            if(num >= 1000){
+                return int2english(num / 1000) + " Thousand" + int2english(num % 1000);
+            }
+            if(num >= 100){
+                return int2english(num / 100) + " Hundred" + int2english(num % 100);
+            }
+            if(num >= 20){
+                return " " + tens[num / 10 - 2] + int2english(num % 10);
+            }
+            if(num > 0){
+                return " " + digits[num - 1];
+            }
+            return "";
+        }
+        
+        string numberToWords(int num) {
+            if(num == 0){
+                return "Zero";
+            }
+            string ans = int2english(num);
+            ans = ans.substr(1, ans.length() - 1);
+            return ans;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Share my python solution
+
+    def numberToWords(self, num):
+        if num == 0: return "Zero"
+        d= {0: "Zero", 1:"One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10 : "Ten", 11: "Eleven", 12: "Twelve", 13: "Thirteen", 14: "Fourteen", 15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen", 19: "Nineteen", 20: "Twenty", 30: "Thirty", 40: "Forty", 50: "Fifty", 60: "Sixty", 70: "Seventy", 80: "Eighty", 90: "Ninety"}
+        unit = [[], ["Thousand"], ["Million"], ["Billion"]]
+        res, i = [], 0
+        while num != 0:
+            cur = num%1000
+            res = self.threedigits(cur, d, unit[i]) + res
+            num //= 1000
+            i += 1
+        return " ".join(res)
+    def threedigits(self, num, d, unit):
+        res = []
+        if num == 0:
+            return res
+        if num/100 != 0:
+            res = [d[num/100] + " " + "Hundred"]
+        res += self.twodigits(num%100, d)
+        res += unit
+        return res
+    
+    def twodigits(self, num, d):
+        if num == 0: return []
+        if num in d: return [d[num]]
+        return [d[(num/10)*10], d[num%10]]
+
+----------------------------------------------------------------------------------------------------
+If you know how to read numbers,you can make it.
+How to read large numbers
+
+Numbers are separated into groups: ones, tens, hundreds, thousands, millions, and so on. Each group contains three subgroups: ones, tens, and hundreds. When writing or reading a large number, begin at the left with the largest group, and proceed to the right. For instance, 7,482 is read as seven thousand, four hundred, eighty-two. The following chart can help in reading large numbers.
+
+![enter image description here][1] 
+[How to Read Large Numbers ][2]
+
+       class Solution {
+    public:
+        string numberToWords(int num) {
+            if(!num)return "Zero";
+            string ones[20]={"Zero","One", "Two", "Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"};
+            string tens[10]={"","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"};
+            string m[5]={"Hundred", "Thousand", "Million","Billion","Trillion"};
+            string s = "";
+            int i=0;
+            while(num){
+            int t1000 = num%1000;
+            string res="";
+            if(t1000){
+                    int t10=t1000%100;
+                    if(t10){
+                        if(t10<20)
+                            res=ones[t10]+(res.empty()?"":" ")+res;
+                        else {
+                            int t1=t10%10;
+                            if(t1){
+                                res = ones[t1]+(res.empty()?"":" ")+res;
+                            }
+                            res=tens[t10/10]+(res.empty()?"":" ")+res;
+                        }
+                    }
+                    int t100=t1000/100;
+                    if(t100){
+                        res=ones[t100]+" Hundred"+(res.empty()?"":" ")+res;
+                    }
+            if(i>0)
+                res=res+" "+m[i];
+            }
+            i++;
+            if(!res.empty())
+                s=res+(s.empty()?"":" ")+s;
+            num/=1000;
+            }
+            return s;
+        }
+    };
+
+
+  [1]: http://training.nwcg.gov/courses/ffm/images/stories/ch1/b_02.gif
+  [2]: http://training.nwcg.gov/courses/ffm/index.php?option=com_content&view=article&id=114&Itemid=142
+
+----------------------------------------------------------------------------------------------------
+A C++ solution with lambda expression
+    class Solution {
+    public:
+      string numberToWords(int num) {
+        if(num == 0) return "Zero";
+        
+        unordered_map<int,string> readings = { {0, ""}, {1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {5, "Five"}, {6, "Six"}, {7, "Seven"}, {8, "Eight"}, {9, "Nine"}, {10, "Ten"}, {11, "Eleven"}, {12, "Twelve"}, {13, "Thirteen"}, {14, "Fourteen"}, {15, "Fifteen"}, {16, "Sixteen"}, {17, "Seventeen"}, {18, "Eighteen"}, {19, "Nineteen"}, {20, "Twenty"}, {30, "Thirty"}, {40, "Forty"}, {50, "Fifty"}, {60, "Sixty"}, {70, "Seventy"}, {80, "Eighty"}, {90, "Ninety"}, {100, "Hundred"}, {1000, "Thousand"}, {1000000, "Million"}, {1000000000, "Billion"}};
+        vector<int> bases = {100, 1000, 1000000, 1000000000};
+        
+        std::function<string(int, int)> read = [&] (int n, int index) {
+          if(n <= 20) return readings[n];
+          if(n < 100) {
+              string ret = readings[n - n % 10];
+              if(!ret.empty() && n % 10) ret += " ";
+              return ret + readings[n % 10];
+          }
+          
+          int radix = bases[index];
+          int result = n / radix, rest = n % radix;
+          string ret;
+          if(result) {
+            ret = read(result, index - 1) + " " + readings[radix] + (rest ? " " : "");
+          }
+          return ret += read(rest, index - 1);
+        };
+        
+        return read(num, bases.size() - 1);
+      }
+    };
+
+----------------------------------------------------------------------------------------------------
+My accepted Java solution (248ms)
+    public class Solution {
+        public String numberToWords(int num) {
+            if(num == 0){
+                return "Zero";
+            }
+            StringBuffer sb = new StringBuffer();
+            
+            String chunk = getRepresentation(num / 1000000000);   
+            if(chunk.length() != 0){
+                sb.append(chunk + " Billion ");
+                num = num % 1000000000;
+            }
+            
+            chunk = getRepresentation(num / 1000000);
+            if(chunk.length() != 0){
+                sb.append(chunk + " Million ");
+                num = num % 1000000;
+            }
+            
+            chunk = getRepresentation(num / 1000);
+            if(chunk.length() != 0){
+                sb.append(chunk + " Thousand ");
+                num = num % 1000;
+            }
+            
+            chunk = getRepresentation(num);
+            if(chunk.length() != 0){
+                sb.append(chunk);
+            }
+            
+            return sb.toString().trim();
+        }
+        
+        public String getRepresentation(int digit){
+            String[] ones = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
+            String[] lessThan20 = {"", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+            String[] tens = {"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+    
+            String res = "";
+            if(digit == 0){
+                return res;
+            }
+    
+            if(digit >= 100){
+                res += ones[digit / 100] + " Hundred ";
+                digit = digit % 100;
+            }
+    
+            if(digit < 10){
+                res += ones[digit];
+                return res.trim();
+            }
+    
+            int temp = digit % 10;
+            digit = digit / 10;
+            
+            if(temp == 0){
+                res += tens[digit];
+            }else if(digit == 1){
+                res += lessThan20[temp];
+            }else{
+                res += tens[digit] + " " + ones[temp];
+            }
+    
+            return res.trim();
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+No loop, no recursive, 4ms
+    class Solution {
+    public:
+        string numberToWords(int num) {
+            if (num == 0) return table[num];
+            string result;
+            int b = num / 1000000000;
+            result += read(b, "Billion");
+            num %= 1000000000;
+            int m = num / 1000000;
+            result += read(m, "Million");
+            num %= 1000000;
+            int k = num / 1000;
+            result += read(k, "Thousand");
+            num %= 1000;
+            result += read(num, "");
+            while (result[result.size() - 1] == ' ')
+                result.erase(result.end() - 1);
+            return result;
+        }
+        
+        string read(int value, const string& suffix) {
+            if (value == 0) return "";
+            string result;
+            int h = value / 100;
+            if (h) {
+                result += table[h] + " " + table[100] + " ";
+            }
+            value %= 100;
+            int c = value / 10;
+            if (c) {
+                if (c == 1) {
+                    result += table[value] + " ";
+                } else {
+                    result += table[c * 10] + " ";
+                }
+            }
+            value %= 10;
+            if (value && c != 1) {
+                result += table[value] + " ";
+            }
+            return result + suffix + " ";
+        }
+        
+        static unordered_map<int, string> table;
+    };
+
+    unordered_map<int, string> Solution::table = {
+        {0, "Zero"},
+        {1, "One"},
+        {2, "Two"},
+        {3, "Three"},
+        {4, "Four"},
+        {5, "Five"},
+        {6, "Six"},
+        {7, "Seven"},
+        {8, "Eight"},
+        {9, "Nine"},
+        {10, "Ten"},
+        {11, "Eleven"},
+        {12, "Twelve"},
+        {13, "Thirteen"},
+        {14, "Fourteen"},
+        {15, "Fifteen"},
+        {16, "Sixteen"},
+        {17, "Seventeen"},
+        {18, "Eighteen"},
+        {19, "Nineteen"},
+        {20, "Twenty"},
+        {30, "Thirty"},
+        {40, "Forty"},
+        {50, "Fifty"},
+        {60, "Sixty"},
+        {70, "Seventy"},
+        {80, "Eighty"},
+        {90, "Ninety"},
+        {100, "Hundred"}
+    };
+
+----------------------------------------------------------------------------------------------------
+Java clean solution
+    private String[] digit = new String[] {"Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
+	private String[] teen = new String[] {"Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+	private String[] ten = new String[] {"Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+	private String[] thousand = new String[] {"Thousand", "Million", "Billion"};
+
+	public String numberToWords(int num) {
+		String ans;
+		if (num == 0)
+			return digit[num];
+		
+		ans = hundredHelper(num%1000);
+		num = num/1000;
+		int i = 0;
+		while (i < 3 && num > 0) {
+			if (num % 1000 > 0)
+				ans = hundredHelper(num%1000) + thousand[i] + " " + ans;
+			num = num/1000;
+			i++;
+		}
+		
+		return ans.trim();
+	}
+	
+	public String hundredHelper(int num) {
+		String nstr = "";
+		if (num >= 100) {
+			nstr = digit[num/100] + " Hundred ";
+		}
+		num = num%100;
+		if (num >= 20) {
+			if (num % 10 != 0)
+				nstr = nstr + ten[num/10 - 2] + " " +  digit[num%10] + " ";
+			else
+				nstr = nstr + ten[num/10 - 2] + " ";
+		} else if (num >= 10) {
+			nstr = nstr + teen[num%10] + " ";
+		} else if (num > 0){
+			nstr = nstr + digit[num] + " ";
+		}
+		return nstr;
+	}
+
+----------------------------------------------------------------------------------------------------
+Clear python solution
+    def numberToWords(self, num):
+        """
+        :type num: int
+        :rtype: str
+        """
+        if num == 0:
+            return 'Zero'
+        ddict = {1: 'One', 2: 'Two', 3: "Three", 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine',
+                 10: 'Ten', 11: 'Eleven', 12: 'Twelve', 13: 'Thirteen', 14: 'Fourteen', 15:'Fifteen', 16: 'Sixteen',
+                 17: 'Seventeen', 18: 'Eighteen', 19: 'Nineteen', 20: 'Twenty', 30: 'Thirty', 40: 'Forty', 50: 'Fifty',
+                 60: 'Sixty', 70: 'Seventy', 80: 'Eighty', 90: 'Ninety'}
+        base = ['', 'Thousand', 'Million', 'Billion']
+        result, exp = '', 1000
+        i, chunk = 0, 0
+        while num:
+            chunk = num % exp
+            if chunk:
+                result = base[i] + ' ' + result
+                one = chunk % 10
+                two = (chunk % 100) - one
+                three = chunk // 100
+                if two == 10:
+                    result = ddict[two+one] + ' ' + result
+                else:
+                    if one:
+                        result = ddict[one] + ' ' + result
+                    if two:
+                        result = ddict[two] + ' ' +result
+                if three:
+                    result = ddict[three] + ' Hundred ' + result
+            num //= exp
+            i += 1
+        return result.rstrip()
+
+----------------------------------------------------------------------------------------------------
+JAVA-------------Easy Version To Understand!!!!!!!
+    	static String[] lessThan20 = { "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+			"Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
+	static String[] tens = { "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety" };
+	static String[] thousands = { "", "Thousand", "Million", "Billion" };
+
+	public static String helper(int number) {
+		if (number == 0)
+			return "";
+		if (number < 20)
+			return lessThan20[number] + " ";
+		if (number < 100)
+			return tens[number / 10] + " " + helper(number % 10);
+		else
+			return lessThan20[number / 100] + " Hundred " + helper(number % 100);
+	}
+
+	public static String numberToWords(int num) {
+		if (num == 0)
+			return "Zero";
+		String word = "";
+		for (int i = 0; i < thousands.length; i++) {
+			int tmp = num % 1000;
+			num /= 1000;
+			if (tmp == 0)
+				continue;
+			word = helper(tmp) + thousands[i] + " " + word;
+		}
+		return word.trim();
+	}
+
+----------------------------------------------------------------------------------------------------
+The simplest recursive solution ever yet efficient enough in C++
+    class Solution {
+    private:
+        const vector<string> numerals{"Billion", "Million", "Thousand", "Hundred", "Ninety","Eighty", "Seventy","Sixty", "Fifty", "Forty", "Thirty", "Twenty", "Nineteen", "Eighteen", "Seventeen", "Sixteen", "Fifteen", "Fourteen", "Thirteen", "Twelve","Eleven", "Ten","Nine", "Eight", "Seven", "Six", "Five", "Four", "Three","Two", "One"};
+        const vector<int> units = {1000000000, 1000000, 1000, 100, 90, 80, 70, 60,50, 40,30,20,19, 18, 17, 16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1};
+    public:
+        string numberToWords(int num) 
+        {
+            if(num == 0) return "Zero";
+            int i = 0;
+            for(; num < units[i]; ++i) ;
+            int upper = num/units[i];
+            int lower = num%units[i];
+            return (i<4? numberToWords(upper) + " " : "") + numerals[i] + (lower? " " + numberToWords(lower) : "");
+        }
+    };
+
+----------------------------------------------------------------------------------------------------

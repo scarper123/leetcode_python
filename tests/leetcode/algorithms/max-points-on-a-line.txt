@@ -1,0 +1,614 @@
+My short solution by C++. O(n2)
+Three flags are used to check whether a number appear.
+
+used1: check each row
+
+used2: check each column
+
+used3: check each sub-boxes
+ 
+    class Solution
+    {
+    public:
+        bool isValidSudoku(vector<vector<char> > &board)
+        {
+            int used1[9][9] = {0}, used2[9][9] = {0}, used3[9][9] = {0};
+            
+            for(int i = 0; i < board.size(); ++ i)
+                for(int j = 0; j < board[i].size(); ++ j)
+                    if(board[i][j] != '.')
+                    {
+                        int num = board[i][j] - '0' - 1, k = i / 3 * 3 + j / 3;
+                        if(used1[i][num] || used2[j][num] || used3[k][num])
+                            return false;
+                        used1[i][num] = used2[j][num] = used3[k][num] = 1;
+                    }
+            
+            return true;
+        }
+    };
+
+----------------------------------------------------------------------------------------------------
+Shared my concise Java code
+    public boolean isValidSudoku(char[][] board) {
+        for(int i = 0; i<9; i++){
+            HashSet<Character> rows = new HashSet<Character>();
+            HashSet<Character> columns = new HashSet<Character>();
+            HashSet<Character> cube = new HashSet<Character>();
+            for (int j = 0; j < 9;j++){
+                if(board[i][j]!='.' && !rows.add(board[i][j]))
+                    return false;
+                if(board[j][i]!='.' && !columns.add(board[j][i]))
+                    return false;
+                int RowIndex = 3*(i/3);
+                int ColIndex = 3*(i%3);
+                if(board[RowIndex + j/3][ColIndex + j%3]!='.' && !cube.add(board[RowIndex + j/3][ColIndex + j%3]))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Short+Simple Java using Strings
+Collect the set of things we see, encoded as strings. For example:
+
+- `'4' in row 7` is encoded as `"(4)7"`.
+- `'4' in column 7` is encoded as `"7(4)"`.
+- `'4' in the top-right block` is encoded as `"0(4)2"`.
+
+Scream `false` if we ever fail to add something because it was already added (i.e., seen before).
+
+    public boolean isValidSudoku(char[][] board) {
+        Set seen = new HashSet();
+        for (int i=0; i<9; ++i) {
+            for (int j=0; j<9; ++j) {
+                if (board[i][j] != '.') {
+                    String b = "(" + board[i][j] + ")";
+                    if (!seen.add(b + i) || !seen.add(j + b) || !seen.add(i/3 + b + j/3))
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+
+---
+
+**Edit:** Just occurred to me that we can also make it really clear and self-explaining. I'm loving it.
+
+    public boolean isValidSudoku(char[][] board) {
+        Set seen = new HashSet();
+        for (int i=0; i<9; ++i) {
+            for (int j=0; j<9; ++j) {
+                char number = board[i][j];
+                if (number != '.')
+                    if (!seen.add(number + " in row " + i) ||
+                        !seen.add(number + " in column " + j) ||
+                        !seen.add(number + " in block " + i/3 + "-" + j/3))
+                        return false;
+            }
+        }
+        return true;
+    }
+
+
+----------------------------------------------------------------------------------------------------
+Sharing my easy-understand java solution using set
+    public class Solution {
+    public boolean isValidSudoku(char[][] board) {
+        for (int i=0; i<9; i++) {
+            if (!isParticallyValid(board,i,0,i,8)) return false;
+            if (!isParticallyValid(board,0,i,8,i)) return false;
+        }
+        for (int i=0;i<3;i++){
+            for(int j=0;j<3;j++){
+                if (!isParticallyValid(board,i*3,j*3,i*3+2,j*3+2)) return false;
+            }
+        }
+        return true;
+    }
+    private boolean isParticallyValid(char[][] board, int x1, int y1,int x2,int y2){
+        Set singleSet = new HashSet();
+        for (int i= x1; i<=x2; i++){
+            for (int j=y1;j<=y2; j++){
+                if (board[i][j]!='.') if(!singleSet.add(board[i][j])) return false;
+            }
+        }
+        return true;
+    }
+}
+
+Each time send the coordinates to check if the board is partially valid.
+
+----------------------------------------------------------------------------------------------------
+C++ very simple and easy understand. using bit operation
+       bool isValidSudoku(vector<vector<char>>& board) {
+        vector<short> col(9, 0);
+        vector<short> block(9, 0);
+        vector<short> row(9, 0);
+        for (int i = 0; i < 9; i++)
+         for (int j = 0; j < 9; j++) {
+             if (board[i][j] != '.') {
+                 int idx = 1 << (board[i][j] - '0');
+                 if (row[i] & idx || col[j] & idx || block[i/3 * 3 + j / 3] & idx)
+                    return false;
+                row[i] |= idx;
+                col[j] |= idx;
+                block[i/3 * 3 + j/3] |= idx;
+             }
+         }
+         return true;
+      }
+
+----------------------------------------------------------------------------------------------------
+Yet another java 2ms solution
+    public boolean isValidSudoku(char[][] board) {
+        int [] vset = new int [9];
+        int [] hset = new int [9];
+        int [] bckt = new int [9];
+        int idx = 0;
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (board[i][j] != '.') {
+                    idx = 1 << (board[i][j] - '0') ;
+                    if ((hset[i] & idx) > 0 ||
+                        (vset[j] & idx) > 0 ||
+                        (bckt[(i / 3) * 3 + j / 3] & idx) > 0) return false;
+                    hset[i] |= idx;
+                    vset[j] |= idx;
+                    bckt[(i / 3) * 3 + j / 3] |= idx;
+                }
+            }
+        }
+        return true;
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
+1-7 lines Python, 4 solutions
+**Idea**
+
+Just go through all you see (like "7 in row 3") and check for duplicates.
+
+**Solution 1**
+
+Using `Counter`. One logical line, seven physical lines.
+
+    def isValidSudoku(self, board):
+        return 1 == max(collections.Counter(
+            x
+            for i, row in enumerate(board)
+            for j, c in enumerate(row)
+            if c != '.'
+            for x in ((c, i), (j, c), (i/3, j/3, c))
+        ).values() + [1])
+
+The ` + [1]` is only for the empty board, where `max` would get an empty list and complain. It's not necessary to get it accepted here, as the empty board isn't among the test cases, but it's good to have.
+
+**Solution 2**
+
+Using `len(set)`.
+
+    def isValidSudoku(self, board):
+        seen = sum(([(c, i), (j, c), (i/3, j/3, c)]
+                    for i, row in enumerate(board)
+                    for j, c in enumerate(row)
+                    if c != '.'), [])
+        return len(seen) == len(set(seen))
+
+**Solution 3**
+
+Using `any`.
+
+    def isValidSudoku(self, board):
+        seen = set()
+        return not any(x in seen or seen.add(x)
+                       for i, row in enumerate(board)
+                       for j, c in enumerate(row)
+                       if c != '.'
+                       for x in ((c, i), (j, c), (i/3, j/3, c)))
+
+**Solution 4**
+
+Iterating a different way.
+
+    def isValidSudoku(self, board):
+        seen = sum(([(c, i), (j, c), (i/3, j/3, c)]
+                    for i in range(9) for j in range(9)
+                    for c in [board[i][j]] if c != '.'), [])
+        return len(seen) == len(set(seen))
+
+
+----------------------------------------------------------------------------------------------------
+My 12 lines C&#x2F;C++ solution with 1 time traversal and 9x9x3 memory
+
+    int isValidSudoku(char** board, int boardRowSize, int boardColSize) {
+        int rows[9][9]={0}; //rows[5][0] means whether number 1('0'+1) in row 5 has appeared.
+    	int cols[9][9]={0}; //cols[3][8] means whether number 9('8'+1) in col 3 has appeared.
+    	int blocks[3][3][9]={0};//blocks[0][2][5] means whether number '6' in block 0,2 (row 0~2,col 6~8) has appeared.
+    	for(int r=0;r<9;r++)    //traverse board r,c
+    		for(int c=0;c<9;c++)
+    			if(board[r][c]!='.'){   //skip all number '.'
+    				int number=board[r][c]-'1'; //calculate the number's index(board's number minus 1)
+    				if(rows[r][number]++) return 0; //if the number has already appeared once, return false.
+    				if(cols[c][number]++) return 0;
+    				if(blocks[r/3][c/3][number]++) return 0;
+    			}
+    	return 1;
+    }
+
+----------------------------------------------------------------------------------------------------
+Simple clear java solution
+    public class Solution {
+        public boolean isValidSudoku(char[][] board) {
+            
+           boolean[][] row = new boolean[9][9];
+           boolean[][] column = new boolean[9][9];
+           boolean[][] block = new boolean[9][9];
+           
+           for(int i = 0;i<9;i++){
+               for(int j=0;j<9;j++){
+                    int c = board[i][j] - '1';       
+                    if(board[i][j]=='.'){
+                        continue;
+                    }
+                    if(row[i][c]||column[j][c]||block[i - i % 3 + j / 3][c]){
+                        return false;
+                    }
+                    row[i][c] = column[j][c] = block[i - i % 3 + j / 3][c] = true;
+               }
+           }
+           return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+A readable Python solution
+Apparently not the shortest solution but I think it's easy to follow the logic.
+
+    
+    def isValidSudoku(self, board):
+        return (self.is_row_valid(board) and
+                self.is_col_valid(board) and
+                self.is_square_valid(board))
+    
+    def is_row_valid(self, board):
+        for row in board:
+            if not self.is_unit_valid(row):
+                return False
+        return True
+    
+    def is_col_valid(self, board):
+        for col in zip(*board):
+            if not self.is_unit_valid(col):
+                return False
+        return True
+        
+    def is_square_valid(self, board):
+        for i in (0, 3, 6):
+            for j in (0, 3, 6):
+                square = [board[x][y] for x in range(i, i + 3) for y in range(j, j + 3)]
+                if not self.is_unit_valid(square):
+                    return False
+        return True
+        
+    def is_unit_valid(self, unit):
+        unit = [i for i in unit if i != '.']
+        return len(set(unit)) == len(unit)
+
+----------------------------------------------------------------------------------------------------
+Clean and Easy82ms Python
+class Solution(object):
+
+    def isValidSudoku(self, board):
+        """
+        :type board: List[List[str]]
+        :rtype: bool
+        """
+        big = set()
+        for i in xrange(0,9):
+            for j in xrange(0,9):
+                if board[i][j]!='.':
+                    cur = board[i][j]
+                    if (i,cur) in big or (cur,j) in big or (i/3,j/3,cur) in big:
+                        return False
+                    big.add((i,cur))
+                    big.add((cur,j))
+                    big.add((i/3,j/3,cur))
+        return True
+        
+
+----------------------------------------------------------------------------------------------------
+Share my solution for Valid Sudoku
+    public static boolean isValidSudoku(char[][] board) {
+		boolean[][] row = new boolean[9][9];
+		boolean[][] col = new boolean[9][9];
+		boolean[][] box = new boolean[9][9];
+
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				char c = board[i][j];
+				if (c == '.')
+					continue;
+
+				if (c < '0' || c > '9')
+					return false;
+
+				int number = c - '1';
+				if (row[i][number] || col[j][number] || box[(i / 3) * 3 + j / 3][number])
+					return false;
+
+				row[i][number] = true;
+				col[j][number] = true;
+				box[(i / 3) * 3 + j / 3][number] = true;
+			}
+		}
+		return true;
+	}
+
+----------------------------------------------------------------------------------------------------
+Share my java solution
+    public class Solution {
+    public Set<Character> set=new HashSet<Character>();
+    public boolean isValidSudoku(char[][] board) {
+       for(int i=0;i<9;i++){
+           if(validPartial(board,i,i,0,8)==false) return false;
+           if(validPartial(board,0,8,i,i)==false) return false;
+       } 
+       for(int i=0;i<9;i+=3){
+           for(int j=0;j<9;j+=3){
+               if(validPartial(board,i,i+2,j,j+2)==false) return false;
+           }
+       }
+       return true;
+    }
+    public boolean validPartial(char[][] board,int row1,int row2,int col1,int col2){
+        set.clear();
+        for(int i=row1;i<=row2;i++){
+            for(int j=col1;j<=col2;j++){
+                if(board[i][j]!='.') {
+                    if(!set.add(board[i][j])) return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+----------------------------------------------------------------------------------------------------
+Java solution easy to understand
+    public boolean isValidSudoku(char[][] board) {
+        boolean[][] col = new boolean[9][9];
+        boolean[][] row = new boolean[9][9];
+        boolean[][] block = new boolean[9][9];
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (board[i][j] == '.') {
+                    continue;
+                }
+                int digit = board[i][j] - '1';
+                int blockId = i / 3 * 3 + j / 3;
+                if (col[j][digit]) {
+                    return false;
+                } else {
+                    col[j][digit] = true;
+                }
+                if (row[i][digit]) {
+                    return false;
+                } else {
+                    row[i][digit] = true;
+                }
+                if (block[blockId][digit]) {
+                    return false;
+                } else {
+                    block[blockId][digit] = true;
+                }
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+Share my c++ solution
+    bool isValidSudoku(vector<vector<char>>& board) {
+        map<char,int> row[9],col[9],blk[9];
+        char c;
+        for(int i = 0;i<9;i++){
+            for(int j =0;j<9;j++){
+                c = board[i][j];
+                if((c!='.')&&(0<row[i][c]++ || 0<col[j][c]++ || 0<blk[i/3*3+j/3][c]++)) return false;
+            }
+        }
+        return true;
+    }
+
+----------------------------------------------------------------------------------------------------
+3ms concise Java solution with bit operation
+    public class Solution {
+        public boolean isValidSudoku(char[][] board) {
+            int[] rows = new int[9];
+            int[] columns = new int[9];
+            int[] blocks = new int[9];
+            for(int i=0;i<9;i++){
+                for(int j=0;j<9;j++){
+                    int mask = board[i][j]=='.'?0:(1<<(board[i][j]-'0'));
+                    if(mask==0) continue;
+                    if((rows[i]&mask)!=0) return false;
+                    if((columns[j]&mask)!=0) return false;
+                    if((blocks[i/3*3+j/3]&mask)!=0) return false;
+                    rows[i] |= mask;
+                    columns[j] |= mask;
+                    blocks[i/3*3+j/3] |= mask;
+                }
+            }
+            return true;
+        }
+    }
+
+----------------------------------------------------------------------------------------------------
+Fast and clean java solution
+       public boolean isValidSudoku(char[][] board) {
+            //first dimension 0/horizontal 1/vertical 2/square
+            //second dimension 0-8 represents the ith row/column/square
+            //third dimension represents the occurrence of number 1-9
+            boolean[][][] occur = new boolean[3][9][9];
+            for (int i = 0; i < 9; i++){
+                for (int j = 0; j < 9; j++){
+                    if (board[i][j] == '.') continue;
+                    int num = board[i][j] - '1';
+                    if (occur[0][i][num]) return false;
+                    else occur[0][i][num] = true;
+                    if (occur[1][j][num]) return false;
+                    else occur[1][j][num] = true;
+                    int s = (i / 3) * 3 + j / 3;
+                    if (occur[2][s][num]) return false;
+                    else occur[2][s][num] = true;
+                }
+            }
+            return true;
+        }
+
+----------------------------------------------------------------------------------------------------
+Sharing my simple O(n^2) C++ solution
+    class Solution {
+    public:
+        bool isValidSudoku(vector<vector<char> > &board) {
+            int rows = board.size();
+            int cols = board[0].size();
+            int mask=0;
+            int val;
+            for(int i=0;i<rows;i++){
+                mask=0;
+                for(int j=0;j<cols;j++){
+                    if(board[i][j]!='.'){
+                        int val = (int)(board[i][j]-'0');
+                        if(mask & (1<<val))
+                            return false;
+                        else mask |= (1<<val);
+                    }
+                }
+            }
+            //rows are checked
+            for(int j=0;j<cols;j++){
+                mask=0;
+                for(int i=0;i<rows;i++){
+                    if(board[i][j]!='.'){
+                        int val = (int)(board[i][j]-'0');
+                        if(mask & (1<<val))
+                            return false;
+                        else mask |= (1<<val);
+                    }
+                }
+            }
+            //cols are checked
+            for(int i=0;i<rows;i+=3)
+            {
+                for(int j=0;j<cols;j+=3)
+                {
+                    mask=0;
+                    for(int k=i;k<=i+2;k++)
+                    {
+                        for(int l=j;l<=j+2;l++)
+                        {
+                            if(board[k][l]!='.'){
+                                val = (int)(board[k][l]-'0');
+                                if(mask&(1<<val))
+                                    return false;
+                                else mask|=(1<<val);
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+    };
+
+I use 'mask' to see which all digits have occurred before. This check is done using binary operators. This check is done for each row, each column and each block of 3*3. Any comments/suggestions/improvements are welcome! 
+
+----------------------------------------------------------------------------------------------------
+Java clear solution.
+    public class Solution {
+    public static boolean isValidSudoku(char[][] board) {
+    		Set<Character>[] setXX = new HashSet[9];
+    		Set<Character>[] setYY = new HashSet[9];
+    		Set<Character>[] setXY = new HashSet[9];
+    		for (int i = 0; i < 9; i++) {
+    			setXX[i] = new HashSet<>();
+    			setYY[i] = new HashSet<>();
+    			setXY[i] = new HashSet<>();
+    		}
+    		
+    		for (int i = 0; i < 9; i++) {
+    			for (int j = 0; j < 9; j++) {
+    				if (board[i][j] == '.') {
+    					continue;
+    				}
+    				if(!setXX[i].add(board[i][j])){
+    					return false;
+    				}
+    				if(!setYY[j].add(board[i][j])){
+    					return false;
+    				}
+    				if(!setXY[(j / 3)* 3 + i / 3].add(board[i][j])){
+    					return false;
+    				}
+    			}
+    		}
+    		return true;
+    	}
+    
+    }
+
+----------------------------------------------------------------------------------------------------
+My one pass O(1) space solution using Java
+ 
+  This solution saves more space. 
+  Using bit-map to represent the occupation of each number.
+  In the outer loop, the i represents ith row, column and block 
+  for the row, col and block variable separately to validate 
+  the jth element in this row (column and the block) seperately.
+
+
+  Time complexity: O(n^2); where n is the width of the board.
+
+  Space complexity: O(1);
+
+  Status: Accepted.
+ 
+
+    public class Solution {
+        public boolean isValidSudoku(char[][] board) {
+            // precondition: board is not null
+            if (board == null) {
+                throw new NullPointerException();
+            }
+    
+            for (int i = 0; i < 9; i++) {
+                int row = 0;
+                int col = 0;
+                int block = 0;
+                for (int j = 0; j < 9; j++) {
+                    int rowVal = board[i][j] - '1';
+                    int colVal = board[j][i] - '1';
+                    int blockVal = board[i/3*3 + j/3][i%3*3 + j%3] - '1';
+                    if (rowVal >= 0 && (row & (1 << rowVal)) != 0
+                     || colVal >= 0 && (col & (1 << colVal)) != 0
+                     || blockVal >= 0 && (block & (1 << blockVal)) !=0) {
+                        return false;
+                    }
+                    row |= rowVal >= 0 ? 1 << rowVal : 0;
+                    col |= colVal >=0 ? 1 << colVal : 0;
+                    block |= blockVal >= 0 ? 1 << blockVal : 0;
+                }
+            }
+    
+            return true;
+        }
+    }
+
+
+
+----------------------------------------------------------------------------------------------------
